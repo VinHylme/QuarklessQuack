@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Handlers\StateManager\" />
+    <Folder Include="Logic\BusinessLogic\" />
+    <Folder Include="Logic\ShopLogic\" />
+    <Folder Include="Logic\StoriesLogic\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Nancy" Version="2.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ContentSearcher\ContentSearcher.csproj" />
+    <ProjectReference Include="..\InstagramApiSharp\InstagramApiSharp.csproj" />
+    <ProjectReference Include="..\QuarklessRepositories\QuarklessRepositories.csproj" />
+  </ItemGroup>
+
+</Project>
