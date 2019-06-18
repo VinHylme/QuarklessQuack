@@ -11,6 +11,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Quarkless.MediaAnalyser;
+using System.Threading.Tasks;
+using Quarkless.Services.Extensions;
+
 namespace Quarkless.Services.ContentBuilder.MediaBuilder
 {
 	public class ImageBuilder : IContent
@@ -19,7 +22,7 @@ namespace Quarkless.Services.ContentBuilder.MediaBuilder
 		private readonly UserStore _userSession;
 		private readonly DateTime _executeTime;
 		private readonly IContentBuilderManager _builder;
-		private const int IMAGE_FETCH_LIMIT = 15;
+		private const int IMAGE_FETCH_LIMIT = 12;
 		public ImageBuilder(UserStore userSession, IContentBuilderManager builder, ProfileModel profile, DateTime executeTime)
 		{
 			_builder = builder;
@@ -30,12 +33,13 @@ namespace Quarkless.Services.ContentBuilder.MediaBuilder
 		public void Operate()
 		{
 			string exactSize = _profile.AdditionalConfigurations.PostSize;
-
+			var location = _profile.LocationTargetList?.ElementAtOrDefault(SecureRandom.Next(_profile.LocationTargetList.Count));
 			var profileColor = _profile.Theme.Colors.ElementAt(SecureRandom.Next(0,_profile.Theme.Colors.Count));
 			var topics = _builder.GetTopics(_userSession, _profile.TopicList,15).GetAwaiter().GetResult();	
 			var topicSelect = topics.ElementAt(SecureRandom.Next(0,topics.Count));
+
 			List<string> pickedSubsTopics = topicSelect.SubTopics.TakeAny(2).ToList();
-			
+			pickedSubsTopics.Add(topicSelect.TopicName);
 			List<PostsModel> TotalResults = new List<PostsModel>();
 
 			switch (_profile.AdditionalConfigurations.SearchTypes.ElementAtOrDefault(SecureRandom.Next(_profile.AdditionalConfigurations.SearchTypes.Count)))
@@ -51,8 +55,13 @@ namespace Quarkless.Services.ContentBuilder.MediaBuilder
 					break;
 				case (int) SearchType.Yandex:
 					if(_profile.Theme.ImagesLike!=null && _profile.Theme.ImagesLike.Count > 0) { 
-						var yanres = _builder.GetYandexSimilarImages(_profile.Theme.ImagesLike.
-							Where(t => t.TopicGroup.ToLower() == topicSelect.TopicName.ToLower()).ToList(), IMAGE_FETCH_LIMIT*2);
+						List<GroupImagesAlike> groupImagesAlikes = new List<GroupImagesAlike>
+						{
+							_profile.Theme.ImagesLike.
+							Where(s=>s.TopicGroup.ToLower() == topicSelect.TopicName.ToLower()).
+							ElementAtOrDefault(SecureRandom.Next(_profile.Theme.ImagesLike.Count))
+						};
+						var yanres = _builder.GetYandexSimilarImages(groupImagesAlikes, IMAGE_FETCH_LIMIT*8);
 						if(yanres!=null)
 							TotalResults.AddRange(yanres);
 					}
@@ -60,29 +69,44 @@ namespace Quarkless.Services.ContentBuilder.MediaBuilder
 			}
 			
 			if(TotalResults.Count<=0) return;
+			List<PostsModel> currentUsersMedia = _builder.GetUserMedia(_userSession,1).Take(5).ToList();
+
+			List<byte[]> userMediaBytes = new List<byte[]>();
+			Parallel.ForEach(currentUsersMedia.First().MediaData, act =>
+			{
+				userMediaBytes.Add(act.DownloadMedia());
+			});
 
 			List<byte[]> imagesBytes = new List<byte[]>();
 			var resultSelect = TotalResults.ElementAtOrDefault(SecureRandom.Next(TotalResults.Count));
-			imagesBytes.AddRange(resultSelect.MediaData.TakeAny(resultSelect.MediaData.Count/2).Select(s=>s.DownloadMedia()).Where(a=>a!=null));
+
+			Parallel.ForEach(resultSelect.MediaData.TakeAny(SecureRandom.Next(resultSelect.MediaData.Count)), s=> imagesBytes.Add(s?.DownloadMedia()));
+
+			imagesBytes = userMediaBytes.Where(u=>u!=null)
+				.RemoveDuplicateImages(imagesBytes,0.7)
+				.ResizeManyToClosestAspectRatio()
+				.Where(s=>s!=null).ToList();
+
 
 			System.Drawing.Color profileColorRGB = System.Drawing.Color.FromArgb(profileColor.Alpha, profileColor.Red, profileColor.Green, profileColor.Blue);
+			
 			var selectedImage = profileColorRGB.MostSimilarImage(imagesBytes.Where(_=>_!=null).ToList()).SharpenImage(4);
 
 			if(selectedImage == null) return;
 			var instaimage = new InstaImageUpload(){
 				ImageBytes = selectedImage,
 			};
-			
-			var hash = _builder.GetHashTags(topicSelect.TopicName, 100,10).GetAwaiter().GetResult().ToList();
-			hash.AddRange(topicSelect.SubTopics.Select(s => $"#{s}"));
-			var hashtags = string.Join(Environment.NewLine, hash.TakeAny(28));
-			var caption_ = _builder.GenerateText(topicSelect.TopicName.ToLower(),_profile.Language.ToUpper(),1,SecureRandom.Next(4), SecureRandom.Next(6));
-
 			UploadPhotoModel uploadPhoto = new UploadPhotoModel
 			{
-				Caption = caption_ + Environment.NewLine + hashtags,
+				Caption = _builder.GenerateMediaInfo(topicSelect,_profile.Language),
 				Image = instaimage,
-				Location = null
+				Location = location!=null ? new InstaLocationShort
+				{
+					Address = location.Address,
+					Lat = location.Coordinates.Latitude,
+					Lng = location.Coordinates.Longitude,
+					Name = location.City
+				} : null
 			};
 			RestModel restModel = new RestModel
 			{

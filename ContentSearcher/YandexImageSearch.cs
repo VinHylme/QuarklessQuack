@@ -3,6 +3,7 @@ using QuarklessContexts.Models.ServicesModels.SearchModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ContentSearcher
 {
@@ -19,7 +20,7 @@ namespace ContentSearcher
 		public Media Search(IEnumerable<GroupImagesAlike> ImagesLikeUrls, int limit)
 		{
 			Media TotalFound = new Media();
-			foreach (var url in ImagesLikeUrls)
+			Parallel.ForEach(ImagesLikeUrls, url=>
 			{
 				var fullurl_ = yandexBaseImageUrl + url.Url + rpt;
 				try
@@ -28,7 +29,7 @@ namespace ContentSearcher
 					MediaResponse imageResponse = new MediaResponse
 					{
 						Topic = url.TopicGroup,
-						MediaUrl = result.ToList()
+						MediaUrl = result.Where(s => !s.Contains(".gif")).ToList()
 					};
 					TotalFound.Medias.Add(imageResponse);
 				}
@@ -37,7 +38,7 @@ namespace ContentSearcher
 					Console.Write(ee.Message);
 					TotalFound.errors++;
 				}
-			}
+			});
 			return TotalFound;
 		}
 	}

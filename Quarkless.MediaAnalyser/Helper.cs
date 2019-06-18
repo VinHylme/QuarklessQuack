@@ -12,10 +12,19 @@ using System.Threading.Tasks;
 using Shipwreck.Phash;
 using Shipwreck.Phash.Bitmaps;
 using Shipwreck.Phash.Data;
+using System.Drawing.Drawing2D;
+using ImageProcessor.Imaging.Filters.EdgeDetection;
+using ImageProcessor.Imaging;
+
 namespace Quarkless.MediaAnalyser
 {
 	public static class  Helper
 	{
+		public struct ImageHolder
+		{
+			public byte[] OriginalImageData;
+			public byte[] ReducedImageData;
+		}
 		private static string GetFilePathByName(string name)
 		{
 			var settingPath = Path.GetFullPath(Path.Combine(@"..\Quarkless"));
@@ -23,42 +32,131 @@ namespace Quarkless.MediaAnalyser
 				SetBasePath(settingPath).AddJsonFile("appsettings.json").Build();
 			return configuration["MediaPath:" + name];
 		}
-		public static IEnumerable<byte[]> RemoveDuplicates (this IEnumerable<byte[]> images, byte[] image, double scorePercantage)
+		public static bool ImageIsDuplicate(this byte[] image, byte[] targetImage, double scorePerctange)
 		{
-			var orginalHash = ImagePhash.ComputeDigest(image.ByteToBitmap().ToLuminanceImage());
-			foreach (var currImage in images)
+			var ogHash = ImagePhash.ComputeDigest(image.ByteToBitmap().ToLuminanceImage());
+			var targetHash = ImagePhash.ComputeDigest(targetImage.ByteToBitmap().ToLuminanceImage());
+			return ImagePhash.GetCrossCorrelation(ogHash,targetHash) > scorePerctange;
+		}
+		public static IEnumerable<byte[]> SelectImageOnSize(this IEnumerable<byte[]> imageData, Size imSize)
+		{
+			List<byte[]> toreturn = new List<byte[]>();
+			foreach(var image in imageData)
 			{
-				var bitmap = (Bitmap)currImage.ByteToBitmap();
-				var Currenthash = ImagePhash.ComputeDigest(bitmap.ToLuminanceImage());
-				var score = ImagePhash.GetCrossCorrelation(Currenthash, orginalHash);
-				if (score < scorePercantage)
-				{
-					yield return currImage;
-				}
-				else
-				{
-					continue;
+				if (image != null) {
+					try { 
+					var bitmapImage = image.ByteToBitmap();
+					if (bitmapImage != null) { 
+						if(bitmapImage.Width > imSize.Width && bitmapImage.Height > imSize.Height)
+							toreturn.Add(image);
+						}
+					}
+					catch(Exception ee)
+					{
+						Console.WriteLine(ee.Message);
+						continue;
+					}
 				}
 			}
+			return toreturn;
 		}
-		public static bool DoesExist(this byte[] image, IEnumerable<byte[]> images, double scorePercantage)
+		public static IEnumerable<byte[]> RemoveDuplicateImages (this IEnumerable<byte[]> selfImages,
+			IEnumerable<byte[]> targetImages, double scorePercantage)
 		{
-			var orginalHash = ImagePhash.ComputeDigest(image.ByteToBitmap().ToLuminanceImage());
-			foreach(var currImage in images)
+			if(selfImages.Count()<=0) throw new Exception("self images cannot be empty");
+			if(targetImages.Count()<=0) throw new Exception("target images cannot be empty");
+			targetImages = targetImages.SelectImageOnSize(new Size(600,600));
+			//initialise
+			ImageHolder[] selfImageHolder = new ImageHolder[selfImages.Count()];
+			Parallel.For(0, selfImageHolder.Length, pos =>
 			{
-				var bitmap = (Bitmap)currImage.ByteToBitmap();
+				selfImageHolder[pos].OriginalImageData = selfImages.ElementAtOrDefault(pos);
+				selfImageHolder[pos].ReducedImageData = selfImages.ElementAtOrDefault(pos)
+					.Constrain(new Size(135, 135))
+					.EntropyCrop(180)
+					.DetectEdges(new Laplacian3X3EdgeFilter(), true);
+			});
+
+			ImageHolder[] targetImageHolder = new ImageHolder[targetImages.Count()];
+			Parallel.For(0,targetImageHolder.Length,pos=>{
+				targetImageHolder[pos].OriginalImageData = targetImages.ElementAtOrDefault(pos);
+				targetImageHolder[pos].ReducedImageData = targetImages.ElementAtOrDefault(pos)
+					.Constrain(new Size(135, 135))
+					.EntropyCrop(180)
+					.DetectEdges(new Laplacian3X3EdgeFilter(), true);
+			});
+			List<byte[]> filteredRes = new List<byte[]>();
+
+			Parallel.ForEach(targetImageHolder, act => {
+				if (!act.ReducedImageData.DoesImageExist(selfImageHolder.Select(s => s.ReducedImageData), scorePercantage))
+				{
+					filteredRes.Add(act.OriginalImageData);
+				}
+			});
+
+			return filteredRes;
+		}
+		public static byte[] ResizeToClosestAspectRatio (this byte[] image)
+		{
+			var imageBitmap = image.ByteToBitmap();
+			int width = imageBitmap.Width;
+			int height = imageBitmap.Height;
+			float ogratio = (float) width / height;
+			float[] AllowedAspectRatios = new float[] {1.0f, 1.8f, 1.9f, 0.8f };
+
+			float DistnaceCalculate(float a, float b)
+			{
+				return Math.Abs(a-b);
+			}
+			var lowestdistance = AllowedAspectRatios.ToList().Select(a =>
+			{
+				return DistnaceCalculate(ogratio,a);
+			}).Min(n=>n);
+
+			var closestRatio = AllowedAspectRatios.ElementAt(AllowedAspectRatios.ToList()
+				.FindIndex(s=> DistnaceCalculate(ogratio,s)==lowestdistance));
+			int newHeightc = (int) ((float) width / closestRatio);
+			return Filters.ResizeImage(imageBitmap,width,newHeightc).BitmapToByte();
+		}
+		public static IEnumerable<ImageHolder> Distinct(this ImageHolder[] imageHolders, ImageHolder[] ogholders, double threshHold)
+		{
+			List<ImageHolder> results =  new List<ImageHolder>();
+			if(imageHolders==null) throw new Exception("image cannot be null");
+			var sortTarget = imageHolders
+				.Select(s=>ImagePhash.ComputeDigest(s.ReducedImageData.ByteToBitmap().ToLuminanceImage())).ToList();
+
+			sortTarget.Sort();
+			var sortOg = ogholders
+				.Select(s => ImagePhash.ComputeDigest(s.ReducedImageData.ByteToBitmap().ToLuminanceImage())).ToList();
+			sortOg.Sort();
+
+			Parallel.For(0, sortOg.Count, pos =>
+			{
+				if(ImagePhash.GetCrossCorrelation(sortOg[pos],sortTarget[pos]) < threshHold)
+				{
+					results.Add(imageHolders[pos]);
+				}
+				
+			});
+			return results;
+		}
+		public static bool DoesImageExist(this byte[] image, IEnumerable<byte[]> images, double scorePercantage)
+		{
+			if(image == null) throw new Exception("image cannot be null");
+			var orginalHash = ImagePhash.ComputeDigest(image.ByteToBitmap().ToLuminanceImage());
+			if(orginalHash==null) return false;
+			bool res = false;
+			Parallel.ForEach(images, (curr, state)=>{
+				var bitmap = (Bitmap)curr.ByteToBitmap();
 				var Currenthash = ImagePhash.ComputeDigest(bitmap.ToLuminanceImage());
 				var score = ImagePhash.GetCrossCorrelation(Currenthash, orginalHash);
 				if (score > scorePercantage)
 				{
-					return true;
+					res = true;
+					state.Break();
 				}
-				else
-				{
-					continue;
-				}
-			}
-			return false;
+			});
+			return res;
 		}
 		public static byte[] DownloadMedias(this List<string> urls, int poz)
 		{
@@ -82,6 +180,8 @@ namespace Quarkless.MediaAnalyser
 			{
 				try
 				{
+					webClient.Proxy = null;
+					webClient.Headers.Add("user-agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.2; .NET CLR 1.0.3705;)");
 					return webClient.DownloadData(url);
 				}
 				catch (Exception e)
@@ -92,6 +192,7 @@ namespace Quarkless.MediaAnalyser
 		}
 		public static Bitmap ByteToBitmap(this byte[] imagesByte)
 		{
+			if(imagesByte==null) return null;
 			using (var ms = new MemoryStream(imagesByte))
 			{
 				return new Bitmap(ms);
@@ -101,7 +202,7 @@ namespace Quarkless.MediaAnalyser
 		{
 			using (MemoryStream ms = new MemoryStream())
 			{
-				bitmap.Save(ms, bitmap.RawFormat);
+				bitmap.Save(ms, ImageFormat.Jpeg);
 				return ms.ToArray();
 			}
 		}
@@ -152,14 +253,24 @@ namespace Quarkless.MediaAnalyser
 
 			return System.Drawing.Color.FromArgb(avgR, avgG, avgB);
 		}
+		public static IEnumerable<byte[]> ResizeManyToClosestAspectRatio(this IEnumerable<byte[]>images)
+		{
+			List<byte[]> resizedImages = new List<byte[]>();
+			Parallel.ForEach(images, image =>
+			{
+				resizedImages.Add(image.ResizeToClosestAspectRatio());
+			});
+			return resizedImages;
+		}
 		public static byte[] MostSimilarImage(this Color color, List<byte[]> images)
 		{
 			List<Color> dom_colors = new List<Color>();
-			foreach (var image in images)
+
+			images.ForEach(resizedImage =>
 			{
-				var bitmap = image.ByteToBitmap().ReduceBitmap(250, 250);
+				var bitmap = resizedImage.ByteToBitmap().ReduceBitmap(380, 380);
 				dom_colors.Add(GetDominantColor(bitmap));
-			}
+			});
 
 			var colorDiffs = dom_colors.Select(n => ColorDiff(n, color)).Min(n => n);
 			var pos = dom_colors.FindIndex(n => ColorDiff(n, color) == colorDiffs);

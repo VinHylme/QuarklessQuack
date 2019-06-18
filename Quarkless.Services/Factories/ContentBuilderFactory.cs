@@ -14,6 +14,7 @@ namespace Quarkless.Services.Factories
 	public abstract class ContentBuilderFactory
 	{
 		public abstract IContent CreatePost(UserStore userSession, IContentBuilderManager builder, ProfileModel profile, DateTime executeTime);
+		//For things like commenting, direct messaging
 		public abstract IContent CreateEngagement(UserStore userSession, IContentBuilderManager builder, ProfileModel profile, DateTime executeTime);
 	}
 }

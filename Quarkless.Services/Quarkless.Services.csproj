@@ -18,7 +18,6 @@
 
   <ItemGroup>
     <Folder Include="ContentBuilder\CommentsBuilder\" />
-    <Folder Include="ContentBuilder\CaptionsBuilder\" />
     <Folder Include="ContentBuilder\BioBuilders\" />
   </ItemGroup>
 

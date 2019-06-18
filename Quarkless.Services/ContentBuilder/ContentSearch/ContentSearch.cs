@@ -43,25 +43,17 @@ namespace Quarkless.Services.ContentBuilder.ContentSearch
 						switch (mediaType)
 						{
 							case InstaMediaType.Image:
-								var tm = results_media.Images.Select(s => s.Uri).ToList();
-								if(tm.Count>0)
-									media_.MediaUrl.AddRange(tm);
+								media_.MediaUrl.Add(results_media.Images.FirstOrDefault().Uri);
 								break;
 							case InstaMediaType.Video:
-								var tv = results_media.Videos.Select(s => s.Uri).ToList();
-								if(tv.Count>0)
-									media_.MediaUrl.AddRange(tv);
+								media_.MediaUrl.Add(results_media.Videos.FirstOrDefault().Uri);
 								break;
 							case InstaMediaType.Carousel:
 								List<string> total_ = new List<string>();
 								results_media.Carousel.Select(s=> 
 								{
-									var videos = s.Videos.Select(sa=>sa.Uri).ToList();
-									var images = s.Images.Select(sa=>sa.Uri).ToList();
-									if(videos.Count>0)
-										total_.AddRange(videos);
-									if(images.Count>0)
-										total_.AddRange(images);
+									media_.MediaUrl.Add(s.Videos.FirstOrDefault().Uri);
+									media_.MediaUrl.Add(s.Images.FirstOrDefault().Uri);
 									return s;
 								});
 								if(total_.Count>0)
@@ -75,26 +67,37 @@ namespace Quarkless.Services.ContentBuilder.ContentSearch
 			return mediaresp;
 		}
 
-		public async Task<Media> SearchMediaUser(UserStore user, int limit = 1, params string[] instagramAccounts)
+		public async Task<Media> SearchMediaUser(UserStore user, int limit = 1)
 		{
 			IAPIClientContainer _container = new APIClientContainer(_context, user.AccountId, user.InstaAccountId);
 			Media mediaresp = new Media();
-			foreach(var account in instagramAccounts)
+			var results = await _container.User.GetUserMediaAsync(_container.GetContext.InstagramAccount.Username, PaginationParameters.MaxPagesToLoad(limit));
+			if (results.Succeeded)
 			{
-				var results = await _container.User.GetUserMediaAsync(account,PaginationParameters.MaxPagesToLoad(limit));
-				if (results.Succeeded)
+				MediaResponse media = new MediaResponse();
+				foreach(var lema in results.Value)
 				{
-					MediaResponse media = new MediaResponse();
-					foreach(var lema in results.Value)
+					switch (lema.MediaType)
 					{
-						media.MediaUrl.AddRange(lema.Images.Select(s=>s.Uri));
-						media.MediaUrl.AddRange(lema.Videos.Select(s=>s.Uri));
-					
-					}
-					mediaresp.Medias.AddRange(results.Value.Select(m=>new MediaResponse{ }));
+						case InstaMediaType.Image:
+							media.MediaUrl.Add(lema.Images.FirstOrDefault().Uri);
+							break;
+						case InstaMediaType.Video:
+							media.MediaUrl.Add(lema.Videos.FirstOrDefault().Uri);
+							break;
+						case InstaMediaType.Carousel:
+							lema.Carousel.Select(s =>
+							{
+								media.MediaUrl.Add(s.Videos.FirstOrDefault().Uri);
+								media.MediaUrl.Add(s.Images.FirstOrDefault().Uri);
+								return s;
+							});
+							break;
+					}		
 				}
+				mediaresp.Medias.Add(media);
 			}
-			return null;
+			return mediaresp;
 		}
 
 		/// <summary>

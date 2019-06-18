@@ -43,7 +43,7 @@ namespace Quarkless.Queue.RestSharpClient
 			SetBaseUrl("http://localhost:51518/api/Auth/refreshState");
 			var jsonBody = new
 			{
-				refreshToken = token,
+				refreshToken = token.Replace("Bearer ",""),
 				Username = username
 			};
 			request.AddJsonBody(JsonConvert.SerializeObject(jsonBody));

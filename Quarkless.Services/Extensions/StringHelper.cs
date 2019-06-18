@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Quarkless.Services.Extensions
@@ -40,6 +41,22 @@ namespace Quarkless.Services.Extensions
 				}
 			}
 			return d[n, m];
+		}
+		public static string JoinEvery(this IEnumerable<string> @strings, string seperator, int every)
+		{
+			string result = string.Empty;
+
+			for(int i = 0 ; i < @strings.Count(); i++)
+			{
+				if (i % every == 0 && i!=0)
+				{
+					for(int j = Math.Abs(i-every); j < (i-every)+every; j++)
+						result += @strings.ElementAt(j) + " ";
+					result+=seperator;
+				}
+			}
+
+			return result;
 		}
 	}
 }

@@ -8,6 +8,7 @@ using Quarkless.Services.Extensions;
 using Quarkless.Services.Factories;
 using Quarkless.Services.Interfaces;
 using Quarkless.Services.RequestBuilder;
+using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.ContentBuilderModels;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
@@ -104,7 +105,14 @@ namespace Quarkless.Services.ContentBuilder
 			if (relatedImages.Medias.Count <= 0) return null;
 			return relatedImages.Medias.Select(g=>new PostsModel { MediaData = g.MediaUrl});
 		}
-
+		public string GenerateMediaInfo(TopicsModel topicSelect, string language)
+		{
+			var hash = GetHashTags(topicSelect.TopicName, 100, 10).GetAwaiter().GetResult().ToList();
+			hash.AddRange(topicSelect.SubTopics.Select(s => $"#{s}"));
+			var hashtags = hash.TakeAny(28).JoinEvery(Environment.NewLine, 3);
+			var caption_ = GenerateText(topicSelect.TopicName.ToLower(), language, 1, SecureRandom.Next(4), SecureRandom.Next(6));
+			return caption_ + Environment.NewLine + hashtags;
+		}
 		public bool AddToTimeline(RestModel restBody, DateTimeOffset executeTime)
 		{
 			restBody.RequestHeaders.AddRange(
@@ -165,6 +173,12 @@ namespace Quarkless.Services.ContentBuilder
 		public void AddActionToTimeLine(Delegate @delegate, DateTimeOffset executeTime,params object[] args)
 		{
 			_taskService.ActionTask(@delegate,executeTime,args);
+		}
+
+		public IEnumerable<PostsModel> GetUserMedia(UserStore user, int limit = 1)
+		{
+			var results = _contentSearch.SearchMediaUser(user,limit).GetAwaiter().GetResult();
+			return results.Medias.Select(g=>new PostsModel { MediaData = g.MediaUrl});
 		}
 	}
 }

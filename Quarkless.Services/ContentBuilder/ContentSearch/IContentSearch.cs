@@ -11,7 +11,7 @@ namespace Quarkless.Services.ContentBuilder.ContentSearch
 	{
 		Media SearchViaGoogle(SearchImageModel searchImageQuery);
 		Task<Media> SearchMediaInstagram(UserStore user, List<string> topics, InstaMediaType mediaType, int limit);
-		Task<Media> SearchMediaUser(UserStore user, int limit = 1, params string[] instagramAccounts);
+		Task<Media> SearchMediaUser(UserStore user, int limit = 1);
 		Media SearchViaYandexBySimilarImages(List<GroupImagesAlike> imagesSimilarUrls, int limit);
 	}
 }

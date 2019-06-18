@@ -8,6 +8,7 @@ namespace QuarklessContexts.Models.ServicesModels.DatabaseModels
 	public class TopicsModel
 	{
 		[BsonId]
+		[BsonIgnoreIfDefault]
 		[BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
 		public string _id { get; set; }
 		public string TopicName { get; set; }

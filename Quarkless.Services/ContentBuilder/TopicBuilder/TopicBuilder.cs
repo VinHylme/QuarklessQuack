@@ -45,6 +45,11 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 			{
 				if(_aPIClientContainer==null) return null;
 				//search for similar hashtags
+				var dbRes = await _topicServicesLogic.GetTopicByName(topic);
+				if(dbRes!=null && dbRes.SubTopics.Count > 3)
+				{
+					return dbRes;
+				}
 				var hashtagsRes = await _aPIClientContainer.Hashtag.SearchHashtagAsync(topic);
 				if (hashtagsRes.Succeeded)
 				{
@@ -84,9 +89,9 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 			while (hashtags.Count < pickRate) { 
 				var chosenHashtags = res.Select(sh=>sh.Hashtags).ElementAtOrDefault(SecureRandom.Next(min,max))
 					.Where(_=>_.Count(count=>count==' ')<=1).Select(s=>$"#{s}");
-				hashtags.AddRange(chosenHashtags);
+				hashtags.AddRange(chosenHashtags.Where(s=>s.Length>=3 && s.Length<=20));
 			}
-			return hashtags.Where(s=>s.Length>2 && s.Length<20);
+			return hashtags;
 		}
 	}
 }

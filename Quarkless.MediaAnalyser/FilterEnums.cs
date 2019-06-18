@@ -14,6 +14,7 @@ namespace Quarkless.MediaAnalyser
 		LomoGraph,
 		LoSatch,
 		Polaroid,
-		Sepia
+		Sepia,
+		GrayScale
 	}
 }
