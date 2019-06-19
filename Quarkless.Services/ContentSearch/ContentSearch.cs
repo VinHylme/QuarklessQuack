@@ -24,7 +24,28 @@ namespace Quarkless.Services.ContentSearch
 			_context = clientContext;
 			_yandexImageSearch = new YandexImageSearch();
 		}
-		
+
+		public async Task<List<UserResponse>> SearchInstagramUsersByTopic(UserStore user, string topic, int limit)
+		{
+			IAPIClientContainer _container = new APIClientContainer(_context, user.AccountId, user.InstaAccountId);
+			var res = await _container.Hashtag.GetTopHashtagMediaListAsync(topic,PaginationParameters.MaxPagesToLoad(limit));
+			if (res.Succeeded)
+			{
+				List<UserResponse> users = res.Value.Medias.Select(_=>_?.User).Select(t=> new UserResponse 
+				{
+					UserId = t.Pk,
+					Topic = topic,
+					Username = t.UserName,
+					FullName = t.FullName,
+					IsVerified = t.IsVerified,
+					IsPrivate = t.IsPrivate,
+					FollowerCount = t.FollowersCount
+				}).ToList();
+				return users;
+			}
+			return null;
+		}
+
 		public async Task<Media> SearchMediaInstagram(UserStore user, List<string> topics, InstaMediaType mediaType, int limit)
 		{
 			IAPIClientContainer _container = new APIClientContainer(_context,user.AccountId,user.InstaAccountId);

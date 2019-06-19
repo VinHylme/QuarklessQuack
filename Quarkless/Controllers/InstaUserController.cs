@@ -132,7 +132,7 @@ namespace Quarkless.Controllers
 			}
 		}
 
-		[HttpGet]
+		[HttpPost]
 		[Route("api/instaUser/followUser/{userId}")]
 		public async Task<IActionResult> FollowUser(long userId)
 		{

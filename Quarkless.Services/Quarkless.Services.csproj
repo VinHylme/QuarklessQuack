@@ -16,9 +16,4 @@
     <ProjectReference Include="..\QuarklessLogic\QuarklessLogic.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="ContentBuilder\CommentsBuilder\" />
-    <Folder Include="ContentBuilder\BioBuilders\" />
-  </ItemGroup>
-
 </Project>

@@ -32,6 +32,7 @@ using QuarklessLogic.Logic.ProfileLogic;
 using QuarklessLogic.Logic.ProxyLogic;
 using QuarklessLogic.RestSharpClient;
 using QuarklessLogic.ServicesLogic;
+using QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic;
 using QuarklessRepositories.InstagramAccountRepository;
 using QuarklessRepositories.ProfileRepository;
 using QuarklessRepositories.ProxyRepository;
@@ -67,6 +68,7 @@ namespace Quarkless.Common
 			services.AddTransient<IHashtagLogic, HashtagLogic>();
 			services.AddTransient<IAgentManager, AgentManager>();
 			services.AddTransient<IMediaLogic,MediaLogic>();
+			services.AddTransient<ITimelineLogic,TimelineLogic>();
 
 		}
 		public static void AddRepositories(this IServiceCollection services, Accessors _accessors)

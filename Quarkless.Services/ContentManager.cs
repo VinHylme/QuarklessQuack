@@ -52,6 +52,10 @@ namespace Quarkless.Services
 			return _textGeneration.MarkovTextGenerator(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\Datas\normalised_data\{0}.csv",
 				type,topic,lang,size,limit) ;
 		}
+		public List<UserResponse> SearchInstagramUsersByTopic(UserStore user, string topic, int limit)
+		{
+			return _contentSearch.SearchInstagramUsersByTopic(user,topic,limit).GetAwaiter().GetResult();
+		}
 		public IEnumerable<PostsModel> GetMediaInstagram(UserStore user, InstaMediaType mediaType, List<string> topics, int limit = 1)
 		{
 			var medias = _contentSearch.SearchMediaInstagram(user,topics,mediaType,limit).GetAwaiter().GetResult();

@@ -55,7 +55,9 @@ namespace QuarklessLogic.RestSharpClient
 			try
 			{
 				var request = string.IsNullOrEmpty(resource) ? new RestRequest(Method.POST): new RestRequest(resource, Method.POST);
-				request.AddJsonBody(jsonBody);
+				if(jsonBody!=null)
+					request.AddJsonBody(jsonBody);
+
 				RestClient.BaseUrl = new Uri(url);
 
 				if (parameters!=null && parameters.Count() > 0)

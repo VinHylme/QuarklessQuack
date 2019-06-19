@@ -33,7 +33,7 @@ namespace QuarklessLogic.Handlers.TextGeneration
 				.Select(v => new { Text = v[0].Replace("\"", ""), Topic = v[1].Replace("\"", ""), Language = v[2].Replace("\"", "") })
 				.Where(_ => _.Topic.ToLower().Contains(topic) && _.Language.Contains(language)).ToList();
 
-			if(reader.Count<=0) return null;
+			if(reader==null && reader.Count<=0) return null;
 			string s = Regex.Replace(string.Join(',', reader.Select(sa => sa.Text)), @"\s+", " ").TrimEnd(' ');
 			TDict t = MarkovHelper.BuildTDict(s, size);
 			return MarkovHelper.BuildString(t, limit, false).TrimEnd(' ');

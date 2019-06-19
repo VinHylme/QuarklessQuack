@@ -20,6 +20,9 @@ namespace QuarklessLogic.Handlers.RequestBuilder.Consts
 		public const string UploadPhoto = ApiPath + "media/upload/photo";
 		public const string UploadVideo = ApiPath + "media/upload/video";
 		#endregion
+		#region Engage
+		public const string FollowUser = ApiPath + "instaUser/followUser/{0}";
+		#endregion
 		public static string GetBasePath
 		{
 			get { return BasePath; }

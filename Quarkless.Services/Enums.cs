@@ -18,25 +18,20 @@ namespace Quarkless.Services
 	}
 	public enum ActionType
 	{
-		Follow,
-		UnFollow,
+		CreatePostTypeImage,
+		CreatePostTypeVideo,
+		CreatePostTypeCarousel,
+		CreateStory,
+		CreateCommentMedia,
+		CreateCommentReply,
+		CreateBiography,
+		FollowHashtag,
+		UnFollowHashtag,
+		FollowUser,
+		UnFollowUser,
 		LikePost,
 		UnlikePost,
 		LikeComment,
 		UnlikeComment
-	}
-	public enum ActionInstances
-	{
-		ChangeToRegularAccount,
-		ChangeToBusinessAccount,
-		Logout,
-		Login,
-		Like,
-		Unlike,
-		Follow,
-		Unfollow,
-		Create,
-		Delete,
-		None
 	}
 }

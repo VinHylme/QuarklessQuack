@@ -13,9 +13,9 @@ using QuarklessLogic.Handlers.RequestBuilder.Consts;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Models.Timeline;
 
-namespace Quarkless.Services.ContentBuilder.MediaBuilder
+namespace Quarkless.Services.ActionBuilders.EngageActions
 {
-	public class VideoBuilder : IContent
+	public class CreateVideoPost : IActionCommit
 	{
 		private readonly ProfileModel _profile;
 		private readonly UserStore _userSession;
@@ -23,7 +23,7 @@ namespace Quarkless.Services.ContentBuilder.MediaBuilder
 		private readonly IContentManager _builder;
 		private const int VIDEO_FETCH_LIMIT = 25;
 		private Random _random;
-		public VideoBuilder(UserStore userSession, IContentManager builder, ProfileModel profile, DateTime executeTime)
+		public CreateVideoPost(UserStore userSession, IContentManager builder, ProfileModel profile, DateTime executeTime)
 		{
 			_builder = builder;
 			_profile = profile;
@@ -42,9 +42,9 @@ namespace Quarkless.Services.ContentBuilder.MediaBuilder
 
 			List<string> pickedSubsTopics = topicSelect.SubTopics.TakeAny(3).ToList();
 			pickedSubsTopics.Add(topicSelect.TopicName);
-			var videos = _builder.GetMediaInstagram(_userSession, InstagramApiSharp.Classes.Models.InstaMediaType.Video, pickedSubsTopics,1).ToList();
+			var videos = _builder.GetMediaInstagram(_userSession, InstagramApiSharp.Classes.Models.InstaMediaType.Video, pickedSubsTopics, 1).ToList();
 
-			if(videos.Count<=0) return;
+			if (videos.Count <= 0) return;
 			List<byte[]> videoBytes = new List<byte[]>();
 			Parallel.ForEach(videos.ElementAtOrDefault(_random.Next(0, videos.Count - 1)).MediaData, media =>
 			{
@@ -52,11 +52,11 @@ namespace Quarkless.Services.ContentBuilder.MediaBuilder
 			});
 
 			System.Drawing.Color profileColorRGB = System.Drawing.Color.FromArgb(profileColor.Alpha, profileColor.Red, profileColor.Green, profileColor.Blue);
-			var selectVideo = profileColorRGB.MostSimilarVideo(videoBytes.Where(_=>_!=null).ToList(),10);
+			var selectVideo = profileColorRGB.MostSimilarVideo(videoBytes.Where(_ => _ != null).ToList(), 10);
 
 			UploadVideoModel uploadVideo = new UploadVideoModel
 			{
-				Caption = _builder.GenerateMediaInfo(topicSelect,_profile.Language),
+				Caption = _builder.GenerateMediaInfo(topicSelect, _profile.Language),
 				Location = location != null ? new InstaLocationShort
 				{
 					Address = location.Address,
@@ -82,9 +82,10 @@ namespace Quarkless.Services.ContentBuilder.MediaBuilder
 				User = _userSession,
 				BaseUrl = UrlConstants.UploadVideo,
 				RequestType = RequestType.POST,
-				JsonBody = JsonConvert.SerializeObject(uploadVideo,Formatting.Indented)
+				JsonBody = JsonConvert.SerializeObject(uploadVideo, Formatting.Indented)
 			};
 			_builder.AddToTimeline(restModel, _executeTime);
 		}
 	}
+
 }

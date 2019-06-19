@@ -2,6 +2,7 @@
 using QuarklessContexts.Models.ContentBuilderModels;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
+using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessContexts.Models.Timeline;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,7 @@ namespace Quarkless.Services.Interfaces
 		string GenerateMediaInfo(TopicsModel topicSelect, string language);
 		string GenerateText(string topic, string lang, int type, int limit, int size);
 		Task<IEnumerable<string>> GetHashTags(string topic, int limit, int pickAmount);
+		List<UserResponse> SearchInstagramUsersByTopic(UserStore user, string topic, int limit);
 		Task<List<TopicsModel>> GetTopics(UserStore usersession, List<string> topic, int limit);
 		bool AddToTimeline(RestModel restBody, DateTimeOffset executeTime);
 		IEnumerable<PostsModel> GetUserMedia(UserStore user, int limit = 1);

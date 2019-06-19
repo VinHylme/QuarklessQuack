@@ -15,13 +15,15 @@ namespace Quarkless.Services.Factories
 		{
 			_factories = new Dictionary<ActionType, ActionBuilderFactory>
 			{
-				{ ActionType.Follow, new FollowActionBuilderFactory() },
+				{ ActionType.FollowUser, new FollowUserActionBuilderFactory() },
+				{ ActionType.CreatePostTypeImage, new CreateImagePostActionBuilderFactory() },
+				{ ActionType.CreatePostTypeVideo, new CreateVideoPostActionBuilderFactory() }
 			};
 		}
 
-		public static Contentor Begin => new Contentor();
+		public static ActionsManager Begin => new ActionsManager();
 
-		public IActionCommit Execute(ActionType actionType, UserStore userStore, IContentManager actionBuilderManager,
+		public IActionCommit Commit(ActionType actionType, UserStore userStore, IContentManager actionBuilderManager,
 			ProfileModel profile, DateTime executionTime)=>_factories[actionType].Commit(userStore,actionBuilderManager,profile,executionTime);
 	}
 }

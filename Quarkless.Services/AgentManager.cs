@@ -34,13 +34,19 @@ namespace Quarkless.Services
 			var profile = await _profileLogic.GetProfile(accountId, instagramAccountId);
 			if (profile == null) return null;
 
-			var imageAction = Contentor.Begin.ExecutePost(ContentType.Image,
+			var followAction = ActionsManager.Begin
+				.Commit(ActionType.CreatePostTypeImage,
 				new UserStore(accountId,instagramAccountId,accessToken),
-				_contentManager,
-				profile,
-				DateTime.UtcNow.AddSeconds(10));
+				_contentManager,profile,DateTime.UtcNow.AddSeconds(10));
 
-			imageAction.Operate();
+			followAction.Operate();
+			//var imageAction = Contentor.Begin.ExecutePost(ContentType.Image,
+			//	new UserStore(accountId,instagramAccountId,accessToken),
+			//	_contentManager,
+			//	profile,
+			//	DateTime.UtcNow.AddSeconds(10));
+
+			//imageAction.Operate();
 			//var videoAction = Contentor.Begin.ExecutePost(ContentType.Video, new UserStore(accountId, instagramAccountId, accessToken),
 			//_contentBuilderManager, profile, DateTime.UtcNow.AddMinutes(1));
 
