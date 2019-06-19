@@ -1,12 +1,9 @@
-﻿using Quarkless.Queue.Jobs.JobOptions;
-using Quarkless.Services.Factories;
+﻿using Quarkless.Services.Factories;
 using Quarkless.Services.Interfaces;
+using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.Handlers.ClientProvider;
-using QuarklessLogic.Logic.InstagramAccountLogic;
 using QuarklessLogic.Logic.ProfileLogic;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Quarkless.Services
@@ -19,13 +16,13 @@ namespace Quarkless.Services
 	{
 
 		private readonly IProfileLogic _profileLogic;
-		private readonly IContentBuilderManager _contentBuilderManager;
+		private readonly IContentManager _contentManager;
 		private readonly IAPIClientContext _clientContext;
 		public AgentManager(IProfileLogic profileLogic,
-			IContentBuilderManager contentBuilderManager, IAPIClientContext clientContext)
+			IContentManager contentManager, IAPIClientContext clientContext)
 		{
 			_profileLogic = profileLogic;
-			_contentBuilderManager = contentBuilderManager;
+			_contentManager = contentManager;
 			_clientContext = clientContext;
 		}
 		private IAPIClientContainer GetContext(string accountId, string instagramAccountId)
@@ -39,7 +36,7 @@ namespace Quarkless.Services
 
 			var imageAction = Contentor.Begin.ExecutePost(ContentType.Image,
 				new UserStore(accountId,instagramAccountId,accessToken),
-				_contentBuilderManager,
+				_contentManager,
 				profile,
 				DateTime.UtcNow.AddSeconds(10));
 

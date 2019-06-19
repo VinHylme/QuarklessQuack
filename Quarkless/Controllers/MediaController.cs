@@ -41,5 +41,20 @@ namespace Quarkless.Controllers
 			}
 			return BadRequest("invalid");
 		}
+		[HttpPost]
+		[Route("api/media/upload/video")]
+		public async Task<IActionResult> UploadVideo([FromBody] UploadVideoModel uploadVideo)
+		{
+			if (_userContext.UserAccountExists && uploadVideo != null)
+			{
+				var results = await _mediaLogic.UploadVideoAsync(uploadVideo);
+				if (results.Succeeded)
+				{
+					return Ok(results.Value);
+				}
+				return NotFound(results.Info);
+			}
+			return BadRequest("invalid");
+		}
 	}
 }

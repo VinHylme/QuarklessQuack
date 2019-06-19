@@ -22,10 +22,10 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using ContentSearcher.SeleniumClient;
 using System.Web;
 using QuarklessContexts.Extensions;
 using QuarklessLogic.Handlers.Util;
+using ContentSearcher.SeleniumClient;
 
 namespace Quarkless.Worker
 {

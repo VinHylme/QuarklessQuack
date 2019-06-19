@@ -1,12 +1,18 @@
-﻿using Quarkless.Queue.Jobs.JobOptions;
-using Quarkless.Services.Extensions;
-using Quarkless.Services.Interfaces;
+﻿using Quarkless.Services.Interfaces;
 using QuarklessContexts.Models.MediaModels;
 using QuarklessContexts.Models.Profiles;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Quarkless.MediaAnalyser;
+using QuarklessContexts.Extensions;
+using System.Threading.Tasks;
+using InstagramApiSharp.Classes.Models;
+using Newtonsoft.Json;
+using QuarklessLogic.Handlers.RequestBuilder.Consts;
+using QuarklessContexts.Enums;
+using QuarklessContexts.Models.Timeline;
+
 namespace Quarkless.Services.ContentBuilder.MediaBuilder
 {
 	public class VideoBuilder : IContent
@@ -14,10 +20,10 @@ namespace Quarkless.Services.ContentBuilder.MediaBuilder
 		private readonly ProfileModel _profile;
 		private readonly UserStore _userSession;
 		private readonly DateTime _executeTime;
-		private readonly IContentBuilderManager _builder;
+		private readonly IContentManager _builder;
 		private const int VIDEO_FETCH_LIMIT = 25;
 		private Random _random;
-		public VideoBuilder(UserStore userSession, IContentBuilderManager builder, ProfileModel profile, DateTime executeTime)
+		public VideoBuilder(UserStore userSession, IContentManager builder, ProfileModel profile, DateTime executeTime)
 		{
 			_builder = builder;
 			_profile = profile;
@@ -29,39 +35,56 @@ namespace Quarkless.Services.ContentBuilder.MediaBuilder
 		public void Operate()
 		{
 			string exactSize = _profile.AdditionalConfigurations.PostSize;
-			var profileColor = _profile.Theme.Colors.ElementAt(_random.Next(0, _profile.Theme.Colors.Count - 1));
-			var topics = _builder.GetTopics(_userSession, _profile.TopicList, 5).GetAwaiter().GetResult();
-			var topicSelect = topics.ElementAt(_random.Next(0, topics.Count - 1));
-			var subtopics = topics.Select(a => a.SubTopics).SquashMe().ToList();
-			var videos = _builder.GetMediaInstagram(_userSession, InstagramApiSharp.Classes.Models.InstaMediaType.Video, subtopics,1).ToList();
+			var location = _profile.LocationTargetList?.ElementAtOrDefault(SecureRandom.Next(_profile.LocationTargetList.Count));
+			var profileColor = _profile.Theme.Colors.ElementAt(SecureRandom.Next(0, _profile.Theme.Colors.Count));
+			var topics = _builder.GetTopics(_userSession, _profile.TopicList, 15).GetAwaiter().GetResult();
+			var topicSelect = topics.ElementAt(SecureRandom.Next(0, topics.Count));
+
+			List<string> pickedSubsTopics = topicSelect.SubTopics.TakeAny(3).ToList();
+			pickedSubsTopics.Add(topicSelect.TopicName);
+			var videos = _builder.GetMediaInstagram(_userSession, InstagramApiSharp.Classes.Models.InstaMediaType.Video, pickedSubsTopics,1).ToList();
 
 			if(videos.Count<=0) return;
 			List<byte[]> videoBytes = new List<byte[]>();
-			videos.ElementAtOrDefault(_random.Next(0,videos.Count-1)).MediaData.ForEach(a=>videoBytes.Add(a.DownloadMedia()));
+			Parallel.ForEach(videos.ElementAtOrDefault(_random.Next(0, videos.Count - 1)).MediaData, media =>
+			{
+				videoBytes.Add(media.DownloadMedia());
+			});
 
 			System.Drawing.Color profileColorRGB = System.Drawing.Color.FromArgb(profileColor.Alpha, profileColor.Red, profileColor.Green, profileColor.Blue);
 			var selectVideo = profileColorRGB.MostSimilarVideo(videoBytes.Where(_=>_!=null).ToList(),10);
 
-			UploadVideoModel uploadPhoto = new UploadVideoModel
+			UploadVideoModel uploadVideo = new UploadVideoModel
 			{
-				Caption = "a warriors pride",
-					Video = new InstagramApiSharp.Classes.Models.InstaVideoUpload{ Video = new InstagramApiSharp.Classes.Models.InstaVideo 
+				Caption = _builder.GenerateMediaInfo(topicSelect,_profile.Language),
+				Location = location != null ? new InstaLocationShort
+				{
+					Address = location.Address,
+					Lat = location.Coordinates.Latitude,
+					Lng = location.Coordinates.Longitude,
+					Name = location.City
+				} : null,
+				Video = new InstaVideoUpload
+				{
+					Video = new InstaVideo
 					{
 						VideoBytes = selectVideo
 					},
-					VideoThumbnail = new InstagramApiSharp.Classes.Models.InstaImage 
-					{ ImageBytes = selectVideo.GenerateVideoThumbnail(8)}
+					VideoThumbnail = new InstaImage
+					{
+						ImageBytes = selectVideo.GenerateVideoThumbnail(8)
+					}
 				}
 			};
 
-			//RestModel restModel = new RestModel
-			//{
-			//	User = _userSession,
-			//	BaseUrl = UrlConstants.UploadPhoto,
-			//	RequestType = RequestType.POST,
-			//	JsonBody = JsonConvert.SerializeObject(uploadPhoto)
-			//};
-			//_builder.AddToTimeline(restModel, _executeTime);
+			RestModel restModel = new RestModel
+			{
+				User = _userSession,
+				BaseUrl = UrlConstants.UploadVideo,
+				RequestType = RequestType.POST,
+				JsonBody = JsonConvert.SerializeObject(uploadVideo,Formatting.Indented)
+			};
+			_builder.AddToTimeline(restModel, _executeTime);
 		}
 	}
 }

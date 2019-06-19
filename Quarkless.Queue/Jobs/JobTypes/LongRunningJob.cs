@@ -1,12 +1,9 @@
 ﻿using Quarkless.Queue.Interfaces.Jobs;
 using Quarkless.Queue.Jobs.JobOptions;
-using Quarkless.Queue.RestSharpClient;
-using QuarklessContexts.Models.Requests;
-using RestSharp;
+using QuarklessContexts.Enums;
+using QuarklessLogic.RestSharpClient;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
 using System.Threading;
 
 namespace Quarkless.Queue.Jobs.JobTypes

@@ -1,7 +1,6 @@
-﻿using Quarkless.Queue.Jobs.JobOptions;
-using Quarkless.Services.Extensions;
-using QuarklessContexts.Extensions;
+﻿using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
+using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.ReportHandler;
 using QuarklessLogic.Logic.HashtagLogic;
@@ -9,7 +8,6 @@ using QuarklessLogic.ServicesLogic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 namespace Quarkless.Services.ContentBuilder.TopicBuilder
 {

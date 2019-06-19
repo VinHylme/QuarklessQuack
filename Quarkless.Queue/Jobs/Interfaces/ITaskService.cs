@@ -1,8 +1,5 @@
-﻿using Quarkless.Queue.Jobs.JobOptions;
-using RestSharp;
+﻿using QuarklessContexts.Models.Timeline;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Quarkless.Queue.Jobs.Interfaces
 {

@@ -2,13 +2,10 @@
 using Quarkless.Auth.AuthTypes;
 using Quarkless.Queue.Jobs.Interfaces;
 using Quarkless.Queue.Jobs.JobOptions;
-using Quarkless.Services.RequestBuilder;
 using QuarklessContexts.Contexts;
-using QuarklessContexts.Models;
+using QuarklessLogic.Handlers.RequestBuilder.RequestBuilder;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Quarkless.Controllers
 {

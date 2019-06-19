@@ -1,15 +1,13 @@
-﻿using Quarkless.Queue.Jobs.JobOptions;
-using Quarkless.Services.Interfaces;
+﻿using Quarkless.Services.Interfaces;
 using QuarklessContexts.Models.Profiles;
+using QuarklessContexts.Models.Timeline;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Quarkless.Services.Factories
 {
 	public abstract class ActionBuilderFactory
 	{
-		public abstract IActionCommit Commit(UserStore userSession, IActionBuilderManager builder, ProfileModel profile, DateTime executeTime);
+		public abstract IActionCommit Commit(UserStore userSession, IContentManager builder, ProfileModel profile, DateTime executeTime);
 
 	}
 }

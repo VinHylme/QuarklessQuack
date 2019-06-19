@@ -1,8 +1,6 @@
 ﻿using InstagramApiSharp.Classes.Models;
 using Newtonsoft.Json;
-using Quarkless.Queue.Jobs.JobOptions;
 using Quarkless.Services.Interfaces;
-using Quarkless.Services.RequestBuilder.Consts;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.ContentBuilderModels;
 using QuarklessContexts.Models.MediaModels;
@@ -12,7 +10,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Quarkless.MediaAnalyser;
 using System.Threading.Tasks;
-using Quarkless.Services.Extensions;
+using QuarklessLogic.Handlers.RequestBuilder.Consts;
+using QuarklessContexts.Models.Timeline;
+using QuarklessContexts.Enums;
 
 namespace Quarkless.Services.ContentBuilder.MediaBuilder
 {
@@ -21,9 +21,9 @@ namespace Quarkless.Services.ContentBuilder.MediaBuilder
 		private readonly ProfileModel _profile;
 		private readonly UserStore _userSession;
 		private readonly DateTime _executeTime;
-		private readonly IContentBuilderManager _builder;
+		private readonly IContentManager _builder;
 		private const int IMAGE_FETCH_LIMIT = 12;
-		public ImageBuilder(UserStore userSession, IContentBuilderManager builder, ProfileModel profile, DateTime executeTime)
+		public ImageBuilder(UserStore userSession, IContentManager builder, ProfileModel profile, DateTime executeTime)
 		{
 			_builder = builder;
 			_profile = profile;
@@ -72,6 +72,7 @@ namespace Quarkless.Services.ContentBuilder.MediaBuilder
 			List<PostsModel> currentUsersMedia = _builder.GetUserMedia(_userSession,1).Take(5).ToList();
 
 			List<byte[]> userMediaBytes = new List<byte[]>();
+			if(currentUsersMedia.Count<=0) return ;
 			Parallel.ForEach(currentUsersMedia.First().MediaData, act =>
 			{
 				userMediaBytes.Add(act.DownloadMedia());
@@ -79,11 +80,10 @@ namespace Quarkless.Services.ContentBuilder.MediaBuilder
 
 			List<byte[]> imagesBytes = new List<byte[]>();
 			var resultSelect = TotalResults.ElementAtOrDefault(SecureRandom.Next(TotalResults.Count));
-
-			Parallel.ForEach(resultSelect.MediaData.TakeAny(SecureRandom.Next(resultSelect.MediaData.Count)), s=> imagesBytes.Add(s?.DownloadMedia()));
+			Parallel.ForEach(resultSelect.MediaData.TakeAny(SecureRandom.Next(resultSelect.MediaData.Count/2)), s=> imagesBytes.Add(s?.DownloadMedia()));
 
 			imagesBytes = userMediaBytes.Where(u=>u!=null)
-				.RemoveDuplicateImages(imagesBytes,0.7)
+				.RemoveDuplicateImages(imagesBytes,0.68)
 				.ResizeManyToClosestAspectRatio()
 				.Where(s=>s!=null).ToList();
 

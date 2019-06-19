@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Quarkless.Common\Quarkless.Common.csproj" />
+    <ProjectReference Include="..\Quarkless.ContentSearcher\Quarkless.ContentSearcher.csproj" />
   </ItemGroup>
 
 </Project>

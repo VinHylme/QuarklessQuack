@@ -9,7 +9,7 @@ using QuarklessLogic.Handlers.ReportHandler;
 
 namespace QuarklessLogic.Logic.DiscoverLogic
 {
-	public class DiscoverLogic : IDiscoverLogic, ILogic
+	public class DiscoverLogic : IDiscoverLogic
 	{
 		private IReportHandler _reportHandler {get; set;}
 		private readonly IAPIClientContainer Client;

@@ -9,8 +9,6 @@ using QuarklessLogic.Logic.InstagramAccountLogic;
 using QuarklessLogic.Logic.ProfileLogic;
 using QuarklessLogic.Logic.ProxyLogic;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace QuarklessLogic.Handlers.ClientProvider

@@ -1,5 +1,5 @@
-﻿using Quarkless.Queue.Jobs.JobOptions;
-using QuarklessContexts.Models.ServicesModels.DatabaseModels;
+﻿using QuarklessContexts.Models.ServicesModels.DatabaseModels;
+using QuarklessContexts.Models.Timeline;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 

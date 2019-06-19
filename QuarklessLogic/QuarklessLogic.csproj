@@ -5,7 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Handlers\StateManager\" />
     <Folder Include="Logic\BusinessLogic\" />
     <Folder Include="Logic\ShopLogic\" />
     <Folder Include="Logic\StoriesLogic\" />
@@ -16,8 +15,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ContentSearcher\ContentSearcher.csproj" />
     <ProjectReference Include="..\InstagramApiSharp\InstagramApiSharp.csproj" />
+    <ProjectReference Include="..\Quarkless.ContentSearcher\Quarkless.ContentSearcher.csproj" />
+    <ProjectReference Include="..\Quarkless.Queue\Quarkless.Queue.csproj" />
     <ProjectReference Include="..\QuarklessRepositories\QuarklessRepositories.csproj" />
   </ItemGroup>
 

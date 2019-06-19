@@ -1,5 +1,4 @@
-﻿using ContentSearcher.SeleniumClient;
-using MoreLinq;
+﻿using MoreLinq;
 using Newtonsoft.Json;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;

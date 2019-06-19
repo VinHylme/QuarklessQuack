@@ -1,6 +1,5 @@
 ﻿using ContentSearcher.SeleniumClient;
 using Hangfire;
-using Hangfire.Mongo;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
@@ -8,24 +7,19 @@ using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using Quarkless.Queue.Interfaces.Jobs;
 using Quarkless.Queue.Jobs.Interfaces;
-using Quarkless.Queue.RestSharpClient;
 using Quarkless.Queue.Services;
 using Quarkless.Services;
-using Quarkless.Services.CommentsServices;
-using Quarkless.Services.ContentBuilder;
-using Quarkless.Services.ContentBuilder.ContentSearch;
 using Quarkless.Services.ContentBuilder.TopicBuilder;
+using Quarkless.Services.ContentSearch;
 using Quarkless.Services.Interfaces;
-using Quarkless.Services.PostServices;
-using Quarkless.Services.RequestBuilder;
 using QuarklessContexts.Contexts;
 using QuarklessContexts.InstaClient;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.ReportHandler;
+using QuarklessLogic.Handlers.RequestBuilder.RequestBuilder;
 using QuarklessLogic.Handlers.TextGeneration;
 using QuarklessLogic.Handlers.TranslateService;
 using QuarklessLogic.Handlers.Util;
-using QuarklessLogic.Logic.AgentLogic;
 using QuarklessLogic.Logic.CollectionsLogic;
 using QuarklessLogic.Logic.CommentLogic;
 using QuarklessLogic.Logic.DiscoverLogic;
@@ -36,6 +30,7 @@ using QuarklessLogic.Logic.InstaUserLogic;
 using QuarklessLogic.Logic.MediaLogic;
 using QuarklessLogic.Logic.ProfileLogic;
 using QuarklessLogic.Logic.ProxyLogic;
+using QuarklessLogic.RestSharpClient;
 using QuarklessLogic.ServicesLogic;
 using QuarklessRepositories.InstagramAccountRepository;
 using QuarklessRepositories.ProfileRepository;
@@ -69,7 +64,6 @@ namespace Quarkless.Common
 			services.AddTransient<ICollectionsLogic, CollectionsLogic>();
 			services.AddTransient<IInstaAccountOptionsLogic, InstaAccountOptionsLogic>();
 			services.AddTransient<IInstaClient,InstaClient>();
-			services.AddTransient<IAgentLogic, AgentLogic>();
 			services.AddTransient<IHashtagLogic, HashtagLogic>();
 			services.AddTransient<IAgentManager, AgentManager>();
 			services.AddTransient<IMediaLogic,MediaLogic>();
@@ -97,13 +91,9 @@ namespace Quarkless.Common
 		public static void AddHandlers(this IServiceCollection services)
 		{
 			services.AddTransient<IReportHandler, ReportHandler>();
-			services.AddTransient<IPostServices,PostServices>();
-			services.AddTransient<IAgentServicer, AgentServicer>();
-			services.AddTransient<ISearchServices,SearchServices>();
 			services.AddTransient<IRestSharpClientManager, RestSharpClientManager>();
 			services.AddTransient<IContentSearch, ContentSearch>();
 			services.AddTransient<ITopicServicesLogic, TopicServicesLogic>();
-			services.AddTransient<ICommentsServices, CommentsServices>();
 
 			services.AddTransient<IClientContextProvider, ClientContextProvider>();
 			services.AddTransient<IAPIClientContext,APIClientContext>();
@@ -111,7 +101,7 @@ namespace Quarkless.Common
 			services.AddTransient<ISeleniumClient,SeleniumClient>();
 			services.AddTransient<ITranslateService,TranslateService>();
 			services.AddTransient<IUtilProviders,UtilProviders>();
-			services.AddSingleton<IContentBuilderManager, ContentBuilderManager>();
+			services.AddSingleton<IContentManager, ContentManager>();
 			services.AddSingleton<ITextGeneration,TextGeneration>();
 		
 		}
