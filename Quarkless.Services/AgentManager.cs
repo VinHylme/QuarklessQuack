@@ -35,11 +35,17 @@ namespace Quarkless.Services
 			if (profile == null) return null;
 
 			var followAction = ActionsManager.Begin
-				.Commit(ActionType.CreatePostTypeImage,
+				.Commit(ActionType.FollowUser,
 				new UserStore(accountId,instagramAccountId,accessToken),
 				_contentManager,profile,DateTime.UtcNow.AddSeconds(10));
 
 			followAction.Operate();
+
+			var likeMediaAction = ActionsManager.Begin.Commit(ActionType.LikePost,
+				new UserStore(accountId,instagramAccountId,accessToken), _contentManager,profile, DateTime.UtcNow.AddSeconds(10));
+
+			likeMediaAction.Operate();
+
 			//var imageAction = Contentor.Begin.ExecutePost(ContentType.Image,
 			//	new UserStore(accountId,instagramAccountId,accessToken),
 			//	_contentManager,

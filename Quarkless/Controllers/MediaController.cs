@@ -56,5 +56,22 @@ namespace Quarkless.Controllers
 			}
 			return BadRequest("invalid");
 		}
+
+		[HttpPost]
+		[Route("api/media/like/{mediaId}")]
+		public async Task<IActionResult> LikeMedia(string mediaId)
+		{
+			if (_userContext.UserAccountExists && !string.IsNullOrEmpty(mediaId))
+			{
+				var results = await _mediaLogic.LikeMediaAsync(mediaId);
+				if (results.Succeeded)
+				{
+					return Ok(results.Value);
+				}
+				return NotFound(results.Info);
+			}
+			return BadRequest("invalid");
+		}
+
 	}
 }

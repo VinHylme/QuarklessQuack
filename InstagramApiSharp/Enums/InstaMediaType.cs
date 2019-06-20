@@ -4,6 +4,7 @@
     {
         Image = 1,
         Video = 2,
-        Carousel = 8
+        Carousel = 8,
+		All = 0
     }
 }

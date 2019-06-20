@@ -17,7 +17,8 @@ namespace Quarkless.Services.Factories
 			{
 				{ ActionType.FollowUser, new FollowUserActionBuilderFactory() },
 				{ ActionType.CreatePostTypeImage, new CreateImagePostActionBuilderFactory() },
-				{ ActionType.CreatePostTypeVideo, new CreateVideoPostActionBuilderFactory() }
+				{ ActionType.CreatePostTypeVideo, new CreateVideoPostActionBuilderFactory() },
+				{ ActionType.LikePost, new LikeMediaPostActionBuilderFactory()}
 			};
 		}
 

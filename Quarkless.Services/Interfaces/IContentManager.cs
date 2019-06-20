@@ -20,6 +20,7 @@ namespace Quarkless.Services.Interfaces
 		bool AddToTimeline(RestModel restBody, DateTimeOffset executeTime);
 		IEnumerable<PostsModel> GetUserMedia(UserStore user, int limit = 1);
 		IEnumerable<PostsModel> GetMediaInstagram(UserStore user, InstaMediaType mediaType, List<string> topics, int limit = 1);
+		IEnumerable<MediaDetail> GetMediaDetailInstagram(UserStore user, List<string> topics, int limit = 1);
 		IEnumerable<PostsModel> GetYandexSimilarImages(List<GroupImagesAlike> similarImages = null, int limit = 10);
 		IEnumerable<PostsModel> GetGoogleImages(string color, List<string> topics, List<string> sites, int limit = 10,
 			string imageType = null, string exactSize = null, string similarImage = null);

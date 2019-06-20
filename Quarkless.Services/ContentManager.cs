@@ -63,6 +63,12 @@ namespace Quarkless.Services
 			if(medias.Medias.Count<=0) return null;
 			return medias.Medias.Select(i=> new PostsModel { MediaData = i.MediaUrl});
 		}
+		public IEnumerable<MediaDetail> GetMediaDetailInstagram(UserStore user, List<string> topics, int limit = 1)
+		{
+			var medias = _contentSearch.SearchMediaDetailInstagram(user,topics,limit).GetAwaiter().GetResult();
+			if (medias.Count() <= 0) return null;
+			return medias;
+		}
 		public IEnumerable<PostsModel> GetYandexSimilarImages(List<GroupImagesAlike> similarImages=null, int limit = 10) 
 		{
 			if (similarImages != null)

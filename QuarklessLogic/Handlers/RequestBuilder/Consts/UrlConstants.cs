@@ -22,6 +22,7 @@ namespace QuarklessLogic.Handlers.RequestBuilder.Consts
 		#endregion
 		#region Engage
 		public const string FollowUser = ApiPath + "instaUser/followUser/{0}";
+		public const string LikeMedia = ApiPath + "media/like/{0}";
 		#endregion
 		public static string GetBasePath
 		{
