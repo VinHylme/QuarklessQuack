@@ -20,8 +20,8 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 		{
 			restBody.RequestHeaders.AddRange(
 				_requestBuilder.DefaultHeaders(
-				restBody.User.InstaAccountId,
-				restBody.User.AccessToken));
+				restBody.User.OInstagramAccountUser,
+				restBody.User.OAccessToken));
 
 			_taskService.LongRunningTask(restBody, executeTime);
 			return true;

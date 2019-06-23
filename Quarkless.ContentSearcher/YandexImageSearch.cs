@@ -22,21 +22,23 @@ namespace ContentSearcher
 			Media TotalFound = new Media();
 			Parallel.ForEach(ImagesLikeUrls, url=>
 			{
+				if (url != null) { 
 				var fullurl_ = yandexBaseImageUrl + url.Url + rpt;
-				try
-				{
-					var result = seleniumClient.Reader(fullurl_, "serp-item_pos_", limit);
-					MediaResponse imageResponse = new MediaResponse
+					try
 					{
-						Topic = url.TopicGroup,
-						MediaUrl = result.Where(s => !s.Contains(".gif")).ToList()
-					};
-					TotalFound.Medias.Add(imageResponse);
-				}
-				catch (Exception ee)
-				{
-					Console.Write(ee.Message);
-					TotalFound.errors++;
+						var result = seleniumClient.Reader(fullurl_, "serp-item_pos_", limit);
+						MediaResponse imageResponse = new MediaResponse
+						{
+							Topic = url.TopicGroup,
+							MediaUrl = result.Where(s => !s.Contains(".gif")).ToList()
+						};
+						TotalFound.Medias.Add(imageResponse);
+					}
+					catch (Exception ee)
+					{
+						Console.Write(ee.Message);
+						TotalFound.errors++;
+					}
 				}
 			});
 			return TotalFound;

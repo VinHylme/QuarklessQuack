@@ -10,6 +10,7 @@ using QuarklessContexts.Models.Profiles;
 using QuarklessLogic.RestSharpClient;
 using QuarklessContexts.Models.Timeline;
 using ContentSearcher;
+using QuarklessContexts.Extensions;
 
 namespace Quarkless.Services.ContentSearch
 {
@@ -17,39 +18,72 @@ namespace Quarkless.Services.ContentSearch
 	{
 		private readonly IRestSharpClientManager _restSharpClient;
 		private readonly IAPIClientContext _context;
+		private IAPIClientContainer _container { get; set; }
 		private readonly YandexImageSearch _yandexImageSearch;
+		public void SetUserClient(IUserStoreDetails _user)
+		{
+			_container = new APIClientContainer(_context, _user.OAccountId, _user.OInstagramAccountUser);
+		}
 		public ContentSearch(IRestSharpClientManager restSharpClient, IAPIClientContext clientContext)
 		{
 			_restSharpClient = restSharpClient;
 			_context = clientContext;
 			_yandexImageSearch = new YandexImageSearch();
 		}
-
-		public async Task<List<UserResponse>> SearchInstagramUsersByTopic(UserStore user, string topic, int limit)
+		public async Task<List<UserResponse<string>>> SearchInstagramMediaLikers(string mediaId)
 		{
-			IAPIClientContainer _container = new APIClientContainer(_context, user.AccountId, user.InstaAccountId);
-			var res = await _container.Hashtag.GetTopHashtagMediaListAsync(topic,PaginationParameters.MaxPagesToLoad(limit));
-			if (res.Succeeded)
+			var userLikersRes = await _container.Media.GetMediaLikersAsync(mediaId);
+			if (userLikersRes.Succeeded)
 			{
-				List<UserResponse> users = res.Value.Medias.Select(_=>_?.User).Select(t=> new UserResponse 
-				{
-					UserId = t.Pk,
-					Topic = topic,
-					Username = t.UserName,
-					FullName = t.FullName,
-					IsVerified = t.IsVerified,
-					IsPrivate = t.IsPrivate,
-					FollowerCount = t.FollowersCount
+				return userLikersRes.Value.Select(s => new UserResponse<string>{ 
+					Object = mediaId,
+					UserId = s.Pk,
+					Username = s.UserName,
+					FullName = s.FullName,
+					IsPrivate = s.IsPrivate,
+					IsVerified = s.IsVerified,
+					ProfilePicture = s.ProfilePicture +"||"+ s.ProfilePictureId
 				}).ToList();
-				return users;
 			}
 			return null;
 		}
-
-		public async Task<IEnumerable<MediaDetail>> SearchMediaDetailInstagram(UserStore user, List<string> topics, int limit)
+		public async Task<List<UserResponse<CommentResponse>>> SearchInstagramMediaCommenters(string mediaId, int limit)
 		{
-			IAPIClientContainer _container = new APIClientContainer(_context, user.AccountId, user.InstaAccountId);
-			List<MediaDetail> medias = new List<MediaDetail>();
+			var userCommentersRes = await _container.Comment.GetMediaCommentsAsync(mediaId, PaginationParameters.MaxPagesToLoad(limit));
+			if (userCommentersRes.Succeeded)
+			{
+				return userCommentersRes.Value.Comments.Select(s => new UserResponse<CommentResponse>
+				{
+					Object = new CommentResponse
+					{
+						CommentId = s.Pk,
+						LikeCount = s.LikesCount,
+						TotalChildComments = s.ChildCommentCount,
+						DidReportForSpam = s.DidReportAsSpam,
+						Text = s.Text
+					},
+					UserId = s.User.Pk,
+					Username = s.User.UserName,
+					FullName = s.User.FullName,
+					IsPrivate = s.User.IsPrivate,
+					IsVerified = s.User.IsVerified,
+					ProfilePicture = s.User.ProfilePicture + "||" + s.User.ProfilePictureId
+				}).ToList();
+			}
+			return null;
+		}
+		public async Task<InstaFullUserInfo> SearchInstagramFullUserDetail(long userId)
+		{
+			var userDetailsResp = await _container.User.GetFullUserInfoAsync(userId);
+			if (userDetailsResp.Succeeded)
+			{
+				return userDetailsResp.Value;
+			}
+			return null;
+		}
+		public async Task<IEnumerable<UserResponse<MediaDetail>>> SearchMediaDetailInstagram(List<string> topics, int limit)
+		{
+			List<UserResponse<MediaDetail>> medias = new List<UserResponse<MediaDetail>>();
 			foreach(var topic in topics) { 
 				var mediasResults = await _container.Hashtag.GetTopHashtagMediaListAsync(topic,PaginationParameters.MaxPagesToLoad(limit));
 				if (mediasResults.Succeeded)
@@ -59,8 +93,14 @@ namespace Quarkless.Services.ContentSearch
 						MediaDetail mediaDetail = new MediaDetail();
 						mediaDetail.LikesCount = s.LikesCount;
 						mediaDetail.MediaId = s.Pk;
+						mediaDetail.HasLikedBefore = s.HasLiked;
+						mediaDetail.HasAudio = s.HasAudio;
+						mediaDetail.IsCommentsDisabled = s.IsCommentsDisabled;
+						mediaDetail.Location = s.Location;
+						mediaDetail.ViewCount = s.ViewCount;
+						mediaDetail.IsFollowing = s?.User?.FriendshipStatus?.Following;
+						mediaDetail.CommentCount = s.CommentsCount;
 						mediaDetail.Topic = topic;
-
 						var totalurls = new List<string>();
 						if(s.MediaType == InstaMediaType.Image)
 						{
@@ -84,16 +124,135 @@ namespace Quarkless.Services.ContentSearch
 							});
 						}
 						mediaDetail.MediaUrl = totalurls;
-						return mediaDetail;
+
+						return new UserResponse<MediaDetail>
+						{
+							Object = mediaDetail,
+							FollowerCount = s.User.FollowersCount,
+							FullName = s.User.FullName,
+							IsPrivate = s.User.IsPrivate,
+							IsVerified = s.User.IsVerified,
+							Topic = topic,
+							UserId = s.User.Pk,
+							Username = s.User.UserName
+						}; ;
 					}));
 				}
 			}
 			return medias;
 		}
-
-		public async Task<Media> SearchMediaInstagram(UserStore user, List<string> topics, InstaMediaType mediaType, int limit)
+		public async Task<IEnumerable<UserResponse<MediaDetail>>> SearchUsersMediaDetailInstagram(string userName, int limit)
 		{
-			IAPIClientContainer _container = new APIClientContainer(_context,user.AccountId,user.InstaAccountId);
+			var medias = await _container.User.GetUserMediaAsync(userName,PaginationParameters.MaxPagesToLoad(limit));
+			if (medias.Succeeded)
+			{
+				return medias.Value.Select(s=> {
+					MediaDetail mediaDetail = new MediaDetail();
+					mediaDetail.LikesCount = s.LikesCount;
+					mediaDetail.MediaId = s.Pk;
+					mediaDetail.HasLikedBefore = s.HasLiked;
+					mediaDetail.HasAudio = s.HasAudio;
+					mediaDetail.IsCommentsDisabled = s.IsCommentsDisabled;
+					mediaDetail.Location = s.Location;
+					mediaDetail.ViewCount = s.ViewCount;
+					mediaDetail.IsFollowing = s?.User?.FriendshipStatus?.Following;
+					mediaDetail.CommentCount = s.CommentsCount;
+					var totalurls = new List<string>();
+					if (s.MediaType == InstaMediaType.Image)
+					{
+						totalurls.Add(s.Images.FirstOrDefault().Uri);
+					}
+					else if (s.MediaType == InstaMediaType.Video)
+					{
+						totalurls.Add(s.Videos.FirstOrDefault().Uri);
+					}
+					else if (s.MediaType == InstaMediaType.Carousel)
+					{
+						s.Carousel.Select(x =>
+						{
+							var videos = x.Videos.FirstOrDefault().Uri;
+							if (videos != null)
+								totalurls.Add(videos);
+							var images = x.Images.FirstOrDefault().Uri;
+							if (images != null)
+								totalurls.Add(images);
+							return s;
+						});
+					}
+					mediaDetail.MediaUrl = totalurls;
+
+					return new UserResponse<MediaDetail>
+					{
+						Object = mediaDetail,
+						FollowerCount = s.User.FollowersCount,
+						FullName = s.User.FullName,
+						IsPrivate = s.User.IsPrivate,
+						IsVerified = s.User.IsVerified,
+						UserId = s.User.Pk,
+						Username = s.User.UserName
+					}; ;
+				});
+			}
+			return null;
+		}
+		public async Task<IEnumerable<UserResponse<MediaDetail>>> SearchUserFeedMediaDetailInstagram(string[] seenMedias = null, bool requestRefresh = false, int limit = 1)
+		{
+			List<UserResponse<MediaDetail>> medias = new List<UserResponse<MediaDetail>>();
+			var mediasResults = await _container.Feeds.GetUserTimelineFeedAsync(PaginationParameters.MaxPagesToLoad(limit),seenMedias,requestRefresh);
+			if (mediasResults.Succeeded)
+			{
+				medias.AddRange(mediasResults.Value.Medias.Select(s =>
+				{
+					MediaDetail mediaDetail = new MediaDetail();
+					mediaDetail.LikesCount = s.LikesCount;
+					mediaDetail.MediaId = s.Pk;
+					mediaDetail.HasLikedBefore = s.HasLiked;
+					mediaDetail.HasAudio = s.HasAudio;
+					mediaDetail.IsCommentsDisabled = s.IsCommentsDisabled;
+					mediaDetail.Location = s.Location;
+					mediaDetail.ViewCount = s.ViewCount;
+					mediaDetail.IsFollowing = s?.User?.FriendshipStatus?.Following;
+					mediaDetail.CommentCount = s.CommentsCount;
+					var totalurls = new List<string>();
+					if (s.MediaType == InstaMediaType.Image)
+					{
+						totalurls.Add(s.Images.FirstOrDefault().Uri);
+					}
+					else if (s.MediaType == InstaMediaType.Video)
+					{
+						totalurls.Add(s.Videos.FirstOrDefault().Uri);
+					}
+					else if (s.MediaType == InstaMediaType.Carousel)
+					{
+						s.Carousel.Select(x =>
+						{
+							var videos = x.Videos.FirstOrDefault().Uri;
+							if (videos != null)
+								totalurls.Add(videos);
+							var images = x.Images.FirstOrDefault().Uri;
+							if (images != null)
+								totalurls.Add(images);
+							return s;
+						});
+					}
+					mediaDetail.MediaUrl = totalurls;
+
+					return new UserResponse<MediaDetail>
+					{
+						Object = mediaDetail,
+						FollowerCount = s.User.FollowersCount,
+						FullName = s.User.FullName,
+						IsPrivate = s.User.IsPrivate,
+						IsVerified = s.User.IsVerified,
+						UserId = s.User.Pk,
+						Username = s.User.UserName
+					}; ;
+				}));
+			}
+		return medias;
+		}
+		public async Task<Media> SearchMediaInstagram(List<string> topics, InstaMediaType mediaType, int limit)
+		{
 			Media mediaresp = new Media();
 			foreach(var topic in topics) { 
 				MediaResponse media_ = new MediaResponse();
@@ -148,11 +307,11 @@ namespace Quarkless.Services.ContentSearch
 			}
 			return mediaresp;
 		}
-		public async Task<Media> SearchMediaUser(UserStore user, int limit = 1)
+		public async Task<Media> SearchMediaUser(string username = null, int limit = 1)
 		{
-			IAPIClientContainer _container = new APIClientContainer(_context, user.AccountId, user.InstaAccountId);
 			Media mediaresp = new Media();
-			var results = await _container.User.GetUserMediaAsync(_container.GetContext.InstagramAccount.Username, PaginationParameters.MaxPagesToLoad(limit));
+			username = username ?? _container.GetContext.InstagramAccount.Username;
+			var results = await _container.User.GetUserMediaAsync(username, PaginationParameters.MaxPagesToLoad(limit));
 			if (results.Succeeded)
 			{
 				MediaResponse media = new MediaResponse();
@@ -184,13 +343,6 @@ namespace Quarkless.Services.ContentSearch
 			}
 			return mediaresp;
 		}
-
-		/// <summary>
-		/// search images via google
-		/// todo, add private url
-		/// </summary>
-		/// <param name="searchImageQuery"></param>
-		/// <returns></returns>
 		public Media SearchViaGoogle(SearchImageModel searchImageQuery)
 		{
 			var results = _restSharpClient.PostRequest("http://127.0.0.1:5000/","searchImages",JsonConvert.SerializeObject(searchImageQuery),null);

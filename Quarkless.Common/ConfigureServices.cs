@@ -14,6 +14,7 @@ using Quarkless.Services.ContentSearch;
 using Quarkless.Services.Interfaces;
 using QuarklessContexts.Contexts;
 using QuarklessContexts.InstaClient;
+using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.ReportHandler;
 using QuarklessLogic.Handlers.RequestBuilder.RequestBuilder;
@@ -113,6 +114,7 @@ namespace Quarkless.Common
 			services.AddTransient<IUserContext, UserContext>();
 			services.AddSingleton<IRequestBuilder,RequestBuilder>();
 			services.AddSingleton<ITopicBuilder, TopicBuilder>();
+			services.AddTransient<IUserStoreDetails,UserStore>();
 		}
 	}
 }

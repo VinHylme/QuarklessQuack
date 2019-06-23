@@ -2,12 +2,14 @@
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.Timeline;
 using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace Quarkless.Services.Factories
 {
-	public abstract class ActionBuilderFactory
+	public abstract class MediaFetcherFactory
 	{
-		public abstract IActionCommit Commit(IContentManager builder, ProfileModel profile, DateTime executeTime);
+		public abstract IMediaFetched Commit(IContentManager builder, ProfileModel profile);
 
 	}
 }

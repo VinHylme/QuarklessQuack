@@ -31,8 +31,7 @@ namespace Quarkless.Controllers
 			{
 				var accessToken = HttpContext.Request.Headers["Authorization"];
 				if(string.IsNullOrEmpty(accessToken)) return BadRequest("Not Authorized");
-				await _agentManager.StartAgent(_userContext.CurrentUser,instagramId, accessToken);
-				return Ok("started");
+				return Ok(await _agentManager.StartAgent(_userContext.CurrentUser, instagramId, accessToken));
 			}
 			return BadRequest("wot");
 		}

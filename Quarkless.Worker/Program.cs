@@ -70,7 +70,7 @@ namespace Quarkless.Worker
 		//Possibly implement the scheduler priority for each type of action, this way you can give more importance to specific jobs
 		static void Main(string[] args)
 		{
-			bool shouldNormalise = true;
+			bool shouldNormalise = false;
 
 			var settingPath = Path.GetFullPath(Path.Combine(@"..\..\..\..\Quarkless")); 
 			IConfiguration configuration = new ConfigurationBuilder().

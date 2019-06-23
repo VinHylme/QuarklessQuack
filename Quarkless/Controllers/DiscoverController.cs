@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Quarkless.Auth.AuthTypes;
 using QuarklessContexts.Contexts;
 using QuarklessLogic.Logic.DiscoverLogic;
+using QuarklessLogic.Logic.HashtagLogic;
 using System.Threading.Tasks;
 
 namespace Quarkless.Controllers
@@ -16,10 +17,12 @@ namespace Quarkless.Controllers
 	public class DiscoverController : ControllerBase
     {
 		private readonly IDiscoverLogic _discoverLogic;
+		private readonly IHashtagLogic _hashtagLogic;
 		private readonly IUserContext _userContext;
-		public DiscoverController(IUserContext userContext, IDiscoverLogic discoverLogic)
+		public DiscoverController(IUserContext userContext, IDiscoverLogic discoverLogic, IHashtagLogic hashtagLogic)
 		{
 			_discoverLogic = discoverLogic;
+			_hashtagLogic = hashtagLogic;
 			_userContext = userContext;
 		}
 
@@ -37,6 +40,21 @@ namespace Quarkless.Controllers
 				return NotFound(results.Info);
 			}
 			return BadRequest("invalid");
+		}
+		[HttpGet]
+		[Route("api/discover/SearchTopic/{topic}/{limit}")]
+		public async Task<IActionResult> SearchTopMediaByTopic(string topic, int limit = 1)
+		{
+			if (_userContext.UserAccountExists)
+			{
+				var results = await _hashtagLogic.GetTopHashtagMediaListAsync(topic,limit);
+				if (results.Succeeded)
+				{
+					return Ok(results.Value);
+				}
+				return NotFound(results.Info);
+			}
+			return BadRequest("invalid, empty id");
 		}
 
 		[HttpGet]

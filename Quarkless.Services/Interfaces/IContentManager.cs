@@ -12,15 +12,20 @@ namespace Quarkless.Services.Interfaces
 {
 	public interface IContentManager
 	{
+		void SetUser(IUserStoreDetails user);
+		IEnumerable<UserResponse<MediaDetail>> SearchUserFeedMediaDetailInstagram(string[] seenMedias = null, bool requestRefresh = false, int limit = 1);
+		List<UserResponse<string>> SearchInstagramMediaLikers(string mediaId);
+		List<UserResponse<CommentResponse>> SearchInstagramMediaCommenters(string mediaId, int limit);
+		IEnumerable<UserResponse<MediaDetail>> SearchMediaDetailInstagram(List<string> topics, int limit);
+		IEnumerable<UserResponse<MediaDetail>> SearchUsersMediaDetailInstagram(string userName, int limit);
+		InstaFullUserInfo SearchInstagramFullUserDetail(long userId);
 		string GenerateMediaInfo(TopicsModel topicSelect, string language);
 		string GenerateText(string topic, string lang, int type, int limit, int size);
 		Task<IEnumerable<string>> GetHashTags(string topic, int limit, int pickAmount);
-		List<UserResponse> SearchInstagramUsersByTopic(UserStore user, string topic, int limit);
-		Task<List<TopicsModel>> GetTopics(UserStore usersession, List<string> topic, int limit);
+		Task<List<TopicsModel>> GetTopics(List<string> topic, int limit);
 		bool AddToTimeline(RestModel restBody, DateTimeOffset executeTime);
-		IEnumerable<PostsModel> GetUserMedia(UserStore user, int limit = 1);
-		IEnumerable<PostsModel> GetMediaInstagram(UserStore user, InstaMediaType mediaType, List<string> topics, int limit = 1);
-		IEnumerable<MediaDetail> GetMediaDetailInstagram(UserStore user, List<string> topics, int limit = 1);
+		IEnumerable<PostsModel> GetUserMedia(string username = null, int limit = 1);
+		IEnumerable<PostsModel> GetMediaInstagram(InstaMediaType mediaType, List<string> topics, int limit = 1);
 		IEnumerable<PostsModel> GetYandexSimilarImages(List<GroupImagesAlike> similarImages = null, int limit = 10);
 		IEnumerable<PostsModel> GetGoogleImages(string color, List<string> topics, List<string> sites, int limit = 10,
 			string imageType = null, string exactSize = null, string similarImage = null);

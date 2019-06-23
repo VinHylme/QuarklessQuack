@@ -9,11 +9,16 @@ namespace Quarkless.Services.ContentSearch
 {
 	public interface IContentSearch
 	{
-		Task<List<UserResponse>> SearchInstagramUsersByTopic(UserStore user, string topic, int limit);
+		void SetUserClient(IUserStoreDetails _user);
+		Task<IEnumerable<UserResponse<MediaDetail>>> SearchUserFeedMediaDetailInstagram(string[] seenMedias = null, bool requestRefresh = false, int limit = 1);
+		Task<IEnumerable<UserResponse<MediaDetail>>> SearchUsersMediaDetailInstagram(string userName, int limit);
+		Task<InstaFullUserInfo> SearchInstagramFullUserDetail(long userId);
+		Task<List<UserResponse<string>>> SearchInstagramMediaLikers(string mediaId);
+		Task<List<UserResponse<CommentResponse>>> SearchInstagramMediaCommenters(string mediaId, int limit);
+		Task<IEnumerable<UserResponse<MediaDetail>>> SearchMediaDetailInstagram(List<string> topics, int limit);
 		Media SearchViaGoogle(SearchImageModel searchImageQuery);
-		Task<Media> SearchMediaInstagram(UserStore user, List<string> topics, InstaMediaType mediaType, int limit);
-		Task<IEnumerable<MediaDetail>> SearchMediaDetailInstagram(UserStore user, List<string> topics, int limit);
-		Task<Media> SearchMediaUser(UserStore user, int limit = 1);
+		Task<Media> SearchMediaInstagram(List<string> topics, InstaMediaType mediaType, int limit);
+		Task<Media> SearchMediaUser(string username = null, int limit = 1);
 		Media SearchViaYandexBySimilarImages(List<GroupImagesAlike> imagesSimilarUrls, int limit);
 	}
 }

@@ -16,7 +16,6 @@ namespace QuarklessLogic.RestSharpClient
 		public RestSharpClientManager()
 		{
 			RestClient = new RestClient();
-
 		}
 
 		public void SetBaseUrl(string url)
@@ -49,7 +48,7 @@ namespace QuarklessLogic.RestSharpClient
 			var response = RestClient.Execute(request);
 			return JObject.Parse(response.Content)["idToken"].ToString();
 		}
-		public IRestResponse PostRequest(string url, string resource, string jsonBody, UserStore userStore = null, 
+		public IRestResponse PostRequest(string url, string resource, string jsonBody, IUserStoreDetails userStore = null, 
 			IEnumerable<Parameter> parameters = null, IEnumerable<HttpHeader> headers=null)
 		{
 			try
@@ -76,9 +75,9 @@ namespace QuarklessLogic.RestSharpClient
 
 				if(response.StatusCode == HttpStatusCode.Unauthorized && userStore!=null)
 				{
-					var refreshToken = RefreshLogin(headers.Where(_=>_.Name == "Authorization").Single().Value,userStore.AccessToken);
-					headers.Where(_=>_.Name=="Authorization").Select(a=>a.Value = $"Bearer {refreshToken}");
-					if(!string.IsNullOrEmpty(refreshToken) && Attempt <= 2) { 
+					userStore.OAccessToken = RefreshLogin(headers.Where(_=>_.Name == "Authorization").Single().Value,userStore.OAccessToken);
+					headers.Where(_=>_.Name=="Authorization").Select(a=>a.Value = $"Bearer {userStore.OAccessToken}");
+					if(!string.IsNullOrEmpty(userStore.OAccessToken) && Attempt <= 2) { 
 						Attempt++;
 						PostRequest(url,resource,jsonBody,userStore,parameters,headers);
 					}

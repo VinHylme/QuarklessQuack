@@ -1,10 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace QuarklessContexts.Extensions
 {
+	public class Chance<TObject>
+	{
+		public TObject @Object { get; set; }
+		public double Probability { get; set; }
+	}
 	public class SecureRandom : RandomNumberGenerator
 	{
 		private static readonly RandomNumberGenerator _rng = new RNGCryptoServiceProvider();
@@ -16,7 +22,20 @@ namespace QuarklessContexts.Extensions
 				_rng.GetBytes(data);
 				return BitConverter.ToInt32(data,0) & (int.MaxValue - 1);
 			}
-			_rng.Dispose();
+		}
+		public static TObject ProbabilityRoll <TObject>(IEnumerable<Chance<TObject>> objects)
+		{
+			var rand = NextDouble() * objects.Sum(_=>_.Probability);
+			double value = 0;
+			foreach(var obj in objects)
+			{
+				value += obj.Probability;
+				if (rand <= value)
+				{
+					return obj.Object;
+				}
+			}
+			return default(TObject);
 		}
 		public static int Next(int maxValue)
 		{

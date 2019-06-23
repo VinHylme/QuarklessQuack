@@ -24,16 +24,23 @@ namespace Quarkless.Services
 		private readonly IContentSearch _contentSearch;
 		private readonly ITextGeneration _textGeneration;
 		private readonly ITimelineLogic _timelineLogic;
-		public ContentManager(ITopicBuilder topicBuilder,ITimelineLogic timelineLogic, IContentSearch contentSearch, ITextGeneration textGeneration)
+		private IUserStoreDetails _user { get; set; }
+		public ContentManager(ITopicBuilder topicBuilder, ITimelineLogic timelineLogic, 
+			IContentSearch contentSearch, ITextGeneration textGeneration)
 		{
 			_topicBuilder = topicBuilder;
 			_timelineLogic = timelineLogic;
 			_contentSearch = contentSearch;
 			_textGeneration = textGeneration;
 		}
-		public async Task<List<TopicsModel>> GetTopics(UserStore user, List<string> topics,int limit)
+		public void SetUser(IUserStoreDetails user)
 		{
+			_contentSearch.SetUserClient(user);
 			_topicBuilder.Init(user);
+			_user = user;
+		}
+		public async Task<List<TopicsModel>> GetTopics(List<string> topics,int limit)
+		{
 			List<TopicsModel> totalFound = new List<TopicsModel>();
 			foreach(var topic in topics) { 
 				var res = await _topicBuilder.Build(topic, limit);
@@ -52,22 +59,12 @@ namespace Quarkless.Services
 			return _textGeneration.MarkovTextGenerator(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\Datas\normalised_data\{0}.csv",
 				type,topic,lang,size,limit) ;
 		}
-		public List<UserResponse> SearchInstagramUsersByTopic(UserStore user, string topic, int limit)
+		public IEnumerable<PostsModel> GetMediaInstagram(InstaMediaType mediaType, List<string> topics, int limit = 1)
 		{
-			return _contentSearch.SearchInstagramUsersByTopic(user,topic,limit).GetAwaiter().GetResult();
-		}
-		public IEnumerable<PostsModel> GetMediaInstagram(UserStore user, InstaMediaType mediaType, List<string> topics, int limit = 1)
-		{
-			var medias = _contentSearch.SearchMediaInstagram(user,topics,mediaType,limit).GetAwaiter().GetResult();
+			var medias = _contentSearch.SearchMediaInstagram(topics,mediaType,limit).GetAwaiter().GetResult();
 			if(medias == null) return null;
 			if(medias.Medias.Count<=0) return null;
 			return medias.Medias.Select(i=> new PostsModel { MediaData = i.MediaUrl});
-		}
-		public IEnumerable<MediaDetail> GetMediaDetailInstagram(UserStore user, List<string> topics, int limit = 1)
-		{
-			var medias = _contentSearch.SearchMediaDetailInstagram(user,topics,limit).GetAwaiter().GetResult();
-			if (medias.Count() <= 0) return null;
-			return medias;
 		}
 		public IEnumerable<PostsModel> GetYandexSimilarImages(List<GroupImagesAlike> similarImages=null, int limit = 10) 
 		{
@@ -105,20 +102,87 @@ namespace Quarkless.Services
 		}
 		public string GenerateMediaInfo(TopicsModel topicSelect, string language)
 		{
-			var hash = GetHashTags(topicSelect.TopicName, 100, 10).GetAwaiter().GetResult().ToList();
+			var hash = GetHashTags(topicSelect.TopicName, 80, 30).GetAwaiter().GetResult().ToList();
 			hash.AddRange(topicSelect.SubTopics.Select(s => $"#{s}"));
-			var hashtags = hash.TakeAny(28).JoinEvery(Environment.NewLine, 3);
-			var caption_ = GenerateText(topicSelect.TopicName.ToLower(), language.ToUpper(), 1, SecureRandom.Next(2), SecureRandom.Next(3));
+			var hashtags = hash.TakeAny(SecureRandom.Next(28)).JoinEvery(Environment.NewLine, 3);
+			var caption_ = GenerateText(topicSelect.TopicName.ToLower(), language.ToUpper(), 1, 1, 1);
 			return caption_ + Environment.NewLine + hashtags;
 		}
-		public IEnumerable<PostsModel> GetUserMedia(UserStore user, int limit = 1)
+		public IEnumerable<PostsModel> GetUserMedia(string userName = null, int limit = 1)
 		{
-			var results = _contentSearch.SearchMediaUser(user,limit).GetAwaiter().GetResult();
+			var results = _contentSearch.SearchMediaUser(userName,limit).GetAwaiter().GetResult();
 			return results.Medias.Select(g=>new PostsModel { MediaData = g.MediaUrl});
+		}
+		public IEnumerable<UserResponse<MediaDetail>> SearchUsersMediaDetailInstagram(string userName, int limit)
+		{
+			try
+			{
+				return _contentSearch.SearchUsersMediaDetailInstagram(userName,limit).GetAwaiter().GetResult();
+			}
+			catch(Exception ee)
+			{
+				Console.Write(ee.Message);
+				return null;
+			}
 		}
 		public bool AddToTimeline(RestModel restBody, DateTimeOffset executeTime)
 		{
+			restBody.User = _user as UserStore;
 			return _timelineLogic.AddToTimeline(restBody,executeTime);
+		}
+		public IEnumerable<UserResponse<MediaDetail>> SearchMediaDetailInstagram(List<string> topics, int limit = 1)
+		{
+			var medias = _contentSearch.SearchMediaDetailInstagram(topics, limit).GetAwaiter().GetResult();
+			if (medias.Count() <= 0) return null;
+			return medias;
+		}
+		public InstaFullUserInfo SearchInstagramFullUserDetail(long userId)
+		{
+			try
+			{
+				return _contentSearch.SearchInstagramFullUserDetail(userId).GetAwaiter().GetResult();
+			}
+			catch(Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+				return null;
+			}
+		}
+		public List<UserResponse<string>> SearchInstagramMediaLikers(string mediaId)
+		{
+			try
+			{
+				return _contentSearch.SearchInstagramMediaLikers(mediaId).GetAwaiter().GetResult();
+			}
+			catch (Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+				return null;
+			}
+		}
+		public List<UserResponse<CommentResponse>> SearchInstagramMediaCommenters(string mediaId, int limit)
+		{
+			try
+			{
+				return _contentSearch.SearchInstagramMediaCommenters(mediaId,limit).GetAwaiter().GetResult();
+			}
+			catch (Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+				return null;
+			}
+		}
+		public IEnumerable<UserResponse<MediaDetail>> SearchUserFeedMediaDetailInstagram(string[] seenMedias = null, bool requestRefresh = false, int limit = 1)
+		{
+			try
+			{
+				return _contentSearch.SearchUserFeedMediaDetailInstagram(seenMedias,requestRefresh).GetAwaiter().GetResult();
+			}
+			catch (Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+				return null;
+			}
 		}
 	}
 }

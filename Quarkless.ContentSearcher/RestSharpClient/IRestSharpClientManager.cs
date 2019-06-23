@@ -10,7 +10,7 @@ namespace QuarklessLogic.RestSharpClient
 		void AddCookie(Cookie cookie);
 		void AddCookies(IEnumerable<Cookie> cookies);
 		IRestResponse GetRequest(string resource, IEnumerable<Parameter> parameters = null, IEnumerable<HttpHeader> headers = null);
-		IRestResponse PostRequest(string url, string resource, string jsonBody, UserStore userStore, IEnumerable<Parameter> parameters = null, IEnumerable<HttpHeader> headers = null);
+		IRestResponse PostRequest(string url, string resource, string jsonBody, IUserStoreDetails userStore, IEnumerable<Parameter> parameters = null, IEnumerable<HttpHeader> headers = null);
 		void SetBaseUrl(string url);
 	}
 }

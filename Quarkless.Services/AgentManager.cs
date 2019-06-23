@@ -1,16 +1,22 @@
-﻿using Quarkless.Services.Factories;
+﻿using Quarkless.Services.ActionBuilders.EngageActions;
+using Quarkless.Services.Factories;
 using Quarkless.Services.Interfaces;
+using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Logic.ProfileLogic;
 using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Quarkless.Services
 {
 	public class AgentRespnse
 	{
-
+		public HttpStatusCode HttpStatus { get; set; }
+		public string Message { get; set; }
 	}
 	public class AgentManager : IAgentManager
 	{
@@ -18,46 +24,72 @@ namespace Quarkless.Services
 		private readonly IProfileLogic _profileLogic;
 		private readonly IContentManager _contentManager;
 		private readonly IAPIClientContext _clientContext;
+		private readonly IUserStoreDetails _userStoreDetails;
 		public AgentManager(IProfileLogic profileLogic,
-			IContentManager contentManager, IAPIClientContext clientContext)
+			IContentManager contentManager, IAPIClientContext clientContext,IUserStoreDetails userStoreDetails)
 		{
 			_profileLogic = profileLogic;
 			_contentManager = contentManager;
 			_clientContext = clientContext;
+			_userStoreDetails = userStoreDetails;
 		}
 		private IAPIClientContainer GetContext(string accountId, string instagramAccountId)
 		{
 			return new APIClientContainer(_clientContext, accountId, instagramAccountId);
 		}
+	
 		public async Task<AgentRespnse> StartAgent(string accountId, string instagramAccountId, string accessToken)
 		{
-			var profile = await _profileLogic.GetProfile(accountId, instagramAccountId);
-			if (profile == null) return null;
+			try { 
+				var profile = await _profileLogic.GetProfile(accountId, instagramAccountId);
+				if (profile == null) return null;
+				_userStoreDetails.AddUpdateUser(accountId,instagramAccountId,accessToken);			
+				_contentManager.SetUser(_userStoreDetails);
 
-			var followAction = ActionsManager.Begin
-				.Commit(ActionType.FollowUser,
-				new UserStore(accountId,instagramAccountId,accessToken),
-				_contentManager,profile,DateTime.UtcNow.AddSeconds(10));
+				var imageAction = ActionsManager.Begin.Commit(ActionType.CreatePostTypeImage, _contentManager, profile, DateTime.UtcNow);
+				var followAction = ActionsManager.Begin.Commit(ActionType.FollowUser, _contentManager, profile, DateTime.UtcNow.AddSeconds(10));
+				var likeMediaAction = ActionsManager.Begin.Commit(ActionType.LikePost, _contentManager, profile, DateTime.UtcNow.AddSeconds(10));
 
-			followAction.Operate();
+				List<Chance<Action>> actionToExecute = new List<Chance<Action>>();
+				actionToExecute.Add(new Chance<Action>
+				{
+					Object = () => imageAction.Operate(),
+					Probability = 0.10
+				});
+				actionToExecute.Add(new Chance<Action>
+				{
+					Object = () => followAction.Operate(FollowActionType.Any),
+					Probability = 0.30
+				});
+				actionToExecute.Add(new Chance<Action>
+				{
+					Object = () => likeMediaAction.Operate(LikeActionType.Any),
+					Probability = 0.60
+				});
 
-			var likeMediaAction = ActionsManager.Begin.Commit(ActionType.LikePost,
-				new UserStore(accountId,instagramAccountId,accessToken), _contentManager,profile, DateTime.UtcNow.AddSeconds(10));
+				_ = Task.Run(() =>
+				{
+					while (true)
+					{
+						var toExe = SecureRandom.ProbabilityRoll(actionToExecute);
+						toExe();
+						Thread.Sleep(TimeSpan.FromSeconds(8));
+					}
+				});
 
-			likeMediaAction.Operate();
-
-			//var imageAction = Contentor.Begin.ExecutePost(ContentType.Image,
-			//	new UserStore(accountId,instagramAccountId,accessToken),
-			//	_contentManager,
-			//	profile,
-			//	DateTime.UtcNow.AddSeconds(10));
-
-			//imageAction.Operate();
-			//var videoAction = Contentor.Begin.ExecutePost(ContentType.Video, new UserStore(accountId, instagramAccountId, accessToken),
-			//_contentBuilderManager, profile, DateTime.UtcNow.AddMinutes(1));
-
-			//videoAction.Operate();
-			return new AgentRespnse();
+				return new AgentRespnse()
+				{
+					HttpStatus = HttpStatusCode.OK,
+					Message = "Started"
+				};
+			}
+			catch(Exception ee)
+			{
+				return new AgentRespnse{
+					HttpStatus = HttpStatusCode.InternalServerError,
+					Message = ee.Message
+				};
+			}
 		}
 	}
 }

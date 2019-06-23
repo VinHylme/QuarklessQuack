@@ -33,9 +33,9 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 			_random = new Random();
 			_reportHandler.SetupReportHandler("topicBuilder");
 		}
-		public void Init(UserStore userStore)
+		public void Init(IUserStoreDetails userStore)
 		{
-			_aPIClientContainer = new APIClientContainer(_context,userStore.AccountId,userStore.InstaAccountId);
+			_aPIClientContainer = new APIClientContainer(_context,userStore.OAccountId,userStore.OInstagramAccountUser);
 		}
 		public async Task<TopicsModel> Build(string topic, int takeHowMany = 8)
 		{

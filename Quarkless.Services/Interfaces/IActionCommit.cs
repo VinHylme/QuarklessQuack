@@ -7,5 +7,6 @@ namespace Quarkless.Services.Interfaces
 	public interface IActionCommit
 	{
 		void Operate();
+		void Operate<TActionType>(TActionType actionType = default(TActionType));
 	}
 }

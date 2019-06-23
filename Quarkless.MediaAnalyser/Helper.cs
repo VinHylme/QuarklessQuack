@@ -116,7 +116,7 @@ namespace Quarkless.MediaAnalyser
 			var closestRatio = AllowedAspectRatios.ElementAt(AllowedAspectRatios.ToList()
 				.FindIndex(s=> DistnaceCalculate(ogratio,s)==lowestdistance));
 			int newHeightc = (int) ((float) width / closestRatio);
-			return Filters.ResizeImage(imageBitmap,width,newHeightc).BitmapToByte();
+			return Filters.ResizeImage(image,ResizeMode.Stretch,new Size(width,newHeightc));//.ResizeImage(imageBitmap,width,newHeightc).BitmapToByte();
 		}
 		public static IEnumerable<ImageHolder> Distinct(this ImageHolder[] imageHolders, ImageHolder[] ogholders, double threshHold)
 		{
@@ -271,7 +271,6 @@ namespace Quarkless.MediaAnalyser
 				var bitmap = resizedImage.ByteToBitmap().ReduceBitmap(380, 380);
 				dom_colors.Add(GetDominantColor(bitmap));
 			});
-
 			var colorDiffs = dom_colors.Select(n => ColorDiff(n, color)).Min(n => n);
 			var pos = dom_colors.FindIndex(n => ColorDiff(n, color) == colorDiffs);
 			var sel = images.ElementAtOrDefault(pos);

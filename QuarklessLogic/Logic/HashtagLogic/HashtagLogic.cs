@@ -49,15 +49,23 @@ namespace QuarklessLogic.Logic.HashtagLogic
 		{
 			throw new NotImplementedException();
 		}
-
+		
 		public Task<IResult<InstaHashtagSearch>> GetSuggestedHashtagsAsync()
 		{
 			throw new NotImplementedException();
 		}
 
-		public Task<IResult<InstaSectionMedia>> GetTopHashtagMediaListAsync(string tagname, PaginationParameters paginationParameters)
+		public async Task<IResult<InstaSectionMedia>> GetTopHashtagMediaListAsync(string topic, int limit)
 		{
-			throw new NotImplementedException();
+			try
+			{
+				return await Client.Hashtag.GetTopHashtagMediaListAsync(topic, PaginationParameters.MaxPagesToLoad(limit));
+			}
+			catch (Exception ee)
+			{
+				_reportHandler.MakeReport(ee);
+				return null;
+			}
 		}
 
 		public async Task<IResult<InstaHashtagSearch>> SearchHashtagAsync(string query, IEnumerable<long> excludeList = null, string rankToken = null)

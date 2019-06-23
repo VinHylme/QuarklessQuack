@@ -18,18 +18,14 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	public class CreateVideoPost : IActionCommit
 	{
 		private readonly ProfileModel _profile;
-		private readonly UserStore _userSession;
 		private readonly DateTime _executeTime;
 		private readonly IContentManager _builder;
 		private const int VIDEO_FETCH_LIMIT = 25;
-		private Random _random;
-		public CreateVideoPost(UserStore userSession, IContentManager builder, ProfileModel profile, DateTime executeTime)
+		public CreateVideoPost(IContentManager builder, ProfileModel profile, DateTime executeTime)
 		{
 			_builder = builder;
 			_profile = profile;
 			_executeTime = executeTime;
-			_userSession = userSession;
-			_random = new Random(TimeSpan.FromMilliseconds(1000000).Milliseconds);
 		}
 
 		public void Operate()
@@ -37,16 +33,16 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			string exactSize = _profile.AdditionalConfigurations.PostSize;
 			var location = _profile.LocationTargetList?.ElementAtOrDefault(SecureRandom.Next(_profile.LocationTargetList.Count));
 			var profileColor = _profile.Theme.Colors.ElementAt(SecureRandom.Next(0, _profile.Theme.Colors.Count));
-			var topics = _builder.GetTopics(_userSession, _profile.TopicList, 15).GetAwaiter().GetResult();
+			var topics = _builder.GetTopics(_profile.TopicList, 15).GetAwaiter().GetResult();
 			var topicSelect = topics.ElementAt(SecureRandom.Next(0, topics.Count));
 
 			List<string> pickedSubsTopics = topicSelect.SubTopics.TakeAny(3).ToList();
 			pickedSubsTopics.Add(topicSelect.TopicName);
-			var videos = _builder.GetMediaInstagram(_userSession, InstagramApiSharp.Classes.Models.InstaMediaType.Video, pickedSubsTopics, 1).ToList();
+			var videos = _builder.GetMediaInstagram(InstaMediaType.Video, pickedSubsTopics, 1).ToList();
 
 			if (videos.Count <= 0) return;
 			List<byte[]> videoBytes = new List<byte[]>();
-			Parallel.ForEach(videos.ElementAtOrDefault(_random.Next(0, videos.Count - 1)).MediaData, media =>
+			Parallel.ForEach(videos.ElementAtOrDefault(SecureRandom.Next(videos.Count - 1)).MediaData, media =>
 			{
 				videoBytes.Add(media.DownloadMedia());
 			});
@@ -79,12 +75,16 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 
 			RestModel restModel = new RestModel
 			{
-				User = _userSession,
 				BaseUrl = UrlConstants.UploadVideo,
 				RequestType = RequestType.POST,
 				JsonBody = JsonConvert.SerializeObject(uploadVideo, Formatting.Indented)
 			};
 			_builder.AddToTimeline(restModel, _executeTime);
+		}
+
+		public void Operate<TActionType>(TActionType actionType = default(TActionType))
+		{
+			throw new NotImplementedException();
 		}
 	}
 

@@ -16,7 +16,7 @@ namespace QuarklessLogic.Logic.HashtagLogic
 		Task<IResult<InstaHashtagStory>> GetHashtagStoriesAsync(string tagname);
 		Task<IResult<InstaSectionMedia>> GetRecentHashtagMediaListAsync(string tagname, PaginationParameters paginationParameters);
 		Task<IResult<InstaHashtagSearch>> GetSuggestedHashtagsAsync();
-		Task<IResult<InstaSectionMedia>> GetTopHashtagMediaListAsync(string tagname, PaginationParameters paginationParameters);
+		Task<IResult<InstaSectionMedia>> GetTopHashtagMediaListAsync(string topic, int limit);
 		Task<IResult<InstaHashtagSearch>> SearchHashtagAsync(string query, IEnumerable<long> excludeList = null, string rankToken = null);
 		Task<IResult<bool>> UnFollowHashtagAsync(string tagname);
 		Task<IEnumerable<HashtagsModel>> GetHashtagsByTopic(string topic, int limit =1);
