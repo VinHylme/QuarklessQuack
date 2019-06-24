@@ -36,7 +36,7 @@ namespace QuarklessLogic.Handlers.TextGeneration
 			if(reader==null && reader.Count<=0) return null;
 			string s = Regex.Replace(string.Join(',', reader.Select(sa => sa.Text)), @"\s+", " ").TrimEnd(' ');
 			TDict t = MarkovHelper.BuildTDict(s, size);
-			return MarkovHelper.BuildString(t, limit, false).TrimEnd(' ');
+			return MarkovHelper.BuildString(t, limit, true).TrimEnd(' ');
 		}
 
 	}

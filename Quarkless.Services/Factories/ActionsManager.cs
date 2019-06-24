@@ -19,6 +19,7 @@ namespace Quarkless.Services.Factories
 				{ ActionType.CreatePostTypeImage, new CreateImagePostActionBuilderFactory() },
 				{ ActionType.CreatePostTypeVideo, new CreateVideoPostActionBuilderFactory() },
 				{ ActionType.LikePost, new LikeMediaPostActionBuilderFactory()},
+				{ ActionType.CreateCommentMedia, new CreateCommentMediaActionBuilderFactory() }
 			};
 		}
 

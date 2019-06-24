@@ -108,6 +108,10 @@ namespace Quarkless.Services
 			var caption_ = GenerateText(topicSelect.TopicName.ToLower(), language.ToUpper(), 1, 1, 1);
 			return caption_ + Environment.NewLine + hashtags;
 		}
+		public string GenerateComment(TopicsModel topicsModel, string language)
+		{
+			return GenerateText(topicsModel.TopicName.ToLower(),language.ToUpper(),0,1,1);
+		}
 		public IEnumerable<PostsModel> GetUserMedia(string userName = null, int limit = 1)
 		{
 			var results = _contentSearch.SearchMediaUser(userName,limit).GetAwaiter().GetResult();

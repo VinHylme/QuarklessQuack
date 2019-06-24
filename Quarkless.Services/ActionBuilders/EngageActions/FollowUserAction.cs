@@ -40,7 +40,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		private long FollowBasedOnLikers()
 		{
-			IEnumerable<UserResponse<MediaDetail>> searchMedias = (IEnumerable<UserResponse<MediaDetail>>)MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic();
+			var fetchMedias = MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic();
+			var searchMedias = (IEnumerable<UserResponse<MediaDetail>>)fetchMedias.FetchedItems;
 			searchMedias = searchMedias.Where(_ => _.Object.IsFollowing != null && _.Object.IsFollowing != true);
 			var users_ = _builder.SearchInstagramMediaLikers(searchMedias.ElementAt(SecureRandom.Next(searchMedias.Count())).Object.MediaId);
 			int index = 0;
@@ -62,13 +63,15 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		private long FollowBasedOnTopic()
 		{
-			IEnumerable<UserResponse<MediaDetail>> searchMedias = (IEnumerable<UserResponse<MediaDetail>>)MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic();
+			var fetchMedias = MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic();
+			var searchMedias = (IEnumerable<UserResponse<MediaDetail>>)fetchMedias.FetchedItems;
 			searchMedias = searchMedias.Where(_=>_.Object.IsFollowing!=null && _.Object.IsFollowing!=true);
 			return searchMedias.ElementAt(SecureRandom.Next(searchMedias.Count())).UserId;
 		}
 		private long FollowBasedOnCommenters()
 		{
-			IEnumerable<UserResponse<MediaDetail>> searchMedias = (IEnumerable<UserResponse<MediaDetail>>)MediaFetcherManager.Begin.Commit(FetchType.Media,_builder, _profile).FetchByTopic();
+			var fetchMedias = MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic();
+			var searchMedias = (IEnumerable<UserResponse<MediaDetail>>)fetchMedias.FetchedItems;
 			searchMedias = searchMedias.Where(_ =>
 			{
 				if (_ == null) return false;

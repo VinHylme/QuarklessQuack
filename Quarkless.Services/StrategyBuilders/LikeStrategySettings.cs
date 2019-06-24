@@ -13,6 +13,6 @@ namespace Quarkless.Services.StrategyBuilders
 	{
 		public LikeStrategyType LikeStrategy { get; set; }
 		public int NumberOfActions { get; set; }
-		public DateTimeOffset OffsetPerAction { get; set; }
+		public TimeSpan OffsetPerAction { get; set; }
 	}
 }

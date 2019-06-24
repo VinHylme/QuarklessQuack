@@ -1,4 +1,5 @@
-﻿using Quarkless.Services.Factories;
+﻿using MoreLinq;
+using Quarkless.Services.Factories;
 using Quarkless.Services.Interfaces;
 using Quarkless.Services.Interfaces.Actions;
 using Quarkless.Services.StrategyBuilders;
@@ -49,14 +50,15 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		private string LikeUsersMediaByTopic()
 		{
-			IEnumerable<UserResponse<MediaDetail>> searchMedias = (IEnumerable<UserResponse<MediaDetail>>) MediaFetcherManager.Begin.Commit(FetchType.Media,_builder,_profile).FetchByTopic();
+			var fetchMedias = MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic();
+			var searchMedias = (IEnumerable<UserResponse<MediaDetail>>)fetchMedias.FetchedItems;
 			var filtered = searchMedias.Where(_=>!_.Object.HasLikedBefore);
 			return filtered.ElementAt(SecureRandom.Next(filtered.Count())).Object.MediaId;
 		}
 		private string LikeUsersMediaLikers(bool inDepth = false)
 		{
-			IEnumerable<UserResponse<MediaDetail>> searchMedias = (IEnumerable<UserResponse<MediaDetail>>)MediaFetcherManager.Begin.Commit(FetchType.Media,_builder, _profile).FetchByTopic();
-
+			var fetchMedias = MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic();
+			var searchMedias = (IEnumerable<UserResponse<MediaDetail>>)fetchMedias.FetchedItems;
 			if (inDepth) { 
 				var users_ = _builder.SearchInstagramMediaLikers(searchMedias.ElementAt(SecureRandom.Next(searchMedias.Count())).Object.MediaId);
 				int index = 0;
@@ -84,7 +86,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		private string LikeUsersMediaCommenters()
 		{
-			IEnumerable<UserResponse<MediaDetail>> searchMedias = (IEnumerable<UserResponse<MediaDetail>>)MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic();
+			var fetchMedias = MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic();
+			var searchMedias = (IEnumerable<UserResponse<MediaDetail>>)fetchMedias.FetchedItems;
 			var users_ = _builder.SearchInstagramMediaCommenters(searchMedias.ElementAt(SecureRandom.Next(searchMedias.Count())).Object.MediaId, 1);
 			int index = 0;
 			while (users_.Count > index)
@@ -159,20 +162,26 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				}
 				else if(likeStrategySettings.LikeStrategy == LikeStrategyType.TwoDollarCent)
 				{
-					var medias = (IEnumerable<UserResponse<MediaDetail>>) MediaFetcherManager.Begin.Commit(FetchType.Media,_builder,_profile).FetchByTopic();
+					var medias = (IEnumerable<UserResponse<MediaDetail>>) MediaFetcherManager.Begin.Commit(FetchType.Media,_builder,_profile).FetchByTopic(takeAmount:likeStrategySettings.NumberOfActions);
 					var filtered = medias.Where(_ => !_.Object.HasLikedBefore);
-					for (int i = 0 ; i < likeStrategySettings.NumberOfActions; i++)
+					var groupByTopics = filtered.GroupBy(_=>_.Topic);
+					int timerCounter = 0 ;
+					foreach(var topic in groupByTopics)
 					{
-						string nominatedMedia = filtered.ElementAtOrDefault(i).Object.MediaId;
-						if (nominatedMedia != null) { 
-							RestModel restModel = new RestModel
+						for (int i = 0; i < likeStrategySettings.NumberOfActions; i++)
+						{
+							string nominatedMedia = topic.ElementAtOrDefault(i).Object.MediaId;
+							if (nominatedMedia != null)
 							{
-								BaseUrl = string.Format(UrlConstants.LikeMedia, nominatedMedia),
-								RequestType = RequestType.POST,
-								JsonBody = null
-							};
-							_builder.AddToTimeline(restModel, 
-								likeActionOptions.ExecutionTime.AddMinutes((likeStrategySettings.OffsetPerAction.Minute)*i));
+								RestModel restModel = new RestModel
+								{
+									BaseUrl = string.Format(UrlConstants.LikeMedia, nominatedMedia),
+									RequestType = RequestType.POST,
+									JsonBody = null
+								};
+								_builder.AddToTimeline(restModel,
+									likeActionOptions.ExecutionTime.AddMinutes((likeStrategySettings.OffsetPerAction.TotalMinutes) * timerCounter++));
+							}
 						}
 					}
 				}

@@ -22,7 +22,7 @@ namespace Quarkless.Queue.Services
 		{
 			var jobOptions = Activator.CreateInstance<TJobOptions>();
 			configureJob(jobOptions);
-			var jobId = _backgroundJobClient.Enqueue<TJob>(job => job.Perform(jobOptions));
+			var jobId = _backgroundJobClient.Schedule<TJob>(job => job.Perform(jobOptions),jobOptions.ExecutionTime);
 
 		}
 

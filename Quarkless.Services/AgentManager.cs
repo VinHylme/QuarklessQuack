@@ -58,33 +58,46 @@ namespace Quarkless.Services
 					.IncludeStrategy(new FollowStrategySettings {
 						FollowStrategy = FollowStrategyType.Default,
 						NumberOfActions = 1,
-						OffsetPerAction = DateTimeOffset.Now.AddMinutes(2)
+						OffsetPerAction = DateTimeOffset.Now.AddSeconds(20)
 					});
 
 				var likeMediaAction = ActionsManager.Begin.Commit(ActionType.LikePost, _contentManager, profile)
 					.IncludeStrategy(new LikeStrategySettings
 					{
-						LikeStrategy = LikeStrategyType.TwoDollarCent,
+						LikeStrategy = LikeStrategyType.Default,
 						NumberOfActions = 9,
-						OffsetPerAction = DateTimeOffset.Now.AddMinutes(2)
+						OffsetPerAction = TimeSpan.FromSeconds(10)
 					});
-
+				var commentAction =  ActionsManager.Begin.Commit(ActionType.CreateCommentMedia, _contentManager, profile)
+					.IncludeStrategy(new CommentingStrategySettings
+					{
+						CommentingStrategy = CommentingStrategy.Default
+					});
 				List<Chance<Action>> actionToExecute = new List<Chance<Action>>();
 				actionToExecute.Add(new Chance<Action>
 				{
 					Object = () => imageAction.Push(new ImageActionOptions
 					{
-						ExecutionTime = DateTime.UtcNow.AddMinutes(1),
+						ExecutionTime = DateTime.UtcNow.AddSeconds(10),
 						ImageFetchLimit = 20
 					}),
-					Probability = 0.08
+					Probability = 0.04
 				});
 				actionToExecute.Add(new Chance<Action>
 				{
 					Object = () => followAction.Push(new FollowActionOptions
 					{
 						FollowActionType = FollowActionType.Any,
-						ExecutionTime = DateTimeOffset.Now.AddMinutes(2)
+						ExecutionTime = DateTimeOffset.UtcNow.AddSeconds(10)
+					}),
+					Probability = 0.16
+				});
+				actionToExecute.Add(new Chance<Action>
+				{
+					Object = () => commentAction.Push(new CommentingActionOptions
+					{
+						CommentingActionType = CommentingActionType.CommentingViaTopicDepth,
+						ExecutionTime = DateTimeOffset.UtcNow.AddSeconds(15)
 					}),
 					Probability = 0.30
 				});
@@ -93,9 +106,9 @@ namespace Quarkless.Services
 					Object = () => likeMediaAction.Push(new LikeActionOptions
 					{
 						LikeActionType = LikeActionType.Any,
-						ExecutionTime = DateTime.Now.AddMinutes(10),
+						ExecutionTime = DateTime.UtcNow.AddSeconds(10),
 					}),
-					Probability = 0.62
+					Probability = 0.50
 				});
 
 				_ = Task.Run(() =>
