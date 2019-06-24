@@ -64,8 +64,8 @@ namespace Quarkless.Services
 				var likeMediaAction = ActionsManager.Begin.Commit(ActionType.LikePost, _contentManager, profile)
 					.IncludeStrategy(new LikeStrategySettings
 					{
-						LikeStrategy = LikeStrategyType.Default,
-						NumberOfActions = 1,
+						LikeStrategy = LikeStrategyType.TwoDollarCent,
+						NumberOfActions = 9,
 						OffsetPerAction = DateTimeOffset.Now.AddMinutes(2)
 					});
 

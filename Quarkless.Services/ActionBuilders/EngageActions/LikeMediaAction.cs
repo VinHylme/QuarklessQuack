@@ -106,53 +106,76 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		public void Push(IActionOptions actionOptions)
 		{
 			LikeActionOptions likeActionOptions = actionOptions as LikeActionOptions;
+			if (likeStrategySettings == null) return ;
 			try
 			{
 				Console.WriteLine("Like Action Started");
-				string nominatedMedia = string.Empty;
-				LikeActionType likeActionTypeSelected = LikeActionType.LikeByTopic;
-				if (likeActionOptions.LikeActionType == LikeActionType.Any)
+				if (likeStrategySettings.LikeStrategy == LikeStrategyType.Default)
 				{
-					List<Chance<LikeActionType>> likeActionsChances = new List<Chance<LikeActionType>>
+					string nominatedMedia = string.Empty;
+					LikeActionType likeActionTypeSelected = LikeActionType.LikeByTopic;
+					if (likeActionOptions.LikeActionType == LikeActionType.Any)
 					{
-						new Chance<LikeActionType>{Object = LikeActionType.LikeByTopic, Probability = 0.10},
-						new Chance<LikeActionType>{Object = LikeActionType.LikeUsersMediaByLikersInDepth, Probability = 0.30},
-						new Chance<LikeActionType>{Object = LikeActionType.LikeFromUsersFeed, Probability = 0.30},
-						new Chance<LikeActionType>{Object = LikeActionType.LikeUsersMediaByCommenters, Probability = 0.15},
-						new Chance<LikeActionType>{Object = LikeActionType.LikeUsersMediaByLikers, Probability = 0.15}
+						List<Chance<LikeActionType>> likeActionsChances = new List<Chance<LikeActionType>>
+						{
+							new Chance<LikeActionType>{Object = LikeActionType.LikeByTopic, Probability = 0.10},
+							new Chance<LikeActionType>{Object = LikeActionType.LikeUsersMediaByLikersInDepth, Probability = 0.30},
+							new Chance<LikeActionType>{Object = LikeActionType.LikeFromUsersFeed, Probability = 0.30},
+							new Chance<LikeActionType>{Object = LikeActionType.LikeUsersMediaByCommenters, Probability = 0.15},
+							new Chance<LikeActionType>{Object = LikeActionType.LikeUsersMediaByLikers, Probability = 0.15}
+						};
+						likeActionTypeSelected = SecureRandom.ProbabilityRoll(likeActionsChances);
+					}
+					else
+					{
+						likeActionTypeSelected = likeActionOptions.LikeActionType;
+					}
+					switch (likeActionTypeSelected)
+					{
+						case LikeActionType.LikeByTopic:
+							nominatedMedia = LikeUsersMediaByTopic();
+							break;
+						case LikeActionType.LikeFromUsersFeed:
+							nominatedMedia = LikeUserFeedMedia();
+							break;
+						case LikeActionType.LikeUsersMediaByCommenters:
+							nominatedMedia = LikeUsersMediaCommenters();
+							break;
+						case LikeActionType.LikeUsersMediaByLikers:
+							nominatedMedia = LikeUsersMediaLikers(false);
+							break;
+						case LikeActionType.LikeUsersMediaByLikersInDepth:
+							nominatedMedia = LikeUsersMediaLikers(true);
+							break;
+					}
+					if (string.IsNullOrEmpty(nominatedMedia)) return;
+					RestModel restModel = new RestModel
+					{
+						BaseUrl = string.Format(UrlConstants.LikeMedia, nominatedMedia),
+						RequestType = RequestType.POST,
+						JsonBody = null
 					};
-					likeActionTypeSelected = SecureRandom.ProbabilityRoll(likeActionsChances);
+					_builder.AddToTimeline(restModel, likeActionOptions.ExecutionTime);
 				}
-				else
+				else if(likeStrategySettings.LikeStrategy == LikeStrategyType.TwoDollarCent)
 				{
-					likeActionTypeSelected = likeActionOptions.LikeActionType;
+					var medias = (IEnumerable<UserResponse<MediaDetail>>) MediaFetcherManager.Begin.Commit(FetchType.Media,_builder,_profile).FetchByTopic();
+					var filtered = medias.Where(_ => !_.Object.HasLikedBefore);
+					for (int i = 0 ; i < likeStrategySettings.NumberOfActions; i++)
+					{
+						string nominatedMedia = filtered.ElementAtOrDefault(i).Object.MediaId;
+						if (nominatedMedia != null) { 
+							RestModel restModel = new RestModel
+							{
+								BaseUrl = string.Format(UrlConstants.LikeMedia, nominatedMedia),
+								RequestType = RequestType.POST,
+								JsonBody = null
+							};
+							_builder.AddToTimeline(restModel, 
+								likeActionOptions.ExecutionTime.AddMinutes((likeStrategySettings.OffsetPerAction.Minute)*i));
+						}
+					}
 				}
-				switch (likeActionTypeSelected)
-				{
-					case LikeActionType.LikeByTopic:
-						nominatedMedia = LikeUsersMediaByTopic();
-						break;
-					case LikeActionType.LikeFromUsersFeed:
-						nominatedMedia = LikeUserFeedMedia();
-						break;
-					case LikeActionType.LikeUsersMediaByCommenters:
-						nominatedMedia = LikeUsersMediaCommenters();
-						break;
-					case LikeActionType.LikeUsersMediaByLikers:
-						nominatedMedia = LikeUsersMediaLikers(false);
-						break;
-					case LikeActionType.LikeUsersMediaByLikersInDepth:
-						nominatedMedia = LikeUsersMediaLikers(true);
-						break;
-				}
-				if (string.IsNullOrEmpty(nominatedMedia)) return;
-				RestModel restModel = new RestModel
-				{
-					BaseUrl = string.Format(UrlConstants.LikeMedia, nominatedMedia),
-					RequestType = RequestType.POST,
-					JsonBody = null
-				};
-				_builder.AddToTimeline(restModel, likeActionOptions.ExecutionTime);
 			}
 			catch (Exception ee)
 			{
