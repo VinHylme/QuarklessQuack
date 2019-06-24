@@ -102,7 +102,7 @@ namespace Quarkless.Services
 		}
 		public string GenerateMediaInfo(TopicsModel topicSelect, string language)
 		{
-			var hash = GetHashTags(topicSelect.TopicName, 80, 30).GetAwaiter().GetResult().ToList();
+			var hash = GetHashTags(topicSelect.TopicName, 150, 30).GetAwaiter().GetResult().ToList();
 			hash.AddRange(topicSelect.SubTopics.Select(s => $"#{s}"));
 			var hashtags = hash.TakeAny(SecureRandom.Next(28)).JoinEvery(Environment.NewLine, 3);
 			var caption_ = GenerateText(topicSelect.TopicName.ToLower(), language.ToUpper(), 1, 1, 1);

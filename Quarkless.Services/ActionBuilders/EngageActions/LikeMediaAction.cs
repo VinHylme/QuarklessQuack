@@ -1,5 +1,7 @@
 ﻿using Quarkless.Services.Factories;
 using Quarkless.Services.Interfaces;
+using Quarkless.Services.Interfaces.Actions;
+using Quarkless.Services.StrategyBuilders;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.Profiles;
@@ -27,28 +29,17 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	{
 		private readonly IContentManager _builder;
 		private readonly ProfileModel _profile;
-		private readonly DateTime _executeTime;
-		public LikeMediaAction(IContentManager builder, ProfileModel profile, DateTime executeTime)
+		private LikeStrategySettings likeStrategySettings;
+		public LikeMediaAction(IContentManager builder, ProfileModel profile)
 		{
 			_builder = builder;
 			_profile = profile;
-			_executeTime = executeTime;
 		}
-		public void Operate()
+
+		public IActionCommit IncludeStrategy(IStrategy strategy)
 		{
-			var topicSearch = _builder.GetTopics(_profile.TopicList, 15).GetAwaiter().GetResult();
-			var topicSelect = topicSearch.ElementAt(SecureRandom.Next(topicSearch.Count));
-			var searchMedias = _builder.SearchMediaDetailInstagram(topicSelect.SubTopics.TakeAny(3).ToList(),1);
-
-			var nominatedMedia = searchMedias.ElementAt(SecureRandom.Next(searchMedias.Count()-1));
-
-			RestModel restModel = new RestModel
-			{
-				BaseUrl = string.Format(UrlConstants.LikeMedia, nominatedMedia.Object.MediaId),
-				RequestType = RequestType.POST,
-				JsonBody = null
-			};
-			_builder.AddToTimeline(restModel, _executeTime);
+			this.likeStrategySettings = strategy as LikeStrategySettings;
+			return this;
 		}
 		private string LikeUserFeedMedia()
 		{
@@ -112,13 +103,15 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			return null;
 		}
 
-		public void Operate<TActionType>(TActionType actionType = default(TActionType))
+		public void Push(IActionOptions actionOptions)
 		{
-			try { 
+			LikeActionOptions likeActionOptions = actionOptions as LikeActionOptions;
+			try
+			{
 				Console.WriteLine("Like Action Started");
 				string nominatedMedia = string.Empty;
 				LikeActionType likeActionTypeSelected = LikeActionType.LikeByTopic;
-				if((LikeActionType)(object)actionType == LikeActionType.Any)
+				if (likeActionOptions.LikeActionType == LikeActionType.Any)
 				{
 					List<Chance<LikeActionType>> likeActionsChances = new List<Chance<LikeActionType>>
 					{
@@ -132,7 +125,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				}
 				else
 				{
-					likeActionTypeSelected = (LikeActionType) (object) actionType;
+					likeActionTypeSelected = likeActionOptions.LikeActionType;
 				}
 				switch (likeActionTypeSelected)
 				{
@@ -152,19 +145,19 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						nominatedMedia = LikeUsersMediaLikers(true);
 						break;
 				}
-				if(string.IsNullOrEmpty(nominatedMedia)) return;
+				if (string.IsNullOrEmpty(nominatedMedia)) return;
 				RestModel restModel = new RestModel
 				{
 					BaseUrl = string.Format(UrlConstants.LikeMedia, nominatedMedia),
 					RequestType = RequestType.POST,
 					JsonBody = null
 				};
-				_builder.AddToTimeline(restModel, _executeTime);
+				_builder.AddToTimeline(restModel, likeActionOptions.ExecutionTime);
 			}
-			catch(Exception ee)
+			catch (Exception ee)
 			{
 				Console.WriteLine(ee.Message);
-				return ;
+				return;
 			}
 		}
 	}

@@ -1,6 +1,8 @@
 ﻿using Quarkless.Services.ActionBuilders.EngageActions;
 using Quarkless.Services.Factories;
 using Quarkless.Services.Interfaces;
+using Quarkless.Services.Interfaces.Actions;
+using Quarkless.Services.StrategyBuilders;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.Handlers.ClientProvider;
@@ -46,25 +48,54 @@ namespace Quarkless.Services
 				_userStoreDetails.AddUpdateUser(accountId,instagramAccountId,accessToken);			
 				_contentManager.SetUser(_userStoreDetails);
 
-				var imageAction = ActionsManager.Begin.Commit(ActionType.CreatePostTypeImage, _contentManager, profile, DateTime.UtcNow);
-				var followAction = ActionsManager.Begin.Commit(ActionType.FollowUser, _contentManager, profile, DateTime.UtcNow.AddSeconds(10));
-				var likeMediaAction = ActionsManager.Begin.Commit(ActionType.LikePost, _contentManager, profile, DateTime.UtcNow.AddSeconds(10));
+				var imageAction = ActionsManager.Begin.Commit(ActionType.CreatePostTypeImage, _contentManager, profile)
+					.IncludeStrategy(new ImageStrategySettings
+					{
+						ImageStrategyType = ImageStrategyType.Default
+					});
+
+				var followAction = ActionsManager.Begin.Commit(ActionType.FollowUser, _contentManager, profile)
+					.IncludeStrategy(new FollowStrategySettings {
+						FollowStrategy = FollowStrategyType.Default,
+						NumberOfActions = 1,
+						OffsetPerAction = DateTimeOffset.Now.AddMinutes(2)
+					});
+
+				var likeMediaAction = ActionsManager.Begin.Commit(ActionType.LikePost, _contentManager, profile)
+					.IncludeStrategy(new LikeStrategySettings
+					{
+						LikeStrategy = LikeStrategyType.Default,
+						NumberOfActions = 1,
+						OffsetPerAction = DateTimeOffset.Now.AddMinutes(2)
+					});
 
 				List<Chance<Action>> actionToExecute = new List<Chance<Action>>();
 				actionToExecute.Add(new Chance<Action>
 				{
-					Object = () => imageAction.Operate(),
-					Probability = 0.10
+					Object = () => imageAction.Push(new ImageActionOptions
+					{
+						ExecutionTime = DateTime.UtcNow.AddMinutes(1),
+						ImageFetchLimit = 20
+					}),
+					Probability = 0.08
 				});
 				actionToExecute.Add(new Chance<Action>
 				{
-					Object = () => followAction.Operate(FollowActionType.Any),
+					Object = () => followAction.Push(new FollowActionOptions
+					{
+						FollowActionType = FollowActionType.Any,
+						ExecutionTime = DateTimeOffset.Now.AddMinutes(2)
+					}),
 					Probability = 0.30
 				});
 				actionToExecute.Add(new Chance<Action>
 				{
-					Object = () => likeMediaAction.Operate(LikeActionType.Any),
-					Probability = 0.60
+					Object = () => likeMediaAction.Push(new LikeActionOptions
+					{
+						LikeActionType = LikeActionType.Any,
+						ExecutionTime = DateTime.Now.AddMinutes(10),
+					}),
+					Probability = 0.62
 				});
 
 				_ = Task.Run(() =>

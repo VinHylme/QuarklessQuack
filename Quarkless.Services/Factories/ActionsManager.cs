@@ -18,13 +18,13 @@ namespace Quarkless.Services.Factories
 				{ ActionType.FollowUser, new FollowUserActionBuilderFactory() },
 				{ ActionType.CreatePostTypeImage, new CreateImagePostActionBuilderFactory() },
 				{ ActionType.CreatePostTypeVideo, new CreateVideoPostActionBuilderFactory() },
-				{ ActionType.LikePost, new LikeMediaPostActionBuilderFactory()}
+				{ ActionType.LikePost, new LikeMediaPostActionBuilderFactory()},
 			};
 		}
 
 		public static ActionsManager Begin => new ActionsManager();
 
 		public IActionCommit Commit(ActionType actionType,IContentManager actionBuilderManager,
-			ProfileModel profile, DateTime executionTime)=>_factories[actionType].Commit(actionBuilderManager,profile,executionTime);
+			ProfileModel profile)=>_factories[actionType].Commit(actionBuilderManager,profile);
 	}
 }

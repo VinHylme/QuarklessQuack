@@ -8,7 +8,7 @@ namespace Quarkless.Services.Factories.Actions
 {
 	class CreateVideoPostActionBuilderFactory : ActionBuilderFactory
 	{
-		public override IActionCommit Commit(IContentManager builder, ProfileModel profile, DateTime executeTime)
-			   => new CreateVideoPost(builder, profile, executeTime);
+		public override IActionCommit Commit(IContentManager builder, ProfileModel profile)
+			   => new CreateVideoPost(builder, profile);
 	}
 }

@@ -10,8 +10,8 @@ namespace Quarkless.Services.Factories.Actions
 {
 	class LikeMediaPostActionBuilderFactory : ActionBuilderFactory
 	{
-		public override IActionCommit Commit(IContentManager builder, ProfileModel profile, DateTime executeTime)
-			   => new LikeMediaAction(builder, profile, executeTime);
+		public override IActionCommit Commit(IContentManager builder, ProfileModel profile)
+			   => new LikeMediaAction(builder, profile);
 	}
 
 }

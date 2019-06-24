@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json;
 using Quarkless.Services.Factories;
 using Quarkless.Services.Interfaces;
+using Quarkless.Services.Interfaces.Actions;
+using Quarkless.Services.StrategyBuilders;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.Profiles;
@@ -25,12 +27,16 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	{
 		private readonly IContentManager _builder;
 		private readonly ProfileModel _profile;
-		private readonly DateTime _executeTime;
-		public FollowUserAction(IContentManager builder, ProfileModel profile, DateTime executeTime)
+		private FollowStrategySettings followStrategySettings;
+		public FollowUserAction(IContentManager builder, ProfileModel profile)
 		{
 			_builder = builder;
 			_profile = profile;
-			_executeTime = executeTime;
+		}
+		public IActionCommit IncludeStrategy(IStrategy strategy)
+		{
+			this.followStrategySettings = strategy as FollowStrategySettings;
+			return this;
 		}
 		private long FollowBasedOnLikers()
 		{
@@ -91,56 +97,17 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			}
 			return 0;
 		}
-		public void Operate()
+		public void Push(IActionOptions actionOptions)
 		{
-			var topicSearch = _builder.GetTopics(_profile.TopicList, 15).GetAwaiter().GetResult();
-			var topicSelect = topicSearch.ElementAt(SecureRandom.Next(topicSearch.Count));
-
-			List<string> pickedSubsTopics = topicSelect.SubTopics.TakeAny(1).ToList();
-			pickedSubsTopics.Add(topicSelect.TopicName);
-			var searchMedias = _builder.SearchMediaDetailInstagram(pickedSubsTopics, 1);
-			long nominatedFollower = 0;
-
-			List<Chance<FollowActionType>> followActionsChances = new List<Chance<FollowActionType>>
+			FollowActionOptions followActionOptions = actionOptions as FollowActionOptions; 
+			try
 			{
-				new Chance<FollowActionType>{Object = FollowActionType.FollowBasedOnCommenters, Probability = 0.50},
-				new Chance<FollowActionType>{Object = FollowActionType.FollowBasedOnLikers, Probability = 0.30},
-				new Chance<FollowActionType>{Object = FollowActionType.FollowBasedOnTopic, Probability = 0.20}
-			};
-
-			var selectedFollowAction = SecureRandom.ProbabilityRoll(followActionsChances);
-			switch (selectedFollowAction)
-			{
-				case FollowActionType.FollowBasedOnCommenters:
-					var filteredMediaSearch = searchMedias.Where(_ => _.Object.LikesCount > 5 && int.Parse(_.Object?.CommentCount) > 0);
-					nominatedFollower = FollowBasedOnCommenters();
-					break;
-				case FollowActionType.FollowBasedOnLikers:
-					nominatedFollower = FollowBasedOnLikers();
-					break;
-				case FollowActionType.FollowBasedOnTopic:
-					nominatedFollower = FollowBasedOnTopic();
-					break;
-			}
-			if(nominatedFollower==0) return ; 
-
-			RestModel restModel =  new RestModel
-			{
-				BaseUrl = string.Format(UrlConstants.FollowUser, nominatedFollower),
-				RequestType = RequestType.POST,
-				JsonBody = null
-			};
-			_builder.AddToTimeline(restModel, _executeTime);
-		}
-
-		public void Operate<TActionType>(TActionType actionType = default(TActionType))
-		{
-			try { 
 				Console.WriteLine("Follow Action Started");
 				long nominatedFollower = 0;
 				//todo add Location?
 				FollowActionType followActionTypeSelected = FollowActionType.FollowBasedOnTopic;
-				if ((FollowActionType) (object) actionType == FollowActionType.Any) { 
+				if (followActionOptions.FollowActionType == FollowActionType.Any)
+				{
 					List<Chance<FollowActionType>> followActionsChances = new List<Chance<FollowActionType>>
 					{
 						new Chance<FollowActionType>{Object = FollowActionType.FollowBasedOnCommenters, Probability = 0.30},
@@ -149,8 +116,9 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					};
 					followActionTypeSelected = SecureRandom.ProbabilityRoll(followActionsChances);
 				}
-				else {
-					followActionTypeSelected = (FollowActionType) (object) actionType;
+				else
+				{
+					followActionTypeSelected = followActionOptions.FollowActionType;
 				}
 				switch (followActionTypeSelected)
 				{
@@ -172,12 +140,12 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					RequestType = RequestType.POST,
 					JsonBody = null
 				};
-				_builder.AddToTimeline(restModel, _executeTime);
+				_builder.AddToTimeline(restModel, followActionOptions.ExecutionTime);
 			}
-			catch(Exception ee)
+			catch (Exception ee)
 			{
 				Console.WriteLine(ee.Message);
-				return ;
+				return;
 			}
 		}
 	}

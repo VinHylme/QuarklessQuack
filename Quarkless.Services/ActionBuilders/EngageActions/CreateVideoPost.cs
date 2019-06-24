@@ -12,24 +12,32 @@ using Newtonsoft.Json;
 using QuarklessLogic.Handlers.RequestBuilder.Consts;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Models.Timeline;
+using Quarkless.Services.Interfaces.Actions;
+using Quarkless.Services.StrategyBuilders;
 
 namespace Quarkless.Services.ActionBuilders.EngageActions
 {
 	public class CreateVideoPost : IActionCommit
 	{
 		private readonly ProfileModel _profile;
-		private readonly DateTime _executeTime;
 		private readonly IContentManager _builder;
-		private const int VIDEO_FETCH_LIMIT = 25;
-		public CreateVideoPost(IContentManager builder, ProfileModel profile, DateTime executeTime)
+		private VideoStrategySettings videoStrategy { get; set; }
+		public CreateVideoPost(IContentManager builder, ProfileModel profile)
 		{
 			_builder = builder;
 			_profile = profile;
-			_executeTime = executeTime;
 		}
 
-		public void Operate()
+		public IActionCommit IncludeStrategy(IStrategy strategy)
 		{
+			this.videoStrategy = strategy as VideoStrategySettings;
+			return this;
+		}
+
+		public void Push(IActionOptions actionOptions)
+		{
+			VideoActionOptions videoActionOptions = actionOptions as VideoActionOptions;
+			
 			string exactSize = _profile.AdditionalConfigurations.PostSize;
 			var location = _profile.LocationTargetList?.ElementAtOrDefault(SecureRandom.Next(_profile.LocationTargetList.Count));
 			var profileColor = _profile.Theme.Colors.ElementAt(SecureRandom.Next(0, _profile.Theme.Colors.Count));
@@ -79,12 +87,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				RequestType = RequestType.POST,
 				JsonBody = JsonConvert.SerializeObject(uploadVideo, Formatting.Indented)
 			};
-			_builder.AddToTimeline(restModel, _executeTime);
-		}
-
-		public void Operate<TActionType>(TActionType actionType = default(TActionType))
-		{
-			throw new NotImplementedException();
+			_builder.AddToTimeline(restModel, videoActionOptions.ExecutionTime);
 		}
 	}
 

@@ -13,26 +13,34 @@ using System.Threading.Tasks;
 using QuarklessLogic.Handlers.RequestBuilder.Consts;
 using QuarklessContexts.Models.Timeline;
 using QuarklessContexts.Enums;
+using Quarkless.Services.Interfaces.Actions;
+using Quarkless.Services.StrategyBuilders;
 
 namespace Quarkless.Services.ActionBuilders.EngageActions
 {
 	class CreateImagePost : IActionCommit
 	{
 		private readonly ProfileModel _profile;
-		private readonly DateTime _executeTime;
 		private readonly IContentManager _builder;
-		private const int IMAGE_FETCH_LIMIT = 20;
-		public CreateImagePost(IContentManager builder, ProfileModel profile, DateTime executeTime)
+		private ImageStrategySettings imageStrategySettings;
+		public CreateImagePost(IContentManager builder, ProfileModel profile)
 		{
 			_builder = builder;
 			_profile = profile;
-			_executeTime = executeTime;
 		}
-		public void Operate()
+
+		public IActionCommit IncludeStrategy(IStrategy strategy)
 		{
+			imageStrategySettings = strategy as ImageStrategySettings;
+			return this;
+		}
+
+		public void Push(IActionOptions actionOptions)
+		{
+			ImageActionOptions imageActionOptions = actionOptions as ImageActionOptions;
 			Console.WriteLine("Create Photo Action Started");
 			try
-			{ 
+			{
 				string exactSize = _profile.AdditionalConfigurations.PostSize;
 				var location = _profile.LocationTargetList?.ElementAtOrDefault(SecureRandom.Next(_profile.LocationTargetList.Count));
 				var profileColor = _profile.Theme.Colors.ElementAt(SecureRandom.Next(0, _profile.Theme.Colors.Count));
@@ -42,11 +50,11 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				List<string> pickedSubsTopics = topicSelect.SubTopics.TakeAny(2).ToList();
 				pickedSubsTopics.Add(topicSelect.TopicName);
 				List<PostsModel> TotalResults = new List<PostsModel>();
-			
+
 				switch (_profile.AdditionalConfigurations.SearchTypes.ElementAtOrDefault(SecureRandom.Next(_profile.AdditionalConfigurations.SearchTypes.Count)))
 				{
 					case (int)SearchType.Google:
-						var gres = _builder.GetGoogleImages(profileColor.Name, pickedSubsTopics, _profile.AdditionalConfigurations.Sites, IMAGE_FETCH_LIMIT,
+						var gres = _builder.GetGoogleImages(profileColor.Name, pickedSubsTopics, _profile.AdditionalConfigurations.Sites, imageActionOptions.ImageFetchLimit,
 							exactSize: exactSize);
 						if (gres != null)
 							TotalResults.AddRange(gres);
@@ -63,7 +71,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 								Where(s=>s.TopicGroup.ToLower() == topicSelect.TopicName.ToLower()).
 								ElementAtOrDefault(SecureRandom.Next(_profile.Theme.ImagesLike.Count))
 							};
-							var yanres = _builder.GetYandexSimilarImages(groupImagesAlikes, IMAGE_FETCH_LIMIT * 8);
+							var yanres = _builder.GetYandexSimilarImages(groupImagesAlikes, imageActionOptions.ImageFetchLimit * 8);
 							if (yanres != null)
 								TotalResults.AddRange(yanres);
 						}
@@ -71,7 +79,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				}
 
 				if (TotalResults.Count <= 0) return;
-				List<PostsModel> currentUsersMedia = _builder.GetUserMedia(limit:1).ToList();
+				List<PostsModel> currentUsersMedia = _builder.GetUserMedia(limit: 1).ToList();
 
 				List<byte[]> userMediaBytes = new List<byte[]>();
 				if (currentUsersMedia.Count <= 0) return;
@@ -117,18 +125,13 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					RequestType = RequestType.POST,
 					JsonBody = JsonConvert.SerializeObject(uploadPhoto)
 				};
-				_builder.AddToTimeline(restModel, _executeTime);
+				_builder.AddToTimeline(restModel, imageActionOptions.ExecutionTime);
 			}
-			catch(Exception ee)
+			catch (Exception ee)
 			{
 				Console.WriteLine(ee.Message);
-				return ;
+				return;
 			}
-		}
-
-		public void Operate<TActionType>(TActionType actionType = default(TActionType))
-		{
-			throw new NotImplementedException();
 		}
 	}
 
