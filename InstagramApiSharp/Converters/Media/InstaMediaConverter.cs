@@ -46,7 +46,25 @@ namespace InstagramApiSharp.Converters
                 NumberOfQualities = SourceObject.NumberOfQualities ?? 0,
                 VideoDuration = SourceObject.VideoDuration ?? 0,
                 HasViewerSaved = SourceObject.HasViewerSaved,
-                DirectReplyToAuthorEnabled = SourceObject.DirectReplyToAuthorEnabled ?? false
+                DirectReplyToAuthorEnabled = SourceObject.DirectReplyToAuthorEnabled ?? false,
+
+
+
+                Explore = SourceObject.Explore,
+                ExploreContext = SourceObject.ExploreContext,
+                ExploreSourceToken = SourceObject.ExploreSourceToken,
+                ConnectionId = SourceObject.ConnectionId,
+                MezqlToken = SourceObject.MezqlToken,
+                IsEof = SourceObject.IsEof ?? false,
+                IsSeen = SourceObject.IsSeen ?? false,
+                FollowHashtagInfo = SourceObject.FollowHashtagInfo,
+                InventorySource = SourceObject.InventorySource,
+                CarouselMediaCount = SourceObject.CarouselMediaCount ?? 0,
+                CanSeeInsightsAsBrand = SourceObject.CanSeeInsightsAsBrand ?? false,
+                UnifyTagDisplay = SourceObject.UnifyTagDisplay ?? false,
+                InlineComposerDisplayCondition= SourceObject.InlineComposerDisplayCondition ,
+                InlineComposerImpTriggerTime = SourceObject.InlineComposerImpTriggerTime ?? 0
+
             };
             if (!string.IsNullOrEmpty(SourceObject.TakenAtUnixLike))
                 media.TakenAt = DateTimeHelper.UnixTimestampToDateTime(SourceObject.TakenAtUnixLike);
@@ -83,6 +101,10 @@ namespace InstagramApiSharp.Converters
 
             if (SourceObject.Location != null)
                 media.Location = ConvertersFabric.Instance.GetLocationConverter(SourceObject.Location).Convert();
+
+            if (SourceObject.TopLikers?.Count > 0)
+                foreach (var item in SourceObject.TopLikers)
+                    media.TopLikers.Add(item);
 
             if (SourceObject.Images?.Candidates == null) return media;
 

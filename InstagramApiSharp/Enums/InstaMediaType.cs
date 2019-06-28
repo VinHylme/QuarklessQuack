@@ -2,9 +2,9 @@
 {
     public enum InstaMediaType
     {
+		All = 0,
         Image = 1,
         Video = 2,
-        Carousel = 8,
-		All = 0
+        Carousel = 8
     }
 }

@@ -9,7 +9,7 @@ namespace Quarkless.Services.StrategyBuilders
 		Default,
 
 	}
-	public class VideoStrategySettings : IStrategy
+	public class VideoStrategySettings : IStrategySettings
 	{
 		public VideoStrategyType VideoStrategyType { get; set; } = VideoStrategyType.Default;
 	}

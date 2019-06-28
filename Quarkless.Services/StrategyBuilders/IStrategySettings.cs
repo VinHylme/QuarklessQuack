@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Quarkless.Services.StrategyBuilders
 {
-	public interface IStrategy
+	public interface IStrategySettings
 	{
 	}
 }

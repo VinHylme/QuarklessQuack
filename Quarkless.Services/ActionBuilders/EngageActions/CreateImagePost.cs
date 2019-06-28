@@ -15,27 +15,30 @@ using QuarklessContexts.Models.Timeline;
 using QuarklessContexts.Enums;
 using Quarkless.Services.Interfaces.Actions;
 using Quarkless.Services.StrategyBuilders;
+using QuarklessContexts.Models;
 
 namespace Quarkless.Services.ActionBuilders.EngageActions
 {
 	class CreateImagePost : IActionCommit
 	{
 		private readonly ProfileModel _profile;
+		private readonly UserStore _user;
 		private readonly IContentManager _builder;
 		private ImageStrategySettings imageStrategySettings;
-		public CreateImagePost(IContentManager builder, ProfileModel profile)
+		public CreateImagePost(IContentManager builder, ProfileModel profile, UserStore user)
 		{
 			_builder = builder;
 			_profile = profile;
+			_user = user;
 		}
 
-		public IActionCommit IncludeStrategy(IStrategy strategy)
+		public IActionCommit IncludeStrategy(IStrategySettings strategy)
 		{
 			imageStrategySettings = strategy as ImageStrategySettings;
 			return this;
 		}
 
-		public void Push(IActionOptions actionOptions)
+		public IEnumerable<TimelineEventModel> Push(IActionOptions actionOptions)
 		{
 			ImageActionOptions imageActionOptions = actionOptions as ImageActionOptions;
 			Console.WriteLine("Create Photo Action Started");
@@ -78,11 +81,11 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						break;
 				}
 
-				if (TotalResults.Count <= 0) return;
+				if (TotalResults.Count <= 0) return null;
 				List<PostsModel> currentUsersMedia = _builder.GetUserMedia(limit: 1).ToList();
 
 				List<byte[]> userMediaBytes = new List<byte[]>();
-				if (currentUsersMedia.Count <= 0) return;
+				if (currentUsersMedia.Count <= 0) return null;
 				Parallel.ForEach(currentUsersMedia.First().MediaData, act =>
 				{
 					userMediaBytes.Add(act.DownloadMedia());
@@ -102,7 +105,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 
 				var selectedImage = profileColorRGB.MostSimilarImage(imagesBytes.Where(_ => _ != null).ToList()).SharpenImage(4);
 
-				if (selectedImage == null) return;
+				if (selectedImage == null) return null;
 				var instaimage = new InstaImageUpload()
 				{
 					ImageBytes = selectedImage,
@@ -123,14 +126,23 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				{
 					BaseUrl = UrlConstants.UploadPhoto,
 					RequestType = RequestType.POST,
-					JsonBody = JsonConvert.SerializeObject(uploadPhoto)
+					JsonBody = JsonConvert.SerializeObject(uploadPhoto),
+					User = _user
 				};
-				_builder.AddToTimeline(restModel, imageActionOptions.ExecutionTime);
+				return new List<TimelineEventModel>
+				{ 
+					new TimelineEventModel
+					{ 
+						ActionName = $"CreatePhoto_{imageStrategySettings.ImageStrategyType.ToString()}", 
+						Data = restModel,
+						ExecutionTime = imageActionOptions.ExecutionTime
+					} 
+				};
 			}
 			catch (Exception ee)
 			{
 				Console.WriteLine(ee.Message);
-				return;
+				return null;
 			}
 		}
 	}

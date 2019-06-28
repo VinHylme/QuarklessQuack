@@ -30,7 +30,12 @@ namespace InstagramApiSharp.Converters
                 ChildCommentCount = SourceObject.ChildCommentCount,
                 HasLikedComment = SourceObject.HasLikedComment,
                 HasMoreHeadChildComments = SourceObject.HasMoreHeadChildComments,
-                HasMoreTailChildComments = SourceObject.HasMoreTailChildComments
+                HasMoreTailChildComments = SourceObject.HasMoreTailChildComments,
+                NumTailChildComments = SourceObject.NumTailChildComments ?? 0,
+                ShareEnabled = SourceObject.ShareEnabled ?? false,
+                CommentIndex = SourceObject.CommentIndex ?? 0,
+                ParentCommentId = SourceObject.ParentCommentId ?? 0,
+                HasTranslation = SourceObject.HasTranslation ?? false
             };
             if (SourceObject.OtherPreviewUsers != null && SourceObject.OtherPreviewUsers.Any())
             {
@@ -45,7 +50,11 @@ namespace InstagramApiSharp.Converters
                     comment.PreviewChildComments = new List<InstaCommentShort>();
 
                 foreach (var cm in SourceObject.PreviewChildComments)
-                    comment.PreviewChildComments.Add(ConvertersFabric.Instance.GetCommentShortConverter(cm).Convert());
+                {
+                    var conCm = ConvertersFabric.Instance.GetCommentShortConverter(cm).Convert();
+                    comment.ChildComments.Add(conCm.ConvertToComment());
+                    comment.PreviewChildComments.Add(conCm);
+                }
             }
             return comment;
         }

@@ -118,6 +118,7 @@ namespace Quarkless
 				options.UseMongoStorage(_accessors.ConnectionString, _accessors.ControlDatabase, new MongoStorageOptions()
 				{
 					CheckConnection = false,
+					JobExpirationCheckInterval = TimeSpan.FromDays(30),
 					MigrationOptions = new MongoMigrationOptions(MongoMigrationStrategy.Migrate) { Strategy = MongoMigrationStrategy.Migrate }
 				});
 				options.UseSerializerSettings(new Newtonsoft.Json.JsonSerializerSettings(){ 

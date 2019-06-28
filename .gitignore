@@ -328,3 +328,7 @@ ASALocalRun/
 
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
+/Requires/Datas/data_bk/Processed
+/Requires/Datas/data_bk/Comments
+/Requires/Datas/data_bk/Captions
+/Requires/Datas/data_bk/Bios

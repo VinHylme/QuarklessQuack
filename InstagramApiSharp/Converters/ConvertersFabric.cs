@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Models;
 using InstagramApiSharp.Classes.Models.Business;
-using InstagramApiSharp.Classes.Models.Hashtags;
 using InstagramApiSharp.Classes.ResponseWrappers;
 using InstagramApiSharp.Classes.ResponseWrappers.Business;
 using InstagramApiSharp.Classes.ResponseWrappers.Web;
@@ -979,6 +978,60 @@ namespace InstagramApiSharp.Converters
             InstaTopicalExploreFeedResponse response)
         {
             return new InstaTopicalExploreFeedConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaVideoCallEvent, InstaVideoCallEventResponse> GetVideoCallEventConverter(
+            InstaVideoCallEventResponse response)
+        {
+            return new InstaVideoCallEventConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaHashtagShort, InstaHashtagShortResponse> GetHashtagShortConverter(
+            InstaHashtagShortResponse response)
+        {
+            return new InstaHashtagShortConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaDiscoverRecentSearchesItem, InstaDiscoverRecentSearchesItemResponse> GetDiscoverRecentSearchesItemConverter(
+            InstaDiscoverRecentSearchesItemResponse response)
+        {
+            return new InstaDiscoverRecentSearchesItemConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaDynamicSearchSection, InstaDynamicSearchSectionResponse> GetDynamicSearchSectionConverter(
+            InstaDynamicSearchSectionResponse response)
+        {
+            return new InstaDynamicSearchSectionConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaDynamicSearch, InstaDynamicSearchResponse> GetDynamicSearchConverter(
+            InstaDynamicSearchResponse response)
+        {
+            return new InstaDynamicSearchConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryQuizItem, InstaStoryQuizItemResponse> GetStoryQuizItemConverter(
+            InstaStoryQuizItemResponse response)
+        {
+            return new InstaStoryQuizItemConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryQuizStickerItem, InstaStoryQuizStickerItemResponse> GetStoryQuizStickerItemConverter(
+            InstaStoryQuizStickerItemResponse response)
+        {
+            return new InstaStoryQuizStickerItemConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryQuizParticipant, InstaStoryQuizParticipantResponse> GetStoryQuizParticipantConverter(
+            InstaStoryQuizParticipantResponse response)
+        {
+            return new InstaStoryQuizParticipantConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryQuizAnswer, InstaStoryQuizAnswerResponse> GetStoryQuizAnswerConverter(
+            InstaStoryQuizAnswerResponse response)
+        {
+            return new InstaStoryQuizAnswerConverter { SourceObject = response };
         }
     }
 }

@@ -24,7 +24,6 @@ namespace Quarkless.Services.Interfaces
 		string GenerateText(string topic, string lang, int type, int limit, int size);
 		Task<IEnumerable<string>> GetHashTags(string topic, int limit, int pickAmount);
 		Task<List<TopicsModel>> GetTopics(List<string> topic, int limit);
-		bool AddToTimeline(RestModel restBody, DateTimeOffset executeTime);
 		IEnumerable<PostsModel> GetUserMedia(string username = null, int limit = 1);
 		IEnumerable<PostsModel> GetMediaInstagram(InstaMediaType mediaType, List<string> topics, int limit = 1);
 		IEnumerable<PostsModel> GetYandexSimilarImages(List<GroupImagesAlike> similarImages = null, int limit = 10);

@@ -90,6 +90,66 @@ namespace InstagramApiSharp.API.Versions
                          Capabilities = "3brTvw==",
                          SignatureKey = "19ce5f445dbfd9d29c59dc2a78c616a7fc090a8e018b9267bc4240a30244c53b"
                     }
+                },
+                {
+                    InstaApiVersionType.Version87,
+                    new InstaApiVersion
+                    {
+                         AppApiVersionCode = "148324051",
+                         AppVersion = "87.0.0.18.99",
+                         Capabilities = "3brTvw==",
+                         SignatureKey = "19ce5f445dbfd9d29c59dc2a78c616a7fc090a8e018b9267bc4240a30244c53b"
+                    }
+                },
+                {
+                    InstaApiVersionType.Version88,
+                    new InstaApiVersion
+                    {
+                         AppApiVersionCode = "149350061",
+                         AppVersion = "88.0.0.14.99",
+                         Capabilities = "3brTvw==",
+                         SignatureKey = "19ce5f445dbfd9d29c59dc2a78c616a7fc090a8e018b9267bc4240a30244c53b"
+                    }
+                },
+                {
+                    InstaApiVersionType.Version89,
+                    new InstaApiVersion
+                    {
+                         AppApiVersionCode = "150338067",
+                         AppVersion = "89.0.0.21.101",
+                         Capabilities = "3brTvw==",
+                         SignatureKey = "937463b5272b5d60e9d20f0f8d7d192193dd95095a3ad43725d494300a5ea5fc"
+                    }
+                },
+                {
+                    InstaApiVersionType.Version90,
+                    new InstaApiVersion
+                    {
+                         AppApiVersionCode = "151414277",
+                         AppVersion = "90.0.0.18.110",
+                         Capabilities = "3brTvw==",
+                         SignatureKey = "937463b5272b5d60e9d20f0f8d7d192193dd95095a3ad43725d494300a5ea5fc"
+                    }
+                },
+                {
+                    InstaApiVersionType.Version91,
+                    new InstaApiVersion
+                    {
+                         AppApiVersionCode = "152367502",
+                         AppVersion = "91.0.0.18.118",
+                         Capabilities = "3brTvw==",
+                         SignatureKey = "7f2efba692e18dd385499a6727ad440a959d575568d5547594cc54c3ff5bbe35"
+                    }
+                },
+                {
+                    InstaApiVersionType.Version94,
+                    new InstaApiVersion
+                    {
+                         AppApiVersionCode = "155374104",
+                         AppVersion = "94.0.0.22.116",
+                         Capabilities = "3brTvw==",
+                         SignatureKey = "446f6292f1da63db9d8d3a9f5af793625173f79bb61de1ddd5cf10ef933a7af7"
+                    }
                 }
             };
         }

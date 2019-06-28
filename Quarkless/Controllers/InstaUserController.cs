@@ -265,12 +265,12 @@ namespace Quarkless.Controllers
 		}
 
 		[HttpPut]
-		[Route("api/instaUser/suggestionDetails")]
-		public async Task<IActionResult> GetSuggestionDetails([FromBody] long[] userIds)
+		[Route("api/instaUser/suggestionDetails/{userId}")]
+		public async Task<IActionResult> GetSuggestionDetails(long userId, [FromBody] long[] userIds)
 		{
 			if (_userContext.UserAccountExists)
 			{
-				var res = await _instaUserLogic.GetSuggestionDetails(userIds);
+				var res = await _instaUserLogic.GetSuggestionDetails(userId,userIds);
 				if (res.Succeeded)
 				{
 					return Ok(res.Value);

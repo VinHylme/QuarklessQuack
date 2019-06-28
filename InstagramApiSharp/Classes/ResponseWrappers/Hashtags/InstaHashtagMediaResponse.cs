@@ -60,8 +60,14 @@ namespace InstagramApiSharp.Classes.ResponseWrappers
     {
         [JsonProperty("medias")]
         public List<InstaMediaAlbumResponse> Medias { get; set; }
+        [JsonProperty("full_item")]
+        public InstaSectionChannelLayoutContentResponse ChannelContainer { get; set; }
     }
-
+    public class InstaSectionChannelLayoutContentResponse
+    {
+        [JsonProperty("channel")]
+        public InstaChannelResponse Channel { get; set; }
+    }
 
 
     public class InstaPersistentSectionResponse
@@ -91,6 +97,5 @@ namespace InstagramApiSharp.Classes.ResponseWrappers
         //[JsonProperty("profile_pic_url")]
         //public string ProfilePictureUrl { get; set; }
     }
-
 
 }

@@ -178,11 +178,11 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 				return null;
 			}
 		}
-		public async Task<IResult<InstaSuggestionItemList>> GetSuggestionDetails(params long[] userIds)
+		public async Task<IResult<InstaSuggestionItemList>> GetSuggestionDetails(long userId,long[] chainedUserIds = null)
 		{
 			try
 			{
-				return await Client.User.GetSuggestionDetailsAsync(userIds);
+				return await Client.User.GetSuggestionDetailsAsync(userId,chainedUserIds);
 			}
 			catch (Exception ee)
 			{

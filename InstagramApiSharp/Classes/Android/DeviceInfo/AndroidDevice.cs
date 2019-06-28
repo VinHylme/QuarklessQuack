@@ -1,17 +1,20 @@
-﻿using MongoDB.Bson.Serialization.Attributes;
-using System;
+﻿using System;
 
 namespace InstagramApiSharp.Classes.Android.DeviceInfo
 {
     [Serializable]
     public class AndroidDevice
     {
-		public Guid PhoneGuid { get; set; }
-		public Guid DeviceGuid { get; set; }
-		public Guid GoogleAdId { get; set; } = Guid.NewGuid();
-		public Guid RankToken { get; set; } = Guid.NewGuid();
-		public Guid AdId { get; set; } = Guid.NewGuid();
-		public AndroidVersion AndroidVer { get; set; } = AndroidVersion.GetRandomAndriodVersion();
+        public Guid PhoneGuid { get; set; }
+        public Guid DeviceGuid { get; set; }
+        public Guid GoogleAdId { get; set; } = Guid.NewGuid();
+        public Guid RankToken { get; set; } = Guid.NewGuid();
+        public Guid AdId { get; set; } = Guid.NewGuid();
+        public Guid PigeonSessionId { get; set; } = Guid.NewGuid();
+        public Guid PushDeviceGuid { get; set; } = Guid.NewGuid();
+        public Guid FamilyDeviceGuid { get; set; } = Guid.NewGuid();
+
+        public AndroidVersion AndroidVer { get; set; } = AndroidVersion.GetRandomAndriodVersion();
 
         public string AndroidBoardName { get; set; }
         public string AndroidBootloader { get; set; }
@@ -28,5 +31,15 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
         public string HardwareModel { get; set; }
         public string Resolution { get; set; } = "1080x1812";
         public string Dpi { get; set; } = "480dpi";
+
+
+        // Related to headers
+        // X-IG-Bandwidth-Speed-KBPS
+        // X-IG-Bandwidth-TotalBytes-B
+        // X-IG-Bandwidth-TotalTime-MS
+        public string IGBandwidthSpeedKbps { get; set; } = "1235.043";
+        public string IGBandwidthTotalBytesB { get; set; } = "1219685";
+        public string IGBandwidthTotalTimeMS { get; set; } = "949";
+
     }
 }

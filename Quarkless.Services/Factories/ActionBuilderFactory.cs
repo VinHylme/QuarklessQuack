@@ -7,7 +7,6 @@ namespace Quarkless.Services.Factories
 {
 	public abstract class ActionBuilderFactory
 	{
-		public abstract IActionCommit Commit(IContentManager builder, ProfileModel profile);
-
+		public abstract IActionCommit Commit(IContentManager builder, ProfileModel profile, UserStore user);
 	}
 }

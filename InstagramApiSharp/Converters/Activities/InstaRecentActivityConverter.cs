@@ -15,13 +15,47 @@ namespace InstagramApiSharp.Converters
             var activityStory = new InstaRecentActivityFeed
             {
                 Pk = SourceObject.Pk,
-                Type = SourceObject.Type,
                 ProfileId = SourceObject.Args.ProfileId,
                 ProfileImage = SourceObject.Args.ProfileImage,
                 Text = SourceObject.Args.Text,
                 RichText = SourceObject.Args.RichText,
-                TimeStamp = DateTimeHelper.UnixTimestampToDateTime((long)System.Convert.ToDouble(SourceObject.Args.TimeStamp, new NumberFormatInfo { NumberDecimalSeparator = "." }))
+                TimeStamp = DateTimeHelper.UnixTimestampToDateTime((long)System.Convert.ToDouble(SourceObject.Args.TimeStamp, new NumberFormatInfo { NumberDecimalSeparator = "." })),
+                CommentId= SourceObject.Args.CommentId,
+                CommentIds = SourceObject.Args.CommentIds,
+                Destination = SourceObject.Args.Destination,
+                ProfileImageDestination = SourceObject.Args.ProfileImageDestination,
+                ProfileName = SourceObject.Args.ProfileName,
+                SecondProfileId = SourceObject.Args.SecondProfileId,
+                SecondProfileImage = SourceObject.Args.SecondProfileImage,
+                SubText = SourceObject.Args.SubText,
+                RequestCount = SourceObject.Args.RequestCount,
+                IconUrl = SourceObject.Args.IconUrl
             };
+            if (!string.IsNullOrEmpty(SourceObject.Args.IconUrl))
+               activityStory.ProfileImage = SourceObject.Args.IconUrl;
+            if (!string.IsNullOrEmpty(SourceObject.Args.SubText))
+                activityStory.Text = SourceObject.Args.SubText;
+            if (!string.IsNullOrEmpty(SourceObject.Args.RichText))
+                activityStory.Text = SourceObject.Args.RichText;
+            try
+            {
+                activityStory.Type = (Enums.InstaActivityFeedType)SourceObject.Type;
+            }
+            catch { }
+            try
+            {
+                if (SourceObject.Args.HashtagFollow != null)
+                    activityStory.HashtagFollow = ConvertersFabric.Instance.GetHashTagConverter(SourceObject.Args.HashtagFollow).Convert();
+            }
+            catch { }
+            try
+            {
+                activityStory.StoryType = (Enums.InstaActivityFeedStoryType)SourceObject.StoryType;
+            }
+            catch { }
+            if (activityStory.Type == Enums.InstaActivityFeedType.FriendRequest)
+                activityStory.StoryType = Enums.InstaActivityFeedStoryType.FriendRequest;
+
             if (SourceObject.Args.Links != null)
                 foreach (var instaLinkResponse in SourceObject.Args.Links)
                     activityStory.Links.Add(new InstaLink

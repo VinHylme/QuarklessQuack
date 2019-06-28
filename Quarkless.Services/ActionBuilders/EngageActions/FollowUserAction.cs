@@ -5,6 +5,7 @@ using Quarkless.Services.Interfaces.Actions;
 using Quarkless.Services.StrategyBuilders;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Extensions;
+using QuarklessContexts.Models;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessContexts.Models.Timeline;
@@ -27,13 +28,15 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	{
 		private readonly IContentManager _builder;
 		private readonly ProfileModel _profile;
+		private readonly UserStore _user;
 		private FollowStrategySettings followStrategySettings;
-		public FollowUserAction(IContentManager builder, ProfileModel profile)
+		public FollowUserAction(IContentManager builder, ProfileModel profile, UserStore user)
 		{
 			_builder = builder;
 			_profile = profile;
+			_user = user;
 		}
-		public IActionCommit IncludeStrategy(IStrategy strategy)
+		public IActionCommit IncludeStrategy(IStrategySettings strategy)
 		{
 			this.followStrategySettings = strategy as FollowStrategySettings;
 			return this;
@@ -100,7 +103,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			}
 			return 0;
 		}
-		public void Push(IActionOptions actionOptions)
+		public IEnumerable<TimelineEventModel> Push(IActionOptions actionOptions)
 		{
 			FollowActionOptions followActionOptions = actionOptions as FollowActionOptions; 
 			try
@@ -135,20 +138,29 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						nominatedFollower = FollowBasedOnTopic();
 						break;
 				}
-				if (nominatedFollower == 0) return;
+				if (nominatedFollower == 0) return null;
 
 				RestModel restModel = new RestModel
 				{
 					BaseUrl = string.Format(UrlConstants.FollowUser, nominatedFollower),
 					RequestType = RequestType.POST,
-					JsonBody = null
+					JsonBody = null,
+					User = _user
 				};
-				_builder.AddToTimeline(restModel, followActionOptions.ExecutionTime);
+				return new List<TimelineEventModel>
+				{
+					new TimelineEventModel
+					{
+						ActionName = $"FollowUser_{followStrategySettings.FollowStrategy.ToString()}_{followActionTypeSelected.ToString()}",
+						Data = restModel,
+						ExecutionTime =followActionOptions.ExecutionTime
+					}
+				};
 			}
 			catch (Exception ee)
 			{
 				Console.WriteLine(ee.Message);
-				return;
+				return null;
 			}
 		}
 	}

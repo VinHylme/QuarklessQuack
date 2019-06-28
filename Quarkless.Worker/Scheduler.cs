@@ -26,6 +26,7 @@ using System.Web;
 using QuarklessContexts.Extensions;
 using QuarklessLogic.Handlers.Util;
 using ContentSearcher.SeleniumClient;
+using static Quarkless.Worker.Analyser;
 
 namespace Quarkless.Worker
 {
@@ -46,6 +47,7 @@ namespace Quarkless.Worker
 		private readonly ConcurrentQueue<IAPIClientContainer> aPIClients;
 		private bool goSleep = false;
 		private bool producerRan = false;
+		private bool notCurrentlyFlushing = true;
 		private readonly List<string> Topics = new List<string>
 		{
 			"Makeup",
@@ -157,7 +159,6 @@ namespace Quarkless.Worker
 			{
 				goSleep = !goSleep;
 				_workerManagerQueue.Restart();
-				timer = new System.Timers.Timer(sleepTime);
 			};
 
 			var timerrestart = new System.Timers.Timer(restartTime);
@@ -165,21 +166,23 @@ namespace Quarkless.Worker
 			timerrestart.Elapsed += (o, s) =>
 			{
 				_workerManagerQueue.Restart();
-				timerrestart = new System.Timers.Timer(restartTime);
 			};
 
 			var flushTimer = new System.Timers.Timer(flushTime);
 			flushTimer.Start();
 			flushTimer.Elapsed += (o, s) =>
 			{
+				if (notCurrentlyFlushing) { 
 				Flush(totalItemsToFlush);
-				flushTimer = new System.Timers.Timer(flushTime);
+				}
 			};
 
 		}
 		public void Schedule(TimerSettings timerSettings, ExecutionSettings executionSettings, params ActionExecuters[] actionExecuters)
 		{
-			if(actionExecuters.Count()<=0) throw new Exception("actions should exist");
+			Flush();
+
+			if (actionExecuters.Count()<=0) throw new Exception("actions should exist");
 			foreach(var action in actionExecuters)
 			{
 				if(action.WorkerType == WorkerType.Fetcher)
@@ -246,129 +249,96 @@ namespace Quarkless.Worker
 			}
 			return false;
 		}
-
-		private void SaveThenRemove<T>(string filePath, Func<Task<IEnumerable<T>>> objectToFlush)
+		private Task Work<TObject>(IEnumerable<TObject> items, string fileNameCSV, string fileNameJsonActualData)
 		{
-			IEnumerable<T> result = null;
-			try { 
-				Task.Run(async () =>
-				{
-					result = await objectToFlush();
-				}).ContinueWith(a =>
-				{
-					if (result != null)
-					{
-						Console.WriteLine($"Saving file to {filePath}");
-						result.SaveAsJSON(filePath);
+			if (items.Count() <= 0) return null;
+			return Task.Run(() =>
+			{
+				items = HandleMultiTranslate(items,items.Count()/2);
 
-						if(result is IEnumerable<CaptionsModel>)
+				var dtc = items.Select(o =>
+				{
+					return new DataHolder()
+					{
+						Text = o.GetValue("Text").ToString(),
+						Topic = o.GetValue("Topic").ToString(),
+						Language = o.GetValue("Language")?.ToString()
+					};
+				}).ToDataTable(
+						a => a.Text,
+						b => b.Topic,
+						c => c.Language);
+				dtc.WriteToCsvFile(fileNameCSV);
+			}).ContinueWith(a =>
+			{
+				items.SaveAsJSON(fileNameJsonActualData);
+				if (items is IEnumerable<CaptionsModel>)
+				{
+					Console.WriteLine("Deleting Captions...");
+					_captionsRepository.RemoveCaptions(items.Select(_ => _.GetType().GetProperty("_id").GetValue(_).ToString()));
+					Console.WriteLine("Captions Deleted");
+				}
+				else if (items is IEnumerable<CommentsModel>)
+				{
+					Console.WriteLine("Deleting Comments...");
+					_commentsRepository.RemoveComments(items.Select(_ => _.GetType().GetProperty("_id").GetValue(_).ToString()));
+					Console.WriteLine("Deleted Comments");
+				}
+				else if (items is IEnumerable<UserBiographyModel>)
+				{
+					Console.WriteLine("Deleting User Biographies...");
+					_userBiographyRepository.RemoveUserBiographies(items.Select(_ => _.GetType().GetProperty("_id").GetValue(_).ToString()));
+					Console.WriteLine("Deleted User Biographies");
+				}
+			});
+		}
+		private IEnumerable<TObject> HandleMultiTranslate<TObject>(IEnumerable<TObject> items, int seperateBy = 255)
+		{
+			try
+			{
+				int incrementedBy = 0;
+				int amountToLoop = items.Count() >= seperateBy
+					? items.Where(_ => !string.IsNullOrEmpty(_.GetValue("Text").ToString())).Count() / seperateBy
+					: items.Where(_ => !string.IsNullOrEmpty(_.GetValue("Text").ToString())).Count();
+
+				List<Holder<TObject>> workQueue = new List<Holder<TObject>>();
+
+				for (int i = 0; i < amountToLoop; i++)
+				{
+					workQueue.Add(new Holder<TObject>
+					{
+						Items = items.TakeBetween(incrementedBy, seperateBy).ToList(),
+					});
+					incrementedBy += seperateBy;
+				}
+
+				Parallel.ForEach(workQueue, fn =>
+				{
+					Task.Delay(250);
+					fn.Langs = _utilProviders.TranslateService.DetectLanguageViaGoogle(texts: fn.Items
+						.Select(c => c.GetValue("Text").ToString()).ToArray());
+					if (fn.Langs != null)
+					{
+						for (int x = 0; x < fn.Items.Where(a => (!string.IsNullOrEmpty(a.GetValue("Text").ToString()))).Count(); x++)
 						{
-							Console.WriteLine("Deleting Captions...");
-							_captionsRepository.RemoveCaptions(result.Select(_=>_.GetType().GetProperty("_id").GetValue(_).ToString()));
-							Console.WriteLine("Captions Deleted");
-						}
-						else if(result is IEnumerable<CommentsModel>)
-						{
-							Console.WriteLine("Deleting Comments...");
-							_commentsRepository.RemoveComments(result.Select(_ => _.GetType().GetProperty("_id").GetValue(_).ToString()));
-							Console.WriteLine("Deleted Comments");
-						}
-						else if(result is IEnumerable<UserBiographyModel>)
-						{
-							Console.WriteLine("Deleting User Biographies...");
-							_userBiographyRepository.RemoveUserBiographies(result.Select(_ => _.GetType().GetProperty("_id").GetValue(_).ToString()));
-							Console.WriteLine("Deleted User Biographies");
+							fn.Items.ElementAt(x).GetProp("Language")
+							.SetValue(fn.Items.ElementAt(x), fn.Langs.ElementAtOrDefault(x));
 						}
 					}
+					else
+					{
+
+					}
+					fn.IsDone = true;
 				});
+
+				return workQueue.Select(t => t.Items).Squash();
 			}
-			catch(Exception e)
+			catch (Exception ee)
 			{
-				Console.WriteLine(e.Message);
+				Console.WriteLine(ee.Message);
+				return null;
 			}
-		}
-		private async Task<IEnumerable<CaptionsModel>> HandleCaptions(int limit)
-		{
-			var captions = await _captionsRepository.GetCaptions(limit:limit);
-			List<string> langs = new List<string>();
-			const int minumum = 255;
-			int incrementBy = 0;
-
-			int amountToLoop = captions.Count()>minumum 
-				? captions.Where(_=>!string.IsNullOrEmpty(_.Text)).Count() / minumum
-				: captions.Where(_ => !string.IsNullOrEmpty(_.Text)).Count();
-
-			for (int i = 0 ; i < amountToLoop; i++)
-			{
-				var between = captions.TakeBetween(incrementBy, minumum);
-				if (between.Count() > 0) { 
-					langs.AddRange(_utilProviders.TranslateService.DetectLanguageViaGoogle(texts:between.Select(c=>c.Text).ToArray()));
-					incrementBy += minumum;
-					await Task.Delay(TimeSpan.FromSeconds(5));
-				}
-			}
-			for(int x = 0 ; x < captions.Where(a=>!string.IsNullOrEmpty(a.Text)).Count(); x++)
-			{
-				captions.ToList()[x].Language = langs.ElementAtOrDefault(x);
-			}
-
-			return captions;
-		}
-		private async Task<IEnumerable<CommentsModel>> HandleComments(int limit)
-		{
-			var comments = await _commentsRepository.GetComments(limit: limit);
-			List<string> langs = new List<string>();
-			const int minumum = 255;
-			int incrementBy = 0;
-
-			int amountToLoop = comments.Count() > minumum
-				? comments.Where(_ => !string.IsNullOrEmpty(_.Text)).Count() / minumum
-				: comments.Where(_ => !string.IsNullOrEmpty(_.Text)).Count();
-
-			for (int i = 0; i < amountToLoop; i++)
-			{
-				var between = comments.TakeBetween(incrementBy, minumum);
-				if (between.Count() > 0)
-				{
-					langs.AddRange(_utilProviders.TranslateService.DetectLanguageViaGoogle(texts: between.Select(c => c.Text).ToArray()));
-					incrementBy += minumum;
-					await Task.Delay(TimeSpan.FromSeconds(3));
-				}
-			}
-			for (int x = 0; x < comments.Where(a => !string.IsNullOrEmpty(a.Text)).Count(); x++)
-			{
-				comments.ToList()[x].Language = langs.ElementAtOrDefault(x);
-			}
-
-			return comments;
-		}
-		private async Task<IEnumerable<UserBiographyModel>> HandleBiographies(int limit)
-		{
-			var bios = await _userBiographyRepository.GetUserBiographies(limit: limit);
-			List<string> langs = new List<string>();
-			const int minumum = 255;
-			int incrementBy = 0;
-
-			int amountToLoop = bios.Count() > minumum
-				? bios.Where(_ => !string.IsNullOrEmpty(_.Text)).Count() / minumum
-				: bios.Where(_ => !string.IsNullOrEmpty(_.Text)).Count();
-
-			for (int i = 0; i < amountToLoop; i++)
-			{
-				var between = bios.TakeBetween(incrementBy, minumum);
-				if (between.Count() > 0)
-				{
-					langs.AddRange(_utilProviders.TranslateService.DetectLanguageViaGoogle(texts: between.Select(c => c.Text).ToArray()));
-					incrementBy += minumum;
-					await Task.Delay(TimeSpan.FromSeconds(3));
-				}
-			}
-			for (int x = 0; x < bios.Where(a => !string.IsNullOrEmpty(a.Text)).Count(); x++)
-			{
-				bios.ToList()[x].Language = langs.ElementAtOrDefault(x);
-			}
-
-			return bios;
 		}
 
 		/// <summary>
@@ -378,16 +348,174 @@ namespace Quarkless.Worker
 		/// <param name="size"></param>
 		public void Flush(int size = -1) 
 		{
-			Console.WriteLine("Begining Flushing...");
-			SaveThenRemove<CaptionsModel>($"../data_bk/Captions/{DateTime.UtcNow.ToLongDateString()}_{Guid.NewGuid()}_captions.json",
-				()=> HandleCaptions(size));
+			notCurrentlyFlushing = false;
+			var t1 = Work(_userBiographyRepository.GetUserBiographies(limit:-1).GetAwaiter().GetResult(),
+				@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\Datas\normalised_data\_bios.csv",
+				$@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\Datas\data_bk\Bios\{DateTime.UtcNow.ToLongDateString()}_{Guid.NewGuid()}_bios_new.json");
 
-			SaveThenRemove<CommentsModel>($"../data_bk/Comments/{DateTime.UtcNow.ToLongDateString()}_{Guid.NewGuid()}_comments.json",
-			() => HandleComments(size)); 
+			var t2 = Work(_captionsRepository.GetCaptions(limit:-1).GetAwaiter().GetResult(),
+				@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\Datas\normalised_data\_captions.csv",
+				$@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\Datas\data_bk\Captions\{DateTime.UtcNow.ToLongDateString()}_{Guid.NewGuid()}_captions_new.json"
+				);
 
-			SaveThenRemove<UserBiographyModel>($"../data_bk/Bios/{DateTime.UtcNow.ToLongDateString()}_{Guid.NewGuid()}_bios.json",
-				() => HandleBiographies(size));
+			var t3 = Work(_commentsRepository.GetComments(limit:-1).GetAwaiter().GetResult(), 
+				@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\Datas\normalised_data\_comments.csv",
+				$@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\Datas\data_bk\Comments\{DateTime.UtcNow.ToLongDateString()}_{Guid.NewGuid()}_comments_new.json");
+
+			Task.WaitAll(t1, t2, t3);
+			notCurrentlyFlushing = true;
 		}
 	}
 
+	#region oldCode
+	/*
+ * 		private void SaveThenRemove<T>(string filePathJson,string filePathCSV, Func<Task<IEnumerable<T>>> objectToFlush)
+{
+	IEnumerable<T> result = null;
+	try { 
+		Task.Run(async () =>
+		{
+			result = await objectToFlush();
+		}).ContinueWith(a =>
+		{
+			if (result != null)
+			{
+				Console.WriteLine($"Saving file to {filePathJson}");
+				result.SaveAsJSON(filePathJson);
+				var dtc = result.Select(o =>
+				{
+					var text = o.GetValue("Text").ToString();
+					var topic = o.GetValue("Topic").ToString();
+					var lang = o.GetValue("Language")?.ToString();
+					if(string.IsNullOrWhiteSpace(topic) || string.IsNullOrWhiteSpace(lang))
+					{
+						return new DataHolder();
+					}
+					return new DataHolder()
+					{
+						Text = text,
+						Topic = topic,
+						Language = lang
+					};
+				}).Where(_=>!string.IsNullOrEmpty(_.Text)).ToDataTable(
+				a => a.Text,
+				b => b.Topic,
+				c => c.Language);
+
+				dtc.WriteToCsvFile(filePathCSV);
+				if (result is IEnumerable<CaptionsModel>)
+				{
+					Console.WriteLine("Deleting Captions...");
+					_captionsRepository.RemoveCaptions(result.Select(_=>_.GetType().GetProperty("_id").GetValue(_).ToString()));
+					Console.WriteLine("Captions Deleted");
+				}
+				else if(result is IEnumerable<CommentsModel>)
+				{
+					Console.WriteLine("Deleting Comments...");
+					_commentsRepository.RemoveComments(result.Select(_ => _.GetType().GetProperty("_id").GetValue(_).ToString()));
+					Console.WriteLine("Deleted Comments");
+				}
+				else if(result is IEnumerable<UserBiographyModel>)
+				{
+					Console.WriteLine("Deleting User Biographies...");
+					_userBiographyRepository.RemoveUserBiographies(result.Select(_ => _.GetType().GetProperty("_id").GetValue(_).ToString()));
+					Console.WriteLine("Deleted User Biographies");
+				}
+			}
+		});
+	}
+	catch(Exception e)
+	{
+		Console.WriteLine(e.Message);
+	}
+}
+
+private async Task<IEnumerable<CaptionsModel>> HandleCaptions(int limit)
+{
+	var captions = await _captionsRepository.GetCaptions(limit:limit);
+	if(captions.Count()<=0) return null;
+	List<string> langs = new List<string>();
+	const int minumum = 255;
+	int incrementBy = 0;
+
+	int amountToLoop = captions.Count()>minumum 
+		? captions.Where(_=>!string.IsNullOrEmpty(_.Text)).Count() / minumum
+		: captions.Where(_ => !string.IsNullOrEmpty(_.Text)).Count();
+
+	for (int i = 0 ; i < amountToLoop; i++)
+	{
+		var between = captions.TakeBetween(incrementBy, minumum);
+		if (between.Count() > 0) { 
+			langs.AddRange(_utilProviders.TranslateService.DetectLanguageViaGoogle(texts:between.Select(c=>c.Text).ToArray()));
+			incrementBy += minumum;
+			await Task.Delay(TimeSpan.FromSeconds(5));
+		}
+	}
+	for(int x = 0 ; x < captions.Where(a=>!string.IsNullOrEmpty(a.Text)).Count(); x++)
+	{
+		captions.ToList()[x].Language = langs.ElementAtOrDefault(x);
+	}
+
+	return captions;
+}
+private async Task<IEnumerable<CommentsModel>> HandleComments(int limit)
+{
+	var comments = await _commentsRepository.GetComments(limit: limit);
+	if(comments.Count()<=0) return null;
+	List<string> langs = new List<string>();
+	const int minumum = 255;
+	int incrementBy = 0;
+
+	int amountToLoop = comments.Count() > minumum
+		? comments.Where(_ => !string.IsNullOrEmpty(_.Text)).Count() / minumum
+		: comments.Where(_ => !string.IsNullOrEmpty(_.Text)).Count();
+
+	for (int i = 0; i < amountToLoop; i++)
+	{
+		var between = comments.TakeBetween(incrementBy, minumum);
+		if (between.Count() > 0)
+		{
+			langs.AddRange(_utilProviders.TranslateService.DetectLanguageViaGoogle(texts: between.Select(c => c.Text).ToArray()));
+			incrementBy += minumum;
+			await Task.Delay(TimeSpan.FromSeconds(3));
+		}
+	}
+	for (int x = 0; x < comments.Where(a => !string.IsNullOrEmpty(a.Text)).Count(); x++)
+	{
+		comments.ToList()[x].Language = langs.ElementAtOrDefault(x);
+	}
+
+	return comments;
+}
+private async Task<IEnumerable<UserBiographyModel>> HandleBiographies(int limit)
+{
+	var bios = await _userBiographyRepository.GetUserBiographies(limit: limit);
+	if(bios.Count()<=0) return null;
+	List<string> langs = new List<string>();
+	const int minumum = 255;
+	int incrementBy = 0;
+
+	int amountToLoop = bios.Count() > minumum
+		? bios.Where(_ => !string.IsNullOrEmpty(_.Text)).Count() / minumum
+		: bios.Where(_ => !string.IsNullOrEmpty(_.Text)).Count();
+
+	for (int i = 0; i < amountToLoop; i++)
+	{
+		var between = bios.TakeBetween(incrementBy, minumum);
+		if (between.Count() > 0)
+		{
+			langs.AddRange(_utilProviders.TranslateService.DetectLanguageViaGoogle(texts: between.Select(c => c.Text).ToArray()));
+			incrementBy += minumum;
+			await Task.Delay(TimeSpan.FromSeconds(3));
+		}
+	}
+	for (int x = 0; x < bios.Where(a => !string.IsNullOrEmpty(a.Text)).Count(); x++)
+	{
+		bios.ToList()[x].Language = langs.ElementAtOrDefault(x);
+	}
+
+	return bios;
+}
+*/
+	#endregion
 }

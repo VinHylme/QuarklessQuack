@@ -33,14 +33,21 @@ namespace InstagramApiSharp.API
     /// </summary>
     public interface IInstaApi
     {
-		#region Custom
+		#region
 		string Username { get; }
+		bool IsUserValidated();
+
 		#endregion
+
 		#region Properties
 		/// <summary>
-		///     Current <see cref="IHttpRequestProcessor"/>
+		///     Get HttpHelper class
 		/// </summary>
-		IHttpRequestProcessor HttpRequestProcessor { get; }
+		HttpHelper HttpHelper { get; }
+        /// <summary>
+        ///     Current <see cref="IHttpRequestProcessor"/>
+        /// </summary>
+        IHttpRequestProcessor HttpRequestProcessor { get; }
         /// <summary>
         ///     Current HttpClient
         /// </summary>
@@ -116,7 +123,11 @@ namespace InstagramApiSharp.API
         ///     <para>It's related to https://instagram.com/accounts/ </para>
         /// </summary>
         IWebProcessor WebProcessor { get; }
-
+        IVideoCallProcessor VideoCallProcessor { get; }
+        /// <summary>
+        ///     Push notification helper processor
+        /// </summary>
+        IPushProcessor PushProcessor { get; }
         /// <summary>
         ///     Session handler
         /// </summary>
@@ -190,6 +201,10 @@ namespace InstagramApiSharp.API
         ///     Get current API version info (signature key, api version info, app id)
         /// </summary>
         InstaApiVersion GetApiVersionInfo();
+        /// <summary>
+        ///     Get api version type
+        /// </summary>
+        InstaApiVersionType GetApiVersionType();
         /// <summary>
         ///     Get user agent of current <see cref="IInstaApi"/>
         /// </summary>
@@ -301,6 +316,12 @@ namespace InstagramApiSharp.API
         /// <param name="uri">Desire uri (must include https://i.instagram.com/api/v...) </param>
         /// <param name="data">Data to post</param>
         Task<IResult<string>> SendSignedPostRequestAsync(System.Uri uri, Newtonsoft.Json.Linq.JObject data);
+        /// <summary>
+        ///     Send signed post request (include signed signature) 
+        /// </summary>
+        /// <param name="uri">Desire uri (must include https://i.instagram.com/api/v...) </param>
+        /// <param name="data">Data to post</param>
+        Task<IResult<string>> SendSignedPostRequestV2Async(System.Uri uri, Newtonsoft.Json.Linq.JObject data);
         /// <summary>
         ///     Send post request
         /// </summary>
@@ -421,6 +442,21 @@ namespace InstagramApiSharp.API
         /// <param name="delay">Delay between requests. null = 2.5 seconds</param>
         Task<IResult<InstaAccountCreation>> CreateNewAccountAsync(string username, string password, string email, string firstName = ""/*, TimeSpan? delay = null*/);
         /// <summary>
+        ///     Accept consent required (only for GDPR countries)
+        /// </summary>
+        /// <param name="delay">Delay time between requests (null => 1.5 seconds)</param>
+        Task<IResult<bool>> AcceptConsentAsync(TimeSpan? delay = null);
+        /// <summary>
+        ///     Send requests for login flows (contact prefill, read msisdn header, launcher sync and qe sync)
+        ///     <para>Note 1: You should call this function before you calling <see cref="IInstaApi.LoginAsync(bool)"/>, if you want your account act like original instagram app.</para>
+        ///     <para>Note 2: One call per one account! No need to call while you are loading a session</para>
+        /// </summary>
+        Task<IResult<bool>> SendRequestsBeforeLoginAsync();
+        /// <summary>
+        ///     Send requests after you logged in successfully (Act as an real instagram user)
+        /// </summary>
+        Task<IResult<bool>> SendRequestsAfterLoginAsync();
+        /// <summary>
         ///     Login using given credentials asynchronously
         /// </summary>
         /// <param name="isNewLogin"></param>
@@ -460,13 +496,14 @@ namespace InstagramApiSharp.API
         ///     Before call this method, please run LoginAsync first.
         /// </summary>
         /// <param name="verificationCode">Verification Code sent to your phone number</param>
+        /// <param name="trustThisDevice">Trust this device or not?!</param>
         /// <returns>
         ///     Success --> is succeed
         ///     InvalidCode --> The code is invalid
         ///     CodeExpired --> The code is expired, please request a new one.
         ///     Exception --> Something wrong happened
         /// </returns>
-        Task<IResult<InstaLoginTwoFactorResult>> TwoFactorLoginAsync(string verificationCode);
+        Task<IResult<InstaLoginTwoFactorResult>> TwoFactorLoginAsync(string verificationCode, bool trustThisDevice = false);
 
         /// <summary>
         ///     Get Two Factor Authentication details
@@ -513,8 +550,17 @@ namespace InstagramApiSharp.API
         ///     <see cref="InstaCurrentUser" />
         /// </returns>
         Task<IResult<InstaCurrentUser>> GetCurrentUserAsync();
-		bool IsUserValidated();
+        Task<IResult<bool>> LauncherSyncAsync();
+        Task<IResult<InstaBanyanSuggestions>> GetBanyanSuggestionsAsync();
 
-		#endregion Authentication, challenge functions
-	}
+        #endregion Authentication, challenge functions
+
+        #region Giphy
+
+        Task<IResult<GiphyList>> GetGiphyTrendingAsync(int count = 100);
+
+        Task<IResult<GiphyList>> SearchGiphyAsync(string query, int count = 100);
+
+        #endregion Giphy
+    }
 }

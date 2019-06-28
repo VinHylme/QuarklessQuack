@@ -45,6 +45,144 @@ namespace InstagramApiSharp.API.Processors
             _httpHelper = httpHelper;
         }
 
+
+        public async Task<IResult<bool>> ReplyPhotoToStoryAsync(InstaImageUpload image, /*string storyMediaId,*/ long userId)
+        {
+            return await ReplyPhotoToStoryAsync(null, image, /*storyMediaId,*/ userId);
+        }
+        public async Task<IResult<bool>> ReplyPhotoToStoryAsync(Action<InstaUploaderProgress> progress, InstaImageUpload image,
+            /*string storyMediaId,*/ long userId)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            var upProgress = new InstaUploaderProgress
+            {
+                Caption = string.Empty,
+                UploadState = InstaUploadState.Preparing
+            };
+            try
+            {
+                var uploadId = ApiRequestMessage.GenerateUnknownUploadId();
+                var uploadResult = await _instaApi.HelperProcessor.UploadSinglePhoto(progress, image, upProgress, uploadId, false, userId.ToString());
+                if (!uploadResult.Succeeded)
+                    Result.Fail(uploadResult.Info, false);
+                Random rnd = new Random();
+                var data = new JObject
+                {
+                    {InstaApiConstants.SUPPORTED_CAPABALITIES_HEADER, InstaApiConstants.SupportedCapabalities.ToString(Formatting.None)},
+                    {"allow_multi_configures", "1"},
+                    {"recipient_users", $"[[{userId}]]"},
+                    {"view_mode", "replayable"},
+                    {"thread_ids", "[]"},
+                    {"client_context", Guid.NewGuid().ToString()},
+                    {"camera_session_id", Guid.NewGuid().ToString()},
+                    {"reply_type", "story"},
+                    {"timezone_offset", InstaApiConstants.TIMEZONE_OFFSET.ToString()},
+                    {"client_shared_at", (long.Parse(ApiRequestMessage.GenerateUploadId())- rnd.Next(25,55)).ToString()},
+                    {"_csrftoken", _user.CsrfToken},
+                    {"configure_mode", "2"},
+                    {"source_type", "3"},
+                    {"creation_surface", "camera"},
+                    {"capture_type", "normal"},
+                    {"_uid", _user.LoggedInUser.Pk.ToString()},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"device_id", _deviceInfo.DeviceId},
+                    {"client_timestamp", ApiRequestMessage.GenerateUploadId()},
+                    {"sampled", "true"},
+                    {"upload_id", uploadId},
+                    {
+                        "extra", JsonConvert.SerializeObject(new JObject
+                        {
+                            {"source_width", 0},
+                            {"source_height", 0}
+                        })
+                    },
+                    {
+                        "device", JsonConvert.SerializeObject(new JObject{
+                            {"manufacturer", _deviceInfo.HardwareManufacturer},
+                            {"model", _deviceInfo.DeviceModelIdentifier},
+                            {"android_release", _deviceInfo.AndroidVer.VersionNumber},
+                            {"android_version", _deviceInfo.AndroidVer.APILevel}
+                        })
+                    }
+                };
+                var instaUri = UriCreator.GetVideoStoryConfigureUri();
+                var request = _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                request.Headers.Add("retry_context", HelperProcessor.GetRetryContext());
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                var obj = JsonConvert.DeserializeObject<InstaDefaultResponse>(json);
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<bool>(response, json);
+
+                return obj.IsSucceed ? Result.Success(true) : Result.UnExpectedResponse<bool>(response, obj.Message, null);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(bool), ResponseType.NetworkProblem);
+            }
+            catch (Exception exception)
+            {
+                upProgress.UploadState = InstaUploadState.Error;
+                progress?.Invoke(upProgress);
+                _logger?.LogException(exception);
+                return Result.Fail<bool>(exception);
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+        /// <summary>
+        ///     Answer to an story quiz
+        /// </summary>
+        /// <param name="storyPk">Story pk (<see cref="InstaStoryItem.Pk"/>)</param>
+        /// <param name="quizId">Quiz id (<see cref="InstaStoryQuizParticipant.QuizId"/>)</param>
+        /// <param name="answer">Your answer</param>
+        public async Task<IResult<bool>> AnswerToStoryQuizAsync(long storyPk, long quizId, int answer)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                var instaUri = UriCreator.GetAnswerToStoryQuizUri(storyPk, quizId);
+                var data = new Dictionary<string, string>
+                {
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"_csrftoken", _user.CsrfToken},
+                    {"answer", answer.ToString()}
+                };
+                var request = _httpHelper.GetDefaultRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                var obj = JsonConvert.DeserializeObject<InstaDefaultResponse>(json);
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<bool>(response, json);
+
+                return obj.IsSucceed ? Result.Success(true) : Result.UnExpectedResponse<bool>(response, obj.Message, null);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, false, ResponseType.NetworkProblem);
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail(ex, false);
+            }
+        }
+
+
+
         /// <summary>
         ///     Respond to an story question
         /// </summary>
@@ -291,7 +429,7 @@ namespace InstagramApiSharp.API.Processors
             UserAuthValidator.Validate(_userAuthValidate);
             try
             {
-                var instaUri = UriCreator.GetHighlightFeedsUri(userId);
+                var instaUri = UriCreator.GetHighlightFeedsUri(userId, _deviceInfo.PhoneGuid.ToString());
                 var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, instaUri, _deviceInfo);
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var json = await response.Content.ReadAsStringAsync();
@@ -343,7 +481,60 @@ namespace InstagramApiSharp.API.Processors
                 return Result.Fail<InstaHighlightShortList>(exception);
             }
         }
+        public async Task<IResult<InstaUserStoriesFeeds>> GetUsersStoriesAsHighlightsAsync(params string[] usersIds)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                var instaUri = UriCreator.GetReelMediaUri();
 
+                var data = new JObject
+                {
+                    {InstaApiConstants.SUPPORTED_CAPABALITIES_HEADER, InstaApiConstants.SupportedCapabalities.ToString(Formatting.None)},
+                    {"source", "feed_timeline"},
+                    {"_csrftoken", _user.CsrfToken},
+                    {"_uid", _user.LoggedInUser.Pk.ToString()},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"user_ids", new JArray(usersIds)}
+                };
+
+                var request = _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+
+                if (response.StatusCode != HttpStatusCode.OK) return Result.UnExpectedResponse<InstaUserStoriesFeeds>(response, json);
+
+
+                var obj = JsonConvert.DeserializeObject<InstaUserStoriesFeedsResponse>(json,
+                    new InstaUserStoriesFeedsDataConverter());
+
+                if(obj != null)
+                {
+                    var reels = new InstaUserStoriesFeeds();
+                    foreach (var item in obj.Items)
+                    {
+                        try
+                        {
+                            reels.Items.Add(ConvertersFabric.Instance.GetReelFeedConverter(item).Convert());
+                        }
+                        catch { }
+                    }
+                    return Result.Success(reels);
+                }
+
+                return Result.Fail<InstaUserStoriesFeeds>("No reels found");
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaUserStoriesFeeds), ResponseType.NetworkProblem);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<InstaUserStoriesFeeds>(exception);
+            }
+        }
         /// <summary>
         ///     Get highlights archive medias
         ///     <para>Note: get highlight id from <see cref="IStoryProcessor.GetHighlightsArchiveAsync"/></para>
@@ -436,6 +627,65 @@ namespace InstagramApiSharp.API.Processors
                 return Result.Fail<InstaHighlightSingleFeed>(exception);
             }
         }
+        /// <summary>
+        ///     Get user story feed with POST method requests (new API)
+        /// </summary>
+        public async Task<IResult<InstaStoryFeed>> GetStoryFeedWithPostMethodAsync(bool refresh = false, string[] preloadedReelIds = null)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                //supported_capabilities_new=[{}]&
+                //reason=cold_start&
+                //_csrftoken=fghjf&
+                //_uuid=6rtrgt&
+                //preloaded_reel_ids=8651542203,7470273225,7293779140,4137323183,4728340654,5412390834,3935014064,9129640961,5702637159,8233674376&
+                //preloaded_reel_timestamp=1555780890,1555765386,1555654998,1555608277,1555582894,1555572328,1555275303,1554736759,1554732984,1554732411
+
+                //supported_capabilities_new=[{"name":"SUPPORTED_SDK_VERSIONS","value":"13.0,14.0,15.0,16.0,17.0,18.0,19.0,20.0,21.0,22.0,23.0,24.0,25.0,26.0,27.0,28.0,29.0,30.0,31.0,32.0,33.0,34.0,35.0,36.0,37.0,38.0,39.0,40.0,41.0,42.0,43.0,44.0,45.0,46.0,47.0,48.0,49.0,50.0,51.0,52.0,53.0,54.0,55.0,56.0,57.0,58.0,59.0,60.0,61.0"},{"name":"FACE_TRACKER_VERSION","value":"12"},{"name":"segmentation","value":"segmentation_enabled"},{"name":"COMPRESSION","value":"ETC2_COMPRESSION"},{"name":"world_tracker","value":"world_tracker_enabled"},{"name":"gyroscope","value":"gyroscope_enabled"}]&
+                //reason=pull_to_refresh&
+                //_csrftoken=defrghdf&
+                //_uuid=c6a2rtyhrt
+                //preloaded_reel_ids=8062492058,7641914022,1593584454,7748367602,7694284101,374897883,1341582726,6179437947,6798340126,3405354889&
+                //preloaded_reel_timestamp=1556806882,1556781054,1556760190,1556746331,1556698368,1556666696,1556644081,1556618908,1556614565,1556531878
+
+
+
+                var storyFeedUri = UriCreator.GetStoryFeedUri();
+                var data = new Dictionary<string, string>
+                {
+                    {InstaApiConstants.SUPPORTED_CAPABALITIES_HEADER, InstaApiConstants.SupportedCapabalities.ToString(Formatting.None)},
+                    {"_csrftoken", _user.CsrfToken},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                };
+                if (refresh)
+                    data.Add("reason", "pull_to_refresh");
+                else
+                    data.Add("reason", "cold_start");
+
+                if (preloadedReelIds?.Length > 0)
+                    data.Add("preloaded_reel_ids", string.Join(",", preloadedReelIds));
+
+                var request = _httpHelper.GetDefaultRequest(HttpMethod.Post, storyFeedUri, _deviceInfo, data);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+
+                if (response.StatusCode != HttpStatusCode.OK) return Result.UnExpectedResponse<InstaStoryFeed>(response, json);
+                var storyFeedResponse = JsonConvert.DeserializeObject<InstaStoryFeedResponse>(json);
+                var instaStoryFeed = ConvertersFabric.Instance.GetStoryFeedConverter(storyFeedResponse).Convert();
+                return Result.Success(instaStoryFeed);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaStoryFeed), ResponseType.NetworkProblem);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<InstaStoryFeed>(exception);
+            }
+        }
 
         /// <summary>
         ///     Get user story feed (stories from users followed by current user).
@@ -444,7 +694,18 @@ namespace InstagramApiSharp.API.Processors
         {
             UserAuthValidator.Validate(_userAuthValidate);
             try
-            { 
+            {
+                //supported_capabilities_new=[{}]&
+                //reason=cold_start&
+                //_csrftoken=ttttttt&
+                //_uuid=aaaaaaaaaaaa&
+                //preloaded_reel_ids=8651542203,7470273225,7293779140,4137323183,4728340654,5412390834,3935014064,9129640961,5702637159,8233674376&
+                //preloaded_reel_timestamp=1555780890,1555765386,1555654998,1555608277,1555582894,1555572328,1555275303,1554736759,1554732984,1554732411
+
+
+
+
+
                 var storyFeedUri = UriCreator.GetStoryFeedUri();
                 var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, storyFeedUri, _deviceInfo);
                 var response = await _httpRequestProcessor.SendAsync(request);
@@ -635,6 +896,58 @@ namespace InstagramApiSharp.API.Processors
                 return Result.Fail(exception, feed);
             }
         }
+        /// <summary>
+        ///     Seen multiple stories
+        /// </summary>
+        /// <param name="storiesWithTakenAt">Story media identifier with taken at unix times</param>
+        public async Task<IResult<bool>> MarkMultipleStoriesAsSeenAsync(Dictionary<string, long> storiesWithTakenAt)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                var instaUri = UriCreator.GetSeenMediaStoryUri();
+                var dateTimeUnix = DateTime.UtcNow.ToUnixTime();
+                var reel = new JObject
+                {
+                    //{ storyId, new JArray($"{takenAtUnix}_{dateTimeUnix}") }
+                };
+                foreach(var item in storiesWithTakenAt)
+                {
+                    var storyId = $"{item.Key}_{item.Key.Split('_')[1]}";
+                    reel.Add(storyId, new JArray($"{item.Value}_{dateTimeUnix}"));
+                }
+                var data = new JObject
+                {
+                    {"_csrftoken", _user.CsrfToken},
+                    {"_uid", _user.LoggedInUser.Pk.ToString()},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"container_module", "feed_timeline"},
+                    {"live_vods_skipped", new JObject()},
+                    {"nuxes_skipped", new JObject()},
+                    {"nuxes", new JObject()},
+                    {"reels", reel},
+                    {"live_vods", new JObject()},
+                    {"reel_media_skipped", new JObject()}
+                };
+                var request = _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<bool>(response, json);
+                var obj = JsonConvert.DeserializeObject<InstaDefault>(json);
+                return obj.Status.ToLower() == "ok" ? Result.Success(true) : Result.UnExpectedResponse<bool>(response, json);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(bool), ResponseType.NetworkProblem);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<bool>(exception);
+            }
+        }
 
         /// <summary>
         ///     Seen story
@@ -809,43 +1122,49 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="threadId">Thread id</param>
         /// <param name="text">Text to send (optional</param>
         /// <param name="sharingType">Sharing type</param>
-        public async Task<IResult<InstaSharing>> ShareStoryAsync(string reelId, string storyMediaId, string threadId, string text, InstaSharingType sharingType = InstaSharingType.Video)
+        public async Task<IResult<bool>> ShareStoryAsync(string reelId, string storyMediaId, string[] threadIds, long[] recipients, string text, InstaSharingType sharingType = InstaSharingType.Video)
         {
             UserAuthValidator.Validate(_userAuthValidate);
             try
             {
                 var instaUri = UriCreator.GetStoryShareUri(sharingType.ToString().ToLower());
+                var guid = Guid.NewGuid().ToString();
                 var data = new JObject
                 {
                     {"action", "send_item"},
-                    {"thread_ids", $"[{threadId}]"},
-                    {"unified_broadcast_format", "1"},
+                    //{"unified_broadcast_format", "1"},
                     {"reel_id", reelId},
                     {"text", text ?? ""},
+                    {"client_context", guid},
                     {"story_media_id", storyMediaId},
                     {"_csrftoken", _user.CsrfToken},
                     {"_uid", _user.LoggedInUser.Pk.ToString()},
                     {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"device_id", _deviceInfo.DeviceId},
+                    {"mutation_token", guid},
                 };
+                if (threadIds?.Length > 0)
+                    data.Add("thread_ids", $"[{threadIds.EncodeList(false)}]");
+                if (recipients?.Length > 0)
+                    data.Add("recipient_users", "[[" + recipients.EncodeList(false) + "]]");
                 var request = _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
-                request.Headers.Add("Host", "i.instagram.com");
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var json = await response.Content.ReadAsStringAsync();
                 if (response.StatusCode != HttpStatusCode.OK)
-                    return Result.UnExpectedResponse<InstaSharing>(response, json);
-                var obj = JsonConvert.DeserializeObject<InstaSharing>(json);
+                    return Result.UnExpectedResponse<bool>(response, json);
+                var obj = JsonConvert.DeserializeObject<InstaDefaultResponse>(json);
 
-                return Result.Success(obj);
+                return obj.IsSucceed ? Result.Success(true): Result.Fail("",false);
             }
             catch (HttpRequestException httpException)
             {
                 _logger?.LogException(httpException);
-                return Result.Fail(httpException, default(InstaSharing), ResponseType.NetworkProblem);
+                return Result.Fail(httpException, default(bool), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaSharing>(exception);
+                return Result.Fail<bool>(exception);
             }
         }
 
@@ -856,26 +1175,42 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="storyMediaId">Media id (get it from <see cref="InstaMedia.InstaIdentifier"/>)</param>
         /// <param name="userId">Story owner user pk (get it from <see cref="InstaMedia.User.Pk"/>)</param>
         /// <param name="text">Text to send</param>
-        public async Task<IResult<bool>> ReplyToStoryAsync(string storyMediaId, long userId, string text)
+        /// <param name="sharingType">Sharing type</param>
+        public async Task<IResult<bool>> ReplyToStoryAsync(string storyMediaId, long userId, string text, InstaSharingType sharingType)
         {
             UserAuthValidator.Validate(_userAuthValidate);
             try
             {
-                var instaUri = UriCreator.GetBroadcastReelShareUri();
+                var instaUri = UriCreator.GetBroadcastReelShareUri(sharingType);
                 var clientContext = Guid.NewGuid().ToString();
+
+                //recipient_users=[[6798340126]]&
+                //action=send_item&
+                //client_context=2a4ff351-a7c7-4159-b385-e2dbbd729b04&
+                //media_id=2037333278700594436_6798340126&
+                //_csrftoken=4spGTGKweOwOkaiN9UBl4QIJbqQfMx7e&
+                //text=Nice&
+                //device_id=android-21c311d494a974fe&
+                //mutation_token=2a4ff351-a7c7-4159-b385-e2dbbd729b04&
+                //_uuid=6324ecb2-e663-4dc8-a3a1-289c699cc876&
+                //entry=reel&
+                //reel_id=6798340126
                 var data = new Dictionary<string, string>
                 {
                     {"recipient_users", $"[[{userId}]]"},
                     {"action", "send_item"},
+                    {"entry", "reel"},
+                    {"reel_id", userId.ToString()},
                     {"client_context", clientContext},
+                    {"mutation_token", clientContext},
                     {"media_id", storyMediaId},
                     {"_csrftoken", _user.CsrfToken},
                     {"text", text ?? string.Empty},
-                    {"_uuid", _deviceInfo.DeviceGuid.ToString()}
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"device_id", _deviceInfo.DeviceId}
                 };
 
-                var request =
-                    _httpHelper.GetDefaultRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                var request = _httpHelper.GetDefaultRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var json = await response.Content.ReadAsStringAsync();
                 
@@ -1583,7 +1918,8 @@ namespace InstagramApiSharp.API.Processors
                     {"edits", new JObject()},
                     {"disable_comments", false},
                     {"configure_mode", 1},
-                    {"camera_position", "unknown"}
+                    {"camera_position", "unknown"},
+                    {"allow_multi_configures", "1"},
                 };
                 if (uri != null)
                 {
@@ -1680,6 +2016,16 @@ namespace InstagramApiSharp.API.Processors
                         data.Add("story_countdowns", countdownArr.ToString(Formatting.None));
                         data.Add("story_sticker_ids", "countdown_sticker_time");
                     }
+                    if (uploadOptions.StoryQuiz != null)
+                    {
+                        var storyQuizArr = new JArray
+                        {
+                            uploadOptions.StoryQuiz.ConvertToJson()
+                        };
+
+                        data.Add("story_quizs", storyQuizArr.ToString(Formatting.None));
+                        data.Add("story_sticker_ids", "quiz_story_sticker_default");
+                    }
                 }
                 var request = _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
                 var response = await _httpRequestProcessor.SendAsync(request);
@@ -1732,7 +2078,7 @@ namespace InstagramApiSharp.API.Processors
                 var data = new JObject
                 {
                     {"filter_type", "0"},
-                    {"timezone_offset", "16200"},
+                    {"timezone_offset", InstaApiConstants.TIMEZONE_OFFSET.ToString()},
                     {"_csrftoken", _user.CsrfToken},
                     {"client_shared_at", (long.Parse(ApiRequestMessage.GenerateUploadId())- rnd.Next(25,55)).ToString()},
                     {"story_media_creation_date", (long.Parse(ApiRequestMessage.GenerateUploadId())- rnd.Next(50,70)).ToString()},
@@ -1844,6 +2190,16 @@ namespace InstagramApiSharp.API.Processors
 
                         data.Add("story_countdowns", countdownArr.ToString(Formatting.None));
                         data.Add("story_sticker_ids", "countdown_sticker_time");
+                    }
+                    if (uploadOptions.StoryQuiz != null)
+                    {
+                        var storyQuizArr = new JArray
+                        {
+                            uploadOptions.StoryQuiz.ConvertToJson()
+                        };
+
+                        data.Add("story_quizs", storyQuizArr.ToString(Formatting.None));
+                        data.Add("story_sticker_ids", "quiz_story_sticker_default");
                     }
                 }
                 var request = _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, data);

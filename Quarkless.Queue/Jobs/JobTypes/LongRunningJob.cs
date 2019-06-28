@@ -10,9 +10,9 @@ namespace Quarkless.Queue.Jobs.JobTypes
 {
 	public static class LongRunningJobExtension
 	{
-		public static void QueueLongRunningJob(this IJobRunner jobRunner, Action<LongRunningJobOptions> configureJob)
+		public static string AddScheduledJob(this IJobRunner jobRunner, Action<LongRunningJobOptions> configureJob)
 		{
-			 jobRunner.Queue<LongRunningJob, LongRunningJobOptions>(configureJob);
+			 return jobRunner.Queue<LongRunningJob, LongRunningJobOptions>(configureJob);
 		}
 	}
 

@@ -5,6 +5,7 @@ using InstagramApiSharp.Classes.Android.DeviceInfo;
 using InstagramApiSharp.Logger;
 using InstagramApiSharp.Enums;
 using InstagramApiSharp.Classes.SessionHandlers;
+using System.Net;
 
 namespace InstagramApiSharp.API.Builder
 {
@@ -13,7 +14,11 @@ namespace InstagramApiSharp.API.Builder
         private IRequestDelay _delay = RequestDelay.Empty();
         private AndroidDevice _device;
         private HttpClient _httpClient;
-        private HttpClientHandler _httpHandler = new HttpClientHandler();
+        private HttpClientHandler _httpHandler = new HttpClientHandler()
+        {
+            UseProxy = false,
+            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+        };
         private IHttpRequestProcessor _httpRequestProcessor;
         private IInstaLogger _logger;
         private ApiRequestMessage _requestMessage;
@@ -37,7 +42,11 @@ namespace InstagramApiSharp.API.Builder
             if (_user == null)
                 _user = UserSessionData.Empty;
 
-            if (_httpHandler == null) _httpHandler = new HttpClientHandler();
+            if (_httpHandler == null) _httpHandler = new HttpClientHandler
+            {
+                UseProxy = false,
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+            };
 
             if (_httpClient == null)
                 _httpClient = new HttpClient(_httpHandler) { BaseAddress = new Uri(InstaApiConstants.INSTAGRAM_URL) };
@@ -71,7 +80,7 @@ namespace InstagramApiSharp.API.Builder
                     new HttpRequestProcessor(_delay, _httpClient, _httpHandler, _requestMessage, _logger);
 
             if (_apiVersionType == null)
-                _apiVersionType = InstaApiVersionType.Version86;
+                _apiVersionType = InstaApiVersionType.Version94;
 
             var instaApi = new InstaApi(_user, _logger, _device, _httpRequestProcessor, _apiVersionType.Value);
             if (_sessionHandler != null)
@@ -117,6 +126,7 @@ namespace InstagramApiSharp.API.Builder
         /// </returns>
         public IInstaApiBuilder UseHttpClientHandler(HttpClientHandler handler)
         {
+            handler.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
             _httpHandler = handler;
             return this;
         }

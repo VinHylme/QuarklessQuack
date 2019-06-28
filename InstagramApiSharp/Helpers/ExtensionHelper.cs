@@ -32,7 +32,7 @@ namespace InstagramApiSharp
             return string.Format(InstaApiConstants.USER_AGENT, deviceInfo.Dpi, deviceInfo.Resolution, deviceInfo.HardwareManufacturer,
                 deviceInfo.DeviceModelIdentifier, deviceInfo.FirmwareBrand, deviceInfo.HardwareModel,
                 apiVersion.AppVersion, deviceInfo.AndroidVer.APILevel,
-                deviceInfo.AndroidVer.VersionNumber, apiVersion.AppApiVersionCode);
+                deviceInfo.AndroidVer.VersionNumber, apiVersion.AppApiVersionCode, deviceInfo.AndroidBoardName);
         }
         public static string GenerateFacebookUserAgent()
         {
@@ -155,6 +155,17 @@ namespace InstagramApiSharp
 
             }
         }
+        public static string GetChannelDeviceType(this InstaPushChannelType type)
+        {
+            switch(type)
+            {
+                default:
+                case InstaPushChannelType.Mqtt:
+                    return "android_mqtt";
+                case InstaPushChannelType.Gcm:
+                    return "android_gcm";
+            }
+        }
         static Random Rnd = new Random();
         public static string GenerateRandomString(this int length)
         {
@@ -180,7 +191,20 @@ namespace InstagramApiSharp
                 UserTags = userTags?.ToList()
             };
         }
-
+        public static InstaComment ConvertToComment(this InstaCommentShort commentShort)
+        {
+            return new InstaComment
+            {
+                ContentType = commentShort.ContentType,
+                User=  commentShort.User,
+                Pk = commentShort.Pk,
+                Text = commentShort.Text,
+                Type = commentShort.Type,
+                CreatedAt = commentShort.CreatedAt,
+                CreatedAtUtc = commentShort.CreatedAtUtc,
+                HasLikedComment = commentShort.HasLikedComment
+            };
+        }
         public static JObject ConvertToJson(this InstaStoryPollUpload poll)
         {
             var jArray = new JArray
@@ -335,6 +359,37 @@ namespace InstagramApiSharp
                 {"text_color", countdown.TextColor},
                 {"following_enabled", countdown.FollowingEnabled},
                 {"is_sticker", countdown.IsSticker}
+            };
+        }
+
+        public static JObject ConvertToJson(this InstaStoryQuizUpload quiz)
+        {
+            var answers = new JArray();
+            if (quiz.Options?.Count > 0)
+                foreach (var item in quiz.Options)
+                    answers.Add(new JObject
+                    {
+                        {"text", item.Text},
+                        {"count", item.Count}
+                    });
+
+            return new JObject
+            {
+                {"x", quiz.X},
+                {"y", quiz.Y},
+                {"z", quiz.Z},
+                {"width", quiz.Width},
+                {"height", quiz.Height},
+                {"rotation", quiz.Rotation},
+                {"question", quiz.Question},
+                {"options", answers},
+                {"correct_answer", quiz.CorrectAnswer},
+                {"viewer_can_answer", quiz.ViewerCanAnswer},
+                {"viewer_answer", quiz.ViewerAnswer},
+                {"text_color", quiz.TextColor},
+                {"start_background_color", quiz.StartBackgroundColor},
+                {"end_background_color", quiz.EndBackgroundColor},
+                {"is_sticker", quiz.IsSticker},
             };
         }
     }

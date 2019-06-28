@@ -8,7 +8,7 @@ namespace Quarkless.Services.StrategyBuilders
 	{
 		Default
 	}
-	public class FollowStrategySettings : IStrategy
+	public class FollowStrategySettings : IStrategySettings
 	{
 		public FollowStrategyType FollowStrategy { get; set; }
 		public int NumberOfActions { get; set; }

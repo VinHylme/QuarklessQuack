@@ -14,27 +14,30 @@ using QuarklessContexts.Enums;
 using QuarklessContexts.Models.Timeline;
 using Quarkless.Services.Interfaces.Actions;
 using Quarkless.Services.StrategyBuilders;
+using QuarklessContexts.Models;
 
 namespace Quarkless.Services.ActionBuilders.EngageActions
 {
 	public class CreateVideoPost : IActionCommit
 	{
 		private readonly ProfileModel _profile;
+		private readonly UserStore _user;
 		private readonly IContentManager _builder;
 		private VideoStrategySettings videoStrategy { get; set; }
-		public CreateVideoPost(IContentManager builder, ProfileModel profile)
+		public CreateVideoPost(IContentManager builder, ProfileModel profile, UserStore user)
 		{
 			_builder = builder;
 			_profile = profile;
+			_user = user;
 		}
 
-		public IActionCommit IncludeStrategy(IStrategy strategy)
+		public IActionCommit IncludeStrategy(IStrategySettings strategy)
 		{
 			this.videoStrategy = strategy as VideoStrategySettings;
 			return this;
 		}
 
-		public void Push(IActionOptions actionOptions)
+		public IEnumerable<TimelineEventModel> Push(IActionOptions actionOptions)
 		{
 			VideoActionOptions videoActionOptions = actionOptions as VideoActionOptions;
 			
@@ -48,7 +51,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			pickedSubsTopics.Add(topicSelect.TopicName);
 			var videos = _builder.GetMediaInstagram(InstaMediaType.Video, pickedSubsTopics, 1).ToList();
 
-			if (videos.Count <= 0) return;
+			if (videos.Count <= 0) return null;
 			List<byte[]> videoBytes = new List<byte[]>();
 			Parallel.ForEach(videos.ElementAtOrDefault(SecureRandom.Next(videos.Count - 1)).MediaData, media =>
 			{
@@ -85,9 +88,18 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			{
 				BaseUrl = UrlConstants.UploadVideo,
 				RequestType = RequestType.POST,
-				JsonBody = JsonConvert.SerializeObject(uploadVideo, Formatting.Indented)
+				JsonBody = JsonConvert.SerializeObject(uploadVideo, Formatting.Indented),
+				User = _user
 			};
-			_builder.AddToTimeline(restModel, videoActionOptions.ExecutionTime);
+			return new List<TimelineEventModel>
+			{
+				new TimelineEventModel
+				{
+					ActionName = $"CreateVideo_{videoStrategy.VideoStrategyType.ToString()}",
+					Data = restModel,
+					ExecutionTime = videoActionOptions.ExecutionTime
+				}
+			};
 		}
 	}
 

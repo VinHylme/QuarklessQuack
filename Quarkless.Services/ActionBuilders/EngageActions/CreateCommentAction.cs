@@ -5,6 +5,7 @@ using Quarkless.Services.Interfaces.Actions;
 using Quarkless.Services.StrategyBuilders;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Extensions;
+using QuarklessContexts.Models;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.Requests;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
@@ -14,7 +15,6 @@ using QuarklessLogic.Handlers.RequestBuilder.Consts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 
 namespace Quarkless.Services.ActionBuilders.EngageActions
@@ -38,11 +38,13 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	{
 		private readonly IContentManager _builder;
 		private readonly ProfileModel _profile;
+		private readonly UserStore _user;
 		private CommentingStrategySettings commentingStrategySettings;
-		public CreateCommentAction(IContentManager contentManager, ProfileModel profile)
+		public CreateCommentAction(IContentManager contentManager, ProfileModel profile, UserStore user)
 		{
 			_builder = contentManager;
 			_profile = profile;
+			_user = user;
 		}
 		private HolderComment CommentingByTopic(bool inDepth = false)
 		{
@@ -105,16 +107,16 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			}
 			return null;
 		}
-		public IActionCommit IncludeStrategy(IStrategy strategy)
+		public IActionCommit IncludeStrategy(IStrategySettings strategy)
 		{
 			commentingStrategySettings = strategy as CommentingStrategySettings;
 			return this;
 		}
-
-		public void Push(IActionOptions actionOptions)
+		public IEnumerable<TimelineEventModel> Push(IActionOptions actionOptions)
 		{
 			CommentingActionOptions commentingActionOptions = actionOptions as CommentingActionOptions;
-			if(commentingActionOptions==null) return ;
+
+			if(commentingActionOptions==null) return null ;
 			try
 			{
 				if(commentingStrategySettings.CommentingStrategy == CommentingStrategy.Default)
@@ -125,10 +127,10 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					{
 						List<Chance<CommentingActionType>> commentingActionChances = new List<Chance<CommentingActionType>>
 						{
-							new Chance<CommentingActionType>{Object = CommentingActionType.CommentingViaTopic, Probability = 0.15},
-							new Chance<CommentingActionType>{Object = CommentingActionType.CommentingViaTopicDepth, Probability = 0.40},
-							new Chance<CommentingActionType>{Object = CommentingActionType.CommentingViaLikersPosts, Probability = 0.15},
-							new Chance<CommentingActionType>{Object = CommentingActionType.CommentingViaLikersPostsDepth, Probability = 0.30},
+							new Chance<CommentingActionType>{Object = CommentingActionType.CommentingViaTopic, Probability = 0.35},
+							new Chance<CommentingActionType>{Object = CommentingActionType.CommentingViaTopicDepth, Probability = 0.15},
+							new Chance<CommentingActionType>{Object = CommentingActionType.CommentingViaLikersPosts, Probability = 0.35},
+							new Chance<CommentingActionType>{Object = CommentingActionType.CommentingViaLikersPostsDepth, Probability = 0.15},
 						};
 						commentingActionSelected = SecureRandom.ProbabilityRoll(commentingActionChances);
 					}
@@ -152,7 +154,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 							nominatedMedia = CommentingByLikers(true);
 							break;
 					}
-					if(string.IsNullOrEmpty(nominatedMedia.MediaId)) return;
+					if(string.IsNullOrEmpty(nominatedMedia.MediaId)) return null;
 					CreateCommentRequest createComment = new CreateCommentRequest
 					{
 						Text = _builder.GenerateComment(nominatedMedia.Topic, _profile.Language)
@@ -161,15 +163,65 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					{
 						BaseUrl = string.Format(UrlConstants.CreateComment, nominatedMedia.MediaId),
 						RequestType = RequestType.POST,
-						JsonBody = JsonConvert.SerializeObject(createComment)
+						JsonBody = JsonConvert.SerializeObject(createComment),
+						User = _user
 					};
-					_builder.AddToTimeline(restModel, commentingActionOptions.ExecutionTime);
+
+					return new List<TimelineEventModel>
+					{
+						new TimelineEventModel{
+							ActionName = $"Comment_{commentingStrategySettings.CommentingStrategy.ToString()}_{commentingActionSelected.ToString()}",
+							Data = restModel,
+							ExecutionTime = commentingActionOptions.ExecutionTime 
+						} 
+					};
 				}
+				else if(commentingStrategySettings.CommentingStrategy == CommentingStrategy.TopNth)
+				{
+					var fetchMedias = MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic(takeAmount:commentingStrategySettings.NumberOfActions);
+					var searchMedias = (IEnumerable<UserResponse<MediaDetail>>)fetchMedias.FetchedItems;
+
+					var groupByTopics = searchMedias.GroupBy(_ => _.Topic);
+					int timerCounter = 0;
+					List<TimelineEventModel> events = new List<TimelineEventModel>();
+					foreach (var topic in groupByTopics)
+					{
+						for (int i = 0; i < commentingStrategySettings.NumberOfActions; i++)
+						{
+							string nominatedMedia = topic.ElementAtOrDefault(i).Object.MediaId;
+							if (nominatedMedia != null)
+							{
+								CreateCommentRequest createComment = new CreateCommentRequest
+								{
+									Text = _builder.GenerateComment(fetchMedias.SelectedTopic, _profile.Language)
+								};
+
+								RestModel restModel = new RestModel
+								{
+									BaseUrl = string.Format(UrlConstants.CreateComment, nominatedMedia),
+									RequestType = RequestType.POST,
+									JsonBody = JsonConvert.SerializeObject(createComment),
+									User = _user
+								};
+								events.Add(new TimelineEventModel
+								{
+									ActionName = $"Comment_{commentingStrategySettings.CommentingStrategy.ToString()}_{commentingActionOptions.CommentingActionType.ToString()}",
+									Data = restModel,
+									ExecutionTime = commentingActionOptions.ExecutionTime.AddMinutes((commentingStrategySettings.OffsetPerAction.TotalMinutes) * timerCounter++)
+								});
+							}
+						}
+					}
+
+					return events;
+				}
+
+				return null;
 			}
 			catch(Exception ee)
 			{
 				Console.WriteLine(ee.Message);
-				return;
+				return null;
 			}
 		}
 	}

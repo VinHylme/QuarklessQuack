@@ -5,6 +5,7 @@ using Quarkless.Services.Interfaces.Actions;
 using Quarkless.Services.StrategyBuilders;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Extensions;
+using QuarklessContexts.Models;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessContexts.Models.Timeline;
@@ -30,14 +31,16 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	{
 		private readonly IContentManager _builder;
 		private readonly ProfileModel _profile;
+		private readonly UserStore _user;
 		private LikeStrategySettings likeStrategySettings;
-		public LikeMediaAction(IContentManager builder, ProfileModel profile)
+		public LikeMediaAction(IContentManager builder, ProfileModel profile, UserStore user)
 		{
 			_builder = builder;
 			_profile = profile;
+			_user = user;
 		}
 
-		public IActionCommit IncludeStrategy(IStrategy strategy)
+		public IActionCommit IncludeStrategy(IStrategySettings strategy)
 		{
 			this.likeStrategySettings = strategy as LikeStrategySettings;
 			return this;
@@ -106,10 +109,10 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			return null;
 		}
 
-		public void Push(IActionOptions actionOptions)
+		public IEnumerable<TimelineEventModel> Push(IActionOptions actionOptions)
 		{
 			LikeActionOptions likeActionOptions = actionOptions as LikeActionOptions;
-			if (likeStrategySettings == null) return ;
+			if (likeStrategySettings == null) return null;
 			try
 			{
 				Console.WriteLine("Like Action Started");
@@ -151,14 +154,23 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 							nominatedMedia = LikeUsersMediaLikers(true);
 							break;
 					}
-					if (string.IsNullOrEmpty(nominatedMedia)) return;
+					if (string.IsNullOrEmpty(nominatedMedia)) return null;
 					RestModel restModel = new RestModel
 					{
 						BaseUrl = string.Format(UrlConstants.LikeMedia, nominatedMedia),
 						RequestType = RequestType.POST,
+						User = _user,
 						JsonBody = null
 					};
-					_builder.AddToTimeline(restModel, likeActionOptions.ExecutionTime);
+					return new List<TimelineEventModel>
+					{
+						new TimelineEventModel
+						{
+							ActionName = $"LikeMedia_{likeStrategySettings.LikeStrategy.ToString()}_{likeActionTypeSelected.ToString()}",
+							Data = restModel,
+							ExecutionTime = likeActionOptions.ExecutionTime
+						}
+					};
 				}
 				else if(likeStrategySettings.LikeStrategy == LikeStrategyType.TwoDollarCent)
 				{
@@ -166,7 +178,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					var filtered = medias.Where(_ => !_.Object.HasLikedBefore);
 					var groupByTopics = filtered.GroupBy(_=>_.Topic);
 					int timerCounter = 0 ;
-					foreach(var topic in groupByTopics)
+					List<TimelineEventModel> events = new List<TimelineEventModel>();
+					foreach (var topic in groupByTopics)
 					{
 						for (int i = 0; i < likeStrategySettings.NumberOfActions; i++)
 						{
@@ -177,19 +190,27 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 								{
 									BaseUrl = string.Format(UrlConstants.LikeMedia, nominatedMedia),
 									RequestType = RequestType.POST,
-									JsonBody = null
+									JsonBody = null,
+									User = _user
 								};
-								_builder.AddToTimeline(restModel,
-									likeActionOptions.ExecutionTime.AddMinutes((likeStrategySettings.OffsetPerAction.TotalMinutes) * timerCounter++));
+								events.Add(new TimelineEventModel
+								{
+									ActionName = $"LikeMedia{likeStrategySettings.LikeStrategy.ToString()}_{likeActionOptions.LikeActionType.ToString()}",
+									Data = restModel,
+									ExecutionTime = likeActionOptions.ExecutionTime.AddMinutes((likeStrategySettings.OffsetPerAction.TotalMinutes) * timerCounter++)
+								});
 							}
 						}
 					}
+					return events;
 				}
+
+				return null;
 			}
 			catch (Exception ee)
 			{
 				Console.WriteLine(ee.Message);
-				return;
+				return null;
 			}
 		}
 	}

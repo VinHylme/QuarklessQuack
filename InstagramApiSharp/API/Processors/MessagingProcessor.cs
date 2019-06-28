@@ -324,7 +324,7 @@ namespace InstagramApiSharp.API.Processors
                 paginationParameters.NextMaxId = threadResponse.OldestCursor;
                 var pagesLoaded = 1;
 
-                while (threadResponse.HasOlder
+                while (threadResponse.HasOlder.HasValue
                       && !string.IsNullOrEmpty(threadResponse.OldestCursor)
                       && pagesLoaded < paginationParameters.MaximumPagesToLoad)
                 {
@@ -463,7 +463,7 @@ namespace InstagramApiSharp.API.Processors
                 if (string.IsNullOrEmpty(username))
                     instaUri = UriCreator.GetRankedRecipientsUri();
                 else
-                    instaUri = UriCreator.GetRankRecipientsByUserUri(username);
+                    instaUri = UriCreator.GetRankRecipientsByUserUri(username, "reshare");
 
                 var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, instaUri, _deviceInfo);
                 var response = await _httpRequestProcessor.SendAsync(request);
@@ -680,15 +680,15 @@ namespace InstagramApiSharp.API.Processors
         }
 
         /// <summary>
-        ///     Mute direct thread
+        ///     Mute direct thread messages
         /// </summary>
         /// <param name="threadId">Thread id</param>
-        public async Task<IResult<bool>> MuteDirectThreadAsync(string threadId)
+        public async Task<IResult<bool>> MuteDirectThreadMessagesAsync(string threadId)
         {
             UserAuthValidator.Validate(_userAuthValidate);
             try
             {
-                var instaUri = UriCreator.GetMuteDirectThreadUri(threadId);
+                var instaUri = UriCreator.GetMuteDirectThreadMessagesUri(threadId);
 
                 var data = new Dictionary<string, string>
                 {
@@ -716,6 +716,79 @@ namespace InstagramApiSharp.API.Processors
             }
         }
 
+        /// <summary>
+        ///     Mute direct thread video calls
+        /// </summary>
+        /// <param name="threadId">Thread id</param>
+        public async Task<IResult<bool>> MuteDirectThreadVideoCallsAsync(string threadId)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                var instaUri = UriCreator.GetMuteDirectThreadVideoCallsUri(threadId);
+
+                var data = new Dictionary<string, string>
+                {
+                    {"_csrftoken", _user.CsrfToken},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()}
+                };
+                var request =
+                    _httpHelper.GetDefaultRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<bool>(response, json);
+                var obj = JsonConvert.DeserializeObject<InstaDefaultResponse>(json);
+                return obj.IsSucceed ? Result.Success(true) : Result.UnExpectedResponse<bool>(response, json);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(bool), ResponseType.NetworkProblem);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<bool>(exception);
+            }
+        }
+        /// <summary>
+        ///     Send gif (animated media) to direct thread
+        /// </summary>
+        /// <param name="giphyId">Giphy id</param>
+        /// <param name="threadIds">Thread ids</param>
+        /// <returns>
+        ///     <see cref="InstaDirectInboxThread" />
+        /// </returns>
+        public async Task<IResult<InstaDirectInboxThread>> SendDirectAnimatedMediaAsync(string giphyId, params string[] threadIds)
+        {
+            if (threadIds == null)
+                return Result.Fail<InstaDirectInboxThread>("At least one thread id is require");
+
+            if (threadIds.Length == 0)
+                return Result.Fail<InstaDirectInboxThread>("At least one thread id is require");
+
+            return await SendDirectAnimatedMedia(giphyId, null, threadIds);
+        }
+
+        /// <summary>
+        ///     Send gif (animated media) to recipients
+        /// </summary>
+        /// <param name="giphyId">Giphy id</param>
+        /// <param name="recipients">Recipients (user ids pk)</param>
+        /// <returns>
+        ///     <see cref="InstaDirectInboxThread" />
+        /// </returns>
+        public async Task<IResult<InstaDirectInboxThread>> SendDirectAnimatedMediaToRecipientsAsync(string giphyId, params string[] recipients)
+        {
+            if (recipients == null)
+                return Result.Fail<InstaDirectInboxThread>("At least one recipient is require");
+
+            if (recipients.Length == 0)
+                return Result.Fail<InstaDirectInboxThread>("At least one recipient is require");
+
+            return await SendDirectAnimatedMedia(giphyId, recipients, null);
+        }
         /// <summary>
         ///     Send disappearing photo to direct thread (video will remove after user saw it)
         /// </summary>
@@ -767,6 +840,57 @@ namespace InstagramApiSharp.API.Processors
             UserAuthValidator.Validate(_userAuthValidate);
             return await _instaApi.HelperProcessor.SendVideoAsync(progress, false, true, "", viewMode, InstaStoryType.Direct, null, threadIds.EncodeList(), video);
         }
+        /// <summary>
+        ///     Send felix share (ig tv) to direct thread
+        /// </summary>
+        /// <param name="mediaId">Media identifier to send</param>
+        /// <param name="threadIds">Thread ids</param>
+        /// <param name="recipients">Recipients ids</param>
+        /// <returns>Returns True if felix share sent</returns>
+        public async Task<IResult<bool>> SendDirectFelixShareAsync(string mediaId, string[] threadIds, string[] recipients)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                var instaUri = UriCreator.GetBroadcastFelixShareUri();
+                var data = new Dictionary<string, string>
+                {
+                    {"mutation_token", Guid.NewGuid().ToString()},
+                    {"media_id", mediaId},
+                    {"action", "send_item"},
+                    {"client_context", Guid.NewGuid().ToString()},
+                    {"_csrftoken", _user.CsrfToken},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()}
+                };
+                if (threadIds?.Length > 0)
+                {
+                    data.Add("thread_ids", $"[{threadIds.EncodeList(false)}]");
+                }
+                if (recipients?.Length > 0)
+                {
+                    data.Add("recipient_users", "[[" + recipients.EncodeList(false) + "]]");
+                }
+                var request =
+                    _httpHelper.GetDefaultRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<bool>(response, json);
+                var obj = JsonConvert.DeserializeObject<InstaDefault>(json);
+                return obj.Status.ToLower() == "ok" ? Result.Success(true) : Result.UnExpectedResponse<bool>(response, json);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(bool), ResponseType.NetworkProblem);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<bool>(exception);
+            }
+        }
+
 
         /// <summary>
         ///     Send hashtag to direct thread
@@ -1105,45 +1229,52 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="threadIds">Message thread ids</param>
         /// <param name="text">Message text</param>
         /// <returns>List of threads</returns>
-        public async Task<IResult<InstaDirectInboxThreadList>> SendDirectTextAsync(string recipients, string threadIds,
+        public async Task<IResult<bool>> SendDirectTextAsync(string recipients, string threadIds,
             string text)
         {
             UserAuthValidator.Validate(_userAuthValidate);
-            var threads = new InstaDirectInboxThreadList();
             try
             {
                 var directSendMessageUri = UriCreator.GetDirectSendMessageUri();
-                var request = _httpHelper.GetDefaultRequest(HttpMethod.Post, directSendMessageUri, _deviceInfo);
-                var fields = new Dictionary<string, string> { { "text", text } };
+                var token = Guid.NewGuid().ToString();
+                var data = new Dictionary<string, string>
+                {
+                    {"mentioned_user_ids", "[]"},
+                    {"action", "send_item"},
+                    {"client_context", token},
+                    {"_csrftoken", _user.CsrfToken},
+                    {"text", text},
+                    {"device_id", _deviceInfo.DeviceId},
+                    {"mutation_token", token},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()}
+                };
                 if (!string.IsNullOrEmpty(recipients))
-                    fields.Add("recipient_users", "[[" + recipients + "]]");
+                    data.Add("recipient_users", "[[" + recipients + "]]");
                 else
-                    fields.Add("recipient_users", "[]");
+                    data.Add("recipient_users", "[]");
 
                 if (!string.IsNullOrEmpty(threadIds))
-                    fields.Add("thread_ids", "[" + threadIds + "]");
+                    data.Add("thread_ids", "[" + threadIds + "]");
 
-                request.Content = new FormUrlEncodedContent(fields);
+                var request = _httpHelper.GetDefaultRequest(HttpMethod.Post, directSendMessageUri, _deviceInfo, data);
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var json = await response.Content.ReadAsStringAsync();
 
                 if (response.StatusCode != HttpStatusCode.OK)
-                    return Result.UnExpectedResponse<InstaDirectInboxThreadList>(response, json);
-                var result = JsonConvert.DeserializeObject<InstaSendDirectMessageResponse>(json);
-                if (!result.IsOk()) return Result.Fail<InstaDirectInboxThreadList>(result.Status);
-                threads.AddRange(result.Threads.Select(thread =>
-                    ConvertersFabric.Instance.GetDirectThreadConverter(thread).Convert()));
-                return Result.Success(threads);
+                    return Result.UnExpectedResponse<bool>(response, json);
+                var result = JsonConvert.DeserializeObject<InstaDefaultResponse>(json);
+               
+                return result.IsSucceed ? Result.Success(true) : Result.Fail<bool>(result.Status);
             }
             catch (HttpRequestException httpException)
             {
                 _logger?.LogException(httpException);
-                return Result.Fail(httpException, default(InstaDirectInboxThreadList), ResponseType.NetworkProblem);
+                return Result.Fail(httpException, default(bool), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {
                 _logger?.LogException(exception);
-                return Result.Fail<InstaDirectInboxThreadList>(exception);
+                return Result.Fail<bool>(exception);
             }
         }
 
@@ -1190,6 +1321,52 @@ namespace InstagramApiSharp.API.Processors
         {
             UserAuthValidator.Validate(_userAuthValidate);
             return await _instaApi.HelperProcessor.SendVideoAsync(progress, true, false, "", InstaViewMode.Replayable, InstaStoryType.Both, recipients.EncodeList(false), null, video);
+        }
+
+        /// <summary>
+        ///     Send video to direct thread (single)
+        /// </summary>
+        /// <param name="audio">Voice to upload</param>
+        /// <param name="threadId">Thread id</param>
+        public async Task<IResult<bool>> SendDirectVoiceAsync(InstaAudioUpload audio, string threadId)
+        {
+            return await SendDirectVoiceAsync(null, audio, threadId);
+        }
+
+        /// <summary>
+        ///     Send voice to direct thread (single) with progress
+        /// </summary>
+        /// <param name="progress">Progress action</param>
+        /// <param name="audio">Voice to upload</param>
+        /// <param name="threadId">Thread id</param>
+        /// <returns>Returns True is sent</returns>
+        public async Task<IResult<bool>> SendDirectVoiceAsync(Action<InstaUploaderProgress> progress, InstaAudioUpload audio, string threadId)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            return await _instaApi.HelperProcessor.SendVoiceAsync(progress, audio, null, threadId);
+        }
+
+        /// <summary>
+        ///     Send video to user id (pk)
+        /// </summary>
+        /// <param name="audio">Voice to upload</param>
+        /// <param name="recipients">Recipients (user ids/pk)</param>
+        public async Task<IResult<bool>> SendDirectVoiceToRecipientsAsync(InstaAudioUpload audio, params string[] recipients)
+        {
+            return await SendDirectVoiceToRecipientsAsync(null, audio, recipients);
+        }
+
+        /// <summary>
+        ///     Send voice to direct thread (single) with progress
+        /// </summary>
+        /// <param name="progress">Progress action</param>
+        /// <param name="audio">Voice to upload</param>
+        /// <param name="recipients">Recipients (user ids/pk)</param>
+        /// <returns>Returns True is sent</returns>
+        public async Task<IResult<bool>> SendDirectVoiceToRecipientsAsync(Action<InstaUploaderProgress> progress, InstaAudioUpload audio, params string[] recipients)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            return await _instaApi.HelperProcessor.SendVoiceAsync(progress, audio, recipients.EncodeList(false), null);
         }
 
         /// <summary>
@@ -1384,15 +1561,15 @@ namespace InstagramApiSharp.API.Processors
             }
         }
         /// <summary>
-        ///     Unmute direct thread
+        ///     Unmute direct thread messages
         /// </summary>
         /// <param name="threadId">Thread id</param>
-        public async Task<IResult<bool>> UnMuteDirectThreadAsync(string threadId)
+        public async Task<IResult<bool>> UnMuteDirectThreadMessagesAsync(string threadId)
         {
             UserAuthValidator.Validate(_userAuthValidate);
             try
             {
-                var instaUri = UriCreator.GetUnMuteDirectThreadUri(threadId);
+                var instaUri = UriCreator.GetUnMuteDirectThreadMessagesUri(threadId);
 
                 var data = new Dictionary<string, string>
                 {
@@ -1420,6 +1597,42 @@ namespace InstagramApiSharp.API.Processors
             }
         }
 
+        /// <summary>
+        ///     Unmute direct thread video calls
+        /// </summary>
+        /// <param name="threadId">Thread id</param>
+        public async Task<IResult<bool>> UnMuteDirectThreadVideoCallsAsync(string threadId)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                var instaUri = UriCreator.GetUnMuteDirectThreadVideoCallsUri(threadId);
+
+                var data = new Dictionary<string, string>
+                {
+                    {"_csrftoken", _user.CsrfToken},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()}
+                };
+                var request =
+                    _httpHelper.GetDefaultRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<bool>(response, json);
+                var obj = JsonConvert.DeserializeObject<InstaDefault>(json);
+                return obj.Status.ToLower() == "ok" ? Result.Success(true) : Result.UnExpectedResponse<bool>(response, json);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(bool), ResponseType.NetworkProblem);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<bool>(exception);
+            }
+        }
         /// <summary>
         ///     Update direct thread title (for groups)
         /// </summary>
@@ -1542,7 +1755,7 @@ namespace InstagramApiSharp.API.Processors
                 return Result.Fail<bool>(exception);
             }
         }
-        private async Task<IResult<bool>> SendDirectPhoto(Action<InstaUploaderProgress> progress, string recipients, string threadId, InstaImage image)
+        private async Task<IResult<bool>> SendDirectPhoto(Action<InstaUploaderProgress> progress, string recipients, string threadIds, InstaImage image)
         {
             var upProgress = new InstaUploaderProgress
             {
@@ -1551,56 +1764,51 @@ namespace InstagramApiSharp.API.Processors
             };
             try
             {
-                var instaUri = UriCreator.GetDirectSendPhotoUri();
+             
                 var uploadId = ApiRequestMessage.GenerateRandomUploadId();
                 var clientContext = Guid.NewGuid();
                 upProgress.UploadId = uploadId;
                 progress?.Invoke(upProgress);
-                var requestContent = new MultipartFormDataContent(uploadId)
+                var singlePhoto = await _instaApi.HelperProcessor.UploadSinglePhoto(progress, image.ConvertToImageUpload(),
+                    upProgress, uploadId, false, recipients);
+
+                var instaUri = UriCreator.GetDirectConfigurePhotoUri();
+                var data = new Dictionary<string, string>
                 {
-                    {new StringContent("send_item"), "\"action\""},
-                    {new StringContent(clientContext.ToString()), "\"client_context\""},
-                    {new StringContent(_user.CsrfToken), "\"_csrftoken\""},
-                    {new StringContent(_deviceInfo.DeviceGuid.ToString()), "\"_uuid\""}
+                    {"action", "send_item"},
+                    {"client_context", Guid.NewGuid().ToString()},
+                    {"_csrftoken", _user.CsrfToken},
+                    {"device_id", _deviceInfo.DeviceId},
+                    {"mutation_token", Guid.NewGuid().ToString()},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"allow_full_aspect_ratio", "true"},
+                    {"upload_id", uploadId},
                 };
-                if (!string.IsNullOrEmpty(recipients))
-                    requestContent.Add(new StringContent($"[[{recipients}]]"), "recipient_users");
-                else
-                    requestContent.Add(new StringContent($"[{threadId}]"), "thread_ids");
-                byte[] fileBytes;
-                if (image.ImageBytes == null)
-                    fileBytes = File.ReadAllBytes(image.Uri);
-                else
-                    fileBytes = image.ImageBytes;
-                var imageContent = new ByteArrayContent(fileBytes);
-                imageContent.Headers.Add("Content-Transfer-Encoding", "binary");
-                imageContent.Headers.Add("Content-Type", "application/octet-stream");
-                requestContent.Add(imageContent, "photo",
-                    $"direct_temp_photo_{ApiRequestMessage.GenerateUploadId()}.jpg");
-                //var progressContent = new ProgressableStreamContent(requestContent, 4096, progress)
-                //{
-                //    UploaderProgress = upProgress
-                //};
-                var request = _httpHelper.GetDefaultRequest(HttpMethod.Post, instaUri, _deviceInfo);
-                request.Content = requestContent;
-                upProgress.UploadState = InstaUploadState.Uploading;
+                if (!string.IsNullOrEmpty(threadIds))
+                    data.Add("thread_ids", $"[{threadIds}]");
+                else if (!string.IsNullOrEmpty(recipients))
+                    data.Add("recipient_users", $"[[{recipients}]]");
+
+                upProgress.UploadState = InstaUploadState.Configuring;
                 progress?.Invoke(upProgress);
+                var request = _httpHelper.GetDefaultRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var json = await response.Content.ReadAsStringAsync();
-                if (response.StatusCode != HttpStatusCode.OK)
+                if (response.StatusCode == HttpStatusCode.OK)
                 {
-                    upProgress.UploadState = InstaUploadState.Error;
-                    progress?.Invoke(upProgress);
-                    return Result.UnExpectedResponse<bool>(response, json);
-                }
-                upProgress.UploadState = InstaUploadState.Uploaded;
-                progress?.Invoke(upProgress);
-                var obj = JsonConvert.DeserializeObject<InstaDefault>(json);
-                if (obj.Status.ToLower() == "ok")
-                {
-                    upProgress.UploadState = InstaUploadState.Completed;
-                    progress?.Invoke(upProgress);
-                    return Result.Success(true);
+                    var obj = JsonConvert.DeserializeObject<InstaDefaultResponse>(json);
+
+                    if (obj.IsSucceed)
+                    {
+                        upProgress.UploadState = InstaUploadState.Configured;
+                        progress?.Invoke(upProgress);
+                    }
+                    else
+                    {
+                        upProgress.UploadState = InstaUploadState.Completed;
+                        progress?.Invoke(upProgress);
+                    }
+                    return obj.IsSucceed ? Result.Success(true) : Result.UnExpectedResponse<bool>(response, json);
                 }
 
                 upProgress.UploadState = InstaUploadState.Error;
@@ -1695,6 +1903,58 @@ namespace InstagramApiSharp.API.Processors
             {
                 _logger?.LogException(exception);
                 return Result.Fail<InstaDirectInboxContainerResponse>(exception);
+            }
+        }
+
+        private async Task<IResult<InstaDirectInboxThread>> SendDirectAnimatedMedia(string giphyId, string[] recipients, string[] threadIds)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                var instaUri = UriCreator.GetBroadcastAnimatedMediaUri();
+                //thread_ids=[340282366841710300949128123666345617120]&
+                //client_context=8ad00094-2980-4113-9d58-270fe746c7d3&
+                //_csrftoken=SAR8V58g7jORGU1bVykRYoxTkKbHNCoN&
+                //id=3xz2Bw2ySOky2D1dcY&
+                //device_id=android-21c311d494a974fe&
+                //mutation_token=8ad00094-2980-4113-9d58-270fe746c7d3&
+                //_uuid=6324ecb2-e663-4dc8-a3a1-289c699cc876
+                var data = new Dictionary<string, string>
+                {
+                    {"client_context", Guid.NewGuid().ToString()},
+                    {"_csrftoken", _user.CsrfToken},
+                    {"id", giphyId},
+                    {"device_id", _deviceInfo.DeviceId},
+                    {"mutation_token", Guid.NewGuid().ToString()},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                };
+                if (threadIds?.Length > 0)
+                    data.Add("thread_ids", $"[{threadIds.EncodeList(false)}]");
+                if (recipients?.Length > 0)
+                    data.Add("recipient_users", "[[" + recipients.EncodeList(false) + "]]");
+
+                var request = _httpHelper.GetDefaultRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<InstaDirectInboxThread>(response, json);
+                var threadsResponse = JsonConvert.DeserializeObject<InstaDirectInboxThreadContainerResponse>(json);
+
+                var threadResponse = threadsResponse.Threads.FirstOrDefault();
+                //Reverse for Chat Order
+                threadResponse.Items.Reverse();
+                var converter = ConvertersFabric.Instance.GetDirectThreadConverter(threadResponse);
+                return Result.Success(converter.Convert());
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaDirectInboxThread), ResponseType.NetworkProblem);
+            }
+            catch (Exception exception)
+            {
+                _logger?.LogException(exception);
+                return Result.Fail<InstaDirectInboxThread>(exception);
             }
         }
     }

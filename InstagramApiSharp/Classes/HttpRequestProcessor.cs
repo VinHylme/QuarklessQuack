@@ -32,6 +32,8 @@ namespace InstagramApiSharp.Classes
 
         public async Task<HttpResponseMessage> SendAsync(HttpRequestMessage requestMessage)
         {
+            Client.DefaultRequestHeaders.ConnectionClose = true;
+            requestMessage.Headers.Add("Connection", "close");
             LogHttpRequest(requestMessage);
             if (_delay.Exist)
                 await Task.Delay(_delay.Value);
@@ -42,6 +44,7 @@ namespace InstagramApiSharp.Classes
 
         public async Task<HttpResponseMessage> GetAsync(Uri requestUri)
         {
+            Client.DefaultRequestHeaders.ConnectionClose = true;
             _logger?.LogRequest(requestUri);
             if (_delay.Exist)
                 await Task.Delay(_delay.Value);
@@ -53,6 +56,8 @@ namespace InstagramApiSharp.Classes
         public async Task<HttpResponseMessage> SendAsync(HttpRequestMessage requestMessage,
             HttpCompletionOption completionOption)
         {
+            Client.DefaultRequestHeaders.ConnectionClose = true;
+            requestMessage.Headers.Add("Connection", "close");
             LogHttpRequest(requestMessage);
             if (_delay.Exist)
                 await Task.Delay(_delay.Value);
@@ -64,6 +69,8 @@ namespace InstagramApiSharp.Classes
         public async Task<string> SendAndGetJsonAsync(HttpRequestMessage requestMessage,
             HttpCompletionOption completionOption)
         {
+            Client.DefaultRequestHeaders.ConnectionClose = true;
+            requestMessage.Headers.Add("Connection", "close");
             LogHttpRequest(requestMessage);
             if (_delay.Exist)
                 await Task.Delay(_delay.Value);
@@ -74,6 +81,7 @@ namespace InstagramApiSharp.Classes
 
         public async Task<string> GeJsonAsync(Uri requestUri)
         {
+            Client.DefaultRequestHeaders.ConnectionClose = true;
             _logger?.LogRequest(requestUri);
             if (_delay.Exist)
                 await Task.Delay(_delay.Value);
@@ -90,6 +98,22 @@ namespace InstagramApiSharp.Classes
         private void LogHttpResponse(HttpResponseMessage request)
         {
             _logger?.LogResponse(request);
+        }
+        async Task<HttpResponseMessage> CopyResponseAsync(HttpResponseMessage response)
+        {
+            await Task.Delay(350);
+            var http = new HttpResponseMessage
+            {
+                Content = response.Content,
+                ReasonPhrase = response.ReasonPhrase,
+                StatusCode = response.StatusCode,
+                RequestMessage = response.RequestMessage,
+                Version = response.Version,
+
+            };
+            foreach (var item in response.Headers)
+                http.Headers.Add(item.Key, item.Value);
+            return http;
         }
     }
 }

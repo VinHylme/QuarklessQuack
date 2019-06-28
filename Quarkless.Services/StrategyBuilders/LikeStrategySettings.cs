@@ -9,7 +9,7 @@ namespace Quarkless.Services.StrategyBuilders
 		Default,
 		TwoDollarCent
 	}
-	public class LikeStrategySettings : IStrategy
+	public class LikeStrategySettings : IStrategySettings
 	{
 		public LikeStrategyType LikeStrategy { get; set; }
 		public int NumberOfActions { get; set; }

@@ -12,7 +12,6 @@ using InstagramApiSharp.Classes.ResponseWrappers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
-
 namespace InstagramApiSharp.Converters.Json
 {
     internal class InstaTopicalExploreFeedDataConverter : JsonConverter
@@ -33,15 +32,19 @@ namespace InstagramApiSharp.Converters.Json
 
             foreach (var item in items)
             {
+                //layout_content
                 var layoutContent = item["layout_content"];
                 if (layoutContent != null)
                 {
+                    //two_by_two_item
+                    //fill_items
+                    //medias
                     var twoByTwoItem = layoutContent["two_by_two_item"];
                     var fillItems = layoutContent["fill_items"];
                     var medias = layoutContent["medias"];
                     if (medias != null)
                     {
-                        foreach (var med in medias)
+                        foreach(var med in medias)
                         {
                             var single = med["media"];
                             if (single != null)
@@ -75,6 +78,7 @@ namespace InstagramApiSharp.Converters.Json
                             var tvGuide = igtv["tv_guide"];
                             if (tvGuide != null)
                             {
+                                //GetTVs
                                 var channelsToken = tvGuide["channels"];
                                 if (channelsToken != null)
                                 {
@@ -90,6 +94,25 @@ namespace InstagramApiSharp.Converters.Json
                 }
                 var channelToken = item["channel"];
                 var mediaToken = item["media"];
+                //if (storiesToken != null)
+                //{
+                //    var storyTray = storiesToken.ToObject<InstaStoryTrayResponse>();
+                //    feed.StoryTray = storyTray;
+                //    continue;
+                //}
+
+                //if (channelToken != null)
+                //{
+                //    var channel = channelToken.ToObject<InstaChannelResponse>();
+                //    feed.Channel = channel;
+                //    continue;
+                //}
+
+                //if (mediaToken != null)
+                //{
+                //    var media = mediaToken.ToObject<InstaMediaItemResponse>();
+                //    feed.Medias.Add(media);
+                //}
             }
 
             return feed;
@@ -111,4 +134,5 @@ namespace InstagramApiSharp.Converters.Json
             serializer.Serialize(writer, value);
         }
     }
+
 }

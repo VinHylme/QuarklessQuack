@@ -1,4 +1,5 @@
-﻿using QuarklessContexts.Models;
+﻿using Hangfire.Storage.Monitoring;
+using QuarklessContexts.Models;
 using QuarklessContexts.Models.Timeline;
 using RestSharp;
 using System;
@@ -9,8 +10,16 @@ namespace Quarkless.Queue.Interfaces.Jobs
 {
 	public interface IJobRunner
 	{
-		void Queue<TJob,TJobOptions>(Action<TJobOptions> configureJob)
+		string Queue<TJob,TJobOptions>(Action<TJobOptions> configureJob)
 			where TJobOptions : IJobOptions
 			where TJob : IJob<TJobOptions>;
+		JobDetailsDto GetJobDetails(string jobId);
+		JobList<ScheduledJobDto> GetScheduledJobs(int from, int limit);
+		JobList<ProcessingJobDto> GetCurrentlyRunningJobs(int from, int limit);
+		JobList<SucceededJobDto> GetFinishedJobs(int from, int limit);
+		JobList<DeletedJobDto> GetDeletedJobs(int from, int limit);
+		JobList<FailedJobDto> GetFailedJobs(int from, int limit);
+		StatisticsDto GetStatistics();
+		bool IsAnyJobsCurrentlyRunning();
 	}
 }

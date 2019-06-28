@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Quarkless.Services.ActionBuilders.EngageActions;
 using Quarkless.Services.StrategyBuilders;
+using QuarklessContexts.Models;
 
 namespace Quarkless.Services.Interfaces.Actions
 {
@@ -10,5 +11,7 @@ namespace Quarkless.Services.Interfaces.Actions
 	{
 		public FollowActionType FollowActionType { get; set; }
 		public DateTimeOffset ExecutionTime { get; set; }
+		public static Range FollowActionDailyLimit { get; set; } = new Range(200, 250);
+		public static Range FollowActionHourlyLimit { get; set; } = new Range(30, 60);
 	}
 }

@@ -97,9 +97,9 @@ namespace Quarkless.Worker
 						}
 					},
 					TimerSettings = new TimerSettings { 
-						RestartTime = (int) TimeSpan.FromMinutes(30).TotalMilliseconds,
-						SleepTime = (int) TimeSpan.FromHours(2.45).TotalMilliseconds,
-						FlushTime = (int) TimeSpan.FromHours(2).TotalMilliseconds,
+						RestartTime = (int) TimeSpan.FromMinutes(18).TotalMilliseconds,
+						SleepTime = (int) TimeSpan.FromHours(2).TotalMilliseconds,
+						FlushTime = (int) TimeSpan.FromSeconds(30).TotalMilliseconds,
 						ProducerThreshHoldLimit = 0,
 						TransferingWorkerCheckTime = (int) TimeSpan.FromSeconds(5).TotalMilliseconds
 					},

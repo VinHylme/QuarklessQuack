@@ -2,7 +2,6 @@
 using InstagramApiSharp.API.Processors;
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Models;
-using InstagramApiSharp.Classes.Models.Hashtags;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.ReportHandler;
@@ -68,11 +67,11 @@ namespace QuarklessLogic.Logic.HashtagLogic
 			}
 		}
 
-		public async Task<IResult<InstaHashtagSearch>> SearchHashtagAsync(string query, IEnumerable<long> excludeList = null, string rankToken = null)
+		public async Task<IResult<InstaHashtagSearch>> SearchHashtagAsync(string query, IEnumerable<long> excludeList = null)
 		{
 			try
 			{
-				return await Client.Hashtag.SearchHashtagAsync(query,excludeList,rankToken);
+				return await Client.Hashtag.SearchHashtagAsync(query,excludeList);
 			}
 			catch(Exception ee)
 			{

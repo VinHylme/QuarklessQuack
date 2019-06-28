@@ -1,5 +1,6 @@
 ﻿using Quarkless.Services.ActionBuilders.EngageActions;
 using Quarkless.Services.StrategyBuilders;
+using QuarklessContexts.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -10,5 +11,7 @@ namespace Quarkless.Services.Interfaces.Actions
 	{
 		public LikeActionType LikeActionType { get; set; }
 		public DateTimeOffset ExecutionTime { get; set; }
+		public static Range LikeActionDailyLimit { get; set; } = new Range(900,1000);
+		public static Range LikeActionHourlyLimit { get; set; } = new Range(30,60);
 	}
 }

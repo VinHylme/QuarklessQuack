@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Models;
@@ -11,6 +12,29 @@ namespace InstagramApiSharp.API.Processors
     /// </summary>
     public interface IStoryProcessor
     {
+        /// <summary>
+        ///     Reply a photo to story
+        /// </summary>
+        /// <param name="image">Photo to send</param>
+        /// <param name="userId">User id/pk of story creator</param>
+        Task<IResult<bool>> ReplyPhotoToStoryAsync(InstaImageUpload image, /*string storyMediaId,*/ long userId);
+        /// <summary>
+        ///     Reply a photo to story with progress
+        /// </summary>
+        /// <param name="progress">Progress</param>
+        /// <param name="image">Photo to send</param>
+        /// <param name="userId">User id/pk of story creator</param>
+        Task<IResult<bool>> ReplyPhotoToStoryAsync(Action<InstaUploaderProgress> progress, InstaImageUpload image, 
+            /*string storyMediaId,*/ long userId);
+
+        /// <summary>
+        ///     Answer to an story quiz
+        /// </summary>
+        /// <param name="storyPk">Story pk (<see cref="InstaStoryItem.Pk"/>)</param>
+        /// <param name="quizId">Quiz id (<see cref="InstaStoryQuizParticipant.QuizId"/>)</param>
+        /// <param name="answer">Your answer</param>
+        Task<IResult<bool>> AnswerToStoryQuizAsync(long storyPk, long quizId, int answer);
+
         /// <summary>
         ///     Respond to an story question
         /// </summary>
@@ -78,12 +102,22 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="highlightId">Highlight id (Get it from <see cref="IStoryProcessor.GetHighlightsArchiveAsync"/>)</param>
         Task<IResult<InstaHighlightSingleFeed>> GetHighlightsArchiveMediasAsync(string highlightId);
 
+        Task<IResult<InstaUserStoriesFeeds>> GetUsersStoriesAsHighlightsAsync(params string[] usersIds);
         /// <summary>
         ///     Get single highlight medias
         ///     <para>Note: get highlight id from <see cref="IStoryProcessor.GetHighlightFeedsAsync(long)"/></para>
         /// </summary>
         /// <param name="highlightId">Highlight id (Get it from <see cref="IStoryProcessor.GetHighlightFeedsAsync(long)"/>)</param>
         Task<IResult<InstaHighlightSingleFeed>> GetHighlightMediasAsync(string highlightId);
+
+
+        /// <summary>
+        ///     Get user story feed with POST method requests (new API)
+        /// </summary>
+        /// <param name="refresh">Refreshing?</param>
+        /// <param name="preloadedReelIds">Preloaded reel ids</param>
+        /// <returns></returns>
+        Task<IResult<InstaStoryFeed>> GetStoryFeedWithPostMethodAsync(bool refresh = false, string[] preloadedReelIds = null);
 
         /// <summary>
         ///     Get user story feed (stories from users followed by current user).
@@ -115,6 +149,11 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="userId">User identifier (PK)</param>
         Task<IResult<InstaReelFeed>> GetUserStoryFeedAsync(long userId);
 
+        /// <summary>
+        ///     Seen multiple stories
+        /// </summary>
+        /// <param name="storiesWithTakenAt">Story media identifier with taken at unix times</param>
+        Task<IResult<bool>> MarkMultipleStoriesAsSeenAsync(Dictionary<string, long> storiesWithTakenAt);
         /// <summary>
         ///     Seen story
         /// </summary>
@@ -184,9 +223,9 @@ namespace InstagramApiSharp.API.Processors
         /// </summary>
         /// <param name="reelId">Reel id</param>
         /// <param name="storyMediaId">Story media id</param>
-        /// <param name="threadId">Thread id</param>
+        /// <param name="threadIds">Thread id</param>
         /// <param name="sharingType">Sharing type</param>
-        Task<IResult<InstaSharing>> ShareStoryAsync(string reelId, string storyMediaId, string threadId, string text, InstaSharingType sharingType = InstaSharingType.Video);
+        Task<IResult<bool>> ShareStoryAsync(string reelId, string storyMediaId, string[] threadIds, long[] recipients, string text, InstaSharingType sharingType = InstaSharingType.Video);
 
         /// <summary>
         ///     Reply to story
@@ -195,7 +234,8 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="storyMediaId">Media id (get it from <see cref="InstaMedia.InstaIdentifier"/>)</param>
         /// <param name="userId">Story owner user pk (get it from <see cref="InstaMedia.User.Pk"/>)</param>
         /// <param name="text">Text to send</param>
-        Task<IResult<bool>> ReplyToStoryAsync(string storyMediaId, long userId, string text);
+        /// <param name="sharingType">Sharing type</param>
+        Task<IResult<bool>> ReplyToStoryAsync(string storyMediaId, long userId, string text, InstaSharingType sharingType);
 
         /// <summary>
         ///     UnFollow countdown story

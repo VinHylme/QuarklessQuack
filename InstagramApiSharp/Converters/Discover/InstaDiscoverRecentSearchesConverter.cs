@@ -23,13 +23,13 @@ namespace InstagramApiSharp.Converters
         {
             if (SourceObject == null) throw new ArgumentNullException($"Source object");
             var recents = new InstaDiscoverRecentSearches();
-            if (SourceObject.Recent != null && SourceObject.Recent.Any())
+            if (SourceObject.Recent?.Count > 0)
             {
                 foreach (var search in SourceObject.Recent)
                 {
                     try
                     {
-                        recents.Recent.Add(ConvertersFabric.Instance.GetDiscoverSearchesConverter(search).Convert());
+                        recents.Recent.Add(ConvertersFabric.Instance.GetDiscoverRecentSearchesItemConverter(search).Convert());
                     }
                     catch { }
                 }

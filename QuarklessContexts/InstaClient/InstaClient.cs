@@ -31,6 +31,7 @@ namespace QuarklessContexts.InstaClient
 			.UseLogger(new DebugLogger(LogLevel.All))
 			.SetRequestDelay(RequestDelay.FromSeconds(0, 2))
 			.Build();
+			_client.SetApiVersion(InstagramApiSharp.Enums.InstaApiVersionType.Version94);
 			return this;
 		}
 		public IInstaApi ReturnClient
@@ -71,27 +72,72 @@ namespace QuarklessContexts.InstaClient
 			{
 				throw new Exception("Model cannot be null");
 			}
-			var instance = InstaApiBuilder.CreateBuilder()
-				.UseLogger(new DebugLogger(LogLevel.Exceptions))
-				.SetUser(instagramAccount.InstagramAccount.State.UserSession)
-				.SetRequestDelay(RequestDelay.FromSeconds(1,2))
-				.Build();
-
-			instance.SetDevice(instagramAccount.InstagramAccount.State.DeviceInfo);
-			if(instagramAccount.Proxy!=null)
-				instance.UseHttpClientHandler(SetupProxy(instagramAccount.Proxy));
-
-			instance.LoadStateDataFromString(JsonConvert.SerializeObject(instagramAccount.InstagramAccount.State));
-			if (!instance.IsUserValidated())
+			if (instagramAccount.InstagramAccount?.State == null)
 			{
-				instance.LoginAsync().GetAwaiter().GetResult();
+				var instancenew = InstaApiBuilder.CreateBuilder()
+					.UseLogger(new DebugLogger(LogLevel.All))
+					.SetRequestDelay(RequestDelay.FromSeconds(1, 2))
+					.Build();
+				instancenew.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
+				instancenew.SetApiVersion(InstagramApiSharp.Enums.InstaApiVersionType.Version94);
+				instancenew.SetUser(new UserSessionData { UserName = instagramAccount.InstagramAccount.Username, Password = instagramAccount.InstagramAccount.Password});
+				if (instagramAccount.Proxy != null)
+					instancenew.UseHttpClientHandler(SetupProxy(instagramAccount.Proxy));
+				var res = instancenew.LoginAsync().GetAwaiter().GetResult();
+				if (res.Succeeded)
+				{
+					var newstate = instancenew.GetStateDataAsString();
+					return new InstaClient()
+					{
+						_client = instancenew,
+						StateString = newstate
+					};
+				}
+				else
+				{
+					throw new Exception("Failed to login");
+				}
 			}
+			else { 
+				var instance = InstaApiBuilder.CreateBuilder()
+					.UseLogger(new DebugLogger(LogLevel.Exceptions))
+					.SetUser(instagramAccount.InstagramAccount.State.UserSession)
+					.SetRequestDelay(RequestDelay.FromSeconds(1,2))
+					.Build();
 
-			return new InstaClient()
-			{
-				_client = instance,
-				StateString = JsonConvert.SerializeObject(instagramAccount.InstagramAccount.State),
-			};
+				instance.SetApiVersion(InstagramApiSharp.Enums.InstaApiVersionType.Version94);
+				instance.SetDevice(instagramAccount.InstagramAccount.State.DeviceInfo);
+
+				if(instagramAccount.Proxy!=null)
+					instance.UseHttpClientHandler(SetupProxy(instagramAccount.Proxy));
+
+				instance.LoadStateDataFromString(JsonConvert.SerializeObject(instagramAccount.InstagramAccount.State));
+
+				if (!instance.IsUserValidated() || instance.Username!=instagramAccount.InstagramAccount.Username)
+				{
+					instance.SetUser(new UserSessionData() { UserName = instagramAccount.InstagramAccount.Username, Password = instagramAccount.InstagramAccount.Password});
+					var res = instance.LoginAsync().GetAwaiter().GetResult();
+					if (res.Succeeded)
+					{
+						var newstate = instance.GetStateDataAsString();
+						return new InstaClient()
+						{
+							_client = instance,
+							StateString = newstate
+						};
+					}
+					else
+					{
+						throw new Exception("Failed to login");
+					}
+				}
+
+				return new InstaClient()
+				{
+					_client = instance,
+					StateString = JsonConvert.SerializeObject(instagramAccount.InstagramAccount.State),
+				};
+			}
 		}
 
 		public InstaClient StateClient(string state)

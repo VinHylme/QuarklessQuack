@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Models;
-using InstagramApiSharp.Classes.Models.Hashtags;
+using InstagramApiSharp.Enums;
 
 namespace InstagramApiSharp.API.Processors
 {
@@ -11,6 +11,20 @@ namespace InstagramApiSharp.API.Processors
     /// </summary>
     public interface IHashtagProcessor
     {
+        /// <summary>
+        ///     Get hashtag sections
+        /// </summary>
+        /// <param name="tagname">Tag name</param>
+        /// <param name="paginationParameters">Pagination parameters: next id and max amount of pages to load</param>
+        /// <param name="hashtagSectionType">Section type</param>
+        Task<IResult<InstaSectionMedia>> GetHashtagsSectionsAsync(string tagname, PaginationParameters paginationParameters, InstaHashtagSectionType hashtagSectionType = InstaHashtagSectionType.All);
+
+        /// <summary>
+        ///     Get Hashtags posts
+        /// </summary>
+        /// <param name="mediaId">Media Identifier</param>
+        Task<IResult<InstaHashtagSearch>> GetHashtagsPostsAsync(string mediaId);
+
         /// <summary>
         ///     Follow a hashtag
         /// </summary>
@@ -66,11 +80,17 @@ namespace InstagramApiSharp.API.Processors
         /// </summary>
         /// <param name="query">Search query</param>
         /// <param name="excludeList">Array of numerical hashtag IDs (ie "17841562498105353") to exclude from the response, allowing you to skip tags from a previous call to get more results</param>
-        /// <param name="rankToken">The rank token from the previous page's response</param>
         /// <returns>
         ///     List of hashtags
         /// </returns>
-        Task<IResult<InstaHashtagSearch>> SearchHashtagAsync(string query, IEnumerable<long> excludeList = null, string rankToken = null);
+        Task<IResult<InstaHashtagSearch>> SearchHashtagAsync(string query, IEnumerable<long> excludeList = null);
+        /// <summary>
+        ///     Report an hashtag media
+        /// </summary>
+        /// <param name="tagname">Tag name</param>
+        /// <param name="hashtagId">Tag Id</param>
+        /// <param name="mediaId">Media identifier</param>
+        Task<IResult<bool>> ReportHashtagMediaAsync(string tagname, string hashtagId, string mediaId);
         /// <summary>
         ///     Unfollow a hashtag
         /// </summary>

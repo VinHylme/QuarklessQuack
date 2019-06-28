@@ -53,6 +53,272 @@ namespace InstagramApiSharp.API.Processors
             _httpHelper = httpHelper;
         }
         #endregion Properties and constructor
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////// SINGLE UPLOADER ////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        public async Task<IResult<string>> UploadSinglePhoto(Action<InstaUploaderProgress> progress, 
+            InstaImageUpload image, InstaUploaderProgress upProgress, string uploadId = null, bool album = true, string recipient = null)
+        {
+            if (string.IsNullOrEmpty(uploadId))
+                uploadId = ApiRequestMessage.GenerateUploadId();
+            var photoHashCode = Path.GetFileName(image.Uri ?? $"C:\\{13.GenerateRandomString()}.jpg").GetHashCode();
+            var photoEntityName = $"{uploadId}_0_{photoHashCode}";
+            var photoUri = UriCreator.GetStoryUploadPhotoUri(uploadId, photoHashCode);
+            var photoUploadParamsObj = new JObject
+            {
+                {"upload_id", uploadId},
+                {"media_type", "1"},
+                {"retry_context", GetRetryContext()},
+                {"image_compression", "{\"lib_name\":\"moz\",\"lib_version\":\"3.1.m\",\"quality\":\"95\"}"},
+                {"xsharing_user_ids", $"[{recipient ?? string.Empty}]"},
+            };
+            if (album)
+                photoUploadParamsObj.Add("is_sidecar", "1");
+            upProgress.UploadState = InstaUploadState.UploadingThumbnail;
+            progress?.Invoke(upProgress);
+            var photoUploadParams = JsonConvert.SerializeObject(photoUploadParamsObj);
+            var imageBytes = image.ImageBytes ?? File.ReadAllBytes(image.Uri);
+            var imageContent = new ByteArrayContent(imageBytes);
+            imageContent.Headers.Add("Content-Transfer-Encoding", "binary");
+            imageContent.Headers.Add("Content-Type", "application/octet-stream");
+            var request = _httpHelper.GetDefaultRequest(HttpMethod.Post, photoUri, _deviceInfo);
+            request.Content = imageContent;
+            request.Headers.Add("X-Entity-Type", "image/jpeg");
+            request.Headers.Add("Offset", "0");
+            request.Headers.Add("X-Instagram-Rupload-Params", photoUploadParams);
+            request.Headers.Add("X-Entity-Name", photoEntityName);
+            request.Headers.Add("X-Entity-Length", imageBytes.Length.ToString());
+            request.Headers.Add("X_FB_PHOTO_WATERFALL_ID", Guid.NewGuid().ToString());
+            var response = await _httpRequestProcessor.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                //upProgress = progressContent?.UploaderProgress;
+                upProgress.UploadState = InstaUploadState.Uploaded;
+                progress?.Invoke(upProgress);
+                return Result.Success(uploadId);
+            }
+            else
+            {
+                upProgress.UploadState = InstaUploadState.Error;
+                progress?.Invoke(upProgress);
+                return Result.Fail<string>("NO UPLOAD ID");
+            }
+        }
+
+        public async Task<IResult<string>> UploadSingleVideo(Action<InstaUploaderProgress> progress, InstaVideoUpload video, InstaUploaderProgress upProgress, bool album = true)
+        {
+            var uploadId = ApiRequestMessage.GenerateRandomUploadId();
+            var videoHashCode = Path.GetFileName(video.Video.Uri ?? $"C:\\{13.GenerateRandomString()}.mp4").GetHashCode();
+            var waterfallId = Guid.NewGuid().ToString();
+            var videoEntityName = $"{uploadId}_0_{videoHashCode}";
+            var videoUri = UriCreator.GetStoryUploadVideoUri(uploadId, videoHashCode);
+            var retryContext = GetRetryContext();
+
+            var videoUploadParamsObj = new JObject
+            {
+                {"upload_media_height", "0"},
+                {"upload_media_width", "0"},
+                {"upload_media_duration_ms", "0"},
+                {"upload_id", uploadId},
+                {"retry_context", retryContext},
+                {"media_type", "2"},
+                {"xsharing_user_ids", "[]"}
+            };
+            if (album)
+                videoUploadParamsObj.Add("is_sidecar", "1");
+
+            var videoUploadParams = JsonConvert.SerializeObject(videoUploadParamsObj);
+            var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, videoUri, _deviceInfo);
+            request.Headers.Add("X_FB_VIDEO_WATERFALL_ID", waterfallId);
+            request.Headers.Add("X-Instagram-Rupload-Params", videoUploadParams);
+            var response = await _httpRequestProcessor.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+
+
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                upProgress.UploadState = InstaUploadState.Error;
+                progress?.Invoke(upProgress);
+                return Result.UnExpectedResponse<string>(response, json);
+            }
+
+            var videoBytes = video.Video.VideoBytes ?? File.ReadAllBytes(video.Video.Uri);
+
+            var videoContent = new ByteArrayContent(videoBytes);
+            //var progressContent = new ProgressableStreamContent(videoContent, 4096, progress)
+            //{
+            //    UploaderProgress = upProgress
+            //};
+            request = _httpHelper.GetDefaultRequest(HttpMethod.Post, videoUri, _deviceInfo);
+            request.Content = videoContent;
+            upProgress.UploadState = InstaUploadState.Uploading;
+            progress?.Invoke(upProgress);
+            var vidExt = Path.GetExtension(video.Video.Uri ?? $"C:\\{13.GenerateRandomString()}.mp4").Replace(".", "").ToLower();
+            if (vidExt == "mov")
+                request.Headers.Add("X-Entity-Type", "video/quicktime");
+            else
+                request.Headers.Add("X-Entity-Type", "video/mp4");
+
+            request.Headers.Add("Offset", "0");
+            request.Headers.Add("X-Instagram-Rupload-Params", videoUploadParams);
+            request.Headers.Add("X-Entity-Name", videoEntityName);
+            request.Headers.Add("X-Entity-Length", videoBytes.Length.ToString());
+            request.Headers.Add("X_FB_VIDEO_WATERFALL_ID", waterfallId);
+            response = await _httpRequestProcessor.SendAsync(request);
+            json = await response.Content.ReadAsStringAsync();
+
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                upProgress.UploadState = InstaUploadState.Error;
+                progress?.Invoke(upProgress);
+                return Result.UnExpectedResponse<string>(response, json);
+            }
+            return Result.Success(uploadId);
+        }
+
+        public JObject GetImageConfigure(string uploadId, InstaImageUpload image)
+        {
+            var imgData = new JObject
+            {
+                {"timezone_offset", InstaApiConstants.TIMEZONE_OFFSET.ToString()},
+                {"source_type", "4"},
+                {"upload_id", uploadId},
+                {"caption", ""},
+                {
+                    "extra", JsonConvert.SerializeObject(new JObject
+                    {
+                        {"source_width", 0},
+                        {"source_height", 0}
+                    })
+                },
+                {
+                    "device", JsonConvert.SerializeObject(new JObject{
+                        {"manufacturer", _deviceInfo.HardwareManufacturer},
+                        {"model", _deviceInfo.DeviceModelIdentifier},
+                        {"android_release", _deviceInfo.AndroidVer.VersionNumber},
+                        {"android_version", _deviceInfo.AndroidVer.APILevel}
+                    })
+                }
+            };
+            if (image.UserTags?.Count > 0)
+            {
+                var tagArr = new JArray();
+                foreach (var tag in image.UserTags)
+                {
+                    if (tag.Pk != -1)
+                    {
+                        var position = new JArray(tag.X, tag.Y);
+                        var singleTag = new JObject
+                                    {
+                                        {"user_id", tag.Pk},
+                                        {"position", position}
+                                    };
+                        tagArr.Add(singleTag);
+                    }
+                }
+
+                var root = new JObject
+                {
+                    {"in",  tagArr}
+                };
+                imgData.Add("usertags", root.ToString(Formatting.None));
+            }
+            return imgData;
+        }
+
+        public JObject GetVideoConfigure(string uploadId, InstaVideoUpload video)
+        {
+            var vidData = new JObject
+            {
+                {"timezone_offset", InstaApiConstants.TIMEZONE_OFFSET.ToString()},
+                {"caption", ""},
+                {"upload_id", uploadId},
+                {"date_time_original", DateTime.Now.ToString("yyyy-dd-MMTh:mm:ss-0fffZ")},
+                {"source_type", "4"},
+                {
+                    "extra", JsonConvert.SerializeObject(new JObject
+                    {
+                        {"source_width", 0},
+                        {"source_height", 0}
+                    })
+                },
+                {
+                    "clips", JsonConvert.SerializeObject(new JArray{
+                        new JObject
+                        {
+                            {"length", video.Video.Length},
+                            {"source_type", "4"},
+                        }
+                    })
+                },
+                {
+                    "device", JsonConvert.SerializeObject(new JObject{
+                        {"manufacturer", _deviceInfo.HardwareManufacturer},
+                        {"model", _deviceInfo.DeviceModelIdentifier},
+                        {"android_release", _deviceInfo.AndroidVer.VersionNumber},
+                        {"android_version", _deviceInfo.AndroidVer.APILevel}
+                    })
+                },
+                {"length", video.Video.Length.ToString()},
+                {"poster_frame_index", "0"},
+                {"audio_muted", "false"},
+                {"filter_type", "0"},
+                {"video_result", ""},
+            };
+            if (video.UserTags?.Count > 0)
+            {
+                var tagArr = new JArray();
+                foreach (var tag in video.UserTags)
+                {
+                    if (tag.Pk != -1)
+                    {
+                        var position = new JArray(0.0, 0.0);
+                        var singleTag = new JObject
+                        {
+                            {"user_id", tag.Pk},
+                            {"position", position}
+                        };
+                        tagArr.Add(singleTag);
+                    }
+                }
+
+                var root = new JObject
+                {
+                    {"in",  tagArr}
+                };
+                vidData.Add("usertags", root.ToString(Formatting.None));
+            }
+            return vidData;
+        }
+
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////// SINGLE UPLOADER ////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         /// <summary>
         ///     Send video story, direct video, disappearing video
@@ -273,7 +539,7 @@ namespace InstagramApiSharp.API.Processors
             {
                 upProgress.UploadState = InstaUploadState.Configuring;
                 progress?.Invoke(upProgress);
-                var instaUri = UriCreator.GetDirectConfigVideoUri();
+                var instaUri = UriCreator.GetDirectConfigureVideoUri();
                 var retryContext = GetRetryContext();
                 var clientContext = Guid.NewGuid().ToString();
                 
@@ -293,7 +559,7 @@ namespace InstagramApiSharp.API.Processors
                     else
                         data.Add("thread_ids", $"[{threadId}]");
 
-                    instaUri = UriCreator.GetDirectConfigVideoUri();
+                    instaUri = UriCreator.GetDirectConfigureVideoUri();
                     var request = _httpHelper.GetDefaultRequest(HttpMethod.Post, instaUri, _deviceInfo);
                     request.Content = new FormUrlEncodedContent(data);
                     request.Headers.Add("retry_context", retryContext);
@@ -467,6 +733,16 @@ namespace InstagramApiSharp.API.Processors
                                 data.Add("story_countdowns", countdownArr.ToString(Formatting.None));
                                 data.Add("story_sticker_ids", "countdown_sticker_time");
                             }
+                            if (uploadOptions.StoryQuiz != null)
+                            {
+                                var storyQuizArr = new JArray
+                                {
+                                    uploadOptions.StoryQuiz.ConvertToJson()
+                                };
+
+                                data.Add("story_quizs", storyQuizArr.ToString(Formatting.None));
+                                data.Add("story_sticker_ids", "quiz_story_sticker_default");
+                            }
                         }
                     }
                     instaUri = UriCreator.GetVideoStoryConfigureUri(true);
@@ -628,7 +904,7 @@ namespace InstagramApiSharp.API.Processors
 
                 upProgress.UploadState = InstaUploadState.Configuring;
                 progress?.Invoke(upProgress);
-                var instaUri = UriCreator.GetDirectConfigVideoUri();
+                var instaUri = UriCreator.GetDirectConfigureVideoUri();
                 var retryContext = GetRetryContext();
                 var clientContext = Guid.NewGuid().ToString();
 
@@ -1055,6 +1331,291 @@ namespace InstagramApiSharp.API.Processors
 
 
 
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////// DIRECT VOICE ////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        public async Task<IResult<bool>> SendVoiceAsync(Action<InstaUploaderProgress> progress, 
+            InstaAudioUpload audio, 
+            string recipients, string threadId)
+        {
+            var upProgress = new InstaUploaderProgress
+            {
+                Caption = "Uploading audio",
+                UploadState = InstaUploadState.Preparing
+            };
+            try
+            {
+                var uploadId = ApiRequestMessage.GenerateRandomUploadId();
+                var videoHashCode = Path.GetFileName(audio.Uri ?? $"C:\\{13.GenerateRandomString()}.mp4").GetHashCode();
+                var waterfallId = Guid.NewGuid().ToString();
+                var videoEntityName = $"{uploadId}_0_{videoHashCode}";
+                var videoUri = UriCreator.GetStoryUploadVideoUri(uploadId, videoHashCode);
+                var retryContext = GetRetryContext();
+                HttpRequestMessage request = null;
+                HttpResponseMessage response = null;
+                string voiceUploadParams = null;
+                string json = null;
+                upProgress.UploadId = uploadId;
+                progress?.Invoke(upProgress);
+                var voiceUploadParamsObj = new JObject();
+                //{
+                //  "xsharing_user_ids": "[]",
+                //  "is_direct_voice": "1",
+                //  "upload_media_duration_ms": "2978",
+                //  "upload_id": "39826791291317",
+                //  "retry_context": "{\"num_reupload\":0,\"num_step_auto_retry\":0,\"num_step_manual_retry\":0}",
+                //  "media_type": "11"
+                //}
+
+
+                voiceUploadParamsObj = new JObject
+                {
+                    {"xsharing_user_ids", "[]"},
+                    {"is_direct_voice", "1"},
+                    {"upload_media_duration_ms", "0"},
+                    {"upload_id", uploadId},
+                    {"retry_context", retryContext},
+                    {"media_type", "11"}
+                };
+
+                voiceUploadParams = JsonConvert.SerializeObject(voiceUploadParamsObj);
+                request = _httpHelper.GetDefaultRequest(HttpMethod.Get, videoUri, _deviceInfo);
+                request.Headers.Add("X_FB_VIDEO_WATERFALL_ID", waterfallId);
+                request.Headers.Add("X-Instagram-Rupload-Params", voiceUploadParams);
+                response = await _httpRequestProcessor.SendAsync(request);
+                json = await response.Content.ReadAsStringAsync();
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                {
+                    upProgress.UploadState = InstaUploadState.Error;
+                    progress?.Invoke(upProgress);
+                    return Result.UnExpectedResponse<bool>(response, json);
+                }
+
+
+                // video part
+                byte[] videoBytes;
+                if (audio.VoiceBytes == null)
+                    videoBytes = File.ReadAllBytes(audio.Uri);
+                else
+                    videoBytes = audio.VoiceBytes;
+
+                var videoContent = new ByteArrayContent(videoBytes);
+                //var progressContent = new ProgressableStreamContent(videoContent, 4096, progress)
+                //{
+                //    UploaderProgress = upProgress
+                //};
+                request = _httpHelper.GetDefaultRequest(HttpMethod.Post, videoUri, _deviceInfo);
+                request.Content = videoContent;
+                upProgress.UploadState = InstaUploadState.Uploading;
+                progress?.Invoke(upProgress);
+                var vidExt = Path.GetExtension(audio.Uri ?? $"C:\\{13.GenerateRandomString()}.mp4").Replace(".", "").ToLower();
+                request.Headers.Add("X-Entity-Type", "audio/mp4");
+                request.Headers.Add("Offset", "0");
+                request.Headers.Add("X-Instagram-Rupload-Params", voiceUploadParams);
+                request.Headers.Add("X-Entity-Name", videoEntityName);
+                request.Headers.Add("X-Entity-Length", videoBytes.Length.ToString());
+                request.Headers.Add("X_FB_VIDEO_WATERFALL_ID", waterfallId);
+                response = await _httpRequestProcessor.SendAsync(request);
+                json = await response.Content.ReadAsStringAsync();
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                {
+                    upProgress.UploadState = InstaUploadState.Error;
+                    progress?.Invoke(upProgress);
+                    return Result.UnExpectedResponse<bool>(response, json);
+                }
+                upProgress.UploadState = InstaUploadState.Uploaded;
+                progress?.Invoke(upProgress);
+                //upProgress = progressContent?.UploaderProgress;
+                return await FinishVoice(progress, upProgress, audio, uploadId, recipients, threadId);
+            }
+            catch (Exception exception)
+            {
+                upProgress.UploadState = InstaUploadState.Error;
+                progress?.Invoke(upProgress);
+                _logger?.LogException(exception);
+                return Result.Fail<bool>(exception);
+            }
+        }
+
+
+        private async Task<IResult<bool>> FinishVoice(Action<InstaUploaderProgress> progress, InstaUploaderProgress upProgress,
+            InstaAudioUpload audio, string uploadId, string recipients, string threadId)
+        {
+            try
+            {
+                var instaUri = UriCreator.GetMediaUploadFinishUri();
+                var retryContext = GetRetryContext();
+                //var pigeonSessionId = Guid.NewGuid().ToString();
+
+                //{
+                //  "timezone_offset": "16200",
+                //  "_csrftoken": "SAR8V58g7jORGU1bVykRYoxTkKbHNCoN",
+                //  "source_type": "4",
+                //  "_uid": "8651542203",
+                //  "device_id": "android-21c311d494a974fe",
+                //  "_uuid": "b2caeea0-e663-42a5-8e64-b0578a6f47b2",
+                //  "upload_id": "39826791291317",
+                //  "device": {
+                //    "manufacturer": "HUAWEI",
+                //    "model": "PRA-LA1",
+                //    "android_version": 26,
+                //    "android_release": "8.0.0"
+                //  }
+                //}
+                var data = new JObject
+                {
+                    {"timezone_offset", InstaApiConstants.TIMEZONE_OFFSET.ToString()},
+                    {"_csrftoken", _user.CsrfToken},
+                    {"source_type", "4"},
+                    {"_uid", _user.LoggedInUser.Pk.ToString()},
+                    {"device_id", _deviceInfo.DeviceId},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"upload_id", uploadId},
+                    {
+                        "device", new JObject{
+                            {"manufacturer", _deviceInfo.HardwareManufacturer},
+                            {"model", _deviceInfo.DeviceModelIdentifier},
+                            {"android_release", _deviceInfo.AndroidVer.VersionNumber},
+                            {"android_version", _deviceInfo.AndroidVer.APILevel}
+                        }
+                    }
+                };
+                var request = _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                //X-Pigeon-Session-Id: f4089ddb-ac42-4428-8682-70786e72df4e
+                //X-Pigeon-Rawclienttime: 1553994145.044
+                //X-IG-Connection-Speed: -1kbps
+                //X-IG-Bandwidth-Speed-KBPS: -1.000
+                //X-IG-Bandwidth-TotalBytes-B: 0
+                //X-IG-Bandwidth-TotalTime-MS: 0
+                //retry_context: {"num_reupload":0,"num_step_auto_retry":0,"num_step_manual_retry":0}
+                //request.Headers.Add("X-Pigeon-Session-Id", pigeonSessionId);
+                //request.Headers.Add("X-Pigeon-Rawclienttime", DateTime.UtcNow.ToUnixTime().ToString());
+                request.Headers.Add("retry_context", retryContext);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                {
+                    upProgress.UploadState = InstaUploadState.Error;
+                    progress?.Invoke(upProgress);
+                    return Result.UnExpectedResponse<bool>(response, json);
+                }
+                var obj = JsonConvert.DeserializeObject<InstaDefault>(json);
+
+                
+                return obj.Status.ToLower() == "ok" ? await ConfigureVoice(progress, upProgress, audio, uploadId, recipients, threadId/*, pigeonSessionId*/) : Result.UnExpectedResponse<bool>(response, json);
+
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(bool), ResponseType.NetworkProblem);
+            }
+            catch (Exception exception)
+            {
+                upProgress.UploadState = InstaUploadState.Error;
+                progress?.Invoke(upProgress);
+                _logger?.LogException(exception);
+                return Result.Fail<bool>(exception);
+            }
+        }
+
+
+
+
+
+        private async Task<IResult<bool>> ConfigureVoice(Action<InstaUploaderProgress> progress, InstaUploaderProgress upProgress,
+            InstaAudioUpload audio, string uploadId, string recipients, string threadId/*, string pigeonSessionId*/)
+        {
+            try
+            {
+                upProgress.UploadState = InstaUploadState.Configuring;
+                progress?.Invoke(upProgress);
+                var instaUri = UriCreator.GetBroadcastVoiceUri();
+                var retryContext = GetRetryContext();
+                var clientContext = Guid.NewGuid().ToString();
+                //action=send_item&
+                //thread_ids=[340282366841710300949128123666345617120]&
+                //client_context=f2c3f34b-9558-4e5e-8bbd-c9b0a7b6a771&
+                //_csrftoken=SAR8V58g7jORGU1bVykRYoxTkKbHNCoN&
+                //device_id=android-21c311d494a974fe&
+                //mutation_token=f2c3f34b-9558-4e5e-8bbd-c9b0a7b6a771&
+                //_uuid=b2caeea0-e663-42a5-8e64-b0578a6f47b2&
+                //waveform=[0.0,0.0,0.0,0.05884941,0.003506393,0.0,0.0,0.29976478,0.33314762,0.06341735,0.2986802,0.06549781,0.38367015,0.29360175,0.39119598,0.36614546,0.5107762,0.30958036,0.5532546,0.5140125,0.6382964,0.0,0.74471056,0.7815802,0.36489755,0.29677072,0.21336359,0.68984145,0.79544395,0.45785314,0.4661943,0.6212427,0.5865638,0.3589901,0.50261754,0.5812237,0.2959479,0.35749117,0.5448706,0.63996726,0.45590478,0.0,0.6518243,0.3780959,0.40221095,0.752992,0.74878454,0.44862807,0.54899794,0.41584116,0.4114664,0.55845153,0.5590756,0.33597252,0.456122,0.549397,0.5547714,0.3008447,0.45785314,0.5210329,0.11371161,0.5812676,0.31191078,0.17568454,0.3540309,0.14548765,0.36364335,0.32884952,0.52589816,0.47800753,0.0151766185,0.46598566,0.24119012,0.33515188,0.456122,0.53152853,0.33597252,0.36479327,0.49597973,0.6698829,0.0,0.6198178,0.40382215,0.31485724,0.44524914,0.0,0.36427125,0.5884041,0.4924371,0.46064088,0.14246038,0.5488981,0.4227185,0.33737308,0.46184638,0.48750645,0.34198576,0.5250206,0.30617538,0.6122588,0.09965639,0.6219894,0.38367015,0.14322063,0.43990052,0.060968067,0.3540309,0.5929255,0.39868405,0.45488852,0.19119339,0.5851423,0.50743854,0.34049594,0.46142158,0.53682536,0.32027444,0.48712313,0.5198017,0.6183847,0.0,0.6375619,0.37591073,0.42739,0.0,0.29553548,0.6245855,0.69934916,0.5009897,0.16104175,0.13707279,0.56089103,0.3425564,0.4545974,0.49281237,0.20520437,0.1165429,0.21450776,0.17187792,0.18096177,0.59166604,0.09965639,0.111997314,0.47046793,0.0400768,0.07231022,0.18030818,0.17142625,0.23355064,0.0,0.1871933,0.1761286,0.13446587,0.14872636,0.08982711,0.088570826,0.07730041,0.004830315,0.0,0.0,0.0,0.18334378,0.0,0.0,0.3146024,0.4217238,0.24559702,0.07631031,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.15938689,0.17899585,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.102352634,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.061319437,0.0,0.13130128]&
+                //waveform_sampling_frequency_hz=10&
+                //upload_id=41949941083181
+                var waveformData = audio.WaveformData?.Count > 0 ? string.Join(",", audio.WaveformData) : string.Empty;
+
+                var data = new Dictionary<string, string>
+                {
+                    {"action", "send_item"},
+                    {"client_context", clientContext},
+                    {"_csrftoken", _user.CsrfToken},
+                    {"device_id", _deviceInfo.DeviceId},
+                    {"mutation_token", Guid.NewGuid().ToString()},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"waveform", $"[{waveformData}]"},
+                    {"waveform_sampling_frequency_hz", audio.WaveformSamplingFrequencyHz.ToString()},
+                    {"upload_id", uploadId}
+                };
+                if (!string.IsNullOrEmpty(recipients))
+                    data.Add("recipient_users", $"[[{recipients}]]");
+                else
+                    data.Add("thread_ids", $"[{threadId}]");
+
+                var request = _httpHelper.GetDefaultRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                //request.Headers.Add("X-Pigeon-Session-Id", pigeonSessionId);
+                //request.Headers.Add("X-Pigeon-Rawclienttime", DateTime.UtcNow.ToUnixTime().ToString());
+                request.Headers.Add("retry_context", retryContext);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                {
+                    upProgress.UploadState = InstaUploadState.Error;
+                    progress?.Invoke(upProgress);
+                    return Result.UnExpectedResponse<bool>(response, json);
+                }
+                var obj = JsonConvert.DeserializeObject<InstaDefault>(json);
+
+                if (obj.Status.ToLower() == "ok")
+                {
+                    upProgress.UploadState = InstaUploadState.Configured;
+                    progress?.Invoke(upProgress);
+                }
+                else
+                {
+                    upProgress.UploadState = InstaUploadState.Completed;
+                    progress?.Invoke(upProgress);
+                }
+                return obj.Status.ToLower() == "ok" ? Result.Success(true) : Result.UnExpectedResponse<bool>(response, json);
+
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(bool), ResponseType.NetworkProblem);
+            }
+            catch (Exception exception)
+            {
+                upProgress.UploadState = InstaUploadState.Error;
+                progress?.Invoke(upProgress);
+                _logger?.LogException(exception);
+                return Result.Fail<bool>(exception);
+            }
+        }
+
+
+
+
+
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         ////////////////////////////////////////////////// INSTAGRAM TV ////////////////////////////////////////////////////////////
@@ -1305,7 +1866,7 @@ namespace InstagramApiSharp.API.Processors
 
 
 
-        internal static string GetRetryContext()
+        public static string GetRetryContext()
         {
             return new JObject
                 {

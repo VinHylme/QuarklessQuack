@@ -9,7 +9,6 @@ using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessLogic.Handlers.TextGeneration;
-using QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,13 +22,10 @@ namespace Quarkless.Services
 		private readonly ITopicBuilder _topicBuilder; 
 		private readonly IContentSearch _contentSearch;
 		private readonly ITextGeneration _textGeneration;
-		private readonly ITimelineLogic _timelineLogic;
 		private IUserStoreDetails _user { get; set; }
-		public ContentManager(ITopicBuilder topicBuilder, ITimelineLogic timelineLogic, 
-			IContentSearch contentSearch, ITextGeneration textGeneration)
+		public ContentManager(ITopicBuilder topicBuilder, IContentSearch contentSearch, ITextGeneration textGeneration)
 		{
 			_topicBuilder = topicBuilder;
-			_timelineLogic = timelineLogic;
 			_contentSearch = contentSearch;
 			_textGeneration = textGeneration;
 		}
@@ -102,15 +98,16 @@ namespace Quarkless.Services
 		}
 		public string GenerateMediaInfo(TopicsModel topicSelect, string language)
 		{
-			var hash = GetHashTags(topicSelect.TopicName, 150, 30).GetAwaiter().GetResult().ToList();
+			var hash = GetHashTags(topicSelect.TopicName, 300, 30).GetAwaiter().GetResult().ToList();
+			hash = hash.TakeAny(15).ToList();
 			hash.AddRange(topicSelect.SubTopics.Select(s => $"#{s}"));
-			var hashtags = hash.TakeAny(SecureRandom.Next(28)).JoinEvery(Environment.NewLine, 3);
-			var caption_ = GenerateText(topicSelect.TopicName.ToLower(), language.ToUpper(), 1, 1, 1);
+			var hashtags = hash.Take(29).JoinEvery(Environment.NewLine, 3);
+			var caption_ = GenerateText(topicSelect.TopicName.ToLower(), language.ToUpper(), 1, SecureRandom.Next(1,3), SecureRandom.Next(2,6));
 			return caption_ + Environment.NewLine + hashtags;
 		}
 		public string GenerateComment(TopicsModel topicsModel, string language)
 		{
-			return GenerateText(topicsModel.TopicName.ToLower(),language.ToUpper(),0,1,1);
+			return GenerateText(topicsModel.TopicName.ToLower(),language.ToUpper(),0,1,SecureRandom.Next(1,3));
 		}
 		public IEnumerable<PostsModel> GetUserMedia(string userName = null, int limit = 1)
 		{
@@ -128,11 +125,6 @@ namespace Quarkless.Services
 				Console.Write(ee.Message);
 				return null;
 			}
-		}
-		public bool AddToTimeline(RestModel restBody, DateTimeOffset executeTime)
-		{
-			restBody.User = _user as UserStore;
-			return _timelineLogic.AddToTimeline(restBody,executeTime);
 		}
 		public IEnumerable<UserResponse<MediaDetail>> SearchMediaDetailInstagram(List<string> topics, int limit = 1)
 		{

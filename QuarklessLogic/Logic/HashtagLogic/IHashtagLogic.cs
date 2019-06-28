@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using InstagramApiSharp;
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Models;
-using InstagramApiSharp.Classes.Models.Hashtags;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 
 namespace QuarklessLogic.Logic.HashtagLogic
@@ -17,7 +16,7 @@ namespace QuarklessLogic.Logic.HashtagLogic
 		Task<IResult<InstaSectionMedia>> GetRecentHashtagMediaListAsync(string tagname, PaginationParameters paginationParameters);
 		Task<IResult<InstaHashtagSearch>> GetSuggestedHashtagsAsync();
 		Task<IResult<InstaSectionMedia>> GetTopHashtagMediaListAsync(string topic, int limit);
-		Task<IResult<InstaHashtagSearch>> SearchHashtagAsync(string query, IEnumerable<long> excludeList = null, string rankToken = null);
+		Task<IResult<InstaHashtagSearch>> SearchHashtagAsync(string query, IEnumerable<long> excludeList = null);
 		Task<IResult<bool>> UnFollowHashtagAsync(string tagname);
 		Task<IEnumerable<HashtagsModel>> GetHashtagsByTopic(string topic, int limit =1);
 	}

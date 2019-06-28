@@ -24,6 +24,11 @@ namespace InstagramApiSharp.Classes.Models
         internal string UploadId { get; set; }
 
         public double Length { get; set; } = 0;
+
+        [JsonIgnore]
+        /// <summary>
+        /// This is only for .NET core apps like UWP(Windows 10) apps
+        /// </summary>
         public byte[] VideoBytes { get; set; }
     }
 }

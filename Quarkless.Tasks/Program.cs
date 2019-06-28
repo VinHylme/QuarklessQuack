@@ -6,6 +6,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Common;
 using Quarkless.Queue;
+using Quarkless.Queue.Jobs.Filters;
+
 namespace Quarkless.Tasks
 {
 	public class WorkerActivator : JobActivator
@@ -27,11 +29,13 @@ namespace Quarkless.Tasks
 			var services = new ServiceCollection();
 
 			services.AddHangFrameworkServices(accessors);
-
-			GlobalConfiguration.Configuration.UseMongoStorage(accessors.ConnectionString, accessors.ControlDatabase,new MongoStorageOptions{ 
-				CheckConnection = false
-			});
+			GlobalConfiguration.Configuration.UseMongoStorage(accessors.ConnectionString, accessors.ControlDatabase,
+				new MongoStorageOptions{
+				CheckConnection = false,
+				JobExpirationCheckInterval = TimeSpan.FromDays(30),
+				});
 			GlobalConfiguration.Configuration.UseActivator(new WorkerActivator(services.BuildServiceProvider(false)));
+			GlobalJobFilters.Filters.Add(new ProlongExpirationTimeAttribute());
 
 			using (var server = new BackgroundJobServer())
 			{

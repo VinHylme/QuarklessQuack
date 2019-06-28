@@ -29,7 +29,7 @@ namespace QuarklessLogic.Handlers.TextGeneration
 			var reader = File.ReadAllLines(joinedPath)
 				.Skip(1)
 				.Select(a => a.Split("\","))
-				.Where(c => c.Length > 2)
+				.Where(c => c.Length > 2 && !c.Contains("@"))
 				.Select(v => new { Text = v[0].Replace("\"", ""), Topic = v[1].Replace("\"", ""), Language = v[2].Replace("\"", "") })
 				.Where(_ => _.Topic.ToLower().Contains(topic) && _.Language.Contains(language)).ToList();
 

@@ -8,7 +8,7 @@ namespace Quarkless.Services.StrategyBuilders
 	{
 		Default
 	}
-	public class ImageStrategySettings : IStrategy
+	public class ImageStrategySettings : IStrategySettings
 	{
 		public ImageStrategyType ImageStrategyType { get; set; } = ImageStrategyType.Default;
 	}

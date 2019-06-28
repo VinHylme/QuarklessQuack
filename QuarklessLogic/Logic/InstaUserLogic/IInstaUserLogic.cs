@@ -21,7 +21,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		Task<IResult<InstaFriendshipShortStatusList>> GetFriendshipStatuses(params long[] userIds);
 		Task<IResult<InstaFullUserInfo>> GetFullUserInfo(long userId);
 		Task<IResult<InstaPendingRequest>> GetPendingFriendRequest();
-		Task<IResult<InstaSuggestionItemList>> GetSuggestionDetails(params long[] userIds);
+		Task<IResult<InstaSuggestionItemList>> GetSuggestionDetails(long userId, long[] chainedUserIds = null);
 		Task<IResult<InstaUser>> GetUser(string username);
 		Task<IResult<InstaUserShortList>> GetUserFollowers(string username, int limit, string query = "", bool mutalfirst = false);
 		Task<IResult<InstaUserShortList>> GetUserFollowing(string username, int limit, string query = "");

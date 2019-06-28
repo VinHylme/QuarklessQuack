@@ -105,5 +105,25 @@ namespace InstagramApiSharp.Classes.ResponseWrappers
         [JsonProperty("product_tags")] public InstaProductTagsContainerResponse ProductTags { get; set; }
 
         [JsonProperty("direct_reply_to_author_enabled")] public bool? DirectReplyToAuthorEnabled { get; set; }
+
+
+
+        [JsonProperty("explore_source_token")] public string ExploreSourceToken { get; set; } 
+        [JsonProperty("explore_context")] public string ExploreContext { get; set; }  
+        [JsonProperty("explore")] public InstaMediaExplore Explore { get; set; }
+        [JsonProperty("mezql_token")] public string MezqlToken { get; set; }
+        [JsonProperty("connection_id")] public string ConnectionId { get; set; }
+        [JsonProperty("is_seen")] public bool? IsSeen { get; set; }
+        [JsonProperty("is_eof")] public bool? IsEof { get; set; }
+        [JsonProperty("inventory_source")] public string InventorySource { get; set; }
+        [JsonProperty("follow_hashtag_info")] public InstaFollowHashtagInfo FollowHashtagInfo { get; set; }
+
+        [JsonProperty("carousel_media_count")] public long? CarouselMediaCount { get; set; }
+        [JsonProperty("can_see_insights_as_brand")] public bool? CanSeeInsightsAsBrand { get; set; }
+        [JsonProperty("unify_tag_display")] public bool? UnifyTagDisplay { get; set; }
+        [JsonProperty("inline_composer_display_condition")] public string InlineComposerDisplayCondition { get; set; }
+        [JsonProperty("inline_composer_imp_trigger_time")] public long? InlineComposerImpTriggerTime { get; set; }
+        [JsonProperty("top_likers")] public InstaMediaIdList TopLikers { get; set; }
+
     }
 }

@@ -8,7 +8,7 @@ namespace Quarkless.Services.Factories.Actions
 {
 	class CreateImagePostActionBuilderFactory : ActionBuilderFactory
 	{
-		public override IActionCommit Commit(IContentManager builder, ProfileModel profile)
-			=> new CreateImagePost(builder, profile);
+		public override IActionCommit Commit(IContentManager builder, ProfileModel profile, UserStore user)
+			=> new CreateImagePost(builder, profile,user);
 	}
 }

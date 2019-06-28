@@ -24,7 +24,7 @@ namespace ContentSearcher.SeleniumClient
 		public SeleniumClient()
 		{
 			var path = Environment.CurrentDirectory;
-			_chromeService = ChromeDriverService.CreateDefaultService(@"..\Requires\chrome");
+			 _chromeService = ChromeDriverService.CreateDefaultService(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\chrome");
 			_chromeOptions = new ChromeOptions()
 			{
 				LeaveBrowserRunning = false,

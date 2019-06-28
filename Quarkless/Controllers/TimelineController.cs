@@ -4,6 +4,7 @@ using Quarkless.Queue.Jobs.Interfaces;
 using Quarkless.Queue.Jobs.JobOptions;
 using QuarklessContexts.Contexts;
 using QuarklessLogic.Handlers.RequestBuilder.RequestBuilder;
+using QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic;
 using System;
 using System.Linq;
 
@@ -19,14 +20,37 @@ namespace Quarkless.Controllers
 	{
 		private readonly IUserContext _userContext;
 		private readonly IRequestBuilder _requestBuilder;
-		private readonly ITaskService _taskService;
-		public TimelineController(IUserContext userContext)
+		private readonly ITimelineLogic _timelineLogic;
+		public TimelineController(IUserContext userContext, ITimelineLogic timelineLogic, IRequestBuilder requestBuilder)
 		{
 			_userContext = userContext;
+			_timelineLogic = timelineLogic;
+			_requestBuilder = requestBuilder;
 		}
-
+		[HttpGet]
+		[Route("api/timeline/{from}/{limit}")]
+		public IActionResult GetEvents(int from = 0, int limit = 1)
+		{
+			if (!string.IsNullOrEmpty(_userContext.CurrentUser))
+			{
+				var res = _timelineLogic.GetTotalScheduledEvents(from,limit);
+				return Ok(res);
+			}
+			return BadRequest();
+		}
+		[HttpGet]
+		[Route("api/timeline/{eventId}")]
+		public IActionResult GetEvent(string eventId)
+		{
+			if (!string.IsNullOrEmpty(_userContext.CurrentUser))
+			{
+				var res = _timelineLogic.GetEventDetail(eventId);
+				return Ok(res);
+			}
+			return BadRequest();
+		}
 		[HttpPost]
-		[Route("timeline/{instagramId}")]
+		[Route("api/timeline/{instagramId}")]
 		public IActionResult AddEvent([FromRoute] string instagramId, [FromBody] LongRunningJobOptions eventItem)
 		{
 
@@ -37,7 +61,7 @@ namespace Quarkless.Controllers
 				var headers = _requestBuilder.DefaultHeaders(instagramId,accessToken); //token will expire after 1 hour, either increase token time or find another solution
 				try {
 					eventItem.Rest.RequestHeaders.ToList().AddRange(headers);
-					_taskService.LongRunningTask(eventItem.Rest, eventItem.ExecutionTime);
+					_timelineLogic.AddEventToTimeline(eventItem.ActionName,eventItem.Rest, eventItem.ExecutionTime);
 					return Ok("Added to queue");
 				}
 				catch(Exception ee) {

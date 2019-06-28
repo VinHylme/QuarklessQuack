@@ -86,33 +86,6 @@ namespace Quarkless.Worker
 
 				Task.WaitAll(t1,t2,t3);
 
-				//Task.WaitAll(ct,ca,bo);
-
-				//if (comments.Count<=0) { 
-				//	var dtc = totalComments[0].ToDataTable<CommentsModel>(
-				//		a=>a.Text, b=>b.Topic, c=>c.Language);
-				//	dtc.WriteToCsvFile($"../../../Data/normalised_data/_comments.csv");
-				//}
-
-				//if (captions.Count<=0) { 
-				//	var dta = captions.ToDataTable(a=>a.Text, b=>b.Topic, c=>c.Language);
-				//	dta.WriteToCsvFile($"../../../Data/normalised_data/_captions.csv");
-				//}
-
-				//if (bios.Count<=0) { 
-				//	var dtb = bios.ToDataTable(a=>a.Text, b=>b.Topic, c=> c.Language);
-				//	dtb.WriteToCsvFile($"../../../Data/normalised_data/_bios.csv");
-				//}
-
-				//foreach (var folder in directory.GetDirectories())
-				//{
-				//	var folderFiles = folder.GetFiles();
-				//	foreach(var file in folderFiles)
-				//	{
-				//		file.MoveTo($"../data_bk/Processed/{file.Name}");
-				//	}
-				//}
-
 			}
 			catch(Exception e)
 			{

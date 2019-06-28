@@ -125,10 +125,37 @@ namespace InstagramApiSharp.API.Processors
         Task<IResult<bool>> MarkDirectThreadAsSeenAsync(string threadId, string itemId);
 
         /// <summary>
-        ///     Mute direct thread
+        ///     Mute direct thread messages
         /// </summary>
         /// <param name="threadId">Thread id</param>
-        Task<IResult<bool>> MuteDirectThreadAsync(string threadId);
+        Task<IResult<bool>> MuteDirectThreadMessagesAsync(string threadId);
+
+        /// <summary>
+        ///     Mute direct thread video calls
+        /// </summary>
+        /// <param name="threadId">Thread id</param>
+        Task<IResult<bool>> MuteDirectThreadVideoCallsAsync(string threadId);
+
+
+        /// <summary>
+        ///     Send gif (animated media) to direct thread
+        /// </summary>
+        /// <param name="giphyId">Giphy id</param>
+        /// <param name="threadIds">Thread ids</param>
+        /// <returns>
+        ///     <see cref="InstaDirectInboxThread" />
+        /// </returns>
+        Task<IResult<InstaDirectInboxThread>> SendDirectAnimatedMediaAsync(string giphyId, params string[] threadIds);
+
+        /// <summary>
+        ///     Send gif (animated media) to recipients
+        /// </summary>
+        /// <param name="giphyId">Giphy id</param>
+        /// <param name="recipients">Recipients (user ids pk)</param>
+        /// <returns>
+        ///     <see cref="InstaDirectInboxThread" />
+        /// </returns>
+        Task<IResult<InstaDirectInboxThread>> SendDirectAnimatedMediaToRecipientsAsync(string giphyId, params string[] recipients);
 
         /// <summary>
         ///     Send disappearing photo to direct thread (video will remove after user saw it)
@@ -137,7 +164,7 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="viewMode">View mode</param>
         /// <param name="threadIds">Thread ids</param>
         Task<IResult<bool>> SendDirectDisappearingPhotoAsync(InstaImage image,
-     InstaViewMode viewMode = InstaViewMode.Replayable, params string[] threadIds);
+            InstaViewMode viewMode = InstaViewMode.Replayable, params string[] threadIds);
 
         /// <summary>
         ///     Send disappearing photo to direct thread (video will remove after user saw it) with progress
@@ -147,7 +174,7 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="viewMode">View mode</param>
         /// <param name="threadIds">Thread ids</param>
         Task<IResult<bool>> SendDirectDisappearingPhotoAsync(Action<InstaUploaderProgress> progress, InstaImage image,
-     InstaViewMode viewMode = InstaViewMode.Replayable, params string[] threadIds);
+            InstaViewMode viewMode = InstaViewMode.Replayable, params string[] threadIds);
 
         /// <summary>
         ///     Send disappearing video to direct thread (video will remove after user saw it)
@@ -157,7 +184,7 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="threadIds">Thread ids</param>
         /// <returns></returns>
         Task<IResult<bool>> SendDirectDisappearingVideoAsync(InstaVideoUpload video,
-       InstaViewMode viewMode = InstaViewMode.Replayable, params string[] threadIds);
+            InstaViewMode viewMode = InstaViewMode.Replayable, params string[] threadIds);
 
         /// <summary>
         ///     Send disappearing video to direct thread (video will remove after user saw it) with progress
@@ -168,7 +195,16 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="threadIds">Thread ids</param>
         /// <returns></returns>
         Task<IResult<bool>> SendDirectDisappearingVideoAsync(Action<InstaUploaderProgress> progress, InstaVideoUpload video,
-       InstaViewMode viewMode = InstaViewMode.Replayable, params string[] threadIds);
+            InstaViewMode viewMode = InstaViewMode.Replayable, params string[] threadIds);
+
+        /// <summary>
+        ///     Send felix share (ig tv) to direct thread
+        /// </summary>
+        /// <param name="mediaId">Media identifier to send</param>
+        /// <param name="threadIds">Thread ids</param>
+        /// <param name="recipients">Recipients ids</param>
+        /// <returns>Returns True if felix share sent</returns>
+        Task<IResult<bool>> SendDirectFelixShareAsync(string mediaId, string[] threadIds, string[] recipients);
 
         /// <summary>
         ///     Send hashtag to direct thread
@@ -290,7 +326,7 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="threadIds">Message thread ids</param>
         /// <param name="text">Message text</param>
         /// <returns>List of threads</returns>
-        Task<IResult<InstaDirectInboxThreadList>> SendDirectTextAsync(string recipients, string threadIds,
+        Task<IResult<bool>> SendDirectTextAsync(string recipients, string threadIds,
             string text);
 
         /// <summary>
@@ -322,6 +358,55 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="video">Video to upload (no need to set thumbnail)</param>
         /// <param name="recipients">Recipients (user ids/pk)</param>
         Task<IResult<bool>> SendDirectVideoToRecipientsAsync(Action<InstaUploaderProgress> progress, InstaVideoUpload video, params string[] recipients);
+
+        /// <summary>
+        ///     Send voice to direct thread (single)
+        ///     <para>Only OGG or M4A files accepted by Instagram</para>
+        /// </summary>
+        /// <param name="audio">
+        ///     Voice to upload
+        ///     <para>Only OGG or M4A files accepted by Instagram</para>
+        /// </param>
+        /// <param name="threadId">Thread id</param>
+        /// <returns>Returns True is sent</returns>
+        Task<IResult<bool>> SendDirectVoiceAsync(InstaAudioUpload audio, string threadId);
+
+        /// <summary>
+        ///     Send voice to direct thread (single) with progress
+        ///     <para>Only OGG or M4A files accepted by Instagram</para>
+        /// </summary>
+        /// <param name="progress">Progress action</param>
+        /// <param name="audio">
+        ///     Voice to upload
+        ///     <para>Only OGG or M4A files accepted by Instagram</para>
+        /// </param>
+        /// <param name="threadId">Thread id</param>
+        /// <returns>Returns True is sent</returns>
+        Task<IResult<bool>> SendDirectVoiceAsync(Action<InstaUploaderProgress> progress, InstaAudioUpload audio, string threadId);
+
+        /// <summary>
+        ///     Send video to user id (pk)
+        ///     <para>Only OGG or M4A files accepted by Instagram</para>
+        /// </summary>
+        /// <param name="audio">
+        ///     Voice to upload
+        ///     <para>Only OGG or M4A files accepted by Instagram</para>
+        /// </param>
+        /// <param name="recipients">Recipients (user ids/pk)</param>
+        Task<IResult<bool>> SendDirectVoiceToRecipientsAsync(InstaAudioUpload audio, params string[] recipients);
+
+        /// <summary>
+        ///     Send voice to user id (pk) with progress
+        ///     <para>Only OGG or M4A files accepted by Instagram</para>
+        /// </summary>
+        /// <param name="progress">Progress action</param>
+        /// <param name="audio">
+        ///     Voice to upload
+        ///     <para>Only OGG or M4A files accepted by Instagram</para>
+        /// </param>
+        /// <param name="recipients">Recipients (user ids/pk)</param>
+        /// <returns>Returns True is sent</returns>
+        Task<IResult<bool>> SendDirectVoiceToRecipientsAsync(Action<InstaUploaderProgress> progress, InstaAudioUpload audio, params string[] recipients);
 
         /// <summary>
         ///     Share media to direct thread
@@ -356,10 +441,16 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="itemId">Item id (message id)</param>
         Task<IResult<bool>> UnLikeThreadMessageAsync(string threadId, string itemId);
         /// <summary>
-        ///     Unmute direct thread
+        ///     Unmute direct thread messages
         /// </summary>
         /// <param name="threadId">Thread id</param>
-        Task<IResult<bool>> UnMuteDirectThreadAsync(string threadId);
+        Task<IResult<bool>> UnMuteDirectThreadMessagesAsync(string threadId);
+
+        /// <summary>
+        ///     Unmute direct thread video calls
+        /// </summary>
+        /// <param name="threadId">Thread id</param>
+        Task<IResult<bool>> UnMuteDirectThreadVideoCallsAsync(string threadId);
 
         /// <summary>
         ///     Update direct thread title (for groups)
