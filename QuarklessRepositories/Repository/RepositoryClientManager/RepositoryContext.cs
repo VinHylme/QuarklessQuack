@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Hangfire.Mongo.Dto;
+using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using QuarklessContexts.Contexts.AccountContext;
@@ -18,6 +19,7 @@ namespace QuarklessRepositories.RepositoryClientManager
 		private readonly IMongoDatabase _clientDatabase;
 		private readonly IMongoDatabase _controlDatabase;
 		private readonly IMongoDatabase _contentDatabase;
+		private readonly IMongoDatabase _schedulerDatabase;
 		public RepositoryContext(IOptions<Settings> options)
 		{
 			var client = new MongoClient(options.Value.ConnectionString);
@@ -26,6 +28,7 @@ namespace QuarklessRepositories.RepositoryClientManager
 				_clientDatabase = client.GetDatabase(options.Value.MainDatabase);
 				_controlDatabase = client.GetDatabase(options.Value.ControlDatabase);
 				_contentDatabase = client.GetDatabase(options.Value.ContentDatabase);
+				_schedulerDatabase = client.GetDatabase(options.Value.SchedulerDatabase);
 			}
 		}
 
@@ -99,11 +102,9 @@ namespace QuarklessRepositories.RepositoryClientManager
 		}
 
 		public IMongoCollection<CaptionsModel> Captions => _contentDatabase.GetCollection<CaptionsModel>("Captions");
-
 		public IMongoCollection<HashtagsModel> Hashtags => _contentDatabase.GetCollection<HashtagsModel>("Hashtags");
-
 		public IMongoCollection<UserBiographyModel> UserBiography => _contentDatabase.GetCollection<UserBiographyModel>("BiographyDetail");
-
+		public IMongoCollection<JobDto> Timeline => _schedulerDatabase.GetCollection<JobDto>("Timeline.jobGraph");
 		internal async Task<bool> CreateCollection(string collectionName, BsonDocument document = null)
 		{
 			try

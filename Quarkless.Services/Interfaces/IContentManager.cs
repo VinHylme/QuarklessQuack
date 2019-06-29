@@ -29,5 +29,7 @@ namespace Quarkless.Services.Interfaces
 		IEnumerable<PostsModel> GetYandexSimilarImages(List<GroupImagesAlike> similarImages = null, int limit = 10);
 		IEnumerable<PostsModel> GetGoogleImages(string color, List<string> topics, List<string> sites, int limit = 10,
 			string imageType = null, string exactSize = null, string similarImage = null);
+		List<UserResponse<UserSuggestionDetails>> GetSuggestedPeopleToFollow(int limit);
+		IEnumerable<UserResponse<string>> GetUserFollowingList(string username, int limit, string query = null);
 	}
 }

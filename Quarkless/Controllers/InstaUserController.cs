@@ -748,7 +748,7 @@ namespace Quarkless.Controllers
 			}
 		}
 
-		[HttpGet]
+		[HttpPost]
 		[Route("api/instaUser/unFollowUser/{userId}")]
 		public async Task<IActionResult> UnFollowUser(long userid)
 		{

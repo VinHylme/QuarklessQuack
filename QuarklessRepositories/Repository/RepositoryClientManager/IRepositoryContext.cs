@@ -1,4 +1,5 @@
-﻿using MongoDB.Bson;
+﻿using Hangfire.Mongo.Dto;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using QuarklessContexts.Contexts.AccountContext;
 using QuarklessContexts.Models.InstagramAccounts;
@@ -24,5 +25,6 @@ namespace QuarklessRepositories.RepositoryClientManager
 		IMongoCollection<CaptionsModel> Captions { get; }
 		IMongoCollection<HashtagsModel> Hashtags { get; }
 		IMongoCollection<UserBiographyModel> UserBiography { get; }
+		IMongoCollection<JobDto> Timeline { get; }
 	}
 }

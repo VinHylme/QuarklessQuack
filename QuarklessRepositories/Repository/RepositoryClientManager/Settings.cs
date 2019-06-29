@@ -7,5 +7,6 @@ namespace QuarklessRepositories.RepositoryClientManager
 		public string MainDatabase { get; set; }
 		public string ConnectionString { get; set; }
 		public string ContentDatabase { get; set; }
+		public string SchedulerDatabase { get; set; }
 	}
 }

@@ -21,6 +21,7 @@ using Quarkless.Auth;
 using Quarkless.Auth.AuthTypes;
 using Quarkless.Auth.Manager;
 using Quarkless.Common;
+using Quarkless.Queue.Jobs.Filters;
 using QuarklessContexts.Contexts;
 using QuarklessContexts.Contexts.AccountContext;
 using QuarklessLogic.Handlers.ReportHandler;
@@ -115,18 +116,23 @@ namespace Quarkless
 
 			services.AddHangfire(options =>
 			{
-				options.UseMongoStorage(_accessors.ConnectionString, _accessors.ControlDatabase, new MongoStorageOptions()
+				options.UseFilter(new ProlongExpirationTimeAttribute());
+				options.UseMongoStorage(_accessors.ConnectionString, _accessors.SchedulerDatabase, new MongoStorageOptions()
 				{
+					Prefix = "Timeline",
 					CheckConnection = false,
-					JobExpirationCheckInterval = TimeSpan.FromDays(30),
-					MigrationOptions = new MongoMigrationOptions(MongoMigrationStrategy.Migrate) { Strategy = MongoMigrationStrategy.Migrate }
+					JobExpirationCheckInterval = TimeSpan.FromDays(7),
+					MigrationOptions = new MongoMigrationOptions(MongoMigrationStrategy.Migrate) 
+					{ 
+						Strategy = MongoMigrationStrategy.Migrate,
+						BackupStrategy = MongoBackupStrategy.Collections
+					}
 				});
 				options.UseSerializerSettings(new Newtonsoft.Json.JsonSerializerSettings(){ 
 					ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
 				});
 			});
 			services.AddHangFrameworkServices(_accessors);
-
 			services.AddLogics();
 			services.AddContexts();
 			services.AddHandlers();

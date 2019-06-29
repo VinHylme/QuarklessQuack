@@ -41,6 +41,7 @@ using QuarklessRepositories.Repository.ServicesRepositories;
 using QuarklessRepositories.Repository.ServicesRepositories.CommentsRepository;
 using QuarklessRepositories.Repository.ServicesRepositories.HashtagsRepository;
 using QuarklessRepositories.Repository.ServicesRepositories.TopicsRepository;
+using QuarklessRepositories.Repository.TimelineRepository;
 using QuarklessRepositories.RepositoryClientManager;
 using System;
 
@@ -81,6 +82,7 @@ namespace Quarkless.Common
 				o.MainDatabase = _accessors.MainDatabase;
 				o.ControlDatabase = _accessors.ControlDatabase;
 				o.ContentDatabase = _accessors.ContentDatabase;
+				o.SchedulerDatabase = _accessors.SchedulerDatabase;
 			});
 			services.AddSingleton<IRepositoryContext, RepositoryContext>();
 			services.AddTransient<IInstagramAccountRepository, InstagramAccountRepository>();
@@ -90,6 +92,7 @@ namespace Quarkless.Common
 			services.AddTransient<ITopicsRepository,TopicsRepository>();
 			services.AddTransient<ICommentsRepository,CommentsRepository>();
 			services.AddTransient<IHashtagsRepository,HashtagsRepository>();
+			services.AddTransient<ITimelineRepository,TimelineRepository>();
 		}
 		public static void AddHandlers(this IServiceCollection services)
 		{

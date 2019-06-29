@@ -55,6 +55,13 @@ namespace Quarkless.Common
 				return _configuration["ConnectionStrings:DatabaseNames:Accounts"];
 			}
 		}
+		public string SchedulerDatabase
+		{
+			get
+			{
+				return _configuration["ConnectionStrings:DatabaseNames:Scheduler"];
+			}
+		}
 		public string ControlDatabase
 		{
 			get

@@ -10,7 +10,11 @@ using System.Text;
 
 namespace Quarkless.Services.ActionBuilders.OtherActions
 {
-	public class FetchResponse
+	public interface IFetchResponse
+	{
+		object FetchedItems { get; set;}
+	}
+	public class FetchResponse : IFetchResponse
 	{
 		public TopicsModel SelectedTopic { get; set; }
 		public object FetchedItems { get; set; }
@@ -20,7 +24,7 @@ namespace Quarkless.Services.ActionBuilders.OtherActions
 			this.FetchedItems = fetchedItems;
 		}
 	}
-	public class FetchMediaAction : IMediaFetched
+	public class FetchMediaAction : IFetched
 	{
 		private readonly ProfileModel _profile;
 		private readonly IContentManager _builder;
@@ -29,7 +33,7 @@ namespace Quarkless.Services.ActionBuilders.OtherActions
 			_profile = profile;
 			_builder = contentBuild;
 		}
-		public FetchResponse FetchByTopic(int totalTopics = 15, int takeAmount = 2)
+		public IFetchResponse FetchByTopic(int totalTopics = 15, int takeAmount = 2)
 		{
 			var topicSearch = _builder.GetTopics(_profile.TopicList, totalTopics).GetAwaiter().GetResult();
 			var topicSelect = topicSearch.ElementAt(SecureRandom.Next(topicSearch.Count));
@@ -37,6 +41,11 @@ namespace Quarkless.Services.ActionBuilders.OtherActions
 			List<string> pickedSubsTopics = topicSelect.SubTopics.TakeAny(takeAmount).ToList();
 			pickedSubsTopics.Add(topicSelect.TopicName);
 			return new FetchResponse(topicSelect, _builder.SearchMediaDetailInstagram(pickedSubsTopics,1));
+		}
+
+		public IFetchResponse FetchUsers(int limit, UserFetchType userFetchType)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

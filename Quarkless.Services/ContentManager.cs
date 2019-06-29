@@ -180,5 +180,15 @@ namespace Quarkless.Services
 				return null;
 			}
 		}
+
+		public List<UserResponse<UserSuggestionDetails>> GetSuggestedPeopleToFollow(int limit)
+		{
+			return _contentSearch.GetSuggestedPeopleToFollow(limit).GetAwaiter().GetResult();
+		}
+
+		public IEnumerable<UserResponse<string>> GetUserFollowingList(string username, int limit, string query = null)
+		{
+			return _contentSearch.GetUserFollowingList(username,limit,query).GetAwaiter().GetResult();
+		}
 	}
 }

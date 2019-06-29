@@ -9,6 +9,8 @@ namespace Quarkless.Services.ContentSearch
 {
 	public interface IContentSearch
 	{
+		Task<List<UserResponse<UserSuggestionDetails>>> GetSuggestedPeopleToFollow(int limit);
+		Task<IEnumerable<UserResponse<string>>> GetUserFollowingList(string username, int limit, string query = null);
 		void SetUserClient(IUserStoreDetails _user);
 		Task<IEnumerable<UserResponse<MediaDetail>>> SearchUserFeedMediaDetailInstagram(string[] seenMedias = null, bool requestRefresh = false, int limit = 1);
 		Task<IEnumerable<UserResponse<MediaDetail>>> SearchUsersMediaDetailInstagram(string userName, int limit);

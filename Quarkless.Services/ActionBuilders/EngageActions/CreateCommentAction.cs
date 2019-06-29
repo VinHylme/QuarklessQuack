@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Quarkless.Services.ActionBuilders.OtherActions;
 using Quarkless.Services.Factories;
 using Quarkless.Services.Interfaces;
 using Quarkless.Services.Interfaces.Actions;
@@ -48,7 +49,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		private HolderComment CommentingByTopic(bool inDepth = false)
 		{
-			var fetchMedias = MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic();
+			var fetchMedias = (FetchResponse) MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic();
 			var searchMedias = (IEnumerable<UserResponse<MediaDetail>>)fetchMedias.FetchedItems;
 			if (inDepth)
 			{
@@ -77,7 +78,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		private HolderComment CommentingByLikers(bool inDepth = false)
 		{
-			var fetchMedias = MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic();
+			var fetchMedias = (FetchResponse) MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic();
 			var searchMedias = (IEnumerable<UserResponse<MediaDetail>>) fetchMedias.FetchedItems;
 			if (inDepth)
 			{
@@ -178,7 +179,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				}
 				else if(commentingStrategySettings.CommentingStrategy == CommentingStrategy.TopNth)
 				{
-					var fetchMedias = MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic(takeAmount:commentingStrategySettings.NumberOfActions);
+					var fetchMedias = (FetchResponse) MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic(takeAmount:commentingStrategySettings.NumberOfActions);
 					var searchMedias = (IEnumerable<UserResponse<MediaDetail>>)fetchMedias.FetchedItems;
 
 					var groupByTopics = searchMedias.GroupBy(_ => _.Topic);

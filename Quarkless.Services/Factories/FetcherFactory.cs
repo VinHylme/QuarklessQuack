@@ -7,9 +7,9 @@ using System.Text;
 
 namespace Quarkless.Services.Factories
 {
-	public abstract class MediaFetcherFactory
+	public abstract class FetcherFactory
 	{
-		public abstract IMediaFetched Commit(IContentManager builder, ProfileModel profile);
+		public abstract IFetched Commit(IContentManager builder, ProfileModel profile);
 
 	}
 }

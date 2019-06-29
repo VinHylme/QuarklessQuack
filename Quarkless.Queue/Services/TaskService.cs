@@ -61,9 +61,9 @@ namespace Quarkless.Queue.Services
 		{
 			IEnumerable<TimelineItem> total;
 			if (string.IsNullOrEmpty(instagramId)) 
-				total = GetTotalScheduledEvents(0,1000000000).Where(_=>_.User.OAccountId == username);
+				total = GetTotalScheduledEvents(0,int.MaxValue).Where(_=>_.User.OAccountId == username);
 			else
-				total = GetTotalScheduledEvents(0, 1000000000).Where(_ => _.User.OAccountId == username && _.User.OInstagramAccountUser == instagramId);
+				total = GetTotalScheduledEvents(0, int.MaxValue).Where(_ => _.User.OAccountId == username && _.User.OInstagramAccountUser == instagramId);
 			
 			return total?.Take(limit) ?? null;
 		}
@@ -71,9 +71,9 @@ namespace Quarkless.Queue.Services
 		{
 			IEnumerable<TimelineInProgressItem> total;
 			if (string.IsNullOrEmpty(instagramId))
-				total = GetTotalCurrentlyRunningJobs(0, 1000000000).Where(_ => _.User.OAccountId == username);
+				total = GetTotalCurrentlyRunningJobs(0, int.MaxValue).Where(_ => _.User.OAccountId == username);
 			else
-				total = GetTotalCurrentlyRunningJobs(0, 1000000000).Where(_ => _.User.OAccountId == username && _.User.OInstagramAccountUser == instagramId);
+				total = GetTotalCurrentlyRunningJobs(0, int.MaxValue).Where(_ => _.User.OAccountId == username && _.User.OInstagramAccountUser == instagramId);
 
 			return total?.Take(limit) ?? null;
 		}
@@ -81,9 +81,9 @@ namespace Quarkless.Queue.Services
 		{
 			IEnumerable<TimelineFinishedItem> total;
 			if (string.IsNullOrEmpty(instagramId))
-				total = GetTotalFinishedJobs(0, 1000000000).Where(_ => _.User.OAccountId == username);
+				total = GetTotalFinishedJobs(0, int.MaxValue).Where(_ => _.User.OAccountId == username);
 			else
-				total = GetTotalFinishedJobs(0, 1000000000).Where(_ => _.User.OAccountId == username && _.User.OInstagramAccountUser == instagramId);
+				total = GetTotalFinishedJobs(0, int.MaxValue).Where(_ => _.User.OAccountId == username && _.User.OInstagramAccountUser == instagramId);
 
 			return total?.Take(limit) ?? null;
 		}
@@ -101,9 +101,9 @@ namespace Quarkless.Queue.Services
 		{
 			IEnumerable<TimelineFailedItem> total;
 			if (string.IsNullOrEmpty(instagramId))
-				total = GetTotalFailedEvents(0, 1000000000).Where(_ => _.User.OAccountId == username);
+				total = GetTotalFailedEvents(0, int.MaxValue).Where(_ => _.User.OAccountId == username);
 			else
-				total = GetTotalFailedEvents(0, 1000000000).Where(_ => _.User.OAccountId == username && _.User.OInstagramAccountUser == instagramId);
+				total = GetTotalFailedEvents(0, int.MaxValue).Where(_ => _.User.OAccountId == username && _.User.OInstagramAccountUser == instagramId);
 
 			return total?.Take(limit) ?? null;
 		}

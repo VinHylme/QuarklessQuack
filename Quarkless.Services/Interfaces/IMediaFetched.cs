@@ -5,8 +5,9 @@ using System.Text;
 
 namespace Quarkless.Services.Interfaces
 {
-	public interface IMediaFetched
+	public interface IFetched
 	{
-		FetchResponse FetchByTopic(int totalTopics = 15, int takeAmount = 2);
+		IFetchResponse FetchByTopic(int totalTopics = 15, int takeAmount = 2);
+		IFetchResponse FetchUsers(int limit, UserFetchType userFetchType);
 	}
 }

@@ -16,6 +16,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Globalization;
+using Quarkless.Services.Extensions;
 
 namespace Quarkless.Services
 {
@@ -34,11 +35,12 @@ namespace Quarkless.Services
 	}
 	struct ScheduleWindow
 	{
-		public IEnumerable<TimelineItem> CreateImageActions;
-		public IEnumerable<TimelineItem> CreateVideoActions;
-		public IEnumerable<TimelineItem> CommentingActions;
-		public IEnumerable<TimelineItem> LikeMediaActions;
-		public IEnumerable<TimelineItem> FollowUserActions;
+		public IEnumerable<ResultBase<TimelineItem>> CreateImageActions;
+		public IEnumerable<ResultBase<TimelineItem>> CreateVideoActions;
+		public IEnumerable<ResultBase<TimelineItem>> CommentingActions;
+		public IEnumerable<ResultBase<TimelineItem>> LikeMediaActions;
+		public IEnumerable<ResultBase<TimelineItem>> FollowUserActions;
+		public IEnumerable<ResultBase<TimelineItem>> All;
 	}
 	class ActionContainer
 	{
@@ -80,10 +82,9 @@ namespace Quarkless.Services
 						try
 						{
 							var actionBase = event_.ActionName.Split('_')[0].ToLower();
-							var actionsScheduledForTheDay = _timelineLogic.GetScheduledEventsForUserForActionByDate(event_.Data.User.OAccountId, actionBase, event_.ExecutionTime.Date);
-							var actionsScheduledForTheNextHour = _timelineLogic.GetScheduledEventsForUserForActionByDate(event_.Data.User.OAccountId, actionBase, 
-								event_.ExecutionTime.Date, event_.ExecutionTime.AddHours(2).Date);
-
+							var actionsScheduledForTheDay = GetEveryActionForToday(event_.Data.User.OAccountId,actionBase,event_.Data.User.OInstagramAccountUser);
+							var actionsScheduledForTheLastHour = GetEveryActionForToday(event_.Data.User.OAccountId, actionBase, event_.Data.User.OInstagramAccountUser,isHourly:true);
+							
 							if (actionBase.Contains(ActionNames.CreatePhoto))
 							{
 								if (actionsScheduledForTheDay.Count() >= ImageActionOptions.CreatePhotoActionDailyLimit.Max)
@@ -96,9 +97,9 @@ namespace Quarkless.Services
 										DailyLimitReached = true
 									});
 								}
-								if (actionsScheduledForTheNextHour.Count() >= ImageActionOptions.CreatePhotoActionHourlyLimit.Max)
+								if (actionsScheduledForTheLastHour.Count() >= ImageActionOptions.CreatePhotoActionHourlyLimit.Max)
 								{
-									event_.ExecutionTime.AddHours(1);
+									event_.ExecutionTime.AddHours(1.1);
 								}
 							}
 							else if (actionBase.Contains(ActionNames.CreateVideo))
@@ -113,9 +114,9 @@ namespace Quarkless.Services
 										DailyLimitReached = true
 									});
 								}
-								if (actionsScheduledForTheNextHour.Count() >= VideoActionOptions.CreateVideoActionHourlyLimit.Max)
+								if (actionsScheduledForTheLastHour.Count() >= VideoActionOptions.CreateVideoActionHourlyLimit.Max)
 								{
-									event_.ExecutionTime.AddHours(1);
+									event_.ExecutionTime.AddHours(1.1);
 								}
 							}
 							else if (actionBase.Contains(ActionNames.Comment))
@@ -130,9 +131,9 @@ namespace Quarkless.Services
 										DailyLimitReached = true
 									});
 								}
-								if (actionsScheduledForTheNextHour.Count() >= CommentingActionOptions.CommentingActionHourlyLimit.Max)
+								if (actionsScheduledForTheLastHour.Count() >= CommentingActionOptions.CommentingActionHourlyLimit.Max)
 								{
-									event_.ExecutionTime.AddHours(1);
+									event_.ExecutionTime.AddHours(1.1);
 								}
 							}
 							else if (actionBase.Contains(ActionNames.LikeMedia))
@@ -147,9 +148,9 @@ namespace Quarkless.Services
 										DailyLimitReached = true
 									});
 								}
-								if (actionsScheduledForTheNextHour.Count() >= LikeActionOptions.LikeActionHourlyLimit.Max)
+								if (actionsScheduledForTheLastHour.Count() >= LikeActionOptions.LikeActionHourlyLimit.Max)
 								{
-									event_.ExecutionTime.AddHours(1);
+									event_.ExecutionTime.AddHours(1.1);
 								}
 
 							}
@@ -165,9 +166,9 @@ namespace Quarkless.Services
 										DailyLimitReached = true
 									});
 								}
-								if (actionsScheduledForTheNextHour.Count() >= FollowActionOptions.FollowActionHourlyLimit.Max)
+								if (actionsScheduledForTheLastHour.Count() >= FollowActionOptions.FollowActionHourlyLimit.Max)
 								{
-									event_.ExecutionTime.AddHours(1);
+									event_.ExecutionTime.AddHours(1.1);
 								}
 							}
 
@@ -207,51 +208,67 @@ namespace Quarkless.Services
 			}
 			return false;
 		}
-		private ScheduleWindow GetTodaysScheduleWindow(string accountId)
+		private ScheduleWindow GetTodaysScheduleWindow (string accountId, TimelineDateType timelineDateType, string instagramId = null, int limit = 1000)
 		{
+			var todays = _timelineLogic.GetAllEventsForUser(accountId, DateTime.UtcNow, instaId: instagramId, 
+				limit: limit,timelineDateType:timelineDateType);
+
+			var schedulerHistory = todays.OrderBy(_ => _.Response.EnqueueTime).GroupBy(_ => new { _.TimelineType, _.Response.ActionName });
+
 			return new ScheduleWindow
 			{
-				CreateImageActions = _timelineLogic.GetScheduledEventsForUserForActionByDate(accountId, ActionNames.CreatePhoto, DateTime.Today),
-				CommentingActions = _timelineLogic.GetScheduledEventsForUserForActionByDate(accountId, ActionNames.Comment, DateTime.Today),
-				CreateVideoActions = _timelineLogic.GetScheduledEventsForUserForActionByDate(accountId, ActionNames.CreateVideo, DateTime.Today),
-				FollowUserActions = _timelineLogic.GetScheduledEventsForUserForActionByDate(accountId, ActionNames.FollowUser, DateTime.Today),
-				LikeMediaActions = _timelineLogic.GetScheduledEventsForUserForActionByDate(accountId, ActionNames.LikeMedia, DateTime.Today)
+				All = schedulerHistory.SquashMe(),
+				CreateImageActions = schedulerHistory.Where(_ => _.Key.TimelineType != typeof(TimelineDeletedItem) && _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionNames.CreatePhoto.ToLower()).SquashMe(),
+				CommentingActions = schedulerHistory.Where(_ => _.Key.TimelineType != typeof(TimelineDeletedItem) && _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionNames.Comment.ToLower()).SquashMe(),
+				CreateVideoActions = schedulerHistory.Where(_ => _.Key.TimelineType != typeof(TimelineDeletedItem) && _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionNames.CreateVideo.ToLower()).SquashMe(),
+				FollowUserActions = schedulerHistory.Where(_ => _.Key.TimelineType != typeof(TimelineDeletedItem) && _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionNames.FollowUser.ToLower()).SquashMe(),
+				LikeMediaActions = schedulerHistory.Where(_ => _.Key.TimelineType != typeof(TimelineDeletedItem) && _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionNames.LikeMedia.ToLower()).SquashMe()
 			};
 		}
-		enum Day
+		private ScheduleWindow GetLastHoursScheduleWindow(string accountId, TimelineDateType timelineDateType, string instagramId = null, int limit = 1000)
 		{
-			Monday,
-			Tuesday,
-			Wednsday,
-			Thursday,
-			Friday,
-			Saturday,
-			Sunday
+			var todays = _timelineLogic.GetAllEventsForUser(accountId, DateTime.UtcNow, endDate: DateTime.UtcNow.AddHours(-1),
+				instaId: instagramId, limit: limit, timelineDateType:timelineDateType);
+
+			var schedulerHistory = todays.OrderBy(_ => _.Response.EnqueueTime).GroupBy(_ => new { _.TimelineType, _.Response.ActionName });
+
+			return new ScheduleWindow
+			{
+				All = schedulerHistory.SquashMe(),
+				CreateImageActions = schedulerHistory.Where(_ => _.Key.TimelineType != typeof(TimelineDeletedItem) && _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionNames.CreatePhoto.ToLower()).SquashMe(),
+				CommentingActions = schedulerHistory.Where(_ => _.Key.TimelineType != typeof(TimelineDeletedItem) && _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionNames.Comment.ToLower()).SquashMe(),
+				CreateVideoActions = schedulerHistory.Where(_ => _.Key.TimelineType != typeof(TimelineDeletedItem) && _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionNames.CreateVideo.ToLower()).SquashMe(),
+				FollowUserActions = schedulerHistory.Where(_ => _.Key.TimelineType != typeof(TimelineDeletedItem) && _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionNames.FollowUser.ToLower()).SquashMe(),
+				LikeMediaActions = schedulerHistory.Where(_ => _.Key.TimelineType != typeof(TimelineDeletedItem) && _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionNames.LikeMedia.ToLower()).SquashMe()
+			};
 		}
-		struct Time
+		private IEnumerable<ResultBase<TimelineItem>> GetEveryActionForToday (string accid, string action, string instaacc = null, int limit = 1000, bool isHourly = false)
 		{
-			public int Hours;
-			public int Minutes;
-			public int Seconds;
-			public int Milliseconds;
+			ScheduleWindow schedule = new ScheduleWindow();
+			if (isHourly)
+			{
+				schedule = GetLastHoursScheduleWindow(accid,TimelineDateType.Both,instaacc,limit);
+			}
+			else
+			{
+				schedule = GetTodaysScheduleWindow(accid,TimelineDateType.Both,instaacc,limit);
+			}
+			switch (action)
+			{
+				case ActionNames.LikeMedia:
+					return schedule.LikeMediaActions;
+				case ActionNames.Comment:
+					return schedule.CommentingActions;
+				case ActionNames.CreatePhoto:
+					return schedule.CreateImageActions;
+				case ActionNames.CreateVideo:
+					return schedule.CreateVideoActions;
+				case ActionNames.FollowUser:
+					return schedule.FollowUserActions;
+			}
+
+			return null;
 		}
-		struct TimelineScheduleWindow
-		{
-			public IEnumerable<object> Items;
-			public Day Day { get; set; }
-			public Time Time { get; set; }
-		}
-		/*
-		 * H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 H11 H12
-		 M I F L  C      (BREAK)             ....
-		 T
-		 W
-		 T
-		 F
-		 S
-		 S
-			 
-		*/
 		public async Task<AgentRespnse> StartAgent(string accountId, string instagramAccountId, string accessToken)
 		{
 			try
@@ -260,138 +277,108 @@ namespace Quarkless.Services
 				if (profile == null) return null;
 				_userStoreDetails.AddUpdateUser(accountId,instagramAccountId,accessToken);			
 				_contentManager.SetUser(_userStoreDetails);
-				var todays = _timelineLogic.GetAllEventsForUser(accountId, DateTime.Today, instaId:instagramAccountId, limit:9000);
-				var groupby = todays.OrderBy(_=>_.Response.EnqueueTime).GroupBy(_=>_.TimelineType);
-				
-				var todaysImagesAction = _timelineLogic.GetAllEventsForUserByAction(ActionNames.LikeMedia,accountId,DateTime.Today,instaId:instagramAccountId,limit:10000);
 
-				var imageAction = ActionsManager.Begin.Commit(ActionType.CreatePostTypeImage, _contentManager, profile, (UserStore) _userStoreDetails)
+				var likeAction = ActionsManager.Begin.Commit(ActionType.LikePost,_contentManager,profile,(UserStore)_userStoreDetails)
+					.IncludeStrategy(new LikeStrategySettings()
+					{
+						LikeStrategy = LikeStrategyType.Default,
+					});
+				var imageAction = ActionsManager.Begin.Commit(ActionType.CreatePostTypeImage, _contentManager, profile, (UserStore)_userStoreDetails)
 					.IncludeStrategy(new ImageStrategySettings
 					{
 						ImageStrategyType = ImageStrategyType.Default
 					});
-				var followAction = ActionsManager.Begin.Commit(ActionType.FollowUser, _contentManager, profile, (UserStore) _userStoreDetails)
-					.IncludeStrategy(new FollowStrategySettings {
-						FollowStrategy = FollowStrategyType.Default,
-						NumberOfActions = 1,
-						OffsetPerAction = DateTimeOffset.Now.AddSeconds(20)
-					});
-				var likeMediaAction = ActionsManager.Begin.Commit(ActionType.LikePost, _contentManager, profile, (UserStore)_userStoreDetails)
-					.IncludeStrategy(new LikeStrategySettings
+				var followAction = ActionsManager.Begin.Commit(ActionType.FollowUser, _contentManager, profile, (UserStore)_userStoreDetails)
+					.IncludeStrategy(new FollowStrategySettings
 					{
-						LikeStrategy = LikeStrategyType.Default,
-						NumberOfActions = 9,
-						OffsetPerAction = TimeSpan.FromSeconds(25)
+						FollowStrategy = FollowStrategyType.Default,
 					});
-				var commentAction =  ActionsManager.Begin.Commit(ActionType.CreateCommentMedia, _contentManager, profile, (UserStore) _userStoreDetails)
+				var commentAction = ActionsManager.Begin.Commit(ActionType.CreateCommentMedia, _contentManager, profile, (UserStore)_userStoreDetails)
 					.IncludeStrategy(new CommentingStrategySettings
 					{
 						CommentingStrategy = CommentingStrategy.Default,
-						NumberOfActions = 9,
-						OffsetPerAction = TimeSpan.FromSeconds(25)
 					});
 
-				//every 2 days 
-				// go through following list
-				// check if any of the following people are engaging && and user's are 2-4 days old
-				// if not then unfollow
+				DateTime nextAvaliableDate = PickAGoodTime();
 
-				ScheduleWindow scheduleWindowForToday = GetTodaysScheduleWindow(accountId);
+				DateTime PickAGoodTime() { 
+					var sft = _timelineLogic.GetScheduledEventsForUserByDate(accountId,DateTime.UtcNow,instaId:instagramAccountId,limit:1000,timelineDateType:TimelineDateType.Forward);
+					var datesPlanned = sft.Select(_=>_.EnqueueTime);
+					if (datesPlanned != null && datesPlanned.Count()>0) { 
+						DateTime current = DateTime.UtcNow;
+						var difference = datesPlanned.Where(_=>_!=null).Max(_=>_- current);
+						var pos = datesPlanned.ToList().FindIndex(n => n - current == difference);
+						return datesPlanned.ElementAt(pos).Value + TimeSpan.FromMinutes(2);;
+					}
+					else
+					{
+						return DateTime.UtcNow;
+					}
+				}
+
+				//Initial Execution
+				var likeScheduleOptions = new LikeActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1,4)), LikeActionType.Any);
+				var imageScheduleOptions = new ImageActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1, 5))) { ImageFetchLimit = 20};
+				var followScheduleOptions = new FollowActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1, 4)), FollowActionType.Any);
+				var commentScheduleOptions = new CommentingActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1, 4)), CommentingActionType.Any);
+			
 				List<Chance<ActionContainer>> ChanceAction = new List<Chance<ActionContainer>>();
-
-				var imageOptions = new ImageActionOptions
-				{
-					ExecutionTime = scheduleWindowForToday.CreateImageActions.LastOrDefault() == null 
-					? DateTime.UtcNow.AddMinutes(1) : scheduleWindowForToday.CreateImageActions.LastOrDefault().EnqueueTime.Value.AddMinutes(5),
-					ImageFetchLimit = 20
-				};
-				var followOptions = new FollowActionOptions
-				{
-					FollowActionType = FollowActionType.Any,
-					ExecutionTime = scheduleWindowForToday.FollowUserActions.LastOrDefault() == null
-					? DateTime.UtcNow.AddMinutes(1) : scheduleWindowForToday.FollowUserActions.LastOrDefault().EnqueueTime.Value.AddMinutes(1),
-				};
-				var likeOptions = new LikeActionOptions
-				{
-					LikeActionType = LikeActionType.Any,
-					ExecutionTime = scheduleWindowForToday.LikeMediaActions.LastOrDefault() == null
-					? DateTime.UtcNow.AddMinutes(1) : scheduleWindowForToday.LikeMediaActions.LastOrDefault().EnqueueTime.Value.AddMinutes(1),
-				};
-				var commentingOptions = new CommentingActionOptions
-				{
-					CommentingActionType = CommentingActionType.Any,
-					ExecutionTime = scheduleWindowForToday.CommentingActions.LastOrDefault() == null
-					? DateTime.UtcNow.AddMinutes(1) : scheduleWindowForToday.CommentingActions.LastOrDefault().EnqueueTime.Value.AddMinutes(1),
-				};
-
-				/*ChanceAction.Add(new Chance<ActionContainer>
+				//add actions in as probabilities
+				ChanceAction.Add(new Chance<ActionContainer>
 				{
 					Object = new ActionContainer
 					{
-						ActionOptions = imageOptions,
+						ActionOptions = imageScheduleOptions,
 						Action_ = (o) => RunAction(imageAction,o)
 					},
-					Probability = 0.10
-				});*/
-				
-				/*ChanceAction.Add(new Chance<ActionContainer>
+					Probability = 0.05
+				});
+				ChanceAction.Add(new Chance<ActionContainer>
 				{
 					Object = new ActionContainer
 					{
-						ActionOptions = followOptions,
+						ActionOptions = followScheduleOptions,
 						Action_ = (o) => RunAction(followAction, o)
 					},
 					Probability = 0.15
-				});*/
-				/*
+				});
 				ChanceAction.Add(new Chance<ActionContainer>
 				{
 					Object = new ActionContainer
 					{
-						ActionOptions = commentingOptions,
+						ActionOptions = commentScheduleOptions,
 						Action_ = (o) => RunAction(commentAction, o)
 					},
-					Probability = 0.25
-				});*/
+					Probability = 0.30
+				});
 				ChanceAction.Add(new Chance<ActionContainer>
 				{
 					Object = new ActionContainer
 					{
-						ActionOptions = likeOptions,
-						Action_ = (o) => RunAction(likeMediaAction, o)
+						ActionOptions = likeScheduleOptions,
+						Action_ = (o) => RunAction(likeAction, o)
 					},
-					Probability = 1
+					Probability = 0.50
 				});
 
-				System.Timers.Timer refreshTime = new System.Timers.Timer(TimeSpan.FromSeconds(2.5).TotalMilliseconds);
-				refreshTime.Start();
-				refreshTime.Elapsed += (o, e) =>
+				System.Timers.Timer fps = new System.Timers.Timer(TimeSpan.FromSeconds(7).TotalMilliseconds);
+				fps.Start();
+				fps.Elapsed += (o, e) =>
 				{
-					GetTodaysScheduleWindow(accountId);
-					imageOptions = new ImageActionOptions
-					{
-						ExecutionTime = scheduleWindowForToday.CreateImageActions.LastOrDefault() == null ? 
-						DateTime.UtcNow.AddMinutes(1) : scheduleWindowForToday.CreateImageActions.LastOrDefault().EnqueueTime.Value.AddMinutes(5),
-						ImageFetchLimit = 20
-					};
-					followOptions = new FollowActionOptions
-					{
-						FollowActionType = FollowActionType.Any,
-						ExecutionTime = scheduleWindowForToday.FollowUserActions.LastOrDefault() == null
-						? DateTime.UtcNow.AddMinutes(1) : scheduleWindowForToday.FollowUserActions.LastOrDefault().EnqueueTime.Value.AddMinutes(1),
-					};
-					likeOptions = new LikeActionOptions
-					{
-						LikeActionType = LikeActionType.Any,
-						ExecutionTime = scheduleWindowForToday.LikeMediaActions.LastOrDefault() == null
-						? DateTime.UtcNow.AddMinutes(1) : scheduleWindowForToday.LikeMediaActions.LastOrDefault().EnqueueTime.Value.AddMinutes(1),
-					};
-					commentingOptions = new CommentingActionOptions
-					{
-						CommentingActionType = CommentingActionType.Any,
-						ExecutionTime = scheduleWindowForToday.CommentingActions.LastOrDefault() == null
-						? DateTime.UtcNow.AddMinutes(1) : scheduleWindowForToday.CommentingActions.LastOrDefault().EnqueueTime.Value.AddMinutes(1),
-					};
+					nextAvaliableDate = PickAGoodTime();
+
+					likeScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(1.6);
+					imageScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(SecureRandom.Next(3, 6));
+					followScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(SecureRandom.Next(2, 4));
+					commentScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(SecureRandom.Next(2, 4));
+
+					ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(LikeActionOptions)).SingleOrDefault().Object.ActionOptions = likeScheduleOptions;
+					ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(FollowActionOptions)).SingleOrDefault().Object.ActionOptions = followScheduleOptions;
+					ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(ImageActionOptions)).SingleOrDefault().Object.ActionOptions = imageScheduleOptions;
+					ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(CommentingActionOptions)).SingleOrDefault().Object.ActionOptions = commentScheduleOptions;
+					
+					var runAction = SecureRandom.ProbabilityRoll(ChanceAction);
+					runAction.Action_(runAction.ActionOptions);
 				};
 
 				_ = Task.Run(() =>
@@ -399,9 +386,6 @@ namespace Quarkless.Services
 					while (true)
 					{
 
-						var run_ = SecureRandom.ProbabilityRoll(ChanceAction);
-						run_.Action_(run_.ActionOptions);
-						Thread.Sleep(TimeSpan.FromSeconds(4));
 					}
 				});
 

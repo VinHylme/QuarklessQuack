@@ -24,11 +24,74 @@ namespace Quarkless.Services.ContentSearch
 		{
 			_container = new APIClientContainer(_context, _user.OAccountId, _user.OInstagramAccountUser);
 		}
+		public async Task<IEnumerable<UserResponse<string>>> GetUserFollowingList(string username, int limit, string query = null)
+		{
+			var usersresp = await _container.User.GetUserFollowingAsync(username,PaginationParameters.MaxPagesToLoad(limit),query);
+			if (usersresp.Succeeded)
+			{
+				var users = usersresp.Value;
+				return users.Select(_=>new UserResponse<string>
+				{
+					Username = _.UserName,
+					FullName = _.FullName,
+					ProfilePicture = _.ProfilePicture,
+					UserId = _.Pk,
+					IsPrivate = _.IsPrivate,
+					IsVerified = _.IsVerified,
+				});
+			}
+			return null;
+		}
 		public ContentSearch(IRestSharpClientManager restSharpClient, IAPIClientContext clientContext)
 		{
 			_restSharpClient = restSharpClient;
 			_context = clientContext;
 			_yandexImageSearch = new YandexImageSearch();
+		}
+		public async Task<List<UserResponse<UserSuggestionDetails>>> GetSuggestedPeopleToFollow(int limit)
+		{
+			var res = await _container.User.GetSuggestionUsersAsync(PaginationParameters.MaxPagesToLoad(limit));
+			if (res.Succeeded)
+			{
+				List<UserResponse<UserSuggestionDetails>> usersTotals = new List<UserResponse<UserSuggestionDetails>>();
+				var users = res.Value;
+				usersTotals.AddRange(users.NewSuggestedUsers.Select(_=>new UserResponse<UserSuggestionDetails>
+				{
+					Object = new UserSuggestionDetails
+					{
+						IsNewSuggestions = _.IsNewSuggestion,
+						Caption = _.Caption,
+						FollowText = _.FollowText,
+						Algorithm = _.Algorithm,
+						Value = _.Value
+					},
+					UserId = _.User.Pk,
+					Username = _.User.UserName,
+					FullName = _.User.FullName,
+					ProfilePicture = _.User.ProfilePicture,
+					IsPrivate = _.User.IsPrivate,
+					IsVerified = _.User.IsVerified
+				}));
+				usersTotals.AddRange(users.SuggestedUsers.Select(_ => new UserResponse<UserSuggestionDetails>
+				{
+					Object = new UserSuggestionDetails
+					{
+						IsNewSuggestions = _.IsNewSuggestion,
+						Caption = _.Caption,
+						FollowText = _.FollowText,
+						Algorithm = _.Algorithm,
+						Value = _.Value
+					},
+					UserId = _.User.Pk,
+					Username = _.User.UserName,
+					FullName = _.User.FullName,
+					ProfilePicture = _.User.ProfilePicture,
+					IsPrivate = _.User.IsPrivate,
+					IsVerified = _.User.IsVerified
+				}));
+				return usersTotals;
+			}
+			return null;
 		}
 		public async Task<List<UserResponse<string>>> SearchInstagramMediaLikers(string mediaId)
 		{

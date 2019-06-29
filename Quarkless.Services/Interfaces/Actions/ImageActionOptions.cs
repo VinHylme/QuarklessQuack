@@ -12,5 +12,10 @@ namespace Quarkless.Services.Interfaces.Actions
 		public DateTimeOffset ExecutionTime { get; set; }
 		public static Range CreatePhotoActionDailyLimit { get; set; } = new Range(10, 15);
 		public static Range CreatePhotoActionHourlyLimit { get; set; } = new Range(1, 2);
+
+		public ImageActionOptions(DateTimeOffset executionTime)
+		{
+			this.ExecutionTime = executionTime;
+		}
 	}
 }

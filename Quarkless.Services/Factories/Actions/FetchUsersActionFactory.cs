@@ -4,13 +4,11 @@ using System.Text;
 using Quarkless.Services.ActionBuilders.OtherActions;
 using Quarkless.Services.Interfaces;
 using QuarklessContexts.Models.Profiles;
-using QuarklessContexts.Models.Timeline;
 
 namespace Quarkless.Services.Factories.Actions
 {
-	public class FetchMediaActionFactory : FetcherFactory
+	public class FetchUsersActionFactory : FetcherFactory
 	{
-		public override IFetched Commit(IContentManager builder, ProfileModel profile)
-			=> new FetchMediaAction(builder,profile);
+		public override IFetched Commit(IContentManager builder, ProfileModel profile) => new FetchUserAction(builder,profile);
 	}
 }

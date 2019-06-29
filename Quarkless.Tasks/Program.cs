@@ -29,15 +29,24 @@ namespace Quarkless.Tasks
 			var services = new ServiceCollection();
 
 			services.AddHangFrameworkServices(accessors);
-			GlobalConfiguration.Configuration.UseMongoStorage(accessors.ConnectionString, accessors.ControlDatabase,
+			GlobalConfiguration.Configuration.UseMongoStorage(accessors.ConnectionString, accessors.SchedulerDatabase,
 				new MongoStorageOptions{
-				CheckConnection = false,
-				JobExpirationCheckInterval = TimeSpan.FromDays(30),
+					Prefix = "Timeline",
+					CheckConnection = false,
+					JobExpirationCheckInterval = TimeSpan.FromDays(7),
+					MigrationOptions = new MongoMigrationOptions
+					{
+						Strategy = MongoMigrationStrategy.Migrate,
+						BackupStrategy = MongoBackupStrategy.Collections
+					}
 				});
 			GlobalConfiguration.Configuration.UseActivator(new WorkerActivator(services.BuildServiceProvider(false)));
 			GlobalJobFilters.Filters.Add(new ProlongExpirationTimeAttribute());
-
-			using (var server = new BackgroundJobServer())
+			BackgroundJobServerOptions jobServerOptions = new BackgroundJobServerOptions
+			{
+				WorkerCount = Environment.ProcessorCount * 5
+			};
+			using (var server = new BackgroundJobServer(jobServerOptions))
 			{
 				Console.WriteLine("hangfire server started");
 				Console.ReadKey();
