@@ -15,6 +15,31 @@ namespace Quarkless.Extensions
 			if (o == null) return null;
 			return evaluator(o);
 		}
+		public static TInput CreateNewObjectIgnoringNulls<TInput>(this TInput @object, TInput target) where TInput : new()
+		{
+			var objectProperties = @object.GetType().GetProperties();
+			var targetProperties = target.GetType().GetProperties();
+			TInput @newObject = new TInput();
+
+			for(int i = 0; i < targetProperties.Count(); i++)
+			{
+				var valueOfTargetProp = targetProperties.ElementAt(i).GetValue(target);
+				var valueOfObjectProp = objectProperties.ElementAt(i).GetValue(@object);
+				if(valueOfObjectProp==null && valueOfTargetProp != null)
+				{
+					newObject.GetType().GetProperties().ElementAt(i).SetValue(@newObject,valueOfTargetProp);
+				}
+				else if(valueOfObjectProp!=null && valueOfTargetProp == null)
+				{
+					newObject.GetType().GetProperties().ElementAt(i).SetValue(@newObject, valueOfObjectProp);
+				}
+				else if(valueOfObjectProp!=null && valueOfTargetProp != null)
+				{
+					newObject.GetType().GetProperties().ElementAt(i).SetValue(@newObject, valueOfObjectProp);
+				}
+			}
+			return @newObject;
+		}
 		public static Dictionary<string,object> Recreate<TInput>(this TInput objec)
 		{
 			var properties = objec.GetType().GetProperties();

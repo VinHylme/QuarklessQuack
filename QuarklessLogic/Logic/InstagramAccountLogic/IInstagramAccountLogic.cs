@@ -10,8 +10,9 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 	{
 		Task<ResultBase<bool>> AddInstagramAccount(string accountId, StateData state,AddInstagramAccountRequest addInstagram);
 		Task<IEnumerable<InstagramAccountModel>> GetInstagramAccountsOfUser(string accountId, int type = 0);
+		Task<ShortInstagramAccountModel> GetInstagramAccountShort(string accountId, string instagramAccountId);
 		Task<InstagramAccountModel> GetInstagramAccount(string accountId, string instagramAccountId);
-		Task<long?> PartialUpdateInstagramAccount(string instagramAccountId, InstagramAccountModel instagramAccountModel);
+		Task<long?> PartialUpdateInstagramAccount(string accountId,string instagramAccountId, InstagramAccountModel instagramAccountModel);
 		Task<StateData> GetInstagramAccountStateData(string accountId, string InstagramAccountId);
 	}
 }

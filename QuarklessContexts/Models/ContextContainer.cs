@@ -8,6 +8,6 @@ namespace QuarklessContexts.Models
 	{
 		public IInstaApi ActionClient { get; set; }
 		public ProfileModel Profile { get; set; }
-		public InstagramAccountModel InstagramAccount { get; set; }
+		public ShortInstagramAccountModel InstagramAccount { get; set; }
 	}
 }

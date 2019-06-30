@@ -74,7 +74,7 @@ namespace QuarklessLogic.Handlers.ClientProvider
 
 					if (stateExtracted != instaAcc.State)
 					{
-						await _instagramAccountLogic.PartialUpdateInstagramAccount(instagramAccountId, new InstagramAccountModel
+						await _instagramAccountLogic.PartialUpdateInstagramAccount(accountId, instagramAccountId, new InstagramAccountModel
 						{
 							State = stateExtracted
 						});
@@ -82,7 +82,16 @@ namespace QuarklessLogic.Handlers.ClientProvider
 					return new ContextContainer
 					{
 						ActionClient = client.ReturnClient,
-						InstagramAccount = instaAcc,
+						InstagramAccount = new ShortInstagramAccountModel
+						{
+							AccountId = instaAcc.AccountId,
+							AgentState = instaAcc.AgentState,
+							FollowersCount = instaAcc.FollowersCount,
+							FollowingCount = instaAcc.FollowingCount,
+							Id = instaAcc._id,
+							TotalPostsCount = instaAcc.TotalPostsCount,
+							Username = instaAcc.Username
+						},
 						Profile = profileOfInstaAcc
 					};
 				}

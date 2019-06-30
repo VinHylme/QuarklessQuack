@@ -42,7 +42,7 @@ namespace Quarkless.Controllers
 		{
 			if (!string.IsNullOrEmpty(_userContext.CurrentUser))
 			{
-				return Ok(_agentManager.StopAgent(instagramId));
+				return Ok(_agentManager.StopAgent(_userContext.CurrentUser,instagramId));
 			}
 			return BadRequest("failed to stop");
 		}

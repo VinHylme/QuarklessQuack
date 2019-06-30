@@ -106,7 +106,7 @@ namespace Quarkless.Controllers
 		{
 			if (_userContext.CurrentUser != null)
 			{
-				var res = await _instagramAccountLogic.PartialUpdateInstagramAccount(instagramAccountId, instagramAccount);
+				var res = await _instagramAccountLogic.PartialUpdateInstagramAccount(_userContext.CurrentUser,instagramAccountId, instagramAccount);
 				if (res != null)
 				{
 					return Ok($"Modified: {res}");

@@ -37,6 +37,8 @@ using QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic;
 using QuarklessRepositories.InstagramAccountRepository;
 using QuarklessRepositories.ProfileRepository;
 using QuarklessRepositories.ProxyRepository;
+using QuarklessRepositories.RedisRepository.InstagramAccountRedis;
+using QuarklessRepositories.RedisRepository.RedisClient;
 using QuarklessRepositories.Repository.ServicesRepositories;
 using QuarklessRepositories.Repository.ServicesRepositories.CommentsRepository;
 using QuarklessRepositories.Repository.ServicesRepositories.HashtagsRepository;
@@ -92,6 +94,13 @@ namespace Quarkless.Common
 			services.AddTransient<ICommentsRepository,CommentsRepository>();
 			services.AddTransient<IHashtagsRepository,HashtagsRepository>();
 			services.AddTransient<ITimelineRepository,TimelineRepository>();
+			services.AddTransient<IInstagramAccountRedis,InstagramAccountRedis>();
+			services.Configure<RedisOptions>(o =>
+			{
+				o.ConnectionString = _accessors.RedisConnectionString;
+				o.DefaultKeyExpiry = TimeSpan.FromDays(7);
+			});
+			services.AddSingleton<IRedisClient,RedisClient>();
 		}
 		public static void AddHandlers(this IServiceCollection services)
 		{

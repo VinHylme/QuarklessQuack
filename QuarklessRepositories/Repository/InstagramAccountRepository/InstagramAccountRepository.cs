@@ -75,7 +75,6 @@ namespace QuarklessRepositories.InstagramAccountRepository
 				return null;
 			}
 		}
-
 		public async Task<long?> PartialUpdateInstagramAccount(string instagramAccountId, InstagramAccountModel instagramAccountModel)
 		{
 			try { 

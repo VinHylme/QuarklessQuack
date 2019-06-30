@@ -265,7 +265,7 @@ namespace Quarkless.Services
 		public async Task<AgentRespnse> StartAgent(string accountId, string instagramAccountId, string accessToken)
 		{
 			UserStoreDetails _userStoreDetails = new UserStoreDetails();
-			await _instagramAccountLogic.PartialUpdateInstagramAccount(instagramAccountId, new InstagramAccountModel{ AgentState = true });
+			await _instagramAccountLogic.PartialUpdateInstagramAccount(accountId,instagramAccountId, new InstagramAccountModel{ AgentState = true });
 			_userStoreDetails.AddUpdateUser(accountId, instagramAccountId, accessToken);
 
 			var context = _contentManager.SetUser(_userStoreDetails);
@@ -382,7 +382,7 @@ namespace Quarkless.Services
 			instanceRefresher.Start();
 			instanceRefresher.Elapsed += async(o, e) =>
 			{
-				context.InstagramAccount = await _instagramAccountLogic.GetInstagramAccount(accountId, instagramAccountId);
+				context.InstagramAccount = await _instagramAccountLogic.GetInstagramAccountShort(accountId, instagramAccountId);
 				if(context.InstagramAccount.AgentState == true) { 
 					nextAvaliableDate = PickAGoodTime();
 
@@ -409,10 +409,10 @@ namespace Quarkless.Services
 				Message = "Done"
 			};
 		}
-		public AgentRespnse StopAgent(string instagramAccountId)
+		public AgentRespnse StopAgent(string accountId, string instagramAccountId)
 		{
 			try { 
-				_instagramAccountLogic.PartialUpdateInstagramAccount(instagramAccountId, new QuarklessContexts.Models.InstagramAccounts.InstagramAccountModel{AgentState = false});
+				_instagramAccountLogic.PartialUpdateInstagramAccount(accountId,instagramAccountId, new InstagramAccountModel{AgentState = false});
 				return new AgentRespnse
 				{
 					HttpStatus = HttpStatusCode.OK,

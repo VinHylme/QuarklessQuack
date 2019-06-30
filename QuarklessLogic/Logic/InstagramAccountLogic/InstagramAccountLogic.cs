@@ -1,9 +1,11 @@
 ﻿using InstagramApiSharp.Classes;
+using Quarkless.Extensions;
 using QuarklessContexts.Classes.Carriers;
 using QuarklessContexts.Models.InstagramAccounts;
 using QuarklessContexts.Models.Proxies;
 using QuarklessLogic.Logic.ProxyLogic;
 using QuarklessRepositories.InstagramAccountRepository;
+using QuarklessRepositories.RedisRepository.InstagramAccountRedis;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -14,10 +16,13 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 	{
 		private readonly IProxyLogic _proxyLogic;
 		private readonly IInstagramAccountRepository _instagramAccountRepository;
-		public InstagramAccountLogic(IProxyLogic proxyLogic, IInstagramAccountRepository instagramAccountRepository)
+		private readonly IInstagramAccountRedis _instagramAccountRedis;
+		public InstagramAccountLogic(IProxyLogic proxyLogic, IInstagramAccountRepository instagramAccountRepository, 
+			IInstagramAccountRedis instagramAccountRedis)
 		{
 			_proxyLogic = proxyLogic;
 			_instagramAccountRepository = instagramAccountRepository;
+			_instagramAccountRedis = instagramAccountRedis;
 		}
 		public async Task<ResultBase<bool>> AddInstagramAccount(string accountId, StateData state, AddInstagramAccountRequest addInstagram)
 		{
@@ -75,6 +80,41 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 				return null;
 			}
 		}
+		public async Task<ShortInstagramAccountModel> GetInstagramAccountShort(string accountId, string instagramAccountId)
+		{
+			try
+			{
+				var redisRes = await _instagramAccountRedis.GetInstagramAccountDetail(accountId,instagramAccountId);
+				if (redisRes != null && redisRes.Recreate().Count>0)
+				{
+					return redisRes;
+				}
+
+				var account = await _instagramAccountRepository.GetInstagramAccount(accountId, instagramAccountId);
+				if (account.Results != null)
+				{
+					var res = account.Results;
+
+					var shortInsta = new ShortInstagramAccountModel{
+						AccountId = res.AccountId,
+						AgentState = res.AgentState,
+						FollowersCount = res.FollowersCount,
+						FollowingCount = res.FollowingCount,
+						Id = res._id,
+						TotalPostsCount = res.TotalPostsCount,
+						Username = res.Username
+					};
+					await _instagramAccountRedis.SetInstagramAccountDetail(accountId,instagramAccountId,shortInsta);
+					return shortInsta;
+				}
+				return null;
+			}
+			catch (Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+				return null;
+			}
+		}
 		public async Task<InstagramAccountModel> GetInstagramAccount(string accountId, string instagramAccountId)
 		{
 			try
@@ -111,8 +151,19 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 				return null;
 			}
 		}	
-		public async Task<long?> PartialUpdateInstagramAccount(string instagramAccountId, InstagramAccountModel instagramAccountModel)
+		public async Task<long?> PartialUpdateInstagramAccount(string accountId, string instagramAccountId, InstagramAccountModel instagramAccountModel)
 		{
+			ShortInstagramAccountModel toshortmodel = new ShortInstagramAccountModel
+			{
+				AccountId = instagramAccountModel.AccountId,
+				AgentState = instagramAccountModel.AgentState,
+				FollowersCount = instagramAccountModel.FollowersCount,
+				FollowingCount = instagramAccountModel.FollowingCount,
+				Id = instagramAccountModel._id,
+				TotalPostsCount = instagramAccountModel.TotalPostsCount,
+				Username = instagramAccountModel.Username
+			};
+			await _instagramAccountRedis.SetInstagramAccountDetail(accountId,instagramAccountId,toshortmodel);
 			return await _instagramAccountRepository.PartialUpdateInstagramAccount(instagramAccountId, instagramAccountModel);
 		}
 	}
