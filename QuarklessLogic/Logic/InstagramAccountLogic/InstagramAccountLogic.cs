@@ -85,7 +85,7 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 			try
 			{
 				var redisRes = await _instagramAccountRedis.GetInstagramAccountDetail(accountId,instagramAccountId);
-				if (redisRes != null && redisRes.Recreate().Count>0)
+				if (redisRes != null && redisRes.Recreate().Count>3)
 				{
 					return redisRes;
 				}

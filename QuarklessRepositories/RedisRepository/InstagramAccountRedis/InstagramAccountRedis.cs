@@ -32,6 +32,7 @@ namespace QuarklessRepositories.RedisRepository.InstagramAccountRedis
 		{
 			string userkeyid = $"{userId}:{instaId}";
 			var getcurrentinplace = await GetInstagramAccountDetail(userId,instaId);
+			if(getcurrentinplace==null) getcurrentinplace = new ShortInstagramAccountModel();
 			var newvalue = value.CreateNewObjectIgnoringNulls(getcurrentinplace);
 			await _redisClient.StringSet(userkeyid, RedisKeys.HashtagGrowKeys.Usersessions, JsonConvert.SerializeObject(newvalue));
 		}

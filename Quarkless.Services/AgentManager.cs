@@ -301,13 +301,13 @@ namespace Quarkless.Services
 
 			DateTime nextAvaliableDate = PickAGoodTime();
 			DateTime PickAGoodTime() { 
-				var sft = _timelineLogic.GetScheduledEventsForUserByDate(accountId,DateTime.UtcNow,instaId:instagramAccountId,limit:1000,timelineDateType:TimelineDateType.Forward);
+				var sft = _timelineLogic.GetScheduledEventsForUserByDate(accountId,DateTime.UtcNow,instaId:instagramAccountId,limit:5000,timelineDateType:TimelineDateType.Forward);
 				var datesPlanned = sft.Select(_=>_.EnqueueTime);
 				if (datesPlanned != null && datesPlanned.Count()>0) { 
 					DateTime current = DateTime.UtcNow;
 					var difference = datesPlanned.Where(_=>_!=null).Max(_=>_- current);
 					var pos = datesPlanned.ToList().FindIndex(n => n - current == difference);
-					return datesPlanned.ElementAt(pos).Value + TimeSpan.FromMinutes(2);;
+					return datesPlanned.ElementAt(pos).Value;
 				}
 				else
 				{
@@ -330,7 +330,7 @@ namespace Quarkless.Services
 					ActionOptions = imageScheduleOptions,
 					Action_ = (o) => RunAction(imageAction,o)
 				},
-				Probability = 0.0
+				Probability = 0.10
 			});
 			ChanceAction.Add(new Chance<ActionContainer>
 			{
@@ -348,7 +348,7 @@ namespace Quarkless.Services
 					ActionOptions = commentScheduleOptions,
 					Action_ = (o) => RunAction(commentAction, o)
 				},
-				Probability = 0.30
+				Probability = 0.20
 			});
 			ChanceAction.Add(new Chance<ActionContainer>
 			{
@@ -386,10 +386,10 @@ namespace Quarkless.Services
 				if(context.InstagramAccount.AgentState == true) { 
 					nextAvaliableDate = PickAGoodTime();
 
-					likeScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(1.6);
-					imageScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(SecureRandom.Next(3, 6));
-					followScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(SecureRandom.Next(2, 4));
-					commentScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(SecureRandom.Next(2, 4));
+					likeScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(1.5);
+					imageScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(3);
+					followScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(1.5);
+					commentScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(2.5);
 
 					ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(LikeActionOptions)).SingleOrDefault().Object.ActionOptions = likeScheduleOptions;
 					ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(FollowActionOptions)).SingleOrDefault().Object.ActionOptions = followScheduleOptions;

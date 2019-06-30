@@ -53,42 +53,47 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 		public IEnumerable<TimelineItem> GetScheduledEventsForUserByDate(string username, DateTime date, DateTime? endDate = null,
 			string instaId = null, int limit = 100, TimelineDateType timelineDateType = TimelineDateType.Backwards)
 		{
-			if (endDate == null)
-			{
-				endDate = date.AddDays(-1).AddTicks(1);
-			}
-
 			switch (timelineDateType)
 			{
 				case TimelineDateType.Backwards:
+					if (endDate == null)
+					{
+						endDate = date.AddDays(-1).AddTicks(1);
+					}
 					var eventsB = GetScheduledEventsForUser(username, instaId, limit: limit)
 						.Where(_ => _.EnqueueTime <= date && _.EnqueueTime >= endDate);
 					return eventsB;
 				case TimelineDateType.Forward:
+					if (endDate == null)
+					{
+						endDate = date.AddDays(1).AddTicks(-1);
+					}
 					var eventsF = GetScheduledEventsForUser(username, instaId, limit: limit)
 						.Where(_ => _.EnqueueTime >= date && _.EnqueueTime <= endDate);
 					return eventsF;
 				case TimelineDateType.Both:
 					return GetScheduledEventsForUser(username, instaId, limit: limit);
-
 			}
 			return null;
 		}
 		public IEnumerable<TimelineFinishedItem> GetFinishedEventsForUserByDate(string username, DateTime date, DateTime? endDate = null,
 			string instaId = null, int limit = 100, TimelineDateType timelineDateType = TimelineDateType.Backwards)
 		{
-			if (endDate == null)
-			{
-				endDate = date.AddDays(-1).AddTicks(1);
-			}
-
 			switch (timelineDateType)
 			{
 				case TimelineDateType.Backwards:
+					if (endDate == null)
+					{
+						endDate = date.AddDays(-1).AddTicks(1);
+					}
 					var eventsB = GetFinishedEventsForUser(username, instaId, limit: limit)
 						.Where(_ => _.SuccededAt <= date && _.SuccededAt >= endDate);
 					return eventsB;
 				case TimelineDateType.Forward:
+					if (endDate == null)
+					{
+						endDate = date.AddDays(1).AddTicks(-1);
+					}
 					var eventsF = GetFinishedEventsForUser(username, instaId, limit: limit)
 						.Where(_ => _.SuccededAt >= date && _.SuccededAt <= endDate);
 					return eventsF;
@@ -100,18 +105,21 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 		public IEnumerable<TimelineInProgressItem> GetCurrentlyRunningEventsForUserByDate(string username, DateTime date, DateTime? endDate = null,
 			int limit = 100, string instaid = null, TimelineDateType timelineDateType = TimelineDateType.Backwards)
 		{
-			if (endDate == null)
-			{
-				endDate = date.AddDays(-1).AddTicks(1);
-			}
-
 			switch (timelineDateType)
 			{
 				case TimelineDateType.Backwards:
+					if (endDate == null)
+					{
+						endDate = date.AddDays(-1).AddTicks(1);
+					}
 					var eventsB = GetCurrentlyRunningEventsForUser(username, instaid, limit: limit)
 						.Where(_ => _.StartedAt <= date && _.StartedAt >= endDate);
 					return eventsB;
 				case TimelineDateType.Forward:
+					if (endDate == null)
+					{
+						endDate = date.AddDays(1).AddTicks(-1);
+					}
 					var eventsF = GetCurrentlyRunningEventsForUser(username, instaid, limit: limit)
 						.Where(_ => _.StartedAt >= date && _.StartedAt <= endDate);
 					return eventsF;
@@ -123,18 +131,21 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 		public IEnumerable<TimelineDeletedItem> GetDeletedEventsForUserByDate(string username, DateTime date, DateTime? endDate = null,
 			string instaId = null, int limit = 100, TimelineDateType timelineDateType = TimelineDateType.Backwards)
 		{
-			if (endDate == null)
-			{
-				endDate = date.AddDays(-1).AddTicks(1);
-			}
-
 			switch (timelineDateType)
 			{
 				case TimelineDateType.Backwards:
+					if (endDate == null)
+					{
+						endDate = date.AddDays(-1).AddTicks(1);
+					}
 					var eventsB = GetDeletedEventsForUser(username, instaId, limit: limit)
 						.Where(_ => _.DeletedAt <= date && _.DeletedAt >= endDate);
 					return eventsB;
 				case TimelineDateType.Forward:
+					if (endDate == null)
+					{
+						endDate = date.AddDays(1).AddTicks(-1);
+					}
 					var eventsF = GetDeletedEventsForUser(username, instaId, limit: limit)
 						.Where(_ => _.DeletedAt >= date && _.DeletedAt <= endDate);
 					return eventsF;
@@ -146,18 +157,21 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 		public IEnumerable<TimelineFailedItem> GetFailedEventsForUserByDate(string username, DateTime date, DateTime? endDate = null,
 			string instaId = null, int limit = 100, TimelineDateType timelineDateType = TimelineDateType.Backwards)
 		{
-			if (endDate == null)
-			{
-				endDate = date.AddDays(-1).AddTicks(1);
-			}
-
 			switch (timelineDateType)
 			{
 				case TimelineDateType.Backwards:
+					if (endDate == null)
+					{
+						endDate = date.AddDays(-1).AddTicks(1);
+					}
 					var eventsB = GetFailedEventsForUser(username, instaId, limit: limit)
 						.Where(_ => _.FailedAt <= date && _.FailedAt >= endDate);
 					return eventsB;
 				case TimelineDateType.Forward:
+					if (endDate == null)
+					{
+						endDate = date.AddDays(1).AddTicks(-1);
+					}
 					var eventsF = GetFailedEventsForUser(username, instaId, limit: limit)
 						.Where(_ => _.FailedAt >= date && _.FailedAt <= endDate);
 					return eventsF;
@@ -169,18 +183,21 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 		public IEnumerable<TimelineItem> GetScheduledEventsForUserForActionByDate(string username, string actionName, DateTime date,
 			string instaId = null, DateTime? endDate = null, int limit = 30, TimelineDateType timelineDateType = TimelineDateType.Backwards)
 		{
-			if (endDate == null)
-			{
-				endDate = date.AddDays(-1).AddTicks(1);
-			}
-
 			switch (timelineDateType)
 			{
 				case TimelineDateType.Backwards:
+					if (endDate == null)
+					{
+						endDate = date.AddDays(-1).AddTicks(1);
+					}
 					var eventsB = GetScheduledEventsForUser(username, instaId, limit: limit)
 						.Where(_ => (_.EnqueueTime <= date && _.EnqueueTime >= endDate) && _?.ActionName?.Split('_')?[0]?.ToLower() == (actionName.ToLower()));
 					return eventsB;
 				case TimelineDateType.Forward:
+					if (endDate == null)
+					{
+						endDate = date.AddDays(1).AddTicks(-1);
+					}
 					var eventsF = GetScheduledEventsForUser(username, instaId, limit: limit)
 						.Where(_ => (_.EnqueueTime >= date && _.EnqueueTime <= endDate) && _?.ActionName?.Split('_')?[0]?.ToLower() == (actionName.ToLower()));
 					return eventsF;
