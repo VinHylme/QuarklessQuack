@@ -8,7 +8,7 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 	public interface ITopicBuilder
 	{
 		void Init(IUserStoreDetails user);
-		Task<TopicsModel> Build(string topic, int takeHowMany = 8);
+		Task<TopicsModel> Build(string topic, int takeSuggested = -1, int takeHowMany = -1);
 		Task<IEnumerable<string>> BuildHashtags(string topic, int limit = 1, int pickRate = 20);
 	}
 }

@@ -11,6 +11,7 @@ using QuarklessLogic.RestSharpClient;
 using QuarklessContexts.Models.Timeline;
 using ContentSearcher;
 using QuarklessContexts.Extensions;
+using QuarklessContexts.Models;
 
 namespace Quarkless.Services.ContentSearch
 {
@@ -20,9 +21,10 @@ namespace Quarkless.Services.ContentSearch
 		private readonly IAPIClientContext _context;
 		private IAPIClientContainer _container { get; set; }
 		private readonly YandexImageSearch _yandexImageSearch;
-		public void SetUserClient(IUserStoreDetails _user)
+		public ContextContainer SetUserClient(IUserStoreDetails _user)
 		{
 			_container = new APIClientContainer(_context, _user.OAccountId, _user.OInstagramAccountUser);
+			return _container.GetContext;
 		}
 		public async Task<IEnumerable<UserResponse<string>>> GetUserFollowingList(string username, int limit, string query = null)
 		{

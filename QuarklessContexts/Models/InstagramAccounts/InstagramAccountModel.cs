@@ -19,6 +19,7 @@ namespace QuarklessContexts.Models.InstagramAccounts
 		public int? Type { get; set; } //0 = normal account, 1 = learner account
 		public int? TotalLikes { get; set; }
 		public string Device { get; set; }
+		public bool? AgentState { get; set; }
 
 	}
 }

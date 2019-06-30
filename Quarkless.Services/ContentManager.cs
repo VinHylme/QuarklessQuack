@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using QuarklessContexts.Models.Timeline;
+using QuarklessContexts.Models;
 
 namespace Quarkless.Services
 {
@@ -29,17 +30,18 @@ namespace Quarkless.Services
 			_contentSearch = contentSearch;
 			_textGeneration = textGeneration;
 		}
-		public void SetUser(IUserStoreDetails user)
+		public ContextContainer SetUser(IUserStoreDetails user)
 		{
-			_contentSearch.SetUserClient(user);
+			var context = _contentSearch.SetUserClient(user);
 			_topicBuilder.Init(user);
 			_user = user;
+			return context;
 		}
-		public async Task<List<TopicsModel>> GetTopics(List<string> topics,int limit)
+		public async Task<List<TopicsModel>> GetTopics(List<string> topics, int takeSuggested = -1, int limit = -1)
 		{
 			List<TopicsModel> totalFound = new List<TopicsModel>();
 			foreach(var topic in topics) { 
-				var res = await _topicBuilder.Build(topic, limit);
+				var res = await _topicBuilder.Build(topic, takeSuggested, limit);
 				if(res!=null)
 					totalFound.Add(res);
 			}

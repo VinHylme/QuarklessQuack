@@ -44,7 +44,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			string exactSize = _profile.AdditionalConfigurations.PostSize;
 			var location = _profile.LocationTargetList?.ElementAtOrDefault(SecureRandom.Next(_profile.LocationTargetList.Count));
 			var profileColor = _profile.Theme.Colors.ElementAt(SecureRandom.Next(0, _profile.Theme.Colors.Count));
-			var topics = _builder.GetTopics(_profile.TopicList, 15).GetAwaiter().GetResult();
+			var topics = _builder.GetTopics(_profile.TopicList,10).GetAwaiter().GetResult();
 			var topicSelect = topics.ElementAt(SecureRandom.Next(0, topics.Count));
 
 			List<string> pickedSubsTopics = topicSelect.SubTopics.TakeAny(3).ToList();

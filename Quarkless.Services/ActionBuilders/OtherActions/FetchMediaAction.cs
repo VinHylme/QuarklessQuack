@@ -33,9 +33,9 @@ namespace Quarkless.Services.ActionBuilders.OtherActions
 			_profile = profile;
 			_builder = contentBuild;
 		}
-		public IFetchResponse FetchByTopic(int totalTopics = 15, int takeAmount = 2)
+		public IFetchResponse FetchByTopic(int totalTopics = -1, int takeAmount = 2)
 		{
-			var topicSearch = _builder.GetTopics(_profile.TopicList, totalTopics).GetAwaiter().GetResult();
+			var topicSearch = _builder.GetTopics(_profile.TopicList,10,totalTopics).GetAwaiter().GetResult();
 			var topicSelect = topicSearch.ElementAt(SecureRandom.Next(topicSearch.Count));
 
 			List<string> pickedSubsTopics = topicSelect.SubTopics.TakeAny(takeAmount).ToList();

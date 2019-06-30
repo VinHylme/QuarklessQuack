@@ -208,7 +208,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 				},
 				TimelineType = typeof(TimelineItem)
 			}));
-		/*	totalEvents.AddRange(GetFinishedEventsForUserByDate(userName, startDate, endDate, instaId, limit, timelineDateType).Select(_ => new ResultBase<TimelineItem>
+			totalEvents.AddRange(GetFinishedEventsForUserByDate(userName, startDate, endDate, instaId, limit, timelineDateType).Select(_ => new ResultBase<TimelineItem>
 			{
 				Response = new TimelineItem
 				{
@@ -221,7 +221,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 				},
 				Message = _.Results,
 				TimelineType = typeof(TimelineFinishedItem)
-			}));*/
+			}));
 			totalEvents.AddRange(GetCurrentlyRunningEventsForUserByDate(userName, startDate, endDate, limit, instaId, timelineDateType).Select(_ => new ResultBase<TimelineItem>
 			{
 				Response = new TimelineItem

@@ -11,6 +11,7 @@
     <PackageReference Include="AWSSDK.CognitoIdentity" Version="3.3.100.41" />
     <PackageReference Include="AWSSDK.CognitoIdentityProvider" Version="3.3.102.26" />
     <PackageReference Include="Dapper" Version="1.60.6" />
+    <PackageReference Include="Hangfire.Redis.StackExchange" Version="1.8.0" />
     <PackageReference Include="Microsoft.AspNetCore.App" Version="2.2.5" />
     <PackageReference Include="AWSSDK.S3" Version="3.3.102.22" />
     <PackageReference Include="Amazon.Lambda.AspNetCoreServer" Version="3.1.0" />

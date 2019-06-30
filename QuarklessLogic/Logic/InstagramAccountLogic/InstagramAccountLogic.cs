@@ -36,7 +36,8 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 						Username = addInstagram.Username,
 						TotalLikes = null,
 						TotalPostsCount = null,
-						Type = addInstagram.Type
+						Type = addInstagram.Type,
+						AgentState = false
 					};
 					var result = await _instagramAccountRepository.AddInstagramAccount(instamodel);
 					if(result!=null)
@@ -111,8 +112,7 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 			{
 				return null;
 			}
-		}
-		
+		}	
 		public async Task<long?> PartialUpdateInstagramAccount(string instagramAccountId, InstagramAccountModel instagramAccountModel)
 		{
 			return await _instagramAccountRepository.PartialUpdateInstagramAccount(instagramAccountId, instagramAccountModel);

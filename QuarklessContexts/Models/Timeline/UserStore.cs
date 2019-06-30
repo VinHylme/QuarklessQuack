@@ -5,6 +5,7 @@ namespace QuarklessContexts.Models.Timeline
 {
 	public class UserStore : INotifyPropertyChanged, IUserStoreDetails
 	{
+		public string instaramUserName { get; set; }
 		private string accountId { get; set; }
 		private string instaAccountId { get; set; }
 		private string accessToken { get; set; }
@@ -30,7 +31,7 @@ namespace QuarklessContexts.Models.Timeline
 				if (value != accountId)
 				{
 					accountId = value;
-					OnPropertyChanged("GetAccountId");
+					OnPropertyChanged("OAccountId");
 				}
 			}
 		}
@@ -42,7 +43,7 @@ namespace QuarklessContexts.Models.Timeline
 				if (value != accessToken)
 				{
 					accessToken = value;
-					OnPropertyChanged("GetAccessToken");
+					OnPropertyChanged("OAccessToken");
 				}
 			}
 		}
@@ -54,11 +55,22 @@ namespace QuarklessContexts.Models.Timeline
 				if (value != instaAccountId)
 				{
 					instaAccountId = value;
-					OnPropertyChanged("GetInstagramAccountUser");
+					OnPropertyChanged("OInstagramAccountUser");
 				}
 			}
 		}
-
+		public string OInstagramAccountUsername
+		{
+			get { return instaramUserName; }
+			set
+			{
+				if (value != instaramUserName)
+				{
+					instaramUserName = value;
+					OnPropertyChanged("OInstagramAccountUsername");
+				}
+			}
+		}
 		protected virtual void OnPropertyChanged(string propertyName)
 		{
 			PropertyChangedEventHandler handler = PropertyChanged;

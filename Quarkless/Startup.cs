@@ -3,53 +3,47 @@ using Amazon;
 using Amazon.CognitoIdentityProvider;
 using Amazon.Extensions.CognitoAuthentication;
 using Hangfire;
-using Hangfire.Mongo;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization;
-using MongoDB.Bson.Serialization.Serializers;
 using MongoDbGenericRepository;
 using Quarkless.Auth;
 using Quarkless.Auth.AuthTypes;
 using Quarkless.Auth.Manager;
 using Quarkless.Common;
 using Quarkless.Queue.Jobs.Filters;
-using QuarklessContexts.Contexts;
 using QuarklessContexts.Contexts.AccountContext;
-using QuarklessLogic.Handlers.ReportHandler;
-using QuarklessLogic.Logic.CollectionsLogic;
-using QuarklessLogic.Logic.CommentLogic;
-using QuarklessLogic.Logic.DiscoverLogic;
-using QuarklessLogic.Logic.InstaAccountOptionsLogic;
-using QuarklessLogic.Logic.InstagramAccountLogic;
-using QuarklessLogic.Logic.InstaUserLogic;
-using QuarklessLogic.Logic.ProfileLogic;
-using QuarklessLogic.Logic.ProxyLogic;
-using QuarklessRepositories.InstagramAccountRepository;
-using QuarklessRepositories.ProfileRepository;
-using QuarklessRepositories.ProxyRepository;
-using QuarklessRepositories.RepositoryClientManager;
 using Quartz;
+using StackExchange.Redis;
 
 namespace Quarkless
 {
-    public class Startup
+	public class WorkerActivator : JobActivator
+	{
+		private readonly IServiceProvider _serviceProvider;
+
+		public WorkerActivator(IServiceProvider serviceProvider)
+		{
+			_serviceProvider = serviceProvider;
+		}
+		public override object ActivateJob(Type jobType) => _serviceProvider.GetService(jobType);
+	}
+	public class Startup
     {
-        //public const string AppS3BucketKey = "AppS3Bucket";
+        //public const string AppS3BucketKey = "AppS3Bucket";	
+		public static ConnectionMultiplexer Redis;
 		private readonly Accessors _accessors;
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
 			_accessors = new Accessors(configuration);
-        }
+			Redis = ConnectionMultiplexer.Connect(_accessors.RedisConnectionString);
+		}
 
         public static IConfiguration Configuration { get; private set; }
 
@@ -117,21 +111,44 @@ namespace Quarkless
 			services.AddHangfire(options =>
 			{
 				options.UseFilter(new ProlongExpirationTimeAttribute());
-				options.UseMongoStorage(_accessors.ConnectionString, _accessors.SchedulerDatabase, new MongoStorageOptions()
+				//options.UseMongoStorage(_accessors.ConnectionString, _accessors.SchedulerDatabase, new MongoStorageOptions()
+				//{
+				//	Prefix = "Timeline",
+				//	CheckConnection = false,
+				//	MigrationOptions = new MongoMigrationOptions(MongoMigrationStrategy.Migrate) 
+				//	{ 
+				//		Strategy = MongoMigrationStrategy.Migrate,
+				//		BackupStrategy = MongoBackupStrategy.Collections
+				//	},
+				//	QueuePollInterval = TimeSpan.FromSeconds(2),
+				//});
+				options.UseRedisStorage(Redis, new Hangfire.Redis.RedisStorageOptions
 				{
 					Prefix = "Timeline",
-					CheckConnection = false,
-					JobExpirationCheckInterval = TimeSpan.FromDays(7),
-					MigrationOptions = new MongoMigrationOptions(MongoMigrationStrategy.Migrate) 
-					{ 
-						Strategy = MongoMigrationStrategy.Migrate,
-						BackupStrategy = MongoBackupStrategy.Collections
-					}
+					SucceededListSize = 100000
 				});
 				options.UseSerializerSettings(new Newtonsoft.Json.JsonSerializerSettings(){ 
 					ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
 				});
 			});
+
+			GlobalConfiguration.Configuration.UseActivator(new WorkerActivator(services.BuildServiceProvider(false)));
+
+			//GlobalConfiguration.Configuration.UseMongoStorage(_accessors.ConnectionString, _accessors.SchedulerDatabase, new MongoStorageOptions()
+			//{
+			//	Prefix = "Timeline",
+			//	CheckConnection = false,
+			//	MigrationOptions = new MongoMigrationOptions(MongoMigrationStrategy.Migrate)
+			//	{
+			//		Strategy = MongoMigrationStrategy.Migrate,
+			//		BackupStrategy = MongoBackupStrategy.Collections
+			//	},
+			//	QueuePollInterval = TimeSpan.Zero,
+			//});
+
+			GlobalJobFilters.Filters.Add(new ProlongExpirationTimeAttribute());
+
+
 			services.AddHangFrameworkServices(_accessors);
 			services.AddLogics();
 			services.AddContexts();
@@ -153,8 +170,13 @@ namespace Quarkless
             {
                 app.UseHsts();
             }
+			BackgroundJobServerOptions jobServerOptions = new BackgroundJobServerOptions
+			{
+				WorkerCount = Environment.ProcessorCount * 2,
+				ServerName = string.Format("{0}.{1}", Environment.MachineName, Guid.NewGuid().ToString())
+			};
 			app.UseHangfireDashboard();
-			app.UseHangfireServer();
+			app.UseHangfireServer(jobServerOptions);
 			app.UseHttpsRedirection();
 			app.UseStaticFiles();	
 			app.UseDefaultFiles();

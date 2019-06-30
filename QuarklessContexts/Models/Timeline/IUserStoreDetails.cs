@@ -6,5 +6,6 @@
 		string OAccountId { get; set; }
 		string OAccessToken { get; set; }
 		string OInstagramAccountUser { get; set; }
+		string OInstagramAccountUsername { get; set; }
 	}
 }

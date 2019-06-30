@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.Globalization;
 using Quarkless.Services.Extensions;
+using QuarklessLogic.Logic.InstagramAccountLogic;
 
 namespace Quarkless.Services
 {
@@ -50,23 +51,21 @@ namespace Quarkless.Services
 
 	public class AgentManager : IAgentManager
 	{
-
-		private readonly IProfileLogic _profileLogic;
+		private readonly IInstagramAccountLogic _instagramAccountLogic;
 		private readonly IContentManager _contentManager;
 		private readonly IAPIClientContext _clientContext;
 		private readonly IUserStoreDetails _userStoreDetails;
 		private readonly ITimelineLogic _timelineLogic;
-		public AgentManager(IProfileLogic profileLogic,
+		public AgentManager(IInstagramAccountLogic instagramAccountLogic,
 			IContentManager contentManager, IAPIClientContext clientContext,
 			IUserStoreDetails userStoreDetails, ITimelineLogic timelineLogic)
 		{
 			_timelineLogic = timelineLogic;
-			_profileLogic = profileLogic;
+			_instagramAccountLogic = instagramAccountLogic;
 			_contentManager = contentManager;
 			_clientContext = clientContext;
 			_userStoreDetails = userStoreDetails;
 		}
-
 		private IAPIClientContainer GetContext(string accountId, string instagramAccountId)
 		{
 			return new APIClientContainer(_clientContext, accountId, instagramAccountId);
@@ -272,11 +271,16 @@ namespace Quarkless.Services
 		public async Task<AgentRespnse> StartAgent(string accountId, string instagramAccountId, string accessToken)
 		{
 			try
-			{ 		
-				var profile = await _profileLogic.GetProfile(accountId, instagramAccountId);
-				if (profile == null) return null;
+			{
+				await _instagramAccountLogic.PartialUpdateInstagramAccount(instagramAccountId, new QuarklessContexts.Models.InstagramAccounts.InstagramAccountModel
+				{
+					AgentState = true
+				});
 				_userStoreDetails.AddUpdateUser(accountId,instagramAccountId,accessToken);			
-				_contentManager.SetUser(_userStoreDetails);
+				var context = _contentManager.SetUser(_userStoreDetails);
+				_userStoreDetails.OInstagramAccountUsername = context.InstagramAccount.Username;
+				var profile = context.Profile; 
+				if (profile == null) return null;
 
 				var likeAction = ActionsManager.Begin.Commit(ActionType.LikePost,_contentManager,profile,(UserStore)_userStoreDetails)
 					.IncludeStrategy(new LikeStrategySettings()
@@ -300,7 +304,6 @@ namespace Quarkless.Services
 					});
 
 				DateTime nextAvaliableDate = PickAGoodTime();
-
 				DateTime PickAGoodTime() { 
 					var sft = _timelineLogic.GetScheduledEventsForUserByDate(accountId,DateTime.UtcNow,instaId:instagramAccountId,limit:1000,timelineDateType:TimelineDateType.Forward);
 					var datesPlanned = sft.Select(_=>_.EnqueueTime);
@@ -331,7 +334,7 @@ namespace Quarkless.Services
 						ActionOptions = imageScheduleOptions,
 						Action_ = (o) => RunAction(imageAction,o)
 					},
-					Probability = 0.05
+					Probability = 0.0
 				});
 				ChanceAction.Add(new Chance<ActionContainer>
 				{
@@ -340,7 +343,7 @@ namespace Quarkless.Services
 						ActionOptions = followScheduleOptions,
 						Action_ = (o) => RunAction(followAction, o)
 					},
-					Probability = 0.15
+					Probability = 0.20
 				});
 				ChanceAction.Add(new Chance<ActionContainer>
 				{
@@ -361,33 +364,31 @@ namespace Quarkless.Services
 					Probability = 0.50
 				});
 
-				System.Timers.Timer fps = new System.Timers.Timer(TimeSpan.FromSeconds(7).TotalMilliseconds);
+				System.Timers.Timer fps = new System.Timers.Timer(TimeSpan.FromSeconds(5).TotalMilliseconds);
 				fps.Start();
-				fps.Elapsed += (o, e) =>
+				fps.Elapsed += async(o, e) =>
 				{
-					nextAvaliableDate = PickAGoodTime();
+					context.InstagramAccount = await _instagramAccountLogic.GetInstagramAccount(accountId, instagramAccountId);
+					if(context.InstagramAccount.AgentState == true) { 
+						nextAvaliableDate = PickAGoodTime();
 
-					likeScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(1.6);
-					imageScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(SecureRandom.Next(3, 6));
-					followScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(SecureRandom.Next(2, 4));
-					commentScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(SecureRandom.Next(2, 4));
+						likeScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(1.6);
+						imageScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(SecureRandom.Next(3, 6));
+						followScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(SecureRandom.Next(2, 4));
+						commentScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(SecureRandom.Next(2, 4));
 
-					ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(LikeActionOptions)).SingleOrDefault().Object.ActionOptions = likeScheduleOptions;
-					ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(FollowActionOptions)).SingleOrDefault().Object.ActionOptions = followScheduleOptions;
-					ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(ImageActionOptions)).SingleOrDefault().Object.ActionOptions = imageScheduleOptions;
-					ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(CommentingActionOptions)).SingleOrDefault().Object.ActionOptions = commentScheduleOptions;
+						ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(LikeActionOptions)).SingleOrDefault().Object.ActionOptions = likeScheduleOptions;
+						ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(FollowActionOptions)).SingleOrDefault().Object.ActionOptions = followScheduleOptions;
+						ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(ImageActionOptions)).SingleOrDefault().Object.ActionOptions = imageScheduleOptions;
+						ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(CommentingActionOptions)).SingleOrDefault().Object.ActionOptions = commentScheduleOptions;
 					
-					var runAction = SecureRandom.ProbabilityRoll(ChanceAction);
-					runAction.Action_(runAction.ActionOptions);
-				};
-
-				_ = Task.Run(() =>
-				{
-					while (true)
-					{
-
+						var runAction = SecureRandom.ProbabilityRoll(ChanceAction);
+						runAction.Action_(runAction.ActionOptions);
 					}
-				});
+					else { 
+						fps.Stop();
+					}
+				};
 
 				return new AgentRespnse()
 				{
@@ -397,7 +398,30 @@ namespace Quarkless.Services
 			}
 			catch(Exception ee)
 			{
+				await _instagramAccountLogic.PartialUpdateInstagramAccount(instagramAccountId, new QuarklessContexts.Models.InstagramAccounts.InstagramAccountModel
+				{
+					AgentState = false
+				});
 				return new AgentRespnse{
+					HttpStatus = HttpStatusCode.InternalServerError,
+					Message = ee.Message
+				};
+			}
+		}
+		public AgentRespnse StopAgent(string instagramAccountId)
+		{
+			try { 
+				_instagramAccountLogic.PartialUpdateInstagramAccount(instagramAccountId, new QuarklessContexts.Models.InstagramAccounts.InstagramAccountModel{AgentState = false});
+				return new AgentRespnse
+				{
+					HttpStatus = HttpStatusCode.OK,
+					Message = "Stopped"
+				};
+			}
+			catch(Exception ee)
+			{
+				return new AgentRespnse
+				{
 					HttpStatus = HttpStatusCode.InternalServerError,
 					Message = ee.Message
 				};

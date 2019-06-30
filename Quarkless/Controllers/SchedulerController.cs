@@ -25,15 +25,25 @@ namespace Quarkless.Controllers
 
 		[HttpPost]
 		[Route("api/scheduler/agent/start/{instagramId}")]
-		public async Task<IActionResult> StartJobAgent(string instagramId)
+		public IActionResult StartAgent(string instagramId)
 		{
 			if (!string.IsNullOrEmpty(_userContext.CurrentUser))
 			{
 				var accessToken = HttpContext.Request.Headers["Authorization"];
 				if(string.IsNullOrEmpty(accessToken)) return BadRequest("Not Authorized");
-				return Ok(await _agentManager.StartAgent(_userContext.CurrentUser, instagramId, accessToken));
+				return Ok(_agentManager.StartAgent(_userContext.CurrentUser, instagramId, accessToken));
 			}
-			return BadRequest("wot");
+			return BadRequest("failed to start");
+		}
+		[HttpPost]
+		[Route("api/scheduler/agent/stop/{instagramId}")]
+		public IActionResult StopAgent(string instagramId)
+		{
+			if (!string.IsNullOrEmpty(_userContext.CurrentUser))
+			{
+				return Ok(_agentManager.StopAgent(instagramId));
+			}
+			return BadRequest("failed to stop");
 		}
 	}
 }

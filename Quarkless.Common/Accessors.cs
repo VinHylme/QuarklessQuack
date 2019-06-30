@@ -41,6 +41,13 @@ namespace Quarkless.Common
 				return _configuration["Endpoints:ImageSearchEndpointGoogle"];
 			}
 		}
+		public string RedisConnectionString
+		{
+			get
+			{
+				return _configuration["ConnectionStrings:Redis"];
+			}
+		}
 		public string ConnectionString
 		{
 			get

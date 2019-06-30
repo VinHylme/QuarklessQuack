@@ -1,4 +1,6 @@
-﻿using QuarklessContexts.Extensions;
+﻿using InstagramApiSharp;
+using Quarkless.Services.Extensions;
+using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.Handlers.ClientProvider;
@@ -8,6 +10,7 @@ using QuarklessLogic.ServicesLogic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 namespace Quarkless.Services.ContentBuilder.TopicBuilder
 {
@@ -37,7 +40,7 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 		{
 			_aPIClientContainer = new APIClientContainer(_context,userStore.OAccountId,userStore.OInstagramAccountUser);
 		}
-		public async Task<TopicsModel> Build(string topic, int takeHowMany = 8)
+		public async Task<TopicsModel> Build(string topic, int takeSuggested = -1, int takeHowMany = -1)
 		{
 			try
 			{
@@ -52,10 +55,27 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 				if (hashtagsRes.Succeeded)
 				{
 					var hashtags = hashtagsRes.Value;
+					var totalHashtags = hashtags.Select(_ => _.Name).ToList();
+					if (takeSuggested > 0)
+					{
+						var related = hashtags.Take(takeSuggested).Select(_ =>
+						{
+							Thread.Sleep(500);
+							var res = _aPIClientContainer.Hashtag.GetHashtagsSectionsAsync(_.Name,PaginationParameters.MaxPagesToLoad(1)).GetAwaiter().GetResult();
+							if (res.Succeeded)
+							{
+								return res.Value.RelatedHashtags.Select(h=>h.Name);
+							}
+							return null;
+						}).SquashMe();
+						if(related!=null && related.Count()>0)
+							totalHashtags.AddRange(related);
+					}
+
 					TopicsModel topic_model = new TopicsModel
 					{
 						TopicName = topic,
-						SubTopics = hashtags.Select(_ => _.Name).Take(takeHowMany).ToList()
+						SubTopics = totalHashtags.Take(takeHowMany > 0 ? takeHowMany : totalHashtags.Count-1).ToList()
 					};
 
 					var resUpdate = await _topicServicesLogic.AddOrUpdateTopic(topic_model);

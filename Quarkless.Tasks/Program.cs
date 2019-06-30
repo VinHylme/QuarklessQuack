@@ -23,7 +23,8 @@ namespace Quarkless.Tasks
 	{
 		static void Main(string[] args)
 		{
-			var settingPath = Path.GetFullPath(Path.Combine(@"..\..\..\..\Quarkless"));
+			/*
+			var settingPath = Path.GetFullPath(Path.Combine(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Quarkless"));
 			IConfiguration configuration = new ConfigurationBuilder().SetBasePath(settingPath).AddJsonFile("appsettings.json").Build();
 			Accessors accessors = new Accessors(configuration);
 			var services = new ServiceCollection();
@@ -33,24 +34,27 @@ namespace Quarkless.Tasks
 				new MongoStorageOptions{
 					Prefix = "Timeline",
 					CheckConnection = false,
-					JobExpirationCheckInterval = TimeSpan.FromDays(7),
 					MigrationOptions = new MongoMigrationOptions
 					{
 						Strategy = MongoMigrationStrategy.Migrate,
 						BackupStrategy = MongoBackupStrategy.Collections
 					}
 				});
+
 			GlobalConfiguration.Configuration.UseActivator(new WorkerActivator(services.BuildServiceProvider(false)));
 			GlobalJobFilters.Filters.Add(new ProlongExpirationTimeAttribute());
+
 			BackgroundJobServerOptions jobServerOptions = new BackgroundJobServerOptions
 			{
-				WorkerCount = Environment.ProcessorCount * 5
+				WorkerCount = Environment.ProcessorCount,
+				ServerName = string.Format("{0}.{1}",Environment.MachineName,Guid.NewGuid().ToString()),
+				Activator = new WorkerActivator(services.BuildServiceProvider(false))
 			};
 			using (var server = new BackgroundJobServer(jobServerOptions))
 			{
 				Console.WriteLine("hangfire server started");
 				Console.ReadKey();
-			}
+			}*/
 		}
 	}
 }
