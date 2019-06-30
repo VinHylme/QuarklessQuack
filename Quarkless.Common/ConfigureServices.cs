@@ -71,7 +71,6 @@ namespace Quarkless.Common
 			services.AddTransient<IAgentManager, AgentManager>();
 			services.AddTransient<IMediaLogic,MediaLogic>();
 			services.AddTransient<ITimelineLogic,TimelineLogic>();
-
 		}
 		public static void AddRepositories(this IServiceCollection services, Accessors _accessors)
 		{
@@ -108,8 +107,7 @@ namespace Quarkless.Common
 			services.AddTransient<ITranslateService,TranslateService>();
 			services.AddTransient<IUtilProviders,UtilProviders>();
 			services.AddSingleton<IContentManager, ContentManager>();
-			services.AddSingleton<ITextGeneration,TextGeneration>();
-		
+			services.AddSingleton<ITextGeneration,TextGeneration>();		
 		}
 		public static void AddContexts(this IServiceCollection services)
 		{
@@ -117,7 +115,6 @@ namespace Quarkless.Common
 			services.AddTransient<IUserContext, UserContext>();
 			services.AddSingleton<IRequestBuilder,RequestBuilder>();
 			services.AddSingleton<ITopicBuilder, TopicBuilder>();
-			services.AddTransient<IUserStoreDetails,UserStore>();
 		}
 	}
 }

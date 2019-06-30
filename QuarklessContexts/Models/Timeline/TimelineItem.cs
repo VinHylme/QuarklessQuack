@@ -10,7 +10,7 @@ namespace QuarklessContexts.Models.Timeline
 		public string ActionName { get; set; }
 		public DateTime? DeletedAt { get; set; }
 		public bool State { get; set; }
-		public UserStore User { get; set; }
+		public UserStoreDetails User { get; set; }
 		public string Url { get; set; }
 	}
 	public class TimelineFailedItem
@@ -20,7 +20,7 @@ namespace QuarklessContexts.Models.Timeline
 		public DateTime? FailedAt { get; set; }
 		public string Error { get; set;}
 		public bool State { get; set; }
-		public UserStore User { get; set; }
+		public UserStoreDetails User { get; set; }
 		public string Url { get; set; }
 	}
 	public class TimelineFinishedItem
@@ -30,7 +30,7 @@ namespace QuarklessContexts.Models.Timeline
 		public DateTime? SuccededAt { get; set; }
 		public object Results { get; set; }
 		public bool State { get; set; }
-		public UserStore User { get; set; }
+		public UserStoreDetails User { get; set; }
 		public string Url { get; set; }
 	}
 	public class TimelineInProgressItem
@@ -39,7 +39,7 @@ namespace QuarklessContexts.Models.Timeline
 		public string ActionName { get; set; }
 		public DateTime? StartedAt { get; set; }
 		public bool State { get; set; }
-		public UserStore User { get; set; }
+		public UserStoreDetails User { get; set; }
 		public string Url { get; set; }
 	}
 	public class ResultBase<TResponse>
@@ -55,7 +55,7 @@ namespace QuarklessContexts.Models.Timeline
 		public DateTime? StartTime { get; set; }
 		public DateTime? EnqueueTime { get; set; }
 		public bool State { get; set; }
-		public UserStore User { get; set; }
+		public UserStoreDetails User { get; set; }
 		public string Url { get; set; }
 	}
 	public class ItemHistory
@@ -72,7 +72,7 @@ namespace QuarklessContexts.Models.Timeline
 		public DateTime? CreatedTime { get; set; }
 		public DateTime? ExpireAt { get; set; }
 		public DateTimeOffset ExecuteTime { get; set; }
-		public UserStore User { get; set; }	
+		public UserStoreDetails User { get; set; }	
 		public string Url { get; set; }
 		public List<ItemHistory> History { get; set; }
 	}

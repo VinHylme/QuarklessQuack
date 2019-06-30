@@ -1,9 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Quarkless.Auth.AuthTypes;
 using QuarklessContexts.Contexts;
 using QuarklessContexts.Models.ApiModels;
+using QuarklessContexts.Models.UserAuth.AuthTypes;
 using QuarklessLogic.Logic.CollectionsLogic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Quarkless.Controllers

@@ -10,6 +10,6 @@ namespace Quarkless.Services.Factories.Actions
 {
 	public class UnFollowUserActionBuilderFactory : ActionBuilderFactory
 	{
-		public override IActionCommit Commit(IContentManager builder, ProfileModel profile, UserStore user) => new UnFollowUserAction(builder,profile,user);
+		public override IActionCommit Commit(IContentManager builder, ProfileModel profile) => new UnFollowUserAction(builder,profile);
 	}
 }

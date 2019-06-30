@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Quarkless.Auth.AuthTypes;
-using Quarkless.Queue.Jobs.Interfaces;
 using Quarkless.Queue.Jobs.JobOptions;
 using QuarklessContexts.Contexts;
+using QuarklessContexts.Models.UserAuth.AuthTypes;
 using QuarklessLogic.Handlers.RequestBuilder.RequestBuilder;
 using QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic;
 using System;

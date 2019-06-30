@@ -1,9 +1,9 @@
-﻿using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Quarkless.Auth.AuthTypes;
 using Quarkless.Services;
 using QuarklessContexts.Contexts;
+using QuarklessContexts.Models.UserAuth.AuthTypes;
+using System.Threading.Tasks;
 
 namespace Quarkless.Controllers
 {
@@ -25,13 +25,14 @@ namespace Quarkless.Controllers
 
 		[HttpPost]
 		[Route("api/scheduler/agent/start/{instagramId}")]
-		public IActionResult StartAgent(string instagramId)
+		public async Task<IActionResult> StartAgent(string instagramId)
 		{
 			if (!string.IsNullOrEmpty(_userContext.CurrentUser))
 			{
 				var accessToken = HttpContext.Request.Headers["Authorization"];
 				if(string.IsNullOrEmpty(accessToken)) return BadRequest("Not Authorized");
-				return Ok(_agentManager.StartAgent(_userContext.CurrentUser, instagramId, accessToken));
+
+				return Ok(await _agentManager.StartAgent(_userContext.CurrentUser, instagramId, accessToken));
 			}
 			return BadRequest("failed to start");
 		}

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Quarkless.Auth.AuthTypes;
 using QuarklessContexts.Contexts;
+using QuarklessContexts.Models.UserAuth.AuthTypes;
 using QuarklessLogic.Logic.InstaAccountOptionsLogic;
 
 namespace Quarkless.Controllers

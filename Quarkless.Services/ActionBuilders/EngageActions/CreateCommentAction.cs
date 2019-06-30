@@ -39,14 +39,14 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	{
 		private readonly IContentManager _builder;
 		private readonly ProfileModel _profile;
-		private readonly UserStore _user;
+		private UserStoreDetails user;
 		private CommentingStrategySettings commentingStrategySettings;
-		public CreateCommentAction(IContentManager contentManager, ProfileModel profile, UserStore user)
+		public CreateCommentAction(IContentManager contentManager, ProfileModel profile)
 		{
 			_builder = contentManager;
 			_profile = profile;
-			_user = user;
 		}
+		
 		private HolderComment CommentingByTopic(bool inDepth = false)
 		{
 			var fetchMedias = (FetchResponse) MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic();
@@ -116,8 +116,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		public IEnumerable<TimelineEventModel> Push(IActionOptions actionOptions)
 		{
 			CommentingActionOptions commentingActionOptions = actionOptions as CommentingActionOptions;
-
-			if(commentingActionOptions==null) return null ;
+			
+			if(commentingActionOptions==null && user==null) return null ;
 			try
 			{
 				if(commentingStrategySettings.CommentingStrategy == CommentingStrategy.Default)
@@ -165,7 +165,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						BaseUrl = string.Format(UrlConstants.CreateComment, nominatedMedia.MediaId),
 						RequestType = RequestType.POST,
 						JsonBody = JsonConvert.SerializeObject(createComment),
-						User = _user
+						User = user
 					};
 
 					return new List<TimelineEventModel>
@@ -202,7 +202,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 									BaseUrl = string.Format(UrlConstants.CreateComment, nominatedMedia),
 									RequestType = RequestType.POST,
 									JsonBody = JsonConvert.SerializeObject(createComment),
-									User = _user
+									User = user
 								};
 								events.Add(new TimelineEventModel
 								{
@@ -224,6 +224,11 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				Console.WriteLine(ee.Message);
 				return null;
 			}
+		}
+		public IActionCommit IncludeUser(UserStoreDetails userStoreDetails)
+		{
+			user = userStoreDetails;
+			return this;
 		}
 	}
 }

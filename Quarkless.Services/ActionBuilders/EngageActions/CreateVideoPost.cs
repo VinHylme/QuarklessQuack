@@ -21,14 +21,13 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	public class CreateVideoPost : IActionCommit
 	{
 		private readonly ProfileModel _profile;
-		private readonly UserStore _user;
+		private UserStoreDetails user;
 		private readonly IContentManager _builder;
 		private VideoStrategySettings videoStrategy { get; set; }
-		public CreateVideoPost(IContentManager builder, ProfileModel profile, UserStore user)
+		public CreateVideoPost(IContentManager builder, ProfileModel profile)
 		{
 			_builder = builder;
 			_profile = profile;
-			_user = user;
 		}
 
 		public IActionCommit IncludeStrategy(IStrategySettings strategy)
@@ -40,7 +39,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		public IEnumerable<TimelineEventModel> Push(IActionOptions actionOptions)
 		{
 			VideoActionOptions videoActionOptions = actionOptions as VideoActionOptions;
-			
+			if(user==null) return null;
 			string exactSize = _profile.AdditionalConfigurations.PostSize;
 			var location = _profile.LocationTargetList?.ElementAtOrDefault(SecureRandom.Next(_profile.LocationTargetList.Count));
 			var profileColor = _profile.Theme.Colors.ElementAt(SecureRandom.Next(0, _profile.Theme.Colors.Count));
@@ -89,7 +88,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				BaseUrl = UrlConstants.UploadVideo,
 				RequestType = RequestType.POST,
 				JsonBody = JsonConvert.SerializeObject(uploadVideo, Formatting.Indented),
-				User = _user
+				User = user
 			};
 			return new List<TimelineEventModel>
 			{
@@ -100,6 +99,12 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					ExecutionTime = videoActionOptions.ExecutionTime
 				}
 			};
+		}
+
+		public IActionCommit IncludeUser(UserStoreDetails userStoreDetails)
+		{
+			user = userStoreDetails;
+			return this;
 		}
 	}
 

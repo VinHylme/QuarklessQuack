@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 
 namespace QuarklessContexts.Contexts
@@ -10,7 +11,6 @@ namespace QuarklessContexts.Contexts
 		{
 			_httpContextAccessor = httpContextAccessor;
 		}
-
 		public string CurrentUser 
 		{
 			get {

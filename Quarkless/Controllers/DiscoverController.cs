@@ -1,7 +1,7 @@
 ﻿using InstagramApiSharp.Classes.Models;
 using Microsoft.AspNetCore.Mvc;
-using Quarkless.Auth.AuthTypes;
 using QuarklessContexts.Contexts;
+using QuarklessContexts.Models.UserAuth.AuthTypes;
 using QuarklessLogic.Logic.DiscoverLogic;
 using QuarklessLogic.Logic.HashtagLogic;
 using System.Threading.Tasks;

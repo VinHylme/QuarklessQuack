@@ -7,17 +7,17 @@ using QuarklessContexts.Extensions;
 using QuarklessContexts.Models;
 using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.Handlers.ClientProvider;
-using QuarklessLogic.Logic.ProfileLogic;
 using QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic;
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
-using System.Globalization;
 using Quarkless.Services.Extensions;
 using QuarklessLogic.Logic.InstagramAccountLogic;
+using System.Timers;
+using QuarklessLogic.Logic.AuthLogic.Auth;
+using QuarklessContexts.Models.InstagramAccounts;
 
 namespace Quarkless.Services
 {
@@ -53,23 +53,17 @@ namespace Quarkless.Services
 	{
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
 		private readonly IContentManager _contentManager;
-		private readonly IAPIClientContext _clientContext;
-		private readonly IUserStoreDetails _userStoreDetails;
 		private readonly ITimelineLogic _timelineLogic;
-		public AgentManager(IInstagramAccountLogic instagramAccountLogic,
-			IContentManager contentManager, IAPIClientContext clientContext,
-			IUserStoreDetails userStoreDetails, ITimelineLogic timelineLogic)
+		private readonly IAuthHandler _authHandler;
+		public AgentManager(IInstagramAccountLogic instagramAccountLogic, IContentManager contentManager,
+			ITimelineLogic timelineLogic, IAuthHandler authHandler)
 		{
 			_timelineLogic = timelineLogic;
 			_instagramAccountLogic = instagramAccountLogic;
 			_contentManager = contentManager;
-			_clientContext = clientContext;
-			_userStoreDetails = userStoreDetails;
+			_authHandler = authHandler;
 		}
-		private IAPIClientContainer GetContext(string accountId, string instagramAccountId)
-		{
-			return new APIClientContainer(_clientContext, accountId, instagramAccountId);
-		}
+
 		private IEnumerable<AddEventResponse> AddToTimeline(IEnumerable<TimelineEventModel> events)
 		{
 			if (events != null) {
@@ -270,143 +264,150 @@ namespace Quarkless.Services
 		}
 		public async Task<AgentRespnse> StartAgent(string accountId, string instagramAccountId, string accessToken)
 		{
-			try
-			{
-				await _instagramAccountLogic.PartialUpdateInstagramAccount(instagramAccountId, new QuarklessContexts.Models.InstagramAccounts.InstagramAccountModel
+			UserStoreDetails _userStoreDetails = new UserStoreDetails();
+			await _instagramAccountLogic.PartialUpdateInstagramAccount(instagramAccountId, new InstagramAccountModel{ AgentState = true });
+			_userStoreDetails.AddUpdateUser(accountId, instagramAccountId, accessToken);
+
+			var context = _contentManager.SetUser(_userStoreDetails);
+			_userStoreDetails.OInstagramAccountUsername = context.InstagramAccount.Username;
+
+			var profile = context.Profile; 
+			if (profile == null) return null;
+
+			var likeAction = ActionsManager.Begin.Commit(ActionType.LikePost, _contentManager, profile)
+				.IncludeStrategy(new LikeStrategySettings()
 				{
-					AgentState = true
-				});
-				_userStoreDetails.AddUpdateUser(accountId,instagramAccountId,accessToken);			
-				var context = _contentManager.SetUser(_userStoreDetails);
-				_userStoreDetails.OInstagramAccountUsername = context.InstagramAccount.Username;
-				var profile = context.Profile; 
-				if (profile == null) return null;
+					LikeStrategy = LikeStrategyType.Default,
+				})
+				.IncludeUser(_userStoreDetails);
+			var imageAction = ActionsManager.Begin.Commit(ActionType.CreatePostTypeImage, _contentManager, profile)
+				.IncludeStrategy(new ImageStrategySettings
+				{
+					ImageStrategyType = ImageStrategyType.Default
+				})
+				.IncludeUser(_userStoreDetails);
+			var followAction = ActionsManager.Begin.Commit(ActionType.FollowUser, _contentManager, profile)
+				.IncludeStrategy(new FollowStrategySettings
+				{
+					FollowStrategy = FollowStrategyType.Default,
+				})
+				.IncludeUser(_userStoreDetails);
+			var commentAction = ActionsManager.Begin.Commit(ActionType.CreateCommentMedia, _contentManager, profile)
+				.IncludeStrategy(new CommentingStrategySettings
+				{
+					CommentingStrategy = CommentingStrategy.Default,
+				})
+				.IncludeUser(_userStoreDetails);
 
-				var likeAction = ActionsManager.Begin.Commit(ActionType.LikePost,_contentManager,profile,(UserStore)_userStoreDetails)
-					.IncludeStrategy(new LikeStrategySettings()
-					{
-						LikeStrategy = LikeStrategyType.Default,
-					});
-				var imageAction = ActionsManager.Begin.Commit(ActionType.CreatePostTypeImage, _contentManager, profile, (UserStore)_userStoreDetails)
-					.IncludeStrategy(new ImageStrategySettings
-					{
-						ImageStrategyType = ImageStrategyType.Default
-					});
-				var followAction = ActionsManager.Begin.Commit(ActionType.FollowUser, _contentManager, profile, (UserStore)_userStoreDetails)
-					.IncludeStrategy(new FollowStrategySettings
-					{
-						FollowStrategy = FollowStrategyType.Default,
-					});
-				var commentAction = ActionsManager.Begin.Commit(ActionType.CreateCommentMedia, _contentManager, profile, (UserStore)_userStoreDetails)
-					.IncludeStrategy(new CommentingStrategySettings
-					{
-						CommentingStrategy = CommentingStrategy.Default,
-					});
-
-				DateTime nextAvaliableDate = PickAGoodTime();
-				DateTime PickAGoodTime() { 
-					var sft = _timelineLogic.GetScheduledEventsForUserByDate(accountId,DateTime.UtcNow,instaId:instagramAccountId,limit:1000,timelineDateType:TimelineDateType.Forward);
-					var datesPlanned = sft.Select(_=>_.EnqueueTime);
-					if (datesPlanned != null && datesPlanned.Count()>0) { 
-						DateTime current = DateTime.UtcNow;
-						var difference = datesPlanned.Where(_=>_!=null).Max(_=>_- current);
-						var pos = datesPlanned.ToList().FindIndex(n => n - current == difference);
-						return datesPlanned.ElementAt(pos).Value + TimeSpan.FromMinutes(2);;
-					}
-					else
-					{
-						return DateTime.UtcNow;
-					}
+			DateTime nextAvaliableDate = PickAGoodTime();
+			DateTime PickAGoodTime() { 
+				var sft = _timelineLogic.GetScheduledEventsForUserByDate(accountId,DateTime.UtcNow,instaId:instagramAccountId,limit:1000,timelineDateType:TimelineDateType.Forward);
+				var datesPlanned = sft.Select(_=>_.EnqueueTime);
+				if (datesPlanned != null && datesPlanned.Count()>0) { 
+					DateTime current = DateTime.UtcNow;
+					var difference = datesPlanned.Where(_=>_!=null).Max(_=>_- current);
+					var pos = datesPlanned.ToList().FindIndex(n => n - current == difference);
+					return datesPlanned.ElementAt(pos).Value + TimeSpan.FromMinutes(2);;
 				}
+				else
+				{
+					return DateTime.UtcNow;
+				}
+			}
 
-				//Initial Execution
-				var likeScheduleOptions = new LikeActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1,4)), LikeActionType.Any);
-				var imageScheduleOptions = new ImageActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1, 5))) { ImageFetchLimit = 20};
-				var followScheduleOptions = new FollowActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1, 4)), FollowActionType.Any);
-				var commentScheduleOptions = new CommentingActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1, 4)), CommentingActionType.Any);
+			//Initial Execution
+			var likeScheduleOptions = new LikeActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1,4)), LikeActionType.Any);
+			var imageScheduleOptions = new ImageActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1, 5))) { ImageFetchLimit = 20};
+			var followScheduleOptions = new FollowActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1, 4)), FollowActionType.Any);
+			var commentScheduleOptions = new CommentingActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1, 4)), CommentingActionType.Any);
 			
-				List<Chance<ActionContainer>> ChanceAction = new List<Chance<ActionContainer>>();
-				//add actions in as probabilities
-				ChanceAction.Add(new Chance<ActionContainer>
-				{
-					Object = new ActionContainer
-					{
-						ActionOptions = imageScheduleOptions,
-						Action_ = (o) => RunAction(imageAction,o)
-					},
-					Probability = 0.0
-				});
-				ChanceAction.Add(new Chance<ActionContainer>
-				{
-					Object = new ActionContainer
-					{
-						ActionOptions = followScheduleOptions,
-						Action_ = (o) => RunAction(followAction, o)
-					},
-					Probability = 0.20
-				});
-				ChanceAction.Add(new Chance<ActionContainer>
-				{
-					Object = new ActionContainer
-					{
-						ActionOptions = commentScheduleOptions,
-						Action_ = (o) => RunAction(commentAction, o)
-					},
-					Probability = 0.30
-				});
-				ChanceAction.Add(new Chance<ActionContainer>
-				{
-					Object = new ActionContainer
-					{
-						ActionOptions = likeScheduleOptions,
-						Action_ = (o) => RunAction(likeAction, o)
-					},
-					Probability = 0.50
-				});
-
-				System.Timers.Timer fps = new System.Timers.Timer(TimeSpan.FromSeconds(5).TotalMilliseconds);
-				fps.Start();
-				fps.Elapsed += async(o, e) =>
-				{
-					context.InstagramAccount = await _instagramAccountLogic.GetInstagramAccount(accountId, instagramAccountId);
-					if(context.InstagramAccount.AgentState == true) { 
-						nextAvaliableDate = PickAGoodTime();
-
-						likeScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(1.6);
-						imageScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(SecureRandom.Next(3, 6));
-						followScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(SecureRandom.Next(2, 4));
-						commentScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(SecureRandom.Next(2, 4));
-
-						ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(LikeActionOptions)).SingleOrDefault().Object.ActionOptions = likeScheduleOptions;
-						ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(FollowActionOptions)).SingleOrDefault().Object.ActionOptions = followScheduleOptions;
-						ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(ImageActionOptions)).SingleOrDefault().Object.ActionOptions = imageScheduleOptions;
-						ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(CommentingActionOptions)).SingleOrDefault().Object.ActionOptions = commentScheduleOptions;
-					
-						var runAction = SecureRandom.ProbabilityRoll(ChanceAction);
-						runAction.Action_(runAction.ActionOptions);
-					}
-					else { 
-						fps.Stop();
-					}
-				};
-
-				return new AgentRespnse()
-				{
-					HttpStatus = HttpStatusCode.OK,
-					Message = "Started"
-				};
-			}
-			catch(Exception ee)
+			List<Chance<ActionContainer>> ChanceAction = new List<Chance<ActionContainer>>();
+			//add actions in as probabilities
+			ChanceAction.Add(new Chance<ActionContainer>
 			{
-				await _instagramAccountLogic.PartialUpdateInstagramAccount(instagramAccountId, new QuarklessContexts.Models.InstagramAccounts.InstagramAccountModel
+				Object = new ActionContainer
 				{
-					AgentState = false
-				});
-				return new AgentRespnse{
-					HttpStatus = HttpStatusCode.InternalServerError,
-					Message = ee.Message
-				};
-			}
+					ActionOptions = imageScheduleOptions,
+					Action_ = (o) => RunAction(imageAction,o)
+				},
+				Probability = 0.0
+			});
+			ChanceAction.Add(new Chance<ActionContainer>
+			{
+				Object = new ActionContainer
+				{
+					ActionOptions = followScheduleOptions,
+					Action_ = (o) => RunAction(followAction, o)
+				},
+				Probability = 0.20
+			});
+			ChanceAction.Add(new Chance<ActionContainer>
+			{
+				Object = new ActionContainer
+				{
+					ActionOptions = commentScheduleOptions,
+					Action_ = (o) => RunAction(commentAction, o)
+				},
+				Probability = 0.30
+			});
+			ChanceAction.Add(new Chance<ActionContainer>
+			{
+				Object = new ActionContainer
+				{
+					ActionOptions = likeScheduleOptions,
+					Action_ = (o) => RunAction(likeAction, o)
+				},
+				Probability = 0.50
+			});
+
+			Timer instanceRefresher = new Timer(TimeSpan.FromSeconds(5).TotalMilliseconds);
+			Timer tokenRefresh = new Timer(TimeSpan.FromMinutes(58).TotalMilliseconds);
+			var refreshtok = _authHandler.GetUserByUsername(_userStoreDetails.OAccountId).GetAwaiter().GetResult();
+
+			tokenRefresh.Start();
+			tokenRefresh.Elapsed += (o, e) =>
+			{
+				var res = _authHandler.RefreshLogin(refreshtok.Tokens.Where(_=>_.Name== "refresh_token").FirstOrDefault().Value,_userStoreDetails.OAccountId).GetAwaiter().GetResult();
+				if(res.StatusCode == HttpStatusCode.OK || res.StatusCode == HttpStatusCode.Accepted)
+				{
+					var newtoken = res.Results.AuthenticationResult.IdToken;
+					_userStoreDetails.OAccessToken = newtoken;
+					likeAction.IncludeUser(_userStoreDetails);
+					imageAction.IncludeUser(_userStoreDetails);
+					followAction.IncludeUser(_userStoreDetails);
+					commentAction.IncludeUser(_userStoreDetails);
+				}
+			};
+				
+			instanceRefresher.Start();
+			instanceRefresher.Elapsed += async(o, e) =>
+			{
+				context.InstagramAccount = await _instagramAccountLogic.GetInstagramAccount(accountId, instagramAccountId);
+				if(context.InstagramAccount.AgentState == true) { 
+					nextAvaliableDate = PickAGoodTime();
+
+					likeScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(1.6);
+					imageScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(SecureRandom.Next(3, 6));
+					followScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(SecureRandom.Next(2, 4));
+					commentScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(SecureRandom.Next(2, 4));
+
+					ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(LikeActionOptions)).SingleOrDefault().Object.ActionOptions = likeScheduleOptions;
+					ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(FollowActionOptions)).SingleOrDefault().Object.ActionOptions = followScheduleOptions;
+					ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(ImageActionOptions)).SingleOrDefault().Object.ActionOptions = imageScheduleOptions;
+					ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(CommentingActionOptions)).SingleOrDefault().Object.ActionOptions = commentScheduleOptions;
+					
+					var runAction = SecureRandom.ProbabilityRoll(ChanceAction);
+					runAction.Action_(runAction.ActionOptions);
+				}
+				else {
+					instanceRefresher.Stop();
+				}
+			};
+			return new AgentRespnse
+			{
+				HttpStatus = HttpStatusCode.OK,
+				Message = "Done"
+			};
 		}
 		public AgentRespnse StopAgent(string instagramAccountId)
 		{

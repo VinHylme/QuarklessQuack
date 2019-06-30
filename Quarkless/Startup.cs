@@ -8,16 +8,17 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDbGenericRepository;
-using Quarkless.Auth;
-using Quarkless.Auth.AuthTypes;
-using Quarkless.Auth.Manager;
 using Quarkless.Common;
 using Quarkless.Queue.Jobs.Filters;
 using QuarklessContexts.Contexts.AccountContext;
+using QuarklessContexts.Models.UserAuth.AuthTypes;
+using QuarklessLogic.Logic.AuthLogic.Auth;
+using QuarklessLogic.Logic.AuthLogic.Auth.Manager;
 using Quartz;
 using StackExchange.Redis;
 
@@ -54,13 +55,13 @@ namespace Quarkless
 			Environment.SetEnvironmentVariable("AWS_SECRET_ACCESS_KEY", _accessors.AWSAccess.SecretKey);
 			Environment.SetEnvironmentVariable("AWS_REGION", _accessors.AWSAccess.Region);
 			var mongoDbContext = new MongoDbContext(_accessors.ConnectionString, "Accounts");
+
 			services.AddIdentity<AccountUser, AccountRole>()
 				.AddMongoDbStores<AccountUser, AccountRole, string>(mongoDbContext)
 				.AddDefaultTokenProviders();
-
 			RegionEndpoint regionEndpoint = RegionEndpoint.EUWest2;
-			IAmazonCognitoIdentityProvider amazonCognitoIdentityProvider = 
-				new AmazonCognitoIdentityProviderClient(_accessors.AWSAccess.AccessKey,_accessors.AWSAccess.SecretKey,regionEndpoint);
+			IAmazonCognitoIdentityProvider amazonCognitoIdentityProvider = new AmazonCognitoIdentityProviderClient(_accessors.AWSAccess.AccessKey,_accessors.AWSAccess.SecretKey,regionEndpoint);
+		
 			CognitoUserPool userPool = new CognitoUserPool(_accessors.AWSPool.PoolID, _accessors.AWSPool.AppClientID,amazonCognitoIdentityProvider,_accessors.AWSPool.AppClientSecret);
 			services.AddSingleton<IAmazonCognitoIdentityProvider>(amazonCognitoIdentityProvider);
 			services.AddSingleton<CognitoUserPool>(userPool);
@@ -105,8 +106,8 @@ namespace Quarkless
 
 			services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 			services.AddSingleton<IAuthAccessHandler>(new AuthAccessHandler(_accessors.AWSPool.AppClientSecret));
-			services.AddSingleton<IAuthHandler, AuthHandler>();
-			services.AddSingleton<IAuthorizationHandler, AuthClientHandler>();
+			services.AddScoped<IAuthHandler, AuthHandler>();
+			services.AddScoped<IAuthorizationHandler, AuthClientHandler>();
 
 			services.AddHangfire(options =>
 			{
@@ -125,7 +126,8 @@ namespace Quarkless
 				options.UseRedisStorage(Redis, new Hangfire.Redis.RedisStorageOptions
 				{
 					Prefix = "Timeline",
-					SucceededListSize = 100000
+					SucceededListSize = 100000,
+					DeletedListSize = 10000
 				});
 				options.UseSerializerSettings(new Newtonsoft.Json.JsonSerializerSettings(){ 
 					ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
@@ -175,6 +177,7 @@ namespace Quarkless
 				WorkerCount = Environment.ProcessorCount * 2,
 				ServerName = string.Format("{0}.{1}", Environment.MachineName, Guid.NewGuid().ToString())
 			};
+
 			app.UseHangfireDashboard();
 			app.UseHangfireServer(jobServerOptions);
 			app.UseHttpsRedirection();

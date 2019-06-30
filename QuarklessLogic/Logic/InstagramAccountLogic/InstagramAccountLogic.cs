@@ -19,7 +19,6 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 			_proxyLogic = proxyLogic;
 			_instagramAccountRepository = instagramAccountRepository;
 		}
-
 		public async Task<ResultBase<bool>> AddInstagramAccount(string accountId, StateData state, AddInstagramAccountRequest addInstagram)
 		{
 			ResultBase<bool> @Result = new ResultBase<bool>();
@@ -60,7 +59,6 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 					return Result;
 				}	
 		}
-
 		public async Task<StateData> GetInstagramAccountStateData(string accountId, string InstagramAccountId)
 		{
 			try
@@ -117,6 +115,5 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 		{
 			return await _instagramAccountRepository.PartialUpdateInstagramAccount(instagramAccountId, instagramAccountModel);
 		}
-
 	}
 }

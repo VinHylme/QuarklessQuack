@@ -1,4 +1,4 @@
-﻿namespace Quarkless.Auth.Manager
+﻿namespace QuarklessLogic.Logic.AuthLogic.Auth.Manager
 {
 	public interface IAuthAccessHandler
 	{

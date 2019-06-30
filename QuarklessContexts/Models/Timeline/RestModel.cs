@@ -6,7 +6,7 @@ namespace QuarklessContexts.Models.Timeline
 {
 	public class RestModel
 	{
-		public UserStore User { get; set; }
+		public UserStoreDetails User { get; set; }
 		public string BaseUrl { get; set; }
 		public string JsonBody { get; set; }
 		public string ResourceAction { get; set; }

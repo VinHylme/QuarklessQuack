@@ -1,26 +1,32 @@
 ﻿using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 using Amazon.Extensions.CognitoAuthentication;
+using Microsoft.AspNetCore.Identity;
 using Newtonsoft.Json.Linq;
-using Quarkless.Auth.Manager;
-using Quarkless.Models;
-using Quarkless.Models.Auth;
 using QuarklessContexts.Classes.Carriers;
+using QuarklessContexts.Contexts.AccountContext;
+using QuarklessContexts.Models.UserAuth.Auth;
 using QuarklessLogic.Handlers.ReportHandler;
+using QuarklessLogic.Logic.AuthLogic.Auth.Manager;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Quarkless.Auth
+namespace QuarklessLogic.Logic.AuthLogic.Auth
 {
 	public class AuthHandler : IAuthHandler
 	{
 		private readonly IAmazonCognitoIdentityProvider _cognito;
+		private readonly UserManager<AccountUser> _userManager;
+		private readonly SignInManager<AccountUser> _signInManager;
 		private readonly CognitoUserPool _cognitoUser;
 		private readonly IAuthAccessHandler _accessHandler;
 		private readonly IReportHandler _reportHandler;
-		public AuthHandler(IAuthAccessHandler accessHandler, IAmazonCognitoIdentityProvider provider, IReportHandler reportHandler, CognitoUserPool cognitoUser)
+		public AuthHandler(IAuthAccessHandler accessHandler, IAmazonCognitoIdentityProvider provider, IReportHandler reportHandler, 
+			CognitoUserPool cognitoUser, UserManager<AccountUser> userManager, SignInManager<AccountUser> signInManager)
 		{
+			_userManager = userManager;
+			_signInManager = signInManager;
 			_accessHandler = accessHandler;
 			_cognitoUser = cognitoUser;
 			_cognito = provider;
@@ -29,6 +35,36 @@ namespace Quarkless.Auth
 		}
 
 		public CognitoUserPool UserPool {  get { return _cognitoUser;} }
+		#region Database
+		public async Task<bool> SignIn(AccountUser user, bool isPersistent = false)
+		{
+			try 
+			{
+				await _signInManager.SignInAsync(user,isPersistent);
+				return true;
+			}
+			catch
+			{
+				return false;
+			}
+		}
+		public async Task<bool> CreateAccount(AccountUser accountUser, string password)
+		{
+			return (await _userManager.CreateAsync(accountUser,password)).Succeeded;
+		}
+		public async Task<bool> UpdateUser(AccountUser accountUser)
+		{
+			return (await _userManager.UpdateAsync(accountUser)).Succeeded;
+		}
+		public async Task<AccountUser> GetUserByUsername(string username)
+		{
+			return await _userManager.FindByNameAsync(username);
+		}
+		public AccountUser GetUserByUsernameOffline(string username)
+		{
+			return null;
+		}
+		#endregion
 		public async Task<ResultBase<GetUserResponse>> GetUser(string accessToken)
 		{
 			var Responseresult = new ResultBase<GetUserResponse>();
@@ -76,7 +112,6 @@ namespace Quarkless.Auth
 				return responseResults;
 			}
 		}
-
 		public async Task<ResultBase<InitiateAuthResponse>> RefreshLogin(string refreshToken, string userName)
 		{
 			ResultBase<InitiateAuthResponse> resultBase = new ResultBase<InitiateAuthResponse>();
@@ -87,7 +122,7 @@ namespace Quarkless.Auth
 				AuthParameters = new Dictionary<string, string>
 				{
 					{ "REFRESH_TOKEN",refreshToken },
-					{"SECRET_HASH", _accessHandler.GetHash(userName, _cognitoUser.ClientID)  }
+					{ "SECRET_HASH", _accessHandler.GetHash(userName, _cognitoUser.ClientID)  }
 				},
 				
 			};
@@ -293,6 +328,7 @@ namespace Quarkless.Auth
 			}
 
 		}
-	
+
+
 	}
 }

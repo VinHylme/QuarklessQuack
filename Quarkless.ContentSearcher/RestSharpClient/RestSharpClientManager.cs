@@ -35,20 +35,7 @@ namespace QuarklessLogic.RestSharpClient
 			foreach (var cookie in cookies)
 				RestClient.CookieContainer.Add(cookie);
 		}
-		private string RefreshLogin(string token, string username)
-		{
-			var request = new RestRequest(Method.POST);
-			SetBaseUrl("http://localhost:51518/api/Auth/refreshState");
-			var jsonBody = new
-			{
-				refreshToken = token.Replace("Bearer ",""),
-				Username = username
-			};
-			request.AddJsonBody(JsonConvert.SerializeObject(jsonBody));
-			var response = RestClient.Execute(request);
-			return JObject.Parse(response.Content)["idToken"].ToString();
-		}
-		public IRestResponse PostRequest(string url, string resource, string jsonBody, IUserStoreDetails userStore = null, 
+		public IRestResponse PostRequest(string url, string resource, string jsonBody, UserStoreDetails userStore = null, 
 			IEnumerable<Parameter> parameters = null, IEnumerable<HttpHeader> headers=null)
 		{
 			try
@@ -75,14 +62,8 @@ namespace QuarklessLogic.RestSharpClient
 
 				if(response.StatusCode == HttpStatusCode.Unauthorized && userStore!=null)
 				{
-					userStore.OAccessToken = RefreshLogin(headers.Where(_=>_.Name == "Authorization").Single().Value,userStore.OAccessToken);
-					headers.Where(_=>_.Name=="Authorization").Select(a=>a.Value = $"Bearer {userStore.OAccessToken}");
-					if(!string.IsNullOrEmpty(userStore.OAccessToken) && Attempt <= 2) { 
-						Attempt++;
-						PostRequest(url,resource,jsonBody,userStore,parameters,headers);
-					}
+					return null;
 				}
-				Attempt = 0;
 				return response;
 			}
 			catch (Exception ee)

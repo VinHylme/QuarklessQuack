@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Quarkless.Auth.AuthTypes;
 using QuarklessContexts.Contexts;
 using QuarklessContexts.Models.MediaModels;
+using QuarklessContexts.Models.UserAuth.AuthTypes;
 using QuarklessLogic.Logic.MediaLogic;
 using System;
 using System.Collections.Generic;

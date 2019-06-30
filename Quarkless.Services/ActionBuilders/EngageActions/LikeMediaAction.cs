@@ -31,13 +31,12 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	{
 		private readonly IContentManager _builder;
 		private readonly ProfileModel _profile;
-		private readonly UserStore _user;
+		private UserStoreDetails user;
 		private LikeStrategySettings likeStrategySettings;
-		public LikeMediaAction(IContentManager builder, ProfileModel profile, UserStore user)
+		public LikeMediaAction(IContentManager builder, ProfileModel profile)
 		{
 			_builder = builder;
 			_profile = profile;
-			_user = user;
 		}
 
 		public IActionCommit IncludeStrategy(IStrategySettings strategy)
@@ -108,11 +107,10 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			}
 			return null;
 		}
-
 		public IEnumerable<TimelineEventModel> Push(IActionOptions actionOptions)
 		{
 			LikeActionOptions likeActionOptions = actionOptions as LikeActionOptions;
-			if (likeStrategySettings == null) return null;
+			if (likeStrategySettings == null && user==null) return null;
 			try
 			{
 				Console.WriteLine("Like Action Started");
@@ -159,7 +157,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					{
 						BaseUrl = string.Format(UrlConstants.LikeMedia, nominatedMedia),
 						RequestType = RequestType.POST,
-						User = _user,
+						User = user,
 						JsonBody = null
 					};
 					return new List<TimelineEventModel>
@@ -191,7 +189,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 									BaseUrl = string.Format(UrlConstants.LikeMedia, nominatedMedia),
 									RequestType = RequestType.POST,
 									JsonBody = null,
-									User = _user
+									User = user
 								};
 								events.Add(new TimelineEventModel
 								{
@@ -212,6 +210,12 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				Console.WriteLine(ee.Message);
 				return null;
 			}
+		}
+
+		public IActionCommit IncludeUser(UserStoreDetails userStoreDetails)
+		{
+			user = userStoreDetails;
+			return this;
 		}
 	}
 }

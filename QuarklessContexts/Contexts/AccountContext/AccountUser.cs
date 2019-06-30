@@ -15,6 +15,5 @@ namespace QuarklessContexts.Contexts.AccountContext
 		public AccountUser(string userName, string email) : base(userName, email)
 		{
 		}
-		
 	}
 }

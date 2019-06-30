@@ -23,14 +23,14 @@ namespace Quarkless.Services
 		private readonly ITopicBuilder _topicBuilder; 
 		private readonly IContentSearch _contentSearch;
 		private readonly ITextGeneration _textGeneration;
-		private IUserStoreDetails _user { get; set; }
+		private UserStoreDetails _user { get; set; }
 		public ContentManager(ITopicBuilder topicBuilder, IContentSearch contentSearch, ITextGeneration textGeneration)
 		{
 			_topicBuilder = topicBuilder;
 			_contentSearch = contentSearch;
 			_textGeneration = textGeneration;
 		}
-		public ContextContainer SetUser(IUserStoreDetails user)
+		public ContextContainer SetUser(UserStoreDetails user)
 		{
 			var context = _contentSearch.SetUserClient(user);
 			_topicBuilder.Init(user);

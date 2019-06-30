@@ -1,14 +1,18 @@
 ﻿using Amazon.CognitoIdentityProvider.Model;
 using Amazon.Extensions.CognitoAuthentication;
-using Quarkless.Models;
-using Quarkless.Models.Auth;
 using QuarklessContexts.Classes.Carriers;
+using QuarklessContexts.Contexts.AccountContext;
+using QuarklessContexts.Models.UserAuth.Auth;
 using System.Threading.Tasks;
 
-namespace Quarkless.Auth
+namespace QuarklessLogic.Logic.AuthLogic.Auth
 {
 	public interface IAuthHandler
 	{
+		Task<bool> SignIn(AccountUser user, bool isPersistent = false);
+		Task<bool> CreateAccount(AccountUser accountUser, string password);
+		Task<AccountUser> GetUserByUsername(string username);
+		Task<bool> UpdateUser(AccountUser accountUser);
 		Task<ResultBase<AdminInitiateAuthResponse>> Login(LoginRequest loginRequest);
 		Task<ResultBase<RespondToAuthChallengeResponse>> SetNewPassword(NewPasswordRequest Newrequest);
 		Task<ResultBase<SignUpResponse>> Register(RegisterAccountModel registerAccount);

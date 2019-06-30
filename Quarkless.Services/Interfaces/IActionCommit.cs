@@ -1,5 +1,6 @@
 ﻿using Quarkless.Services.StrategyBuilders;
 using QuarklessContexts.Models;
+using QuarklessContexts.Models.Timeline;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -14,5 +15,6 @@ namespace Quarkless.Services.Interfaces
 	{
 		IEnumerable<TimelineEventModel> Push(IActionOptions actionOptions);
 		IActionCommit IncludeStrategy(IStrategySettings strategy);
+		IActionCommit IncludeUser(UserStoreDetails userStoreDetails);
 	}
 }

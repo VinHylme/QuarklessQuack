@@ -3,14 +3,11 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Amazon.CognitoIdentityProvider;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Quarkless.Auth;
-using Quarkless.Auth.AuthTypes;
-using Quarkless.Models;
-using Quarkless.Models.Auth;
 using QuarklessContexts.Contexts.AccountContext;
-using QuarklessContexts.Models;
+using QuarklessContexts.Models.UserAuth.Auth;
+using QuarklessContexts.Models.UserAuth.AuthTypes;
+using QuarklessLogic.Logic.AuthLogic.Auth;
 
 namespace Quarkless.Controllers
 {
@@ -18,14 +15,9 @@ namespace Quarkless.Controllers
     public class AuthController : ControllerBase
     {
 		private readonly IAuthHandler _authHandler;
-		private readonly UserManager<AccountUser> _userManager;
-		private readonly SignInManager<AccountUser> _signInManager;
-		public AuthController(IAuthHandler authHandler, UserManager<AccountUser> userManager,
-			SignInManager<AccountUser> signInManager)
+		public AuthController(IAuthHandler authHandler)
 		{
 			_authHandler = authHandler;
-			_userManager = userManager;
-			_signInManager = signInManager;
 		}
 		[AllowAnonymous]
 		[HttpPost]
@@ -54,13 +46,33 @@ namespace Quarkless.Controllers
 								results.Results.AuthenticationResult.ExpiresIn, 
 								results.Results.AuthenticationResult.RefreshToken 
 							};
-
-							var userdb = await _userManager.FindByNameAsync(loginRequest.Username);
-							if (userdb!=null && !userdb.IsUserConfirmed)
+							var userdb = await _authHandler.GetUserByUsername(loginRequest.Username);
+							if (userdb!=null)
 							{
 								userdb.IsUserConfirmed = true;
-								var aresu = await _userManager.UpdateAsync(userdb);
-								if (!aresu.Succeeded)
+								userdb.Tokens = new List<AspNetCore.Identity.MongoDbCore.Models.Token>
+								{
+									new AspNetCore.Identity.MongoDbCore.Models.Token
+									{
+										LoginProvider = "aws",
+										Name = "refresh_token",
+										Value = responseConcatenate.RefreshToken
+									},
+									new AspNetCore.Identity.MongoDbCore.Models.Token
+									{
+										LoginProvider = "aws",
+										Name = "expires_in",
+										Value = responseConcatenate.ExpiresIn.ToString()
+									},
+									new AspNetCore.Identity.MongoDbCore.Models.Token
+									{
+										LoginProvider = "aws",
+										Name = "access_token",
+										Value = responseConcatenate.AccessToken
+									}
+								};
+								var aresu = await _authHandler.UpdateUser(userdb);
+								if (!aresu)
 								{
 									//something went wrong with the db
 								}
@@ -128,11 +140,11 @@ namespace Quarkless.Controllers
 						Roles = new List<string> { { AuthTypes.TrialUsers.ToString() } },
 					};
 
-					await _userManager.CreateAsync(accountUser, registerAccountModel.Password);
+					await _authHandler.CreateAccount(accountUser, registerAccountModel.Password);
 					if (results.Results.UserConfirmed)
 					{
-						var userIs = await _userManager.FindByNameAsync(registerAccountModel.Username);
-						await _signInManager.SignInAsync(userIs, isPersistent: false);
+						var userIs = await _authHandler.GetUserByUsername(registerAccountModel.Username);
+						await _authHandler.SignIn(userIs);
 						await Login(new LoginRequest { Username = registerAccountModel.Username, Password = registerAccountModel.Password });
 						return Ok(results);
 					}

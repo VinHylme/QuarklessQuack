@@ -21,7 +21,7 @@ namespace Quarkless.Services.ContentSearch
 		private readonly IAPIClientContext _context;
 		private IAPIClientContainer _container { get; set; }
 		private readonly YandexImageSearch _yandexImageSearch;
-		public ContextContainer SetUserClient(IUserStoreDetails _user)
+		public ContextContainer SetUserClient(UserStoreDetails _user)
 		{
 			_container = new APIClientContainer(_context, _user.OAccountId, _user.OInstagramAccountUser);
 			return _container.GetContext;

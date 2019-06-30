@@ -21,12 +21,11 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		private readonly IContentManager _content;
 		private UnFollowStrategySettings unFollowStrategySettings;
 		private readonly ProfileModel _profile;
-		private readonly UserStore _user;
-		public UnFollowUserAction(IContentManager content, ProfileModel profile, UserStore user)
+		private UserStoreDetails user;
+		public UnFollowUserAction(IContentManager content, ProfileModel profile)
 		{
 			this._content = content;
 			this._profile = profile;
-			this._user = user;
 		}
 
 		public IActionCommit IncludeStrategy(IStrategySettings strategy)
@@ -44,6 +43,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		public IEnumerable<TimelineEventModel> Push(IActionOptions actionOptions)
 		{
 			FollowActionOptions followActionOptions = actionOptions as FollowActionOptions;
+			if(user==null) return null;
 			if(unFollowStrategySettings.UnFollowStrategy == UnFollowStrategyType.Default)
 			{
 				var fetchedItems =  MediaFetcherManager.Begin.Commit(FetchType.Users,_content,_profile).FetchUsers(2, OtherActions.UserFetchType.UserFollowingList).FetchedItems;
@@ -58,7 +58,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 							BaseUrl = string.Format(UrlConstants.UnfollowUser, nominated),
 							RequestType = RequestType.POST,
 							JsonBody = null,
-							User = _user
+							User = user
 						};
 						return new List<TimelineEventModel>
 						{
@@ -77,6 +77,12 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 
 			}
 			return null;
+		}
+
+		public IActionCommit IncludeUser(UserStoreDetails userStoreDetails)
+		{
+			user = userStoreDetails;
+			return this;
 		}
 	}
 }

@@ -28,13 +28,12 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	{
 		private readonly IContentManager _builder;
 		private readonly ProfileModel _profile;
-		private readonly UserStore _user;
+		private UserStoreDetails user;
 		private FollowStrategySettings followStrategySettings;
-		public FollowUserAction(IContentManager builder, ProfileModel profile, UserStore user)
+		public FollowUserAction(IContentManager builder, ProfileModel profile)
 		{
 			_builder = builder;
 			_profile = profile;
-			_user = user;
 		}
 		public IActionCommit IncludeStrategy(IStrategySettings strategy)
 		{
@@ -106,6 +105,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		public IEnumerable<TimelineEventModel> Push(IActionOptions actionOptions)
 		{
 			FollowActionOptions followActionOptions = actionOptions as FollowActionOptions; 
+			if(user == null) return null;
 			try
 			{
 				Console.WriteLine("Follow Action Started");
@@ -145,7 +145,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					BaseUrl = string.Format(UrlConstants.FollowUser, nominatedFollower),
 					RequestType = RequestType.POST,
 					JsonBody = null,
-					User = _user
+					User = user
 				};
 				return new List<TimelineEventModel>
 				{
@@ -162,6 +162,12 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				Console.WriteLine(ee.Message);
 				return null;
 			}
+		}
+
+		public IActionCommit IncludeUser(UserStoreDetails userStoreDetails)
+		{
+			user = userStoreDetails;
+			return this;
 		}
 	}
 }

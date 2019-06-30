@@ -26,6 +26,6 @@ namespace Quarkless.Services.Factories
 		public static ActionsManager Begin => new ActionsManager();
 
 		public IActionCommit Commit(ActionType actionType,IContentManager actionBuilderManager,
-			ProfileModel profile, UserStore user) =>_factories[actionType].Commit(actionBuilderManager,profile,user);
+			ProfileModel profile) =>_factories[actionType].Commit(actionBuilderManager,profile);
 	}
 }

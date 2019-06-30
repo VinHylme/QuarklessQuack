@@ -1,10 +1,7 @@
 ﻿using Amazon.CognitoIdentityProvider;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace QuarklessContexts.Models
+namespace QuarklessContexts.Models.UserAuth.Auth
 {
 	public class ChangePasswordResponse
 	{

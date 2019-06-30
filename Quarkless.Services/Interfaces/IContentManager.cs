@@ -13,7 +13,7 @@ namespace Quarkless.Services.Interfaces
 {
 	public interface IContentManager
 	{
-		ContextContainer SetUser(IUserStoreDetails user);
+		ContextContainer SetUser(UserStoreDetails user);
 		string GenerateComment(TopicsModel topicsModel, string language);
 		IEnumerable<UserResponse<MediaDetail>> SearchUserFeedMediaDetailInstagram(string[] seenMedias = null, bool requestRefresh = false, int limit = 1);
 		List<UserResponse<string>> SearchInstagramMediaLikers(string mediaId);

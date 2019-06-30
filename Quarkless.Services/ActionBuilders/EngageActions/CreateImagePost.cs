@@ -22,14 +22,13 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	class CreateImagePost : IActionCommit
 	{
 		private readonly ProfileModel _profile;
-		private readonly UserStore _user;
+		private UserStoreDetails user;
 		private readonly IContentManager _builder;
 		private ImageStrategySettings imageStrategySettings;
-		public CreateImagePost(IContentManager builder, ProfileModel profile, UserStore user)
+		public CreateImagePost(IContentManager builder, ProfileModel profile)
 		{
 			_builder = builder;
 			_profile = profile;
-			_user = user;
 		}
 
 		public IActionCommit IncludeStrategy(IStrategySettings strategy)
@@ -41,6 +40,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		public IEnumerable<TimelineEventModel> Push(IActionOptions actionOptions)
 		{
 			ImageActionOptions imageActionOptions = actionOptions as ImageActionOptions;
+			if(user==null) return null;
 			Console.WriteLine("Create Photo Action Started");
 			try
 			{
@@ -127,7 +127,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					BaseUrl = UrlConstants.UploadPhoto,
 					RequestType = RequestType.POST,
 					JsonBody = JsonConvert.SerializeObject(uploadPhoto),
-					User = _user
+					User =  user
 				};
 				return new List<TimelineEventModel>
 				{ 
@@ -144,6 +144,12 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				Console.WriteLine(ee.Message);
 				return null;
 			}
+		}
+
+		public IActionCommit IncludeUser(UserStoreDetails userStoreDetails)
+		{
+			user = userStoreDetails;
+			return this;
 		}
 	}
 

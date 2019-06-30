@@ -3,9 +3,9 @@ using System.Threading.Tasks;
 using InstagramApiSharp.Classes;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using Quarkless.Auth.AuthTypes;
 using QuarklessContexts.Contexts;
 using QuarklessContexts.Models.InstagramAccounts;
+using QuarklessContexts.Models.UserAuth.AuthTypes;
 using QuarklessLogic.Logic.InstagramAccountLogic;
 using QuarklessLogic.Logic.InstaUserLogic;
 
