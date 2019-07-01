@@ -72,7 +72,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					if (ratioff > 1.0 && findNominatedUser.UserDetail.MediaCount > 5)
 					{
 						var resMedia = _builder.SearchUsersMediaDetailInstagram(findNominatedUser.UserDetail.UserName, 1);
-						return resMedia.ElementAt(SecureRandom.Next(resMedia.Count())).Object.MediaId;
+						return resMedia.ElementAt(SecureRandom.Next(resMedia.Count()-1)).Object.MediaId;
 					}
 					Thread.Sleep(TimeSpan.FromSeconds(SecureRandom.Next(1, 4)));
 					index++;
@@ -82,7 +82,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			{
 				var resMedia = _builder.SearchUsersMediaDetailInstagram( 
 					searchMedias.ElementAt(SecureRandom.Next(searchMedias.Count())).Username, 1);
-				return resMedia.ElementAt(SecureRandom.Next(resMedia.Count())).Object.MediaId;
+				return resMedia.ElementAt(SecureRandom.Next(resMedia.Count()-1)).Object.MediaId;
 			}
 			return null;
 		}
@@ -90,7 +90,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		{
 			var fetchMedias = MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic();
 			var searchMedias = (IEnumerable<UserResponse<MediaDetail>>)fetchMedias.FetchedItems;
-			var users_ = _builder.SearchInstagramMediaCommenters(searchMedias.ElementAt(SecureRandom.Next(searchMedias.Count())).Object.MediaId, 1);
+			var users_ = _builder.SearchInstagramMediaCommenters(searchMedias.ElementAt(SecureRandom.Next(searchMedias.Count()-1)).Object.MediaId, 1);
 			int index = 0;
 			while (users_.Count > index)
 			{
@@ -100,7 +100,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				if (ratioff > 1.0 && findNominatedUser.UserDetail.MediaCount > 5)
 				{
 					var resMedia = _builder.SearchUsersMediaDetailInstagram(findNominatedUser.UserDetail.UserName, 1);
-					return resMedia.ElementAt(SecureRandom.Next(resMedia.Count())).Object.MediaId;
+					return resMedia.ElementAt(SecureRandom.Next(resMedia.Count()-1)).Object.MediaId;
 				}
 				Thread.Sleep(TimeSpan.FromSeconds(SecureRandom.Next(1, 4)));
 				index++;

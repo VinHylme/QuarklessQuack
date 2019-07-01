@@ -31,7 +31,7 @@ namespace QuarklessLogic.Handlers.TextGeneration
 				.Select(a => a.Split("\","))
 				.Where(c => c.Length > 2 && !c.Contains("@"))
 				.Select(v => new { Text = v[0].Replace("\"", ""), Topic = v[1].Replace("\"", ""), Language = v[2].Replace("\"", "") })
-				.Where(_ => _.Topic.ToLower().Contains(topic) && _.Language.Contains(language)).ToList();
+				.Where(_ => _.Topic.ToLower().Equals(topic) && _.Language.Equals(language)).ToList();
 
 			if(reader==null && reader.Count<=0) return null;
 			string s = Regex.Replace(string.Join(',', reader.Select(sa => sa.Text)), @"\s+", " ").TrimEnd(' ');

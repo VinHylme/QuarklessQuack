@@ -59,169 +59,165 @@ namespace Quarkless.Services
 			_authHandler = authHandler;
 		}
 
-		private AddEventResponse AddToTimeline(IEnumerable<TimelineEventModel> events)
+		private AddEventResponse AddToTimeline(TimelineEventModel events)
 		{
 			if (events != null) {
-				foreach(var event_ in events)
-				{
-					if (event_ != null)
+				try
 					{
-						try
-						{
-							var actionBase = event_.ActionName.Split('_')[0].ToLower();
-							var actionsScheduledForTheDay = GetEveryActionForToday(event_.Data.User.OAccountId,actionBase,event_.Data.User.OInstagramAccountUser);
-							var actionsScheduledForTheLastHour = GetEveryActionForToday(event_.Data.User.OAccountId, actionBase, event_.Data.User.OInstagramAccountUser,isHourly:true);
+						var actionBase = events.ActionName.Split('_')[0].ToLower();
+						var actionsScheduledForTheDay = GetEveryActionForToday(events.Data.User.OAccountId,actionBase,events.Data.User.OInstagramAccountUser);
+						var actionsScheduledForTheLastHour = GetEveryActionForToday(events.Data.User.OAccountId, actionBase, events.Data.User.OInstagramAccountUser,isHourly:true);
 							
-							if (actionBase.Contains(ActionNames.CreatePhoto))
-							{
-								if (actionsScheduledForTheDay.Count() >= ImageActionOptions.CreatePhotoActionDailyLimit.Max)
-								{
-									return new AddEventResponse
-									{
-										Event = event_,
-										ContainsErrors = false,
-										HasCompleted = false,
-										DailyLimitReached = true
-									};
-								}
-								if (actionsScheduledForTheLastHour.Count() >= ImageActionOptions.CreatePhotoActionHourlyLimit.Max)
-								{
-									return new AddEventResponse
-									{
-										Event = event_,
-										ContainsErrors = false,
-										HasCompleted = false,
-										HourlyLimitReached = true
-									};
-								}
-							}
-							else if (actionBase.Contains(ActionNames.CreateVideo))
-							{
-								if (actionsScheduledForTheDay.Count() >= VideoActionOptions.CreateVideoActionDailyLimit.Max)
-								{
-									return new AddEventResponse
-									{
-										Event = event_,
-										ContainsErrors = false,
-										HasCompleted = false,
-										DailyLimitReached = true
-									};
-								}
-								if (actionsScheduledForTheLastHour.Count() >= VideoActionOptions.CreateVideoActionHourlyLimit.Max)
-								{
-									return new AddEventResponse
-									{
-										Event = event_,
-										ContainsErrors = false,
-										HasCompleted = false,
-										HourlyLimitReached = true
-									};
-								}
-							}
-							else if (actionBase.Contains(ActionNames.Comment))
-							{
-								if (actionsScheduledForTheDay.Count() >= CommentingActionOptions.CommentingActionDailyLimit.Max)
-								{
-									return new AddEventResponse
-									{
-										Event = event_,
-										ContainsErrors = false,
-										HasCompleted = false,
-										DailyLimitReached = true
-									};
-								}
-								if (actionsScheduledForTheLastHour.Count() >= CommentingActionOptions.CommentingActionHourlyLimit.Max)
-								{
-									return new AddEventResponse
-									{
-										Event = event_,
-										ContainsErrors = false,
-										HasCompleted = false,
-										HourlyLimitReached = true
-									};
-								}
-							}
-							else if (actionBase.Contains(ActionNames.LikeMedia))
-							{
-								if (actionsScheduledForTheDay.Count() >= LikeActionOptions.LikeActionDailyLimit.Max)
-								{
-									return new AddEventResponse
-									{
-										Event = event_,
-										ContainsErrors = false,
-										HasCompleted = false,
-										DailyLimitReached = true
-									};
-								}
-								if (actionsScheduledForTheLastHour.Count() >= LikeActionOptions.LikeActionHourlyLimit.Max)
-								{
-									new AddEventResponse
-									{
-										Event = event_,
-										ContainsErrors = false,
-										HasCompleted = false,
-										HourlyLimitReached = true
-									};
-								}
-
-							}
-							else if (actionBase.Contains(ActionNames.FollowUser))
-							{
-								if (actionsScheduledForTheDay.Count() >= FollowActionOptions.FollowActionDailyLimit.Max)
-								{
-									return new AddEventResponse
-									{
-										Event = event_,
-										ContainsErrors = false,
-										HasCompleted = false,
-										DailyLimitReached = true
-									};
-								}
-								if (actionsScheduledForTheLastHour.Count() >= FollowActionOptions.FollowActionHourlyLimit.Max)
-								{
-									return new AddEventResponse
-									{
-										Event = event_,
-										ContainsErrors = false,
-										HasCompleted = false,
-										HourlyLimitReached = true
-									};
-								}
-							}
-
-							_timelineLogic.AddEventToTimeline(event_.ActionName, event_.Data, event_.ExecutionTime);
-							return new AddEventResponse
-								{
-									HasCompleted = true,
-									Event = event_
-								};					
-						}
-						catch (Exception ee)
+						if (actionBase.Contains(ActionNames.CreatePhoto))
 						{
-							return new AddEventResponse
+							if (actionsScheduledForTheDay.Count() >= ImageActionOptions.CreatePhotoActionDailyLimit.Max)
 							{
-								ContainsErrors = true,
-								Event = event_,
-								Errors = new TimelineErrorResponse
+								return new AddEventResponse
 								{
-									Exception = ee,
-									Message = ee.Message
-								}
-							};
+									Event = events,
+									ContainsErrors = false,
+									HasCompleted = false,
+									DailyLimitReached = true
+								};
+							}
+							if (actionsScheduledForTheLastHour.Count() >= ImageActionOptions.CreatePhotoActionHourlyLimit.Max)
+							{
+								return new AddEventResponse
+								{
+									Event = events,
+									ContainsErrors = false,
+									HasCompleted = false,
+									HourlyLimitReached = true
+								};
+							}
 						}
+						else if (actionBase.Contains(ActionNames.CreateVideo))
+						{
+							if (actionsScheduledForTheDay.Count() >= VideoActionOptions.CreateVideoActionDailyLimit.Max)
+							{
+								return new AddEventResponse
+								{
+									Event = events,
+									ContainsErrors = false,
+									HasCompleted = false,
+									DailyLimitReached = true
+								};
+							}
+							if (actionsScheduledForTheLastHour.Count() >= VideoActionOptions.CreateVideoActionHourlyLimit.Max)
+							{
+								return new AddEventResponse
+								{
+									Event = events,
+									ContainsErrors = false,
+									HasCompleted = false,
+									HourlyLimitReached = true
+								};
+							}
+						}
+						else if (actionBase.Contains(ActionNames.Comment))
+						{
+							if (actionsScheduledForTheDay.Count() >= CommentingActionOptions.CommentingActionDailyLimit.Max)
+							{
+								return new AddEventResponse
+								{
+									Event = events,
+									ContainsErrors = false,
+									HasCompleted = false,
+									DailyLimitReached = true
+								};
+							}
+							if (actionsScheduledForTheLastHour.Count() >= CommentingActionOptions.CommentingActionHourlyLimit.Max)
+							{
+								return new AddEventResponse
+								{
+									Event = events,
+									ContainsErrors = false,
+									HasCompleted = false,
+									HourlyLimitReached = true
+								};
+							}
+						}
+						else if (actionBase.Contains(ActionNames.LikeMedia))
+						{
+							if (actionsScheduledForTheDay.Count() >= LikeActionOptions.LikeActionDailyLimit.Max)
+							{
+								return new AddEventResponse
+								{
+									Event = events,
+									ContainsErrors = false,
+									HasCompleted = false,
+									DailyLimitReached = true
+								};
+							}
+							if (actionsScheduledForTheLastHour.Count() >= LikeActionOptions.LikeActionHourlyLimit.Max)
+							{
+								new AddEventResponse
+								{
+									Event = events,
+									ContainsErrors = false,
+									HasCompleted = false,
+									HourlyLimitReached = true
+								};
+							}
+
+						}
+						else if (actionBase.Contains(ActionNames.FollowUser))
+						{
+							if (actionsScheduledForTheDay.Count() >= FollowActionOptions.FollowActionDailyLimit.Max)
+							{
+								return new AddEventResponse
+								{
+									Event = events,
+									ContainsErrors = false,
+									HasCompleted = false,
+									DailyLimitReached = true
+								};
+							}
+							if (actionsScheduledForTheLastHour.Count() >= FollowActionOptions.FollowActionHourlyLimit.Max)
+							{
+								return new AddEventResponse
+								{
+									Event = events,
+									ContainsErrors = false,
+									HasCompleted = false,
+									HourlyLimitReached = true
+								};
+							}
+						}
+
+						_timelineLogic.AddEventToTimeline(events.ActionName, events.Data, events.ExecutionTime);
+						return new AddEventResponse
+							{
+								HasCompleted = true,
+								Event = events
+							};					
+					}
+					catch (Exception ee)
+					{
+						return new AddEventResponse
+						{
+							ContainsErrors = true,
+							Event = events,
+							Errors = new TimelineErrorResponse
+							{
+								Exception = ee,
+								Message = ee.Message
+							}
+						};
 					}
 				}
-				return null;
-			}
 			return null;
 		}
 		private bool RunAction(IActionCommit action, IActionOptions actionOptions)
 		{
-			var executeAction = action.Push(actionOptions);
+			var executeAction = action.Push(actionOptions).ToList();
 			if (executeAction != null)
 			{
-				var tryAdd = AddToTimeline(executeAction);
-				return tryAdd.HasCompleted;
+				executeAction.ForEach(_ =>
+				{
+					if(_!=null)
+						AddToTimeline(_);
+				});
 			}
 			return false;
 		}
@@ -336,9 +332,15 @@ namespace Quarkless.Services
 						for (int x = 0; x < datesPlanned.Count(); x++)
 						{
 							var diff = datesPlanned.ElementAt(x) - current;
+
 							if(diff.Value.TotalMilliseconds > actionTime.Value.TotalMilliseconds)
 							{
-								return datesPlanned.ElementAt(x).Value + actionTime.Value;
+
+								if((actionTime.Value.TotalMilliseconds/diff.Value.TotalMilliseconds) > 0.5)
+								{
+									return datesPlanned.ElementAt(x).Value - actionTime.Value;
+								}
+								return datesPlanned.ElementAt(x).Value + (actionTime.Value);
 							}
 							continue;
 						}
@@ -364,10 +366,10 @@ namespace Quarkless.Services
 			var followScheduleOptions = new FollowActionOptions(nextAvaliableDate.Value.AddMinutes(SecureRandom.Next(1, 4)), FollowActionType.Any);
 			var commentScheduleOptions = new CommentingActionOptions(nextAvaliableDate.Value.AddMinutes(SecureRandom.Next(1, 4)), CommentingActionType.Any);
 			
-			actionsContainerManager.Add(imageAction,imageScheduleOptions,0.10);
-			actionsContainerManager.Add(likeAction,likeScheduleOptions,0.50);
-			actionsContainerManager.Add(followAction,followScheduleOptions,0.20);
-			actionsContainerManager.Add(commentAction,commentScheduleOptions,0.20);
+			actionsContainerManager.AddAction(imageAction,imageScheduleOptions,0.10);
+			actionsContainerManager.AddAction(likeAction,likeScheduleOptions,0.50);
+			actionsContainerManager.AddAction(followAction,followScheduleOptions,0.15);
+			actionsContainerManager.AddAction(commentAction,commentScheduleOptions,0.25);
 
 			Timer instanceRefresher = new Timer(TimeSpan.FromSeconds(2.5).TotalMilliseconds);
 			Timer tokenRefresh = new Timer(TimeSpan.FromMinutes(50).TotalMilliseconds);
@@ -397,24 +399,41 @@ namespace Quarkless.Services
 					});
 				}
 			};
-				
+			bool started = false;
 			instanceRefresher.Start();
 			instanceRefresher.Elapsed += async(o, e) =>
 			{
 				context.InstagramAccount = await _instagramAccountLogic.GetInstagramAccountShort(accountId, instagramAccountId);
 				if(context.InstagramAccount.AgentState == true) {
 
-					var getAction = actionsContainerManager.GetRandomAction();
-					var actionsTime = actionsContainerManager.FindActionLimit(getAction);
-					nextAvaliableDate = PickAGoodTime(TimeSpan.FromSeconds(actionsTime.Max));
+					_= Task.Run(() => { 
+						var nominatedAction = actionsContainerManager.GetRandomAction();
+						actionsContainerManager.AddWork(nominatedAction);
+					});
 
-					if (nextAvaliableDate != null) { 
+					_ = Task.Run(() => {
+						actionsContainerManager.RunAction();
+					});
 
-						actionsContainerManager.UpdateExecutionTime(getAction, nextAvaliableDate.Value.AddSeconds(Average(actionsTime.Min, actionsTime.Max)));	
-						var results = actionsContainerManager.RunAction(getAction);
-						if(results!=null)
-							AddToTimeline(results);
+					if (!started) { 
+						started = true;
+						var finishedAction = actionsContainerManager.GetFinishedActions();
+						if (finishedAction != null)
+						{
+							Parallel.ForEach(finishedAction, _ =>
+							{
+								var timeSett = actionsContainerManager.FindActionLimit(_.ActionName.Split('_')[0].ToLower());
+								nextAvaliableDate = PickAGoodTime(TimeSpan.FromSeconds(timeSett.Value.Max));
+								if (nextAvaliableDate != null)
+								{
+									_.ExecutionTime = nextAvaliableDate.Value.AddSeconds(Average(timeSett.Value.Min, timeSett.Value.Max));
+									AddToTimeline(_);
+								}
+							});		
+						}
+						started = false;
 					}
+
 				}
 				else {
 					instanceRefresher.Stop();
