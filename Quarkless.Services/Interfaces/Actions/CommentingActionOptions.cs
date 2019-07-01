@@ -1,8 +1,6 @@
 ﻿using Quarkless.Services.ActionBuilders.EngageActions;
 using QuarklessContexts.Models;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Quarkless.Services.Interfaces.Actions
 {
@@ -12,6 +10,7 @@ namespace Quarkless.Services.Interfaces.Actions
 		public DateTimeOffset ExecutionTime { get; set; }
 		public static Range CommentingActionDailyLimit { get; set; } = new Range(400, 500);
 		public static Range CommentingActionHourlyLimit { get; set; } = new Range(30, 60);
+		public static Range TimeFrameSeconds { get; set; } = new Range(22, 44);
 
 		public CommentingActionOptions(DateTimeOffset executionTime, CommentingActionType commentingActionType)
 		{

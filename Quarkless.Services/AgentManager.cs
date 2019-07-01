@@ -18,6 +18,7 @@ using QuarklessLogic.Logic.InstagramAccountLogic;
 using System.Timers;
 using QuarklessLogic.Logic.AuthLogic.Auth;
 using QuarklessContexts.Models.InstagramAccounts;
+using System.Reflection;
 
 namespace Quarkless.Services
 {
@@ -64,10 +65,9 @@ namespace Quarkless.Services
 			_authHandler = authHandler;
 		}
 
-		private IEnumerable<AddEventResponse> AddToTimeline(IEnumerable<TimelineEventModel> events)
+		private AddEventResponse AddToTimeline(IEnumerable<TimelineEventModel> events)
 		{
 			if (events != null) {
-				List<AddEventResponse> events_response = new List<AddEventResponse>();
 				foreach(var event_ in events)
 				{
 					if (event_ != null)
@@ -82,68 +82,92 @@ namespace Quarkless.Services
 							{
 								if (actionsScheduledForTheDay.Count() >= ImageActionOptions.CreatePhotoActionDailyLimit.Max)
 								{
-									events_response.Add(new AddEventResponse
+									return new AddEventResponse
 									{
 										Event = event_,
 										ContainsErrors = false,
 										HasCompleted = false,
 										DailyLimitReached = true
-									});
+									};
 								}
 								if (actionsScheduledForTheLastHour.Count() >= ImageActionOptions.CreatePhotoActionHourlyLimit.Max)
 								{
-									event_.ExecutionTime.AddHours(1.1);
+									return new AddEventResponse
+									{
+										Event = event_,
+										ContainsErrors = false,
+										HasCompleted = false,
+										HourlyLimitReached = true
+									};
 								}
 							}
 							else if (actionBase.Contains(ActionNames.CreateVideo))
 							{
 								if (actionsScheduledForTheDay.Count() >= VideoActionOptions.CreateVideoActionDailyLimit.Max)
 								{
-									events_response.Add(new AddEventResponse
+									return new AddEventResponse
 									{
 										Event = event_,
 										ContainsErrors = false,
 										HasCompleted = false,
 										DailyLimitReached = true
-									});
+									};
 								}
 								if (actionsScheduledForTheLastHour.Count() >= VideoActionOptions.CreateVideoActionHourlyLimit.Max)
 								{
-									event_.ExecutionTime.AddHours(1.1);
+									return new AddEventResponse
+									{
+										Event = event_,
+										ContainsErrors = false,
+										HasCompleted = false,
+										HourlyLimitReached = true
+									};
 								}
 							}
 							else if (actionBase.Contains(ActionNames.Comment))
 							{
 								if (actionsScheduledForTheDay.Count() >= CommentingActionOptions.CommentingActionDailyLimit.Max)
 								{
-									events_response.Add(new AddEventResponse
+									return new AddEventResponse
 									{
 										Event = event_,
 										ContainsErrors = false,
 										HasCompleted = false,
 										DailyLimitReached = true
-									});
+									};
 								}
 								if (actionsScheduledForTheLastHour.Count() >= CommentingActionOptions.CommentingActionHourlyLimit.Max)
 								{
-									event_.ExecutionTime.AddHours(1.1);
+									return new AddEventResponse
+									{
+										Event = event_,
+										ContainsErrors = false,
+										HasCompleted = false,
+										HourlyLimitReached = true
+									};
 								}
 							}
 							else if (actionBase.Contains(ActionNames.LikeMedia))
 							{
 								if (actionsScheduledForTheDay.Count() >= LikeActionOptions.LikeActionDailyLimit.Max)
 								{
-									events_response.Add(new AddEventResponse
+									return new AddEventResponse
 									{
 										Event = event_,
 										ContainsErrors = false,
 										HasCompleted = false,
 										DailyLimitReached = true
-									});
+									};
 								}
 								if (actionsScheduledForTheLastHour.Count() >= LikeActionOptions.LikeActionHourlyLimit.Max)
 								{
-									event_.ExecutionTime.AddHours(1.1);
+									new AddEventResponse
+									{
+										Event = event_,
+										ContainsErrors = false,
+										HasCompleted = false,
+										HourlyLimitReached = true
+									};
 								}
 
 							}
@@ -151,30 +175,36 @@ namespace Quarkless.Services
 							{
 								if (actionsScheduledForTheDay.Count() >= FollowActionOptions.FollowActionDailyLimit.Max)
 								{
-									events_response.Add(new AddEventResponse
+									return new AddEventResponse
 									{
 										Event = event_,
 										ContainsErrors = false,
 										HasCompleted = false,
 										DailyLimitReached = true
-									});
+									};
 								}
 								if (actionsScheduledForTheLastHour.Count() >= FollowActionOptions.FollowActionHourlyLimit.Max)
 								{
-									event_.ExecutionTime.AddHours(1.1);
+									return new AddEventResponse
+									{
+										Event = event_,
+										ContainsErrors = false,
+										HasCompleted = false,
+										HourlyLimitReached = true
+									};
 								}
 							}
 
 							_timelineLogic.AddEventToTimeline(event_.ActionName, event_.Data, event_.ExecutionTime);
-							events_response.Add(new AddEventResponse
-							{
-								HasCompleted = true,
-								Event = event_
-							});
+							return new AddEventResponse
+								{
+									HasCompleted = true,
+									Event = event_
+								};					
 						}
 						catch (Exception ee)
 						{
-							events_response.Add(new AddEventResponse
+							return new AddEventResponse
 							{
 								ContainsErrors = true,
 								Event = event_,
@@ -183,11 +213,11 @@ namespace Quarkless.Services
 									Exception = ee,
 									Message = ee.Message
 								}
-							});
+							};
 						}
 					}
 				}
-				return events_response;
+				return null;
 			}
 			return null;
 		}
@@ -197,7 +227,7 @@ namespace Quarkless.Services
 			if (executeAction != null)
 			{
 				var tryAdd = AddToTimeline(executeAction);
-				return tryAdd.All(_=>_.HasCompleted);	
+				return tryAdd.HasCompleted;
 			}
 			return false;
 		}
@@ -300,18 +330,31 @@ namespace Quarkless.Services
 				.IncludeUser(_userStoreDetails);
 
 			DateTime? nextAvaliableDate = PickAGoodTime();
-			DateTime? PickAGoodTime() { 
+			DateTime? PickAGoodTime(TimeSpan? actionTime = null) { 
 				var sft = _timelineLogic.GetScheduledEventsForUserByDate(accountId,DateTime.UtcNow,instaId:instagramAccountId,limit:5000,timelineDateType:TimelineDateType.Forward);
 				var datesPlanned = sft.Select(_=>_.EnqueueTime);
 				if (datesPlanned != null && datesPlanned.Count()>0) { 
 					DateTime current = DateTime.UtcNow;
-					var difference = datesPlanned.Where(_=>_!=null).Max(_=>_- current);
+					if (actionTime != null)
+					{
+						for (int x = 0; x < datesPlanned.Count(); x++)
+						{
+							var diff = datesPlanned.ElementAt(x) - current;
+							if(diff.Value.TotalMilliseconds > actionTime.Value.TotalMilliseconds)
+							{
+								return datesPlanned.ElementAt(x).Value;
+							}
+							continue;
+						}
+					}
+
+					var difference = datesPlanned.Where(_ => _ != null).Max(_ => _ - current);
+					var position = datesPlanned.ToList().FindIndex(n => n - current == difference);
 					if (difference.Value.TotalMinutes > TimeSpan.FromMinutes(55).TotalMinutes)
 					{
 						return null;
 					}
-					var pos = datesPlanned.ToList().FindIndex(n => n - current == difference);
-					return datesPlanned.ElementAt(pos).Value;
+					return datesPlanned.ElementAt(position).Value;
 				}
 				else
 				{
@@ -396,20 +439,24 @@ namespace Quarkless.Services
 			instanceRefresher.Elapsed += async(o, e) =>
 			{
 				context.InstagramAccount = await _instagramAccountLogic.GetInstagramAccountShort(accountId, instagramAccountId);
-				if(context.InstagramAccount.AgentState == true) { 
-					nextAvaliableDate = PickAGoodTime();
+				if(context.InstagramAccount.AgentState == true) {
+
+					var runAction = SecureRandom.ProbabilityRoll(ChanceAction);
+					var actionP = runAction.ActionOptions.GetType().GetProperties().Where(_=>_.Name.Equals("TimeFrameSeconds")).FirstOrDefault();
+					var valueof = (Range)actionP.GetValue(runAction.ActionOptions);
+					nextAvaliableDate = PickAGoodTime(TimeSpan.FromSeconds(valueof.Max));
+
 					if (nextAvaliableDate != null) { 
-						likeScheduleOptions.ExecutionTime = nextAvaliableDate.Value.AddMinutes(1.5);
-						imageScheduleOptions.ExecutionTime = nextAvaliableDate.Value.AddMinutes(3);
-						followScheduleOptions.ExecutionTime = nextAvaliableDate.Value.AddMinutes(1.5);
-						commentScheduleOptions.ExecutionTime = nextAvaliableDate.Value.AddMinutes(2.5);
+						likeScheduleOptions.ExecutionTime = nextAvaliableDate.Value.AddSeconds(Average(LikeActionOptions.TimeFrameSeconds.Min,LikeActionOptions.TimeFrameSeconds.Max));
+						imageScheduleOptions.ExecutionTime = nextAvaliableDate.Value.AddSeconds(Average(ImageActionOptions.TimeFrameSeconds.Min, ImageActionOptions.TimeFrameSeconds.Max));
+						followScheduleOptions.ExecutionTime = nextAvaliableDate.Value.AddSeconds(Average(FollowActionOptions.TimeFrameSeconds.Min, FollowActionOptions.TimeFrameSeconds.Max));
+						commentScheduleOptions.ExecutionTime = nextAvaliableDate.Value.AddSeconds(Average(CommentingActionOptions.TimeFrameSeconds.Min, CommentingActionOptions.TimeFrameSeconds.Max));
 
 						ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(LikeActionOptions)).SingleOrDefault().Object.ActionOptions = likeScheduleOptions;
 						ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(FollowActionOptions)).SingleOrDefault().Object.ActionOptions = followScheduleOptions;
 						ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(ImageActionOptions)).SingleOrDefault().Object.ActionOptions = imageScheduleOptions;
 						ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(CommentingActionOptions)).SingleOrDefault().Object.ActionOptions = commentScheduleOptions;
 					
-						var runAction = SecureRandom.ProbabilityRoll(ChanceAction);
 						runAction.Action_(runAction.ActionOptions);
 					}
 				}
@@ -441,6 +488,10 @@ namespace Quarkless.Services
 					Message = ee.Message
 				};
 			}
+		}
+		private int Average(params int[] vals)
+		{
+			return vals.Sum()/vals.Length;
 		}
 	}
 }
