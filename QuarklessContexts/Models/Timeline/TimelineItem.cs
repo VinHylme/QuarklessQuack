@@ -57,6 +57,7 @@ namespace QuarklessContexts.Models.Timeline
 		public bool State { get; set; }
 		public UserStoreDetails User { get; set; }
 		public string Url { get; set; }
+		public RestModel Rest { get; set; }
 	}
 	public class ItemHistory
 	{

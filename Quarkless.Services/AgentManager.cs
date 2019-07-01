@@ -299,13 +299,17 @@ namespace Quarkless.Services
 				})
 				.IncludeUser(_userStoreDetails);
 
-			DateTime nextAvaliableDate = PickAGoodTime();
-			DateTime PickAGoodTime() { 
+			DateTime? nextAvaliableDate = PickAGoodTime();
+			DateTime? PickAGoodTime() { 
 				var sft = _timelineLogic.GetScheduledEventsForUserByDate(accountId,DateTime.UtcNow,instaId:instagramAccountId,limit:5000,timelineDateType:TimelineDateType.Forward);
 				var datesPlanned = sft.Select(_=>_.EnqueueTime);
 				if (datesPlanned != null && datesPlanned.Count()>0) { 
 					DateTime current = DateTime.UtcNow;
 					var difference = datesPlanned.Where(_=>_!=null).Max(_=>_- current);
+					if (difference.Value.TotalMinutes > TimeSpan.FromMinutes(55).TotalMinutes)
+					{
+						return null;
+					}
 					var pos = datesPlanned.ToList().FindIndex(n => n - current == difference);
 					return datesPlanned.ElementAt(pos).Value;
 				}
@@ -316,11 +320,11 @@ namespace Quarkless.Services
 			}
 
 			//Initial Execution
-			var likeScheduleOptions = new LikeActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1,4)), LikeActionType.Any);
-			var imageScheduleOptions = new ImageActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1, 5))) { ImageFetchLimit = 20};
-			var followScheduleOptions = new FollowActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1, 4)), FollowActionType.Any);
-			var commentScheduleOptions = new CommentingActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1, 4)), CommentingActionType.Any);
-			
+			var likeScheduleOptions = new LikeActionOptions(nextAvaliableDate.Value.AddMinutes(SecureRandom.Next(1,4)), LikeActionType.Any);
+			var imageScheduleOptions = new ImageActionOptions(nextAvaliableDate.Value.AddMinutes(SecureRandom.Next(1, 5))) { ImageFetchLimit = 20};
+			var followScheduleOptions = new FollowActionOptions(nextAvaliableDate.Value.AddMinutes(SecureRandom.Next(1, 4)), FollowActionType.Any);
+			var commentScheduleOptions = new CommentingActionOptions(nextAvaliableDate.Value.AddMinutes(SecureRandom.Next(1, 4)), CommentingActionType.Any);
+
 			List<Chance<ActionContainer>> ChanceAction = new List<Chance<ActionContainer>>();
 			//add actions in as probabilities
 			ChanceAction.Add(new Chance<ActionContainer>
@@ -360,14 +364,14 @@ namespace Quarkless.Services
 				Probability = 0.50
 			});
 
-			Timer instanceRefresher = new Timer(TimeSpan.FromSeconds(5).TotalMilliseconds);
-			Timer tokenRefresh = new Timer(TimeSpan.FromMinutes(58).TotalMilliseconds);
-			var refreshtok = _authHandler.GetUserByUsername(_userStoreDetails.OAccountId).GetAwaiter().GetResult();
+			Timer instanceRefresher = new Timer(TimeSpan.FromSeconds(6).TotalMilliseconds);
+			Timer tokenRefresh = new Timer(TimeSpan.FromMinutes(50).TotalMilliseconds);
+			_userStoreDetails.ORefreshToken = _authHandler.GetUserByUsername(_userStoreDetails.OAccountId).GetAwaiter().GetResult().Tokens.Where(_ => _.Name == "refresh_token").FirstOrDefault().Value;
 
 			tokenRefresh.Start();
 			tokenRefresh.Elapsed += (o, e) =>
 			{
-				var res = _authHandler.RefreshLogin(refreshtok.Tokens.Where(_=>_.Name== "refresh_token").FirstOrDefault().Value,_userStoreDetails.OAccountId).GetAwaiter().GetResult();
+				var res = _authHandler.RefreshLogin(_userStoreDetails.ORefreshToken,_userStoreDetails.OAccountId).GetAwaiter().GetResult();
 				if(res.StatusCode == HttpStatusCode.OK || res.StatusCode == HttpStatusCode.Accepted)
 				{
 					var newtoken = res.Results.AuthenticationResult.IdToken;
@@ -376,6 +380,15 @@ namespace Quarkless.Services
 					imageAction.IncludeUser(_userStoreDetails);
 					followAction.IncludeUser(_userStoreDetails);
 					commentAction.IncludeUser(_userStoreDetails);
+
+					//Update currently Queued Items
+					var items = _timelineLogic.GetScheduledEventsForUser(_userStoreDetails.OAccountId,_userStoreDetails.OInstagramAccountUser).ToList();
+					items.ForEach(_ =>
+					{
+						_timelineLogic.DeleteEvent(_.ItemId);
+						_.User = _userStoreDetails;
+						_timelineLogic.AddEventToTimeline(_.ActionName,_.Rest,_.EnqueueTime.Value.AddSeconds(30));
+					});
 				}
 			};
 				
@@ -385,19 +398,20 @@ namespace Quarkless.Services
 				context.InstagramAccount = await _instagramAccountLogic.GetInstagramAccountShort(accountId, instagramAccountId);
 				if(context.InstagramAccount.AgentState == true) { 
 					nextAvaliableDate = PickAGoodTime();
+					if (nextAvaliableDate != null) { 
+						likeScheduleOptions.ExecutionTime = nextAvaliableDate.Value.AddMinutes(1.5);
+						imageScheduleOptions.ExecutionTime = nextAvaliableDate.Value.AddMinutes(3);
+						followScheduleOptions.ExecutionTime = nextAvaliableDate.Value.AddMinutes(1.5);
+						commentScheduleOptions.ExecutionTime = nextAvaliableDate.Value.AddMinutes(2.5);
 
-					likeScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(1.5);
-					imageScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(3);
-					followScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(1.5);
-					commentScheduleOptions.ExecutionTime = nextAvaliableDate.AddMinutes(2.5);
-
-					ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(LikeActionOptions)).SingleOrDefault().Object.ActionOptions = likeScheduleOptions;
-					ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(FollowActionOptions)).SingleOrDefault().Object.ActionOptions = followScheduleOptions;
-					ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(ImageActionOptions)).SingleOrDefault().Object.ActionOptions = imageScheduleOptions;
-					ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(CommentingActionOptions)).SingleOrDefault().Object.ActionOptions = commentScheduleOptions;
+						ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(LikeActionOptions)).SingleOrDefault().Object.ActionOptions = likeScheduleOptions;
+						ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(FollowActionOptions)).SingleOrDefault().Object.ActionOptions = followScheduleOptions;
+						ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(ImageActionOptions)).SingleOrDefault().Object.ActionOptions = imageScheduleOptions;
+						ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(CommentingActionOptions)).SingleOrDefault().Object.ActionOptions = commentScheduleOptions;
 					
-					var runAction = SecureRandom.ProbabilityRoll(ChanceAction);
-					runAction.Action_(runAction.ActionOptions);
+						var runAction = SecureRandom.ProbabilityRoll(ChanceAction);
+						runAction.Action_(runAction.ActionOptions);
+					}
 				}
 				else {
 					instanceRefresher.Stop();

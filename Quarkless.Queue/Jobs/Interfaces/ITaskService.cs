@@ -22,6 +22,7 @@ namespace Quarkless.Queue.Jobs.Interfaces
 		IEnumerable<TimelineFinishedItem> GetTotalFinishedJobs(int from, int limit);
 		TimelineStatistics GetStatistics();
 		bool IsAnyJobsCurrentlyRunning();
+		bool DeleteEvent(string eventId);
 		TimelineItemDetail GetEvent(string eventId);
 	}
 }

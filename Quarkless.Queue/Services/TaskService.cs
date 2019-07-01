@@ -120,7 +120,9 @@ namespace Quarkless.Queue.Services
 					Url = actionDetails.Rest.BaseUrl,
 					StartTime = _.Value.ScheduledAt,
 					EnqueueTime = _.Value.EnqueueAt,
-					State = _.Value.InScheduledState
+					State = _.Value.InScheduledState,
+					Rest = actionDetails.Rest
+					
 				};
 			});
 		}
@@ -209,6 +211,11 @@ namespace Quarkless.Queue.Services
 		public bool IsAnyJobsCurrentlyRunning()
 		{
 			return _jobRunner.IsAnyJobsCurrentlyRunning();
+		}
+
+		public bool DeleteEvent(string eventId)
+		{
+			return _jobRunner.DeleteJob(eventId);
 		}
 	}
 }

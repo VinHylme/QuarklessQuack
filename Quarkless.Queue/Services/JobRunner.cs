@@ -37,6 +37,10 @@ namespace Quarkless.Queue.Services
 			var des = JobStorage.Current.GetMonitoringApi().Queues();
 			return JobStorage.Current.GetMonitoringApi().GetStatistics();
 		}
+		public bool DeleteJob(string jobId)
+		{
+			return _backgroundJobClient.Delete(jobId);
+		}
 		public JobList<ScheduledJobDto> GetScheduledJobs(int from, int limit)
 		{
 			return JobStorage.Current.GetMonitoringApi().ScheduledJobs(from,limit);

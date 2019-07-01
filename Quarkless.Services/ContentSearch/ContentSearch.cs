@@ -330,36 +330,40 @@ namespace Quarkless.Services.ContentSearch
 						switch (mediaType)
 						{
 							case InstaMediaType.All:
-								var image = results_media.Images.FirstOrDefault().Uri;		
-								if(image!=null)
+								var image = results_media.Images.FirstOrDefault()?.Uri;		
+								if(!string.IsNullOrEmpty(image))
 									media_.MediaUrl.Add(image);
-								var video = results_media.Videos.FirstOrDefault().Uri;
-								if(video!=null)
+								var video = results_media.Videos.FirstOrDefault()?.Uri;
+								if(!string.IsNullOrEmpty(video))
 									media_.MediaUrl.Add(video);
 								results_media.Carousel.Select(s =>
 								{
-									var videos = s.Videos.FirstOrDefault().Uri;
-									if (videos != null)
+									var videos = s.Videos.FirstOrDefault()?.Uri;
+									if (!string.IsNullOrEmpty(videos))
 										media_.MediaUrl.Add(videos);
-									var images = s.Images.FirstOrDefault().Uri;
-									if (images != null)
+									var images = s.Images.FirstOrDefault()?.Uri;
+									if(!string.IsNullOrEmpty(images))
 										media_.MediaUrl.Add(images);
 									return s;
 								});
 								break;
 							case InstaMediaType.Image:
-								media_.MediaUrl.Add(results_media.Images.FirstOrDefault().Uri);
+								var image_ = results_media.Images.FirstOrDefault()?.Uri;
+								if(!string.IsNullOrEmpty(image_))
+									media_.MediaUrl.Add(image_);
 								break;
 							case InstaMediaType.Video:
-								media_.MediaUrl.Add(results_media.Videos.FirstOrDefault().Uri);
+								var video_ = results_media.Videos.FirstOrDefault()?.Uri;
+								if(!string.IsNullOrEmpty(video_))
+									media_.MediaUrl.Add(video_);
 								break;
 							case InstaMediaType.Carousel:
 								results_media.Carousel.Select(s =>
 								{
-									var videos = s.Videos.FirstOrDefault().Uri;
+									var videos = s.Videos.FirstOrDefault()?.Uri;
 									if (videos != null)
 										media_.MediaUrl.Add(videos);
-									var images = s.Images.FirstOrDefault().Uri;
+									var images = s.Images.FirstOrDefault()?.Uri;
 									if (images != null)
 										media_.MediaUrl.Add(images);
 									return s;

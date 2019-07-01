@@ -94,12 +94,12 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				List<byte[]> imagesBytes = new List<byte[]>();
 				var resultSelect = TotalResults.ElementAtOrDefault(SecureRandom.Next(TotalResults.Count));
 				Parallel.ForEach(resultSelect.MediaData.TakeAny(SecureRandom.Next(resultSelect.MediaData.Count / 2)), s => imagesBytes.Add(s?.DownloadMedia()));
-
-				imagesBytes = userMediaBytes.Where(u => u != null)
-					.RemoveDuplicateImages(imagesBytes, 0.69)
-					.ResizeManyToClosestAspectRatio()
-					.Where(s => s != null).ToList();
-
+				if (userMediaBytes.Count > 0) { 
+					imagesBytes = userMediaBytes.Where(u => u != null)
+						.RemoveDuplicateImages(imagesBytes, 0.69)
+						.ResizeManyToClosestAspectRatio()
+						.Where(s => s != null).ToList();
+				}
 
 				System.Drawing.Color profileColorRGB = System.Drawing.Color.FromArgb(profileColor.Alpha, profileColor.Red, profileColor.Green, profileColor.Blue);
 

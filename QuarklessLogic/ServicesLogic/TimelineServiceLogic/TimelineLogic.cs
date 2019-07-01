@@ -340,6 +340,11 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 		{
 			return _taskService.IsAnyJobsCurrentlyRunning();
 		}
+
+		public bool DeleteEvent(string eventId)
+		{
+			return _taskService.DeleteEvent(eventId);
+		}
 		#endregion
 	}
 }

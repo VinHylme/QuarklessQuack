@@ -1,10 +1,5 @@
 ﻿using Hangfire.Storage.Monitoring;
-using QuarklessContexts.Models;
-using QuarklessContexts.Models.Timeline;
-using RestSharp;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Quarkless.Queue.Interfaces.Jobs
 {
@@ -20,6 +15,7 @@ namespace Quarkless.Queue.Interfaces.Jobs
 		JobList<DeletedJobDto> GetDeletedJobs(int from, int limit);
 		JobList<FailedJobDto> GetFailedJobs(int from, int limit);
 		StatisticsDto GetStatistics();
-		bool IsAnyJobsCurrentlyRunning();
+		bool IsAnyJobsCurrentlyRunning(); 
+		bool DeleteJob(string jobId);
 	}
 }

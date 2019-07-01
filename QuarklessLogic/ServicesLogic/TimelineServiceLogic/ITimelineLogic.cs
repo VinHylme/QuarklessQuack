@@ -6,6 +6,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 {
 	public interface ITimelineLogic
 	{
+		bool DeleteEvent(string eventId);
 		bool AddEventToTimeline(string actionName, RestModel restBody, DateTimeOffset executeTime);
 		IEnumerable<ResultBase<TimelineItem>> GetAllEventsForUser(string userName, DateTime startDate, DateTime? endDate = null, string instaId = null, int limit = 1000, TimelineDateType timelineDateType = TimelineDateType.Backwards);
 		IEnumerable<ResultBase<TimelineItem>> GetAllEventsForUserByAction(string actionName, string userName, DateTime startDate, DateTime? endDate = null, string instaId = null, int limit = 1000, TimelineDateType timelineDateType = TimelineDateType.Backwards);
