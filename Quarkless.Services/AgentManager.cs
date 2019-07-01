@@ -6,7 +6,6 @@ using Quarkless.Services.StrategyBuilders;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models;
 using QuarklessContexts.Models.Timeline;
-using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic;
 using System;
 using System.Collections.Generic;
@@ -43,11 +42,6 @@ namespace Quarkless.Services
 		public IEnumerable<ResultBase<TimelineItem>> LikeMediaActions;
 		public IEnumerable<ResultBase<TimelineItem>> FollowUserActions;
 		public IEnumerable<ResultBase<TimelineItem>> All;
-	}
-	class ActionContainer
-	{
-		public IActionOptions ActionOptions { get; set; }
-		public Action<IActionOptions> Action_ { get; set; }
 	}
 
 	public class AgentManager : IAgentManager
@@ -304,6 +298,8 @@ namespace Quarkless.Services
 			var profile = context.Profile; 
 			if (profile == null) return null;
 
+			ActionsContainerManager actionsContainerManager = new ActionsContainerManager();
+
 			var likeAction = ActionsManager.Begin.Commit(ActionType.LikePost, _contentManager, profile)
 				.IncludeStrategy(new LikeStrategySettings()
 				{
@@ -342,7 +338,7 @@ namespace Quarkless.Services
 							var diff = datesPlanned.ElementAt(x) - current;
 							if(diff.Value.TotalMilliseconds > actionTime.Value.TotalMilliseconds)
 							{
-								return datesPlanned.ElementAt(x).Value;
+								return datesPlanned.ElementAt(x).Value + actionTime.Value;
 							}
 							continue;
 						}
@@ -367,48 +363,15 @@ namespace Quarkless.Services
 			var imageScheduleOptions = new ImageActionOptions(nextAvaliableDate.Value.AddMinutes(SecureRandom.Next(1, 5))) { ImageFetchLimit = 20};
 			var followScheduleOptions = new FollowActionOptions(nextAvaliableDate.Value.AddMinutes(SecureRandom.Next(1, 4)), FollowActionType.Any);
 			var commentScheduleOptions = new CommentingActionOptions(nextAvaliableDate.Value.AddMinutes(SecureRandom.Next(1, 4)), CommentingActionType.Any);
+			
+			actionsContainerManager.Add(imageAction,imageScheduleOptions,0.10);
+			actionsContainerManager.Add(likeAction,likeScheduleOptions,0.50);
+			actionsContainerManager.Add(followAction,followScheduleOptions,0.20);
+			actionsContainerManager.Add(commentAction,commentScheduleOptions,0.20);
 
-			List<Chance<ActionContainer>> ChanceAction = new List<Chance<ActionContainer>>();
-			//add actions in as probabilities
-			ChanceAction.Add(new Chance<ActionContainer>
-			{
-				Object = new ActionContainer
-				{
-					ActionOptions = imageScheduleOptions,
-					Action_ = (o) => RunAction(imageAction,o)
-				},
-				Probability = 0.10
-			});
-			ChanceAction.Add(new Chance<ActionContainer>
-			{
-				Object = new ActionContainer
-				{
-					ActionOptions = followScheduleOptions,
-					Action_ = (o) => RunAction(followAction, o)
-				},
-				Probability = 0.20
-			});
-			ChanceAction.Add(new Chance<ActionContainer>
-			{
-				Object = new ActionContainer
-				{
-					ActionOptions = commentScheduleOptions,
-					Action_ = (o) => RunAction(commentAction, o)
-				},
-				Probability = 0.20
-			});
-			ChanceAction.Add(new Chance<ActionContainer>
-			{
-				Object = new ActionContainer
-				{
-					ActionOptions = likeScheduleOptions,
-					Action_ = (o) => RunAction(likeAction, o)
-				},
-				Probability = 0.50
-			});
-
-			Timer instanceRefresher = new Timer(TimeSpan.FromSeconds(6).TotalMilliseconds);
+			Timer instanceRefresher = new Timer(TimeSpan.FromSeconds(2.5).TotalMilliseconds);
 			Timer tokenRefresh = new Timer(TimeSpan.FromMinutes(50).TotalMilliseconds);
+
 			_userStoreDetails.ORefreshToken = _authHandler.GetUserByUsername(_userStoreDetails.OAccountId).GetAwaiter().GetResult().Tokens.Where(_ => _.Name == "refresh_token").FirstOrDefault().Value;
 
 			tokenRefresh.Start();
@@ -441,23 +404,16 @@ namespace Quarkless.Services
 				context.InstagramAccount = await _instagramAccountLogic.GetInstagramAccountShort(accountId, instagramAccountId);
 				if(context.InstagramAccount.AgentState == true) {
 
-					var runAction = SecureRandom.ProbabilityRoll(ChanceAction);
-					var actionP = runAction.ActionOptions.GetType().GetProperties().Where(_=>_.Name.Equals("TimeFrameSeconds")).FirstOrDefault();
-					var valueof = (Range)actionP.GetValue(runAction.ActionOptions);
-					nextAvaliableDate = PickAGoodTime(TimeSpan.FromSeconds(valueof.Max));
+					var getAction = actionsContainerManager.GetRandomAction();
+					var actionsTime = actionsContainerManager.FindActionLimit(getAction);
+					nextAvaliableDate = PickAGoodTime(TimeSpan.FromSeconds(actionsTime.Max));
 
 					if (nextAvaliableDate != null) { 
-						likeScheduleOptions.ExecutionTime = nextAvaliableDate.Value.AddSeconds(Average(LikeActionOptions.TimeFrameSeconds.Min,LikeActionOptions.TimeFrameSeconds.Max));
-						imageScheduleOptions.ExecutionTime = nextAvaliableDate.Value.AddSeconds(Average(ImageActionOptions.TimeFrameSeconds.Min, ImageActionOptions.TimeFrameSeconds.Max));
-						followScheduleOptions.ExecutionTime = nextAvaliableDate.Value.AddSeconds(Average(FollowActionOptions.TimeFrameSeconds.Min, FollowActionOptions.TimeFrameSeconds.Max));
-						commentScheduleOptions.ExecutionTime = nextAvaliableDate.Value.AddSeconds(Average(CommentingActionOptions.TimeFrameSeconds.Min, CommentingActionOptions.TimeFrameSeconds.Max));
 
-						ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(LikeActionOptions)).SingleOrDefault().Object.ActionOptions = likeScheduleOptions;
-						ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(FollowActionOptions)).SingleOrDefault().Object.ActionOptions = followScheduleOptions;
-						ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(ImageActionOptions)).SingleOrDefault().Object.ActionOptions = imageScheduleOptions;
-						ChanceAction.Where(_ => _.Object.ActionOptions.GetType() == typeof(CommentingActionOptions)).SingleOrDefault().Object.ActionOptions = commentScheduleOptions;
-					
-						runAction.Action_(runAction.ActionOptions);
+						actionsContainerManager.UpdateExecutionTime(getAction, nextAvaliableDate.Value.AddSeconds(Average(actionsTime.Min, actionsTime.Max)));	
+						var results = actionsContainerManager.RunAction(getAction);
+						if(results!=null)
+							AddToTimeline(results);
 					}
 				}
 				else {
