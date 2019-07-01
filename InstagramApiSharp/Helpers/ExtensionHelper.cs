@@ -166,7 +166,7 @@ namespace InstagramApiSharp
                     return "android_gcm";
             }
         }
-        static Random Rnd = new Random();
+        readonly static Random Rnd = new Random();
         public static string GenerateRandomString(this int length)
         {
             const string pool = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -179,6 +179,7 @@ namespace InstagramApiSharp
         {
             System.Diagnostics.Debug.WriteLine(Convert.ToString(obj));
         }
+        public static string EncodeTime(this TimeSpan span) => $"{span.Hours.ToString("00")}:{span.Minutes.ToString("00")}:{span.Seconds.ToString("00")}";
 
         public static InstaImageUpload ConvertToImageUpload(this InstaImage instaImage, InstaUserTagUpload[] userTags = null)
         {

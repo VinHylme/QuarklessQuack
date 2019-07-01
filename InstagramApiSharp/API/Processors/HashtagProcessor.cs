@@ -43,6 +43,21 @@ namespace InstagramApiSharp.API.Processors
             _httpHelper = httpHelper;
         }
 
+
+        /// <summary>
+        ///     Get medias for hashtag channel
+        /// </summary>
+        /// <param name="channelId">Channel id</param>
+        /// <param name="firstMediaId">First media id</param>
+        /// <param name="paginationParameters">Pagination parameters: next id and max amount of pages to load</param>
+        /// <returns>
+        ///     <see cref="InstaMediaList" />
+        /// </returns>
+        public async Task<IResult<InstaMediaList>> GetHashtagChannelVideosAsync(string channelId, string firstMediaId,
+            PaginationParameters paginationParameters)
+        {
+            return await _instaApi.HelperProcessor.GetChannelVideosAsync(UriCreator.GetHashtagChannelVideosUri(channelId), firstMediaId, paginationParameters);
+        }
         /// <summary>
         ///     Get hashtag sections
         /// </summary>
@@ -720,5 +735,7 @@ namespace InstagramApiSharp.API.Processors
                 return Result.Fail<InstaSectionMediaListResponse>(exception);
             }
         }
+
+
     }
 }

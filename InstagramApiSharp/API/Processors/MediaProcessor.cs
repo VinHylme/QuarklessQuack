@@ -51,7 +51,7 @@ namespace InstagramApiSharp.API.Processors
         /// <returns>Return true if the media is archived</returns>
         public async Task<IResult<bool>> ArchiveMediaAsync(string mediaId)
         {
-            return await LikeUnlikeArchiveUnArchiveMediaInternal(mediaId, UriCreator.GetArchiveMediaUri(mediaId));
+            return await ArchiveUnArchiveMediaInternal(mediaId, UriCreator.GetArchiveMediaUri(mediaId));
         }
 
         /// <summary>
@@ -111,21 +111,26 @@ namespace InstagramApiSharp.API.Processors
             UserAuthValidator.Validate(_userAuthValidate);
             try
             {
+                if (!string.IsNullOrEmpty(caption))
+                    caption = caption.Replace("\r", "");
                 var editMediaUri = UriCreator.GetEditMediaUri(mediaId);
 
                 var currentMedia = await GetMediaByIdAsync(mediaId);
 
                 var data = new JObject
                 {
-                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
-                    {"_uid", _user.LoggedInUser.Pk},
+                    {"caption_text", caption ?? string.Empty},
+                    {"fb_user_tags", "{\"in\":[]}"},
                     {"_csrftoken", _user.CsrfToken},
-                    {"caption_text", caption ?? string.Empty}
+                    {"_uid", _user.LoggedInUser.Pk},
+                    {"device_id", _deviceInfo.DeviceId},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"container_module", "edit_media_info"}
                 };
                 if (location != null)
-                {
                     data.Add("location", location.GetJson());
-                }
+                else
+                    data.Add("location", "{}");
 
                 var removeArr = new JArray();
                 if (currentMedia.Succeeded)
@@ -193,6 +198,8 @@ namespace InstagramApiSharp.API.Processors
                         };
                         data.Add("usertags", root.ToString(Formatting.None));
                     }
+                    else
+                        data.Add("usertags", "{\"in\":[]}");
                 }
                 var request = _httpHelper.GetSignedRequest(HttpMethod.Post, editMediaUri, _deviceInfo, data);
                 var response = await _httpRequestProcessor.SendAsync(request);
@@ -579,7 +586,7 @@ namespace InstagramApiSharp.API.Processors
         /// <returns>Return true if the media is unarchived</returns>
         public async Task<IResult<bool>> UnArchiveMediaAsync(string mediaId)
         {
-            return await LikeUnlikeArchiveUnArchiveMediaInternal(mediaId, UriCreator.GetUnArchiveMediaUri(mediaId));
+            return await ArchiveUnArchiveMediaInternal(mediaId, UriCreator.GetUnArchiveMediaUri(mediaId));
         }
 
         /// <summary>
@@ -927,9 +934,16 @@ namespace InstagramApiSharp.API.Processors
         {
             try
             {
+                if (!string.IsNullOrEmpty(caption))
+                    caption = caption.Replace("\r", "");
                 upProgress.Name = "Album upload";
                 upProgress.UploadState = InstaUploadState.Configuring;
                 progress?.Invoke(upProgress);
+                try
+                {
+                    await Task.Delay(_httpRequestProcessor.ConfigureMediaDelay.Value);
+                }
+                catch { }
                 var instaUri = UriCreator.GetMediaAlbumConfigureUri();
                 var clientSidecarId = ApiRequestMessage.GenerateUploadId();
                 var childrenArray = new JArray();
@@ -960,7 +974,7 @@ namespace InstagramApiSharp.API.Processors
                             {"manufacturer", _deviceInfo.HardwareManufacturer},
                             {"model", _deviceInfo.DeviceModelIdentifier},
                             {"android_release", _deviceInfo.AndroidVer.VersionNumber},
-                            {"android_version", _deviceInfo.AndroidVer.APILevel}
+                            {"android_version", int.Parse(_deviceInfo.AndroidVer.APILevel)}
                         }
                     },
                     {"children_metadata", childrenArray},
@@ -1145,9 +1159,16 @@ namespace InstagramApiSharp.API.Processors
         {
             try
             {
+                if (!string.IsNullOrEmpty(caption))
+                    caption = caption.Replace("\r", "");
                 upProgress.Name = "Album upload";
                 upProgress.UploadState = InstaUploadState.Configuring;
                 progress?.Invoke(upProgress);
+                try
+                {
+                    await Task.Delay(_httpRequestProcessor.ConfigureMediaDelay.Value);
+                }
+                catch { }
                 var instaUri = UriCreator.GetMediaAlbumConfigureUri();
                 var clientSidecarId = ApiRequestMessage.GenerateUploadId();
                 var childrenArray = new JArray();
@@ -1172,6 +1193,7 @@ namespace InstagramApiSharp.API.Processors
                     {"_csrftoken", _user.CsrfToken},
                     {"caption", caption},
                     {"client_sidecar_id", clientSidecarId},
+                    {"device_id", _deviceInfo.DeviceId},
                     {"upload_id", clientSidecarId},
                     {
                         "device", new JObject
@@ -1179,7 +1201,7 @@ namespace InstagramApiSharp.API.Processors
                             {"manufacturer", _deviceInfo.HardwareManufacturer},
                             {"model", _deviceInfo.DeviceModelIdentifier},
                             {"android_release", _deviceInfo.AndroidVer.VersionNumber},
-                            {"android_version", _deviceInfo.AndroidVer.APILevel}
+                            {"android_version", int.Parse(_deviceInfo.AndroidVer.APILevel)}
                         }
                     },
                     {"children_metadata", childrenArray},
@@ -1238,14 +1260,22 @@ namespace InstagramApiSharp.API.Processors
         {
             try
             {
+                if (!string.IsNullOrEmpty(caption))
+                    caption = caption.Replace("\r", "");
                 upProgress.UploadState = InstaUploadState.Configuring;
                 progress?.Invoke(upProgress);
+                try
+                {
+                    await Task.Delay(_httpRequestProcessor.ConfigureMediaDelay.Value);
+                }
+                catch { }
                 var instaUri = UriCreator.GetMediaConfigureUri(true);
                 var data = new JObject
                 {
                     {"caption", caption ?? string.Empty},
                     {"upload_id", uploadId},
                     {"source_type", "4"},
+                    {"device_id", _deviceInfo.DeviceId},
                     {"camera_position", "unknown"},
                     {"creation_logger_session_id", Guid.NewGuid().ToString()},
                     {"timezone_offset", InstaApiConstants.TIMEZONE_OFFSET.ToString()},
@@ -1347,7 +1377,35 @@ namespace InstagramApiSharp.API.Processors
                 return Result.Fail<InstaMedia>(exception);
             }
         }
-
+        private async Task<IResult<bool>> ArchiveUnArchiveMediaInternal(string mediaId, Uri instaUri)
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                var data = new Dictionary<string, string>
+                {
+                    {"media_id", mediaId},
+                    {"_csrftoken", _user.CsrfToken},
+                    {"_uid", _user.LoggedInUser.Pk.ToString()},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                };
+                var request = _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+                return response.StatusCode == HttpStatusCode.OK
+                    ? Result.Success(true)
+                    : Result.UnExpectedResponse<bool>(response, json);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(bool), ResponseType.NetworkProblem);
+            }
+            catch (Exception exception)
+            {
+                return Result.Fail<bool>(exception);
+            }
+        }
         private async Task<IResult<bool>> LikeUnlikeArchiveUnArchiveMediaInternal(string mediaId, Uri instaUri)
         {
             UserAuthValidator.Validate(_userAuthValidate);
@@ -1355,11 +1413,12 @@ namespace InstagramApiSharp.API.Processors
             {
                 var fields = new Dictionary<string, string>
                 {
-                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
-                    {"_uid", _user.LoggedInUser.Pk.ToString()},
-                    {"_csrftoken", _user.CsrfToken},
                     {"media_id", mediaId},
-                    {"radio_type", "wifi-none"}
+                    {"_csrftoken", _user.CsrfToken},
+                    {"radio_type", "wifi-none"},
+                    {"_uid", _user.LoggedInUser.Pk.ToString()},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"device_id", _deviceInfo.DeviceId}
                 };
                 var request =
                     _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, fields);

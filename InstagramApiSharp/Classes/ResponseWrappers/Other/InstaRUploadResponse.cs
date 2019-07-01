@@ -6,14 +6,13 @@
  * 
  * IRANIAN DEVELOPERS
  */
-
-namespace InstagramApiSharp.Enums
+using Newtonsoft.Json;
+using InstagramApiSharp.Classes.Models;
+namespace InstagramApiSharp.Classes.ResponseWrappers
 {
-    public enum InstaExploreClusterType
+    public class InstaRUploadResponse : InstaDefaultResponse
     {
-        ExploreAll,
-        HashtagInspired,
-        Shopping,
-        IGTV
+        [JsonProperty("stream_id")] public string StreamId { get; set; }
     }
+
 }

@@ -33,12 +33,11 @@ namespace InstagramApiSharp.API
     /// </summary>
     public interface IInstaApi
     {
-		#region
+		#region Custom
 		string Username { get; }
 		bool IsUserValidated();
 
 		#endregion
-
 		#region Properties
 		/// <summary>
 		///     Get HttpHelper class
@@ -220,18 +219,24 @@ namespace InstagramApiSharp.API
         /// <param name="handler">HttpClientHandler</param>
         void UseHttpClientHandler(HttpClientHandler handler);
         /// <summary>
-        /// Sets user credentials
+        ///     Sets user credentials
         /// </summary>
         /// <param name="username"></param>
         /// <param name="password"></param>
         void SetUser(string username, string password);
 
         /// <summary>
-        /// Sets user credentials
+        ///     Sets user credentials
         /// </summary>
         /// <param name="user"></param>
         void SetUser(UserSessionData user);
-
+        /// <summary>
+        ///     Update user information (private, profile picture, username and etc.)
+        ///     <para>Note 1. Login required!</para>
+        ///     <para>Note 2. It's necessary to save session, after you called this function</para>
+        /// </summary>
+        /// <param name="updatedUser">Updated user</param>
+        void UpdateUser(InstaUserShort updatedUser);
         /// <summary>
         ///     Gets current device
         /// </summary>
@@ -261,6 +266,11 @@ namespace InstagramApiSharp.API
         /// </summary>
         /// <param name="delay">Timespan delay</param>
         void SetRequestDelay(IRequestDelay delay);
+        /// <summary>
+        ///     Set delay before configuring medias [only for uploading parts]
+        /// </summary>
+        /// <param name="configureMediaDelay">Timespan delay for configuring Media</param>
+        void SetConfigureMediaDelay(IConfigureMediaDelay configureMediaDelay);
         /// <summary>
         ///     Set instagram api version (for user agent version)
         /// </summary>

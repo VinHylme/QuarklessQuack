@@ -473,14 +473,8 @@ namespace InstagramApiSharp.API.Processors
             UserAuthValidator.Validate(_userAuthValidate);
             try
             {
-                var cookies =
-                    _httpRequestProcessor.HttpHandler.CookieContainer.GetCookies(_httpRequestProcessor.Client
-                        .BaseAddress);
-                var csrftoken = cookies[InstaApiConstants.CSRFTOKEN]?.Value ?? string.Empty;
-                _user.CsrfToken = csrftoken;
-                var instaUri = UriCreator.GetFriendshipPendingRequestsUri(_user.RankToken);
+                var instaUri = UriCreator.GetFriendshipPendingRequestsUri();
                 var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, instaUri, _deviceInfo);
-                request.Properties.Add(InstaApiConstants.HEADER_IG_SIGNATURE_KEY_VERSION, InstaApiConstants.IG_SIGNATURE_KEY_VERSION);
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var json = await response.Content.ReadAsStringAsync();
 
@@ -816,11 +810,12 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="username">Username</param>
         /// <param name="paginationParameters">Pagination parameters: next id and max amount of pages to load</param>
         /// <param name="searchQuery">Search string to locate specific followings</param>
+        /// <param name="orderBy">Order by latest, earliest or default</param>
         /// <returns>
         ///     <see cref="InstaUserShortList" />
         /// </returns>
         public async Task<IResult<InstaUserShortList>> GetUserFollowingAsync(string username,
-            PaginationParameters paginationParameters, string searchQuery)
+            PaginationParameters paginationParameters, string searchQuery, InstaFollowingOrderType orderBy = InstaFollowingOrderType.Default)
         {
             try
             {
@@ -830,7 +825,7 @@ namespace InstagramApiSharp.API.Processors
                     if (user.Value.FriendshipStatus.IsPrivate && user.Value.UserName != _user.LoggedInUser.UserName && !user.Value.FriendshipStatus.Following)
                         return Result.Fail("You must be a follower of private accounts to be able to get user's followings", default(InstaUserShortList));
 
-                    return await GetUserFollowingByIdAsync(user.Value.Pk, paginationParameters, searchQuery);
+                    return await GetUserFollowingByIdAsync(user.Value.Pk, paginationParameters, searchQuery, orderBy);
                 }
                 else
                     return Result.Fail(user.Info, default(InstaUserShortList));
@@ -852,11 +847,12 @@ namespace InstagramApiSharp.API.Processors
         /// <param name="userId">User id(pk)</param>
         /// <param name="paginationParameters">Pagination parameters: next id and max amount of pages to load</param>
         /// <param name="searchQuery">Search string to locate specific followings</param>
+        /// <param name="orderBy">Order by latest, earliest or default</param>
         /// <returns>
         ///     <see cref="InstaUserShortList" />
         /// </returns>
         public async Task<IResult<InstaUserShortList>> GetUserFollowingByIdAsync(long userId,
-            PaginationParameters paginationParameters, string searchQuery)
+            PaginationParameters paginationParameters, string searchQuery, InstaFollowingOrderType orderBy = InstaFollowingOrderType.Default)
         {
             UserAuthValidator.Validate(_userAuthValidate);
             var following = new InstaUserShortList();
@@ -866,7 +862,7 @@ namespace InstagramApiSharp.API.Processors
                     paginationParameters = PaginationParameters.MaxPagesToLoad(1);
 
                 var uri = UriCreator.GetUserFollowingUri(userId, _user.RankToken, searchQuery,
-                    paginationParameters.NextMaxId);
+                    paginationParameters.NextMaxId, orderBy);
                 var userListResponse = await GetUserListByUriAsync(uri);
                 if (!userListResponse.Succeeded)
                     return Result.Fail(userListResponse.Info, (InstaUserShortList)null);
@@ -880,7 +876,7 @@ namespace InstagramApiSharp.API.Processors
                 {
                     var nextUri =
                         UriCreator.GetUserFollowingUri(userId, _user.RankToken, searchQuery,
-                            userListResponse.Value.NextMaxId);
+                            userListResponse.Value.NextMaxId, orderBy);
                     userListResponse = await GetUserListByUriAsync(nextUri);
                     if (!userListResponse.Succeeded)
                         return Result.Fail(userListResponse.Info, following);

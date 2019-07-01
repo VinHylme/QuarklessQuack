@@ -61,7 +61,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 
 					if (ratioff > 1.0 && findNominatedUser.UserDetail.MediaCount > 5)
 					{
-						var resMedia = _builder.SearchUsersMediaDetailInstagram(findNominatedUser.UserDetail.Username, 1);
+						var resMedia = _builder.SearchUsersMediaDetailInstagram(findNominatedUser.UserDetail.UserName, 1);
 						var selected = resMedia.ElementAt(SecureRandom.Next(resMedia.Count()));
 						return new HolderComment{ Topic =  fetchMedias.SelectedTopic, MediaId = selected.Object.MediaId };
 					}
@@ -91,7 +91,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 
 					if (ratioff > 1.0 && findNominatedUser.UserDetail.MediaCount > 5)
 					{
-						var resMedia = _builder.SearchUsersMediaDetailInstagram(findNominatedUser.UserDetail.Username, 1);
+						var resMedia = _builder.SearchUsersMediaDetailInstagram(findNominatedUser.UserDetail.UserName, 1);
 						var selected = resMedia.ElementAt(SecureRandom.Next(resMedia.Count()));
 						return new HolderComment { Topic = fetchMedias.SelectedTopic, MediaId = selected.Object.MediaId };
 					}

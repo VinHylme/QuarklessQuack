@@ -36,6 +36,15 @@ namespace InstagramApiSharp.API
         public const string DIRECT_THREAD_VIDEOCALLS_MUTE = API_SUFFIX + "/direct_v2/threads/{0}/mute_video_call/";
         public const string DIRECT_THREAD_VIDEOCALLS_UNMUTE = API_SUFFIX + "/direct_v2/threads/{0}/unmute_video_call/";
 
+
+        public const string EXPLORE_CHANNEL_VIEWER = API_SUFFIX + "/channels/viewer/discover_videos/{0}/";
+
+
+
+        public const string RUPLOAD_IGVIDEO_START = "/rupload_igvideo/{0}?segmented=true&phase=start";
+        public const string RUPLOAD_IGVIDEO_TRANSFER = "/rupload_igvideo/{0}-{1}-{2}?segmented=true&phase=transfer";
+        public const string RUPLOAD_IGVIDEO_END = "/rupload_igvideo/{0}?segmented=true&phase=end";
+
         // push 
         public const string FACEBOOK_OTA_FIELDS = "update%7Bdownload_uri%2Cdownload_uri_delta_base%2Cversion_code_delta_base%2Cdownload_uri_delta%2Cfallback_to_full_update%2Cfile_size_delta%2Cversion_code%2Cpublished_date%2Cfile_size%2Cota_bundle_type%2Cresources_checksum%7D";
         public const int FACEBOOK_ORCA_PROTOCOL_VERSION = 20150314;
@@ -406,6 +415,7 @@ namespace InstagramApiSharp.API
         public const string DIRECT_BROADCAST_SHARE_VOICE = API_SUFFIX + "/direct_v2/threads/broadcast/share_voice/";
         public const string DIRECT_BROADCAST_ANIMATED_MEDIA = API_SUFFIX + "/direct_v2/threads/broadcast/animated_media/";
         public const string DIRECT_BROADCAST_FELIX_SHARE = API_SUFFIX + "/direct_v2/threads/broadcast/felix_share/";
+        public const string DIRECT_BROADCAST_REEL_REACT = API_SUFFIX + "/direct_v2/threads/broadcast/reel_react/";
 
         /// <summary>
         /// post data:
@@ -528,7 +538,7 @@ namespace InstagramApiSharp.API
         public const string FRIENDSHIPS_IGNORE = API_SUFFIX + "/friendships/ignore/{0}/";
 
 
-        public const string FRIENDSHIPS_PENDING_REQUESTS = API_SUFFIX + "/friendships/pending/?rank_mutual=0&rank_token={0}";
+        public const string FRIENDSHIPS_PENDING_REQUESTS = API_SUFFIX + "/friendships/pending/";//?rank_mutual=0&rank_token={0}";
         public const string FRIENDSHIPS_REMOVE_FOLLOWER = API_SUFFIX + "/friendships/remove_follower/{0}/";
         /// <summary>
         /// hide your stories from specific users
@@ -588,7 +598,7 @@ namespace InstagramApiSharp.API
         public const string IGTV_SEARCH = API_SUFFIX + "/igtv/search/?query={0}";
         public const string IGTV_SUGGESTED_SEARCHES = API_SUFFIX + "/igtv/suggested_searches/";
         public const string IGTV_TV_GUIDE = API_SUFFIX + "/igtv/tv_guide/";
-        public const string MEDIA_CONFIGURE_TO_IGTV = API_SUFFIX + "/media/configure_to_igtv/";
+        public const string MEDIA_CONFIGURE_TO_IGTV = API_SUFFIX + "/media/configure_to_igtv/?video=1";
 
         #endregion IgTv (instagram tv) endpoints constants
 
@@ -749,6 +759,9 @@ namespace InstagramApiSharp.API
         public const string TAG_SUGGESTED = API_SUFFIX + "/tags/suggested/";
         public const string TAG_UNFOLLOW = API_SUFFIX + "/tags/unfollow/{0}/";
         public const string TAG_MEDIA_REPORT = API_SUFFIX + "/tags/hashtag_media_report/";
+
+        public const string TAG_CHANNEL_VIEWER = API_SUFFIX + "/tags/channel_viewer/hashtag_videos/{0}/";
+
 
         #endregion Tags endpoints constants
 

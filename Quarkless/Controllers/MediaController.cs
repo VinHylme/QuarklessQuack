@@ -63,7 +63,7 @@ namespace Quarkless.Controllers
 		{
 			if (_userContext.UserAccountExists && !string.IsNullOrEmpty(mediaId))
 			{
-				var results = await _mediaLogic.LikeMediaAsync(mediaId);
+			var results = await _mediaLogic.LikeMediaAsync(mediaId);
 				if (results.Succeeded)
 				{
 					return Ok(results.Value);

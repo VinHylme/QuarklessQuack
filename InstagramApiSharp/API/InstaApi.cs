@@ -34,6 +34,7 @@ namespace InstagramApiSharp.API
     {
         #region Variables and properties
 
+        private IConfigureMediaDelay _configureMediaDelay = ConfigureMediaDelay.Empty();
         private IRequestDelay _delay = RequestDelay.Empty();
         private readonly IHttpRequestProcessor _httpRequestProcessor;
         private readonly IInstaLogger _logger;
@@ -55,9 +56,8 @@ namespace InstagramApiSharp.API
         readonly Random Rnd = new Random();
         string _waterfallIdReg = "", _deviceIdReg = "", _phoneIdReg = "", _guidReg = "";
         InstaAccountRegistrationPhoneNumber _signUpPhoneNumberInfo;
-		public string Username { get { return _user.UserName; } }
 
-		private bool _isUserAuthenticated;
+        private bool _isUserAuthenticated;
         /// <summary>
         ///     Indicates whether user authenticated or not
         /// </summary>
@@ -75,10 +75,28 @@ namespace InstagramApiSharp.API
         /// </summary>
         public IHttpRequestProcessor HttpRequestProcessor => _httpRequestProcessor;
 
-        #endregion Variables and properties
-
-        #region SessionHandler
-        private ISessionHandler _sessionHandler;
+		#endregion Variables and properties
+		public string Username { get { return _user.UserName; } }
+		/// <summary>
+		/// Checks if user is validated
+		/// </summary>
+		/// <returns></returns>
+		public bool IsUserValidated()
+		{
+			try
+			{
+				ValidateUser();
+				ValidateLoggedIn();
+				return true;
+			}
+			catch (Exception ee)
+			{
+				Console.Write(ee.Message);
+				return false;
+			}
+		}
+		#region SessionHandler
+		private ISessionHandler _sessionHandler;
         public ISessionHandler SessionHandler { get => _sessionHandler; set => _sessionHandler = value; }
         #endregion
 
@@ -186,7 +204,7 @@ namespace InstagramApiSharp.API
         #region Constructor
 
         public InstaApi(UserSessionData user, IInstaLogger logger, AndroidDevice deviceInfo,
-            IHttpRequestProcessor httpRequestProcessor, InstaApiVersionType apiVersionType)
+            IHttpRequestProcessor httpRequestProcessor, InstaApiVersionType apiVersionType, IConfigureMediaDelay configureMediaDelay)
         {
             _userAuthValidate = new UserAuthValidate();
             _user = user;
@@ -196,6 +214,7 @@ namespace InstagramApiSharp.API
             _apiVersionType = apiVersionType;
             _apiVersion = InstaApiVersionList.GetApiVersionList().GetApiVersion(apiVersionType);
             _httpHelper = new HttpHelper(_apiVersion);
+            _configureMediaDelay = configureMediaDelay;
         }
 
         #endregion Constructor
@@ -924,12 +943,18 @@ namespace InstagramApiSharp.API
                 if (delay == null)
                     delay = TimeSpan.FromSeconds(1.5);
 
-                await AcceptFirstStepConsentAsync();
+                var result = await AcceptFirstStepConsentAsync();
                 await Task.Delay(delay.Value);
-                await AcceptSecondStepConsentAsync();
-                await Task.Delay(delay.Value);
-                await AcceptThirdStepConsentAsync();
-
+                if (result.Succeeded && result.Value.ScreenKey.ToLower() == "dob")
+                {
+                    await SetBirthdayConsentAsync();
+                }
+                else
+                {
+                    await AcceptSecondStepConsentAsync();
+                    await Task.Delay(delay.Value);
+                    await AcceptThirdStepConsentAsync();
+                }
                 return Result.Success(true);
             }
             catch (HttpRequestException httpException)
@@ -1127,7 +1152,7 @@ namespace InstagramApiSharp.API
                     IsUserAuthenticated = false;
                     return Result.Fail(us.Info, false);
                 }
-                _user.UserName = _httpRequestProcessor.RequestMessage.Username = _user.LoggedInUser.UserName = us.Value.Username;
+                _user.UserName = _httpRequestProcessor.RequestMessage.Username = _user.LoggedInUser.UserName = us.Value.UserName;
                 _user.LoggedInUser.FullName = us.Value.FullName;
                 _user.LoggedInUser.IsPrivate = us.Value.IsPrivate;
                 _user.LoggedInUser.IsVerified = us.Value.IsVerified;
@@ -2295,25 +2320,40 @@ namespace InstagramApiSharp.API
             _httpRequestProcessor.SetHttpClientHandler(handler);
         }
         /// <summary>
-        /// Sets user credentials
+        ///     Sets user credentials
         /// </summary>
         public void SetUser(string username, string password)
         {
-            _user.UserName = username;
+            _user.UserName = username.ToLower();
             _user.Password = password;
 
-            _httpRequestProcessor.RequestMessage.Username = username;
+            _httpRequestProcessor.RequestMessage.Username = username.ToLower();
             _httpRequestProcessor.RequestMessage.Password = password;
         }
 
         /// <summary>
-        /// Sets user credentials
+        ///     Sets user credentials
         /// </summary>
         public void SetUser(UserSessionData user)
         {
             SetUser(user.UserName, user.Password);
         }
-
+        /// <summary>
+        ///     Update user information (private, profile picture, username and etc.)
+        ///     <para>Note 1. Login required!</para>
+        ///     <para>Note 2. It's necessary to save session, after you called this function</para>
+        /// </summary>
+        /// <param name="updatedUser">Updated user</param>
+        public void UpdateUser(InstaUserShort updatedUser)
+        {
+            if (updatedUser == null) return;
+            ValidateUser();
+            ValidateLoggedIn();
+            updatedUser.UserName = updatedUser.UserName.ToLower();
+            _user.UserName = updatedUser.UserName;
+            _user.LoggedInUser = updatedUser;
+            _httpRequestProcessor.RequestMessage.Username = updatedUser.UserName;
+        }
         /// <summary>
         ///     Gets current device
         /// </summary>
@@ -2377,7 +2417,17 @@ namespace InstagramApiSharp.API
             _delay = delay;
             _httpRequestProcessor.Delay = _delay;
         }
-
+        /// <summary>
+        ///     Set delay before configuring medias [only for uploading parts]
+        /// </summary>
+        /// <param name="configureMediaDelay">Timespan delay for configuring Media</param>
+        public void SetConfigureMediaDelay(IConfigureMediaDelay configureMediaDelay)
+        {
+            if (configureMediaDelay == null)
+                configureMediaDelay = ConfigureMediaDelay.PreferredDelay();
+            _configureMediaDelay = configureMediaDelay;
+            _httpRequestProcessor.ConfigureMediaDelay = _configureMediaDelay;
+        }
         internal IRequestDelay GetRequestDelay() => _delay;
 
         /// <summary>
@@ -3339,7 +3389,7 @@ namespace InstagramApiSharp.API
         }
 
 
-        private async Task<IResult<bool>> AcceptFirstStepConsentAsync()
+        private async Task<IResult<InstaConsentRequiredResponse>> AcceptFirstStepConsentAsync()
         {
             try
             {
@@ -3361,20 +3411,20 @@ namespace InstagramApiSharp.API
                 var json = await response.Content.ReadAsStringAsync();
 
                 if (response.StatusCode != HttpStatusCode.OK)
-                    return Result.UnExpectedResponse<bool>(response, json);
+                    return Result.UnExpectedResponse<InstaConsentRequiredResponse>(response, json);
 
 
-                return Result.Success(true);
+                return Result.Success(JsonConvert.DeserializeObject<InstaConsentRequiredResponse>(json));
             }
             catch (HttpRequestException httpException)
             {
                 _logger?.LogException(httpException);
-                return Result.Fail(httpException, default(bool), ResponseType.NetworkProblem);
+                return Result.Fail(httpException, default(InstaConsentRequiredResponse), ResponseType.NetworkProblem);
             }
             catch (Exception exception)
             {
                 LogException(exception);
-                return Result.Fail(exception, false);
+                return Result.Fail(exception, default(InstaConsentRequiredResponse));
             }
         }
         private async Task<IResult<bool>> AcceptSecondStepConsentAsync()
@@ -3455,24 +3505,50 @@ namespace InstagramApiSharp.API
             }
         }
 
-		#endregion
-		/// <summary>
-		/// Checks if user is validated
-		/// </summary>
-		/// <returns></returns>
-		public bool IsUserValidated()
-		{
-			try
-			{
-				ValidateUser();
-				ValidateLoggedIn();
-				return true;
-			}
-			catch (Exception ee)
-			{
-				Console.Write(ee.Message);
-				return false;
-			}
-		}
-	}
+        private async Task<IResult<bool>> SetBirthdayConsentAsync()
+        {
+            try
+            {
+                int day = Rnd.Next(1, 29);
+                int month = Rnd.Next(1, 12);
+                int year = Rnd.Next(1980, 1998);
+
+                var cookies = _httpRequestProcessor.HttpHandler.CookieContainer.GetCookies(_httpRequestProcessor.Client
+                    .BaseAddress);
+
+                var csrftoken = cookies[InstaApiConstants.CSRFTOKEN]?.Value ?? string.Empty;
+                _user.CsrfToken = csrftoken;
+                var instaUri = UriCreator.GetConsentExistingUserFlowUri();
+                var data = new Dictionary<string, string>
+                {
+                    {"current_screen_key", "dob"},
+                    {"_csrftoken", _user.CsrfToken},
+                    {"day", day.ToString()},
+                    {"_uid", _user.LoggedInUser.Pk.ToString()},
+                    {"year", year.ToString()},
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"month", month.ToString()},
+                };
+                var request = _httpHelper.GetSignedRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                    return Result.UnExpectedResponse<bool>(response, json);
+
+                return Result.Success(true);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(bool), ResponseType.NetworkProblem);
+            }
+            catch (Exception exception)
+            {
+                LogException(exception);
+                return Result.Fail(exception, false);
+            }
+        }
+        #endregion
+    }
 }

@@ -522,13 +522,16 @@ namespace InstagramApiSharp.Helpers
                 : new UriBuilder(instaUri) { Query = $"use_unified_inbox=true" }.Uri;
         }
 
-        public static Uri GetDirectInboxUri(string NextId = "")
+        public static Uri GetDirectInboxUri(string nextId = "", int seqId = 0)
         {
             if (!Uri.TryCreate(BaseInstagramUri, InstaApiConstants.GET_DIRECT_INBOX, out var instaUri))
                 throw new Exception("Cant create URI for get inbox");
-            return !string.IsNullOrEmpty(NextId)
-                ? new UriBuilder(instaUri) { Query = $"persistentBadging=true&use_unified_inbox=true&cursor={NextId}&direction=older" }.Uri
-                 : new UriBuilder(instaUri) { Query = "persistentBadging=true&use_unified_inbox=true" }.Uri;
+            return !string.IsNullOrEmpty(nextId)
+                ? new UriBuilder(instaUri) { Query = $"visual_message_return_type=unseen&thread_message_limit=10&limit=20&" +
+                $"persistentBadging=true&use_unified_inbox=true&cursor={nextId}&direction=older&seq_id={seqId}" }.Uri
+
+                 : new UriBuilder(instaUri) { Query = "visual_message_return_type=unseen&thread_message_limit=10&limit=20&" +
+                 "persistentBadging=true&use_unified_inbox=true" }.Uri;
             //: instaUri;
             //        return instaUri
             ////GET /api/v1/direct_v2/inbox/?visual_message_return_type=unseen&persistentBadging=true&use_unified_inbox=true
@@ -729,9 +732,9 @@ namespace InstagramApiSharp.Helpers
             return instaUri;
         }
 
-        public static Uri GetFriendshipPendingRequestsUri(string rankToken)
+        public static Uri GetFriendshipPendingRequestsUri(/*string rankToken*/)
         {
-            if (!Uri.TryCreate(BaseInstagramUri, string.Format(InstaApiConstants.FRIENDSHIPS_PENDING_REQUESTS, rankToken), out var instaUri))
+            if (!Uri.TryCreate(BaseInstagramUri, /*string.Format(*/InstaApiConstants.FRIENDSHIPS_PENDING_REQUESTS/*, rankToken)*/, out var instaUri))
                 throw new Exception("Cant create URI for friendship pending requests");
             return instaUri;
         }
@@ -1201,9 +1204,9 @@ namespace InstagramApiSharp.Helpers
         {
             if (!Uri.TryCreate(BaseInstagramUri, InstaApiConstants.GET_RECENT_ACTIVITY, out var instaUri))
                 throw new Exception("Cant create URI (get recent activity)");
-            var query = $"activity_module=all";
-            var uriBuilder = new UriBuilder(instaUri) { Query = query };
-            return uriBuilder.Uri;
+            //var query = $"activity_module=all";
+            //var uriBuilder = new UriBuilder(instaUri) { Query = query };
+            return instaUri;
         }
 
         public static Uri GetRecentRecipientsUri()
@@ -1664,14 +1667,26 @@ namespace InstagramApiSharp.Helpers
                 .AddQueryParameterIfNotEmpty("query", searchQuery);
         }
 
-        public static Uri GetUserFollowingUri(long userPk, string rankToken, string searchQuery, string maxId = "")
+        public static Uri GetUserFollowingUri(long userPk, string rankToken, string searchQuery, string maxId = "", InstaFollowingOrderType orderBy = InstaFollowingOrderType.Default)
         {
             if (!Uri.TryCreate(BaseInstagramUri, string.Format(InstaApiConstants.FRIENDSHIPS_USER_FOLLOWING, userPk, rankToken),
                 out var instaUri))
                 throw new Exception("Cant create URI for user following");
+            var order = "";
+            switch(orderBy)
+            {
+                case InstaFollowingOrderType.DateFollowedEarliest:
+                    order = "date_followed_earliest";
+                    break;
+                case InstaFollowingOrderType.DateFollowedLatest:
+                    order = "date_followed_late";
+                    break;
+            }
             return instaUri
+                .AddQueryParameter("includes_hashtags", "true")
                 .AddQueryParameterIfNotEmpty("max_id", maxId)
-                .AddQueryParameterIfNotEmpty("query", searchQuery);
+                .AddQueryParameterIfNotEmpty("query", searchQuery)
+                .AddQueryParameterIfNotEmpty("order", order);
         }
 
         public static Uri GetUserFriendshipUri(long userId)
@@ -2305,11 +2320,12 @@ namespace InstagramApiSharp.Helpers
 
             instaUri = instaUri
                 .AddQueryParameter("is_prefetch", "false")
+                .AddQueryParameter("omit_cover_media", "true")
                 .AddQueryParameter("module", "explore_popular")
                 .AddQueryParameter("use_sectional_payload", "true")
                 .AddQueryParameter("timezone_offset", InstaApiConstants.TIMEZONE_OFFSET.ToString())
                 .AddQueryParameter("session_id", sessionId)
-                .AddQueryParameter("include_fixed_destinations", "false");
+                .AddQueryParameter("include_fixed_destinations", "true");
 
             if (clusterId.ToLower() == "explore_all:0" || clusterId.ToLower() == "explore_all%3A0")
             {
@@ -2498,6 +2514,47 @@ namespace InstagramApiSharp.Helpers
         {
             if (!Uri.TryCreate(BaseInstagramUri, string.Format(InstaApiConstants.DIRECT_THREAD_VIDEOCALLS_UNMUTE, threadId), out var instaUri))
                 throw new Exception("Cant create URI for unmute direct thread video calls");
+            return instaUri;
+        }
+
+        public static Uri GetHashtagChannelVideosUri(string threadId)
+        {
+            if (!Uri.TryCreate(BaseInstagramUri, string.Format(InstaApiConstants.TAG_CHANNEL_VIEWER, threadId), out var instaUri))
+                throw new Exception("Cant create URI for hashtag channel videos");
+            return instaUri;
+        }
+
+        public static Uri GetExploreChannelVideosUri(string threadId)
+        {
+            if (!Uri.TryCreate(BaseInstagramUri, string.Format(InstaApiConstants.EXPLORE_CHANNEL_VIEWER, threadId), out var instaUri))
+                throw new Exception("Cant create URI for explore channel videos");
+            return instaUri;
+        }
+
+        public static Uri GetRUploadVideoStartUri(string guid)
+        {
+            if (!Uri.TryCreate(BaseInstagramUri, string.Format(InstaApiConstants.RUPLOAD_IGVIDEO_START, guid), out var instaUri))
+                throw new Exception("Cant create URI for rupload segmented video start");
+            return instaUri;
+        }
+        public static Uri GetRUploadVideoTransferUri(string md5, int start, int fileSize)
+        {
+            if (!Uri.TryCreate(BaseInstagramUri, string.Format(InstaApiConstants.RUPLOAD_IGVIDEO_TRANSFER, md5, start, fileSize), out var instaUri))
+                throw new Exception("Cant create URI for rupload segmented video transfer");
+            return instaUri;
+        }
+
+        public static Uri GetRUploadVideoEndUri(string guid)
+        {
+            if (!Uri.TryCreate(BaseInstagramUri, string.Format(InstaApiConstants.RUPLOAD_IGVIDEO_END, guid), out var instaUri))
+                throw new Exception("Cant create URI for rupload segmented video end");
+            return instaUri;
+        }
+
+        public static Uri GetBroadcastReelReactUri()
+        {
+            if (!Uri.TryCreate(BaseInstagramUri, InstaApiConstants.DIRECT_BROADCAST_REEL_REACT, out var instaUri))
+                throw new Exception("Cant create URI for direct broadcast reel react");
             return instaUri;
         }
     }

@@ -6,14 +6,12 @@
  * 
  * IRANIAN DEVELOPERS
  */
-
 namespace InstagramApiSharp.Enums
 {
-    public enum InstaExploreClusterType
+    public enum InstaFollowingOrderType
     {
-        ExploreAll,
-        HashtagInspired,
-        Shopping,
-        IGTV
+        Default,
+        DateFollowedEarliest,
+        DateFollowedLatest
     }
 }

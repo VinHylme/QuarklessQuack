@@ -9,11 +9,9 @@
 
 namespace InstagramApiSharp.Enums
 {
-    public enum InstaExploreClusterType
+    public enum InstaAccountType
     {
-        ExploreAll,
-        HashtagInspired,
-        Shopping,
-        IGTV
+        Normal = 1,
+        Business = 2
     }
 }

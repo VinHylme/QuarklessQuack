@@ -6,14 +6,11 @@
  * 
  * IRANIAN DEVELOPERS
  */
-
-namespace InstagramApiSharp.Enums
+using System;
+namespace InstagramApiSharp.Classes
 {
-    public enum InstaExploreClusterType
+    public interface IConfigureMediaDelay
     {
-        ExploreAll,
-        HashtagInspired,
-        Shopping,
-        IGTV
+        TimeSpan Value { get; }
     }
 }

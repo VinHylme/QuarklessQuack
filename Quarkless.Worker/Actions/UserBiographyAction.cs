@@ -64,7 +64,7 @@ namespace Quarkless.Worker.Actions
 							FollowingCount = curUser.FollowingCount,
 							FullName = curUser.FullName,
 							UserId = curUser.Pk,
-							Username = curUser.Username
+							Username = curUser.UserName
 						},
 						Contact = new Contact
 						{
@@ -129,7 +129,7 @@ namespace Quarkless.Worker.Actions
 							FollowingCount = curUser.FollowingCount,
 							FullName = curUser.FullName,
 							UserId = curUser.Pk,
-							Username = curUser.Username
+							Username = curUser.UserName
 						},
 						Contact = new Contact
 						{
