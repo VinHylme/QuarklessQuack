@@ -68,6 +68,7 @@ namespace QuarklessContexts.Models.Profiles
 		public string Name { get; set; }
 		public string Description { get; set; }
 		public string Language { get; set; }
+		public string Topic { get; set; }
 		public List<string> TopicList { get; set; }
 		public List<string> UserTargetList { get; set; }
 		public List<Location> LocationTargetList { get; set; }

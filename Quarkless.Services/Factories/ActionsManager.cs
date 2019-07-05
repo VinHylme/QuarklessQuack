@@ -2,6 +2,7 @@
 using Quarkless.Services.Interfaces;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.Timeline;
+using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using System;
 using System.Collections.Generic;
 
@@ -25,7 +26,7 @@ namespace Quarkless.Services.Factories
 
 		public static ActionsManager Begin => new ActionsManager();
 
-		public IActionCommit Commit(ActionType actionType,IContentManager actionBuilderManager,
-			ProfileModel profile) =>_factories[actionType].Commit(actionBuilderManager,profile);
+		public IActionCommit Commit(ActionType actionType,IContentManager actionBuilderManager, IHeartbeatLogic heartbeatLogic,
+			ProfileModel profile) =>_factories[actionType].Commit(actionBuilderManager,heartbeatLogic,profile);
 	}
 }

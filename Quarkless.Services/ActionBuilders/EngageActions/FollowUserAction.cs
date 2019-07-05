@@ -7,9 +7,11 @@ using QuarklessContexts.Enums;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models;
 using QuarklessContexts.Models.Profiles;
+using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.Handlers.RequestBuilder.Consts;
+using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,13 +29,15 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	public class FollowUserAction : IActionCommit
 	{
 		private readonly IContentManager _builder;
+		private readonly IHeartbeatLogic _heartbeatLogic;
 		private readonly ProfileModel _profile;
 		private UserStoreDetails user;
 		private FollowStrategySettings followStrategySettings;
-		public FollowUserAction(IContentManager builder, ProfileModel profile)
+		public FollowUserAction(IContentManager builder, IHeartbeatLogic heartbeatLogic, ProfileModel profile)
 		{
 			_builder = builder;
 			_profile = profile;
+			_heartbeatLogic = heartbeatLogic;
 		}
 		public IActionCommit IncludeStrategy(IStrategySettings strategy)
 		{
@@ -42,63 +46,70 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		private long FollowBasedOnLikers()
 		{
-			var fetchMedias = MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic();
-			var searchMedias = (IEnumerable<UserResponse<MediaDetail>>)fetchMedias.FetchedItems;
-			searchMedias = searchMedias.Where(_ => _.Object.IsFollowing != null && _.Object.IsFollowing != true);
-			var users_ = _builder.SearchInstagramMediaLikers(searchMedias.ElementAt(SecureRandom.Next(searchMedias.Count())).Object.MediaId);
-			int index = 0;
-
-			while (users_.Count>index)
+			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersViaPostLiked, _profile.Topic).GetAwaiter().GetResult();
+			if (fetchMedias != null)
 			{
-				var findNominatedUser = _builder.SearchInstagramFullUserDetail(users_.ElementAt(SecureRandom.Next(users_.Count)).UserId);
-				if(findNominatedUser==null) return 0;
-				double ratioff = (double)findNominatedUser.UserDetail.FollowerCount / findNominatedUser.UserDetail.FollowingCount;
-
-				if (ratioff > 1.0 && findNominatedUser.UserDetail.MediaCount > 5)
+				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
+				if (select.HasValue)
 				{
-					return findNominatedUser.UserDetail.Pk;
+					By by = new By
+					{
+						ActionType = (int)ActionType.FollowUser,
+						User = _profile.InstagramAccountId
+					};
+					if (!select.Value.SeenBy.Contains(by))
+					{
+						select.Value.SeenBy.Add(by);
+						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostLiked, _profile.Topic, select.Value).GetAwaiter().GetResult();
+						return select.Value.ObjectItem.ElementAtOrDefault(select.Value.ObjectItem.Count).UserId;
+					}
 				}
-				Thread.Sleep(TimeSpan.FromSeconds(SecureRandom.Next(1, 4)));
-				index++;
 			}
 			return 0;
 		}
 		private long FollowBasedOnTopic()
 		{
-			var fetchMedias = MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic();
-			var searchMedias = (IEnumerable<UserResponse<MediaDetail>>)fetchMedias.FetchedItems;
-			searchMedias = searchMedias.Where(_=>_.Object.IsFollowing!=null && _.Object.IsFollowing!=true);
-			return searchMedias.ElementAt(SecureRandom.Next(searchMedias.Count())).UserId;
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic, _profile.Topic).GetAwaiter().GetResult();
+			if (fetchMedias != null)
+			{
+				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
+				if (select.HasValue)
+				{
+					By by = new By
+					{
+						ActionType = (int)ActionType.FollowUser,
+						User = _profile.InstagramAccountId
+					};
+					if (!select.Value.SeenBy.Contains(by))
+					{
+						select.Value.SeenBy.Add(by);
+						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByTopic, _profile.Topic, select.Value).GetAwaiter().GetResult();
+						return select.Value.ObjectItem.Medias.FirstOrDefault().User.UserId;
+					}
+				}
+			}
+			return 0;
 		}
 		private long FollowBasedOnCommenters()
 		{
-			var fetchMedias = MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic();
-			var searchMedias = (IEnumerable<UserResponse<MediaDetail>>)fetchMedias.FetchedItems;
-			searchMedias = searchMedias.Where(_ =>
+			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<CommentResponse>>>(MetaDataType.FetchUsersViaPostCommented, _profile.Topic).GetAwaiter().GetResult();
+			if (fetchMedias != null)
 			{
-				if (_ == null) return false;
-				int commentCount = 0;
-				int.TryParse(_.Object?.CommentCount, out commentCount);
-				return _.Object.LikesCount > 5 && commentCount > 0 && !_.Object.IsCommentsDisabled;
-			});
-			var users_ = _builder.SearchInstagramMediaCommenters( 
-				searchMedias.ElementAt(SecureRandom.Next(searchMedias.Count())).Object.MediaId,1);
-			int index = 0;
-			while (users_.Count > index)
-			{
-				var comment = users_.ElementAt(index).Object;
-				if (comment.LikeCount > 1) 
+				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
+				if (select.HasValue)
 				{
-					var findNominatedUser = _builder.SearchInstagramFullUserDetail(users_.ElementAt(SecureRandom.Next(users_.Count)).UserId);
-					double ratioff = (double)findNominatedUser.UserDetail.FollowerCount / findNominatedUser.UserDetail.FollowingCount;
-
-					if (ratioff > 1.0 && findNominatedUser.UserDetail.MediaCount > 5)
+					By by = new By
 					{
-						return findNominatedUser.UserDetail.Pk;
+						ActionType = (int)ActionType.FollowUser,
+						User = _profile.InstagramAccountId
+					};
+					if (!select.Value.SeenBy.Contains(by))
+					{
+						select.Value.SeenBy.Add(by);
+						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostCommented, _profile.Topic, select.Value).GetAwaiter().GetResult();
+						return select.Value.ObjectItem.ElementAtOrDefault(select.Value.ObjectItem.Count).UserId;
 					}
-					Thread.Sleep(TimeSpan.FromSeconds(SecureRandom.Next(1, 4)));
 				}
-				index++;
 			}
 			return 0;
 		}

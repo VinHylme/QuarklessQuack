@@ -17,7 +17,8 @@ using QuarklessLogic.Logic.InstagramAccountLogic;
 using System.Timers;
 using QuarklessLogic.Logic.AuthLogic.Auth;
 using QuarklessContexts.Models.InstagramAccounts;
-using System.Reflection;
+using QuarklessLogic.Logic.ProfileLogic;
+using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 
 namespace Quarkless.Services
 {
@@ -29,7 +30,7 @@ namespace Quarkless.Services
 		public const string LikeMedia = "likemedia";
 		public const string FollowUser = "followuser";
 	}
-	public class AgentRespnse
+	public class AgentResponse
 	{
 		public HttpStatusCode HttpStatus { get; set; }
 		public string Message { get; set; }
@@ -47,14 +48,18 @@ namespace Quarkless.Services
 	public class AgentManager : IAgentManager
 	{
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
+		private readonly IProfileLogic _profileLogic;
 		private readonly IContentManager _contentManager;
 		private readonly ITimelineLogic _timelineLogic;
 		private readonly IAuthHandler _authHandler;
-		public AgentManager(IInstagramAccountLogic instagramAccountLogic, IContentManager contentManager,
-			ITimelineLogic timelineLogic, IAuthHandler authHandler)
+		private readonly IHeartbeatLogic _heartbeatLogic;
+		public AgentManager(IInstagramAccountLogic instagramAccountLogic, IProfileLogic profileLogic ,IContentManager contentManager,
+			ITimelineLogic timelineLogic,IHeartbeatLogic heartbeatLogic, IAuthHandler authHandler)
 		{
+			_heartbeatLogic = heartbeatLogic;
 			_timelineLogic = timelineLogic;
 			_instagramAccountLogic = instagramAccountLogic;
+			_profileLogic = profileLogic;
 			_contentManager = contentManager;
 			_authHandler = authHandler;
 		}
@@ -282,69 +287,55 @@ namespace Quarkless.Services
 
 			return null;
 		}
-		public async Task<AgentRespnse> StartAgent(string accountId, string instagramAccountId, string accessToken)
+		public async Task<AgentResponse> StartAgent(string accountId, string instagramAccountId, string accessToken)
 		{
 			UserStoreDetails _userStoreDetails = new UserStoreDetails();
 			await _instagramAccountLogic.PartialUpdateInstagramAccount(accountId,instagramAccountId, new InstagramAccountModel{ AgentState = true });
 			_userStoreDetails.AddUpdateUser(accountId, instagramAccountId, accessToken);
-
-			var context = _contentManager.SetUser(_userStoreDetails);
-			_userStoreDetails.OInstagramAccountUsername = context.InstagramAccount.Username;
-
-			var profile = context.Profile; 
+			
+			var instaAccount = await _instagramAccountLogic.GetInstagramAccountShort(accountId,instagramAccountId);
+			if(instaAccount==null) return new AgentResponse
+			{
+				HttpStatus = HttpStatusCode.NotFound,
+				Message = "Account not found"
+			};
+			_userStoreDetails.OInstagramAccountUsername = instaAccount.Username;
+			var profile = await _profileLogic.GetProfile(accountId,instagramAccountId); 
 			if (profile == null) return null;
+
 
 			ActionsContainerManager actionsContainerManager = new ActionsContainerManager();
 
-			var likeAction = ActionsManager.Begin.Commit(ActionType.LikePost, _contentManager, profile)
+			var likeAction = ActionsManager.Begin.Commit(ActionType.LikePost, _contentManager,_heartbeatLogic, profile)
 				.IncludeStrategy(new LikeStrategySettings()
 				{
 					LikeStrategy = LikeStrategyType.Default,
 				})
 				.IncludeUser(_userStoreDetails);
-			var imageAction = ActionsManager.Begin.Commit(ActionType.CreatePostTypeImage, _contentManager, profile)
+			var imageAction = ActionsManager.Begin.Commit(ActionType.CreatePostTypeImage, _contentManager, _heartbeatLogic, profile)
 				.IncludeStrategy(new ImageStrategySettings
 				{
 					ImageStrategyType = ImageStrategyType.Default
 				})
 				.IncludeUser(_userStoreDetails);
-			var followAction = ActionsManager.Begin.Commit(ActionType.FollowUser, _contentManager, profile)
+			var followAction = ActionsManager.Begin.Commit(ActionType.FollowUser, _contentManager, _heartbeatLogic, profile)
 				.IncludeStrategy(new FollowStrategySettings
 				{
 					FollowStrategy = FollowStrategyType.Default,
 				})
 				.IncludeUser(_userStoreDetails);
-			var commentAction = ActionsManager.Begin.Commit(ActionType.CreateCommentMedia, _contentManager, profile)
+			var commentAction = ActionsManager.Begin.Commit(ActionType.CreateCommentMedia, _contentManager, _heartbeatLogic, profile)
 				.IncludeStrategy(new CommentingStrategySettings
 				{
 					CommentingStrategy = CommentingStrategy.Default,
 				})
 				.IncludeUser(_userStoreDetails);
 
-			DateTime? nextAvaliableDate = PickAGoodTime();
-			DateTime? PickAGoodTime(TimeSpan? actionTime = null) { 
+			DateTime? PickAGoodTime() { 
 				var sft = _timelineLogic.GetScheduledEventsForUserByDate(accountId,DateTime.UtcNow,instaId:instagramAccountId,limit:5000,timelineDateType:TimelineDateType.Forward);
 				var datesPlanned = sft.Select(_=>_.EnqueueTime);
 				if (datesPlanned != null && datesPlanned.Count()>0) { 
 					DateTime current = DateTime.UtcNow;
-					if (actionTime != null)
-					{
-						for (int x = 0; x < datesPlanned.Count(); x++)
-						{
-							var diff = datesPlanned.ElementAt(x) - current;
-
-							if(diff.Value.TotalMilliseconds > actionTime.Value.TotalMilliseconds)
-							{
-
-								if((actionTime.Value.TotalMilliseconds/diff.Value.TotalMilliseconds) > 0.5)
-								{
-									return datesPlanned.ElementAt(x).Value - actionTime.Value;
-								}
-								return datesPlanned.ElementAt(x).Value + (actionTime.Value);
-							}
-							continue;
-						}
-					}
 
 					var difference = datesPlanned.Where(_ => _ != null).Max(_ => _ - current);
 					var position = datesPlanned.ToList().FindIndex(n => n - current == difference);
@@ -360,6 +351,7 @@ namespace Quarkless.Services
 				}
 			}
 
+			DateTime? nextAvaliableDate = PickAGoodTime();
 			//Initial Execution
 			var likeScheduleOptions = new LikeActionOptions(nextAvaliableDate.Value.AddMinutes(SecureRandom.Next(1,4)), LikeActionType.Any);
 			var imageScheduleOptions = new ImageActionOptions(nextAvaliableDate.Value.AddMinutes(SecureRandom.Next(1, 5))) { ImageFetchLimit = 20};
@@ -367,9 +359,9 @@ namespace Quarkless.Services
 			var commentScheduleOptions = new CommentingActionOptions(nextAvaliableDate.Value.AddMinutes(SecureRandom.Next(1, 4)), CommentingActionType.Any);
 			
 			actionsContainerManager.AddAction(imageAction,imageScheduleOptions,0.10);
-			actionsContainerManager.AddAction(likeAction,likeScheduleOptions,0.50);
-			actionsContainerManager.AddAction(followAction,followScheduleOptions,0.15);
-			actionsContainerManager.AddAction(commentAction,commentScheduleOptions,0.25);
+			actionsContainerManager.AddAction(likeAction,likeScheduleOptions,0.55);
+			actionsContainerManager.AddAction(followAction,followScheduleOptions,0.20);
+			actionsContainerManager.AddAction(commentAction,commentScheduleOptions,0.15);
 
 			Timer instanceRefresher = new Timer(TimeSpan.FromSeconds(2.5).TotalMilliseconds);
 			Timer tokenRefresh = new Timer(TimeSpan.FromMinutes(50).TotalMilliseconds);
@@ -400,21 +392,24 @@ namespace Quarkless.Services
 				}
 			};
 			bool started = false;
+			bool isrunning = false;
 			instanceRefresher.Start();
 			instanceRefresher.Elapsed += async(o, e) =>
 			{
-				context.InstagramAccount = await _instagramAccountLogic.GetInstagramAccountShort(accountId, instagramAccountId);
-				if(context.InstagramAccount.AgentState == true) {
+				instaAccount = await _instagramAccountLogic.GetInstagramAccountShort(accountId, instagramAccountId);
+				if(instaAccount==null) return ;
+				if(instaAccount.AgentState == true) {
 
 					_= Task.Run(() => { 
 						var nominatedAction = actionsContainerManager.GetRandomAction();
 						actionsContainerManager.AddWork(nominatedAction);
 					});
-
-					_ = Task.Run(() => {
-						actionsContainerManager.RunAction();
-					});
-
+					if (!isrunning) {
+						isrunning = true;
+						_ = Task.Run(() => {
+							actionsContainerManager.RunAction();
+						}).ContinueWith(x => isrunning = false);
+					}
 					if (!started) { 
 						started = true;
 						var finishedAction = actionsContainerManager.GetFinishedActions();
@@ -423,7 +418,7 @@ namespace Quarkless.Services
 							Parallel.ForEach(finishedAction, _ =>
 							{
 								var timeSett = actionsContainerManager.FindActionLimit(_.ActionName.Split('_')[0].ToLower());
-								nextAvaliableDate = PickAGoodTime(TimeSpan.FromSeconds(timeSett.Value.Max));
+								nextAvaliableDate = PickAGoodTime();
 								if (nextAvaliableDate != null)
 								{
 									_.ExecutionTime = nextAvaliableDate.Value.AddSeconds(Average(timeSett.Value.Min, timeSett.Value.Max));
@@ -439,17 +434,17 @@ namespace Quarkless.Services
 					instanceRefresher.Stop();
 				}
 			};
-			return new AgentRespnse
+			return new AgentResponse
 			{
 				HttpStatus = HttpStatusCode.OK,
 				Message = "Done"
 			};
 		}
-		public AgentRespnse StopAgent(string accountId, string instagramAccountId)
+		public AgentResponse StopAgent(string accountId, string instagramAccountId)
 		{
 			try { 
 				_instagramAccountLogic.PartialUpdateInstagramAccount(accountId,instagramAccountId, new InstagramAccountModel{AgentState = false});
-				return new AgentRespnse
+				return new AgentResponse
 				{
 					HttpStatus = HttpStatusCode.OK,
 					Message = "Stopped"
@@ -457,7 +452,7 @@ namespace Quarkless.Services
 			}
 			catch(Exception ee)
 			{
-				return new AgentRespnse
+				return new AgentResponse
 				{
 					HttpStatus = HttpStatusCode.InternalServerError,
 					Message = ee.Message

@@ -1,6 +1,4 @@
 ﻿using Newtonsoft.Json;
-using Quarkless.Services.ActionBuilders.OtherActions;
-using Quarkless.Services.Factories;
 using Quarkless.Services.Interfaces;
 using Quarkless.Services.Interfaces.Actions;
 using Quarkless.Services.StrategyBuilders;
@@ -9,14 +7,14 @@ using QuarklessContexts.Extensions;
 using QuarklessContexts.Models;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.Requests;
-using QuarklessContexts.Models.ServicesModels.DatabaseModels;
+using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.Handlers.RequestBuilder.Consts;
+using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 
 namespace Quarkless.Services.ActionBuilders.EngageActions
 {
@@ -24,87 +22,69 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	{
 		Any,
 		CommentingViaLikersPosts, 
-		CommentingViaLikersPostsDepth,
 		CommentingViaTopic,
-		CommentingViaTopicDepth,
 		CommentingUserReply,
 		CommentingPostReply
 	}
 	public class HolderComment
 	{
-		public TopicsModel Topic {get;set; }
+		public string Topic {get;set; }
 		public string MediaId {get;set; }
 	}
 	public class CreateCommentAction : IActionCommit
 	{
 		private readonly IContentManager _builder;
+		private readonly IHeartbeatLogic _heartbeatLogic;
 		private readonly ProfileModel _profile;
 		private UserStoreDetails user;
 		private CommentingStrategySettings commentingStrategySettings;
-		public CreateCommentAction(IContentManager contentManager, ProfileModel profile)
+		public CreateCommentAction(IContentManager contentManager, IHeartbeatLogic heartbeatLogic, ProfileModel profile)
 		{
+			_heartbeatLogic = heartbeatLogic;
 			_builder = contentManager;
 			_profile = profile;
 		}
 		
-		private HolderComment CommentingByTopic(bool inDepth = false)
+		private HolderComment CommentingByTopic()
 		{
-			var fetchMedias = (FetchResponse) MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic();
-			var searchMedias = (IEnumerable<UserResponse<MediaDetail>>)fetchMedias.FetchedItems;
-			if (inDepth)
-			{
-				int index = 0;
-				while (searchMedias.Count() > index)
-				{
-					var findNominatedUser = _builder.SearchInstagramFullUserDetail(searchMedias.ElementAt(SecureRandom.Next(searchMedias.Count())).UserId);
-					double ratioff = (double)findNominatedUser.UserDetail.FollowerCount / findNominatedUser.UserDetail.FollowingCount;
-
-					if (ratioff > 1.0 && findNominatedUser.UserDetail.MediaCount > 5)
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByCommenters,_profile.Topic).GetAwaiter().GetResult();
+			if (fetchMedias!=null) { 
+				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
+				if (select.HasValue) {
+					By by = new By
 					{
-						var resMedia = _builder.SearchUsersMediaDetailInstagram(findNominatedUser.UserDetail.UserName, 1);
-						var selected = resMedia.ElementAt(SecureRandom.Next(resMedia.Count()));
-						return new HolderComment{ Topic =  fetchMedias.SelectedTopic, MediaId = selected.Object.MediaId };
+						ActionType = (int)ActionType.CreateCommentMedia,
+						User = _profile.InstagramAccountId
+					};
+					if (!select.Value.SeenBy.Contains(by)) { 
+						select.Value.SeenBy.Add(by);
+						_heartbeatLogic.UpdateMetaData<Media>(MetaDataType.FetchMediaByCommenters,_profile.Topic, select.Value).GetAwaiter().GetResult();
+						return new HolderComment { Topic = _profile.Topic, MediaId = select.Value.ObjectItem.Medias.FirstOrDefault().MediaId};
 					}
-					Thread.Sleep(TimeSpan.FromSeconds(SecureRandom.Next(1, 4)));
-					index++;
 				}
-			}
-			else
-			{
-				var selected = searchMedias.ElementAt(SecureRandom.Next(searchMedias.Count()));
-				return new HolderComment { Topic = fetchMedias.SelectedTopic, MediaId = selected.Object.MediaId };
 			}
 			return null;
 		}
-		private HolderComment CommentingByLikers(bool inDepth = false)
+		private HolderComment CommentingByLikers()
 		{
-			var fetchMedias = (FetchResponse) MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic();
-			var searchMedias = (IEnumerable<UserResponse<MediaDetail>>) fetchMedias.FetchedItems;
-			if (inDepth)
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByLikers, _profile.Topic).GetAwaiter().GetResult();
+			if (fetchMedias != null)
 			{
-				var users_ = _builder.SearchInstagramMediaLikers(searchMedias.ElementAt(SecureRandom.Next(searchMedias.Count())).Object.MediaId);
-				int index = 0;
-				while (users_.Count > index)
+				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
+				if (select.HasValue)
 				{
-					var findNominatedUser = _builder.SearchInstagramFullUserDetail(users_.ElementAt(SecureRandom.Next(users_.Count)).UserId);
-					double ratioff = (double)findNominatedUser.UserDetail.FollowerCount / findNominatedUser.UserDetail.FollowingCount;
-
-					if (ratioff > 1.0 && findNominatedUser.UserDetail.MediaCount > 5)
+					By by = new By
 					{
-						var resMedia = _builder.SearchUsersMediaDetailInstagram(findNominatedUser.UserDetail.UserName, 1);
-						var selected = resMedia.ElementAt(SecureRandom.Next(resMedia.Count()));
-						return new HolderComment { Topic = fetchMedias.SelectedTopic, MediaId = selected.Object.MediaId };
+						ActionType = (int)ActionType.CreateCommentMedia,
+						User = _profile.InstagramAccountId
+					};
+					if (!select.Value.SeenBy.Contains(by))
+					{
+						select.Value.SeenBy.Add(by);
+						_heartbeatLogic.UpdateMetaData<Media>(MetaDataType.FetchMediaByCommenters, _profile.Topic, select.Value).GetAwaiter().GetResult();
+						return new HolderComment { Topic = _profile.Topic, MediaId = select.Value.ObjectItem.Medias.FirstOrDefault().MediaId };
 					}
-					Thread.Sleep(TimeSpan.FromSeconds(SecureRandom.Next(1, 4)));
-					index++;
 				}
-			}
-			else
-			{
-				var resMedia = _builder.SearchUsersMediaDetailInstagram(
-					searchMedias.ElementAt(SecureRandom.Next(searchMedias.Count())).Username, 1);
-				var selected = resMedia.ElementAt(SecureRandom.Next(resMedia.Count()));
-				return new HolderComment { Topic = fetchMedias.SelectedTopic, MediaId = selected.Object.MediaId };
 			}
 			return null;
 		}
@@ -113,6 +93,11 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			commentingStrategySettings = strategy as CommentingStrategySettings;
 			return this;
 		}
+		/// <summary>
+		/// TO DO : IMPLEMENT OTHER STRATEGIES
+		/// </summary>
+		/// <param name="actionOptions"></param>
+		/// <returns></returns>
 		public IEnumerable<TimelineEventModel> Push(IActionOptions actionOptions)
 		{
 			CommentingActionOptions commentingActionOptions = actionOptions as CommentingActionOptions;
@@ -129,9 +114,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						List<Chance<CommentingActionType>> commentingActionChances = new List<Chance<CommentingActionType>>
 						{
 							new Chance<CommentingActionType>{Object = CommentingActionType.CommentingViaTopic, Probability = 0.35},
-							new Chance<CommentingActionType>{Object = CommentingActionType.CommentingViaTopicDepth, Probability = 0.15},
 							new Chance<CommentingActionType>{Object = CommentingActionType.CommentingViaLikersPosts, Probability = 0.35},
-							new Chance<CommentingActionType>{Object = CommentingActionType.CommentingViaLikersPostsDepth, Probability = 0.15},
 						};
 						commentingActionSelected = SecureRandom.ProbabilityRoll(commentingActionChances);
 					}
@@ -145,14 +128,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						case CommentingActionType.CommentingViaTopic:
 							nominatedMedia = CommentingByTopic();
 							break;
-						case CommentingActionType.CommentingViaTopicDepth:
-							nominatedMedia = CommentingByTopic(true);
-							break;
 						case CommentingActionType.CommentingViaLikersPosts:
 							nominatedMedia = CommentingByLikers();
-							break;
-						case CommentingActionType.CommentingViaLikersPostsDepth:
-							nominatedMedia = CommentingByLikers(true);
 							break;
 					}
 					if(string.IsNullOrEmpty(nominatedMedia.MediaId)) return null;
@@ -177,46 +154,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						} 
 					};
 				}
-				else if(commentingStrategySettings.CommentingStrategy == CommentingStrategy.TopNth)
-				{
-					var fetchMedias = (FetchResponse) MediaFetcherManager.Begin.Commit(FetchType.Media, _builder, _profile).FetchByTopic(takeAmount:commentingStrategySettings.NumberOfActions);
-					var searchMedias = (IEnumerable<UserResponse<MediaDetail>>)fetchMedias.FetchedItems;
-
-					var groupByTopics = searchMedias.GroupBy(_ => _.Topic);
-					int timerCounter = 0;
-					List<TimelineEventModel> events = new List<TimelineEventModel>();
-					foreach (var topic in groupByTopics)
-					{
-						for (int i = 0; i < commentingStrategySettings.NumberOfActions; i++)
-						{
-							string nominatedMedia = topic.ElementAtOrDefault(i).Object.MediaId;
-							if (nominatedMedia != null)
-							{
-								CreateCommentRequest createComment = new CreateCommentRequest
-								{
-									Text = _builder.GenerateComment(fetchMedias.SelectedTopic, _profile.Language)
-								};
-
-								RestModel restModel = new RestModel
-								{
-									BaseUrl = string.Format(UrlConstants.CreateComment, nominatedMedia),
-									RequestType = RequestType.POST,
-									JsonBody = JsonConvert.SerializeObject(createComment),
-									User = user
-								};
-								events.Add(new TimelineEventModel
-								{
-									ActionName = $"Comment_{commentingStrategySettings.CommentingStrategy.ToString()}_{commentingActionOptions.CommentingActionType.ToString()}",
-									Data = restModel,
-									ExecutionTime = commentingActionOptions.ExecutionTime.AddMinutes((commentingStrategySettings.OffsetPerAction.TotalMinutes) * timerCounter++)
-								});
-							}
-						}
-					}
-
-					return events;
-				}
-
+				
 				return null;
 			}
 			catch(Exception ee)

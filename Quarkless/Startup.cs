@@ -174,7 +174,7 @@ namespace Quarkless
             }
 			BackgroundJobServerOptions jobServerOptions = new BackgroundJobServerOptions
 			{
-				WorkerCount = Environment.ProcessorCount * 2,
+				WorkerCount = Environment.ProcessorCount * 5,
 				ServerName = string.Format("{0}.{1}", Environment.MachineName, Guid.NewGuid().ToString())
 			};
 

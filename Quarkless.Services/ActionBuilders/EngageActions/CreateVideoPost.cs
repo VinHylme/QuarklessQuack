@@ -15,6 +15,9 @@ using QuarklessContexts.Models.Timeline;
 using Quarkless.Services.Interfaces.Actions;
 using Quarkless.Services.StrategyBuilders;
 using QuarklessContexts.Models;
+using QuarklessLogic.ServicesLogic.HeartbeatLogic;
+using QuarklessContexts.Models.ServicesModels.SearchModels;
+using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 
 namespace Quarkless.Services.ActionBuilders.EngageActions
 {
@@ -23,11 +26,13 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		private readonly ProfileModel _profile;
 		private UserStoreDetails user;
 		private readonly IContentManager _builder;
+		private readonly IHeartbeatLogic _heartbeatLogic;
 		private VideoStrategySettings videoStrategy { get; set; }
-		public CreateVideoPost(IContentManager builder, ProfileModel profile)
+		public CreateVideoPost(IContentManager builder, IHeartbeatLogic heartbeatLogic,ProfileModel profile)
 		{
 			_builder = builder;
 			_profile = profile;
+			_heartbeatLogic = heartbeatLogic;
 		}
 
 		public IActionCommit IncludeStrategy(IStrategySettings strategy)
@@ -40,21 +45,28 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		{
 			VideoActionOptions videoActionOptions = actionOptions as VideoActionOptions;
 			if(user==null) return null;
+
 			string exactSize = _profile.AdditionalConfigurations.PostSize;
 			var location = _profile.LocationTargetList?.ElementAtOrDefault(SecureRandom.Next(_profile.LocationTargetList.Count));
-			var profileColor = _profile.Theme.Colors.ElementAt(SecureRandom.Next(0, _profile.Theme.Colors.Count));
-			var topics = _builder.GetTopics(_profile.TopicList,10).GetAwaiter().GetResult();
-			var topicSelect = topics.ElementAt(SecureRandom.Next(0, topics.Count));
 
-			List<string> pickedSubsTopics = topicSelect.SubTopics.TakeAny(3).ToList();
-			pickedSubsTopics.Add(topicSelect.TopicName);
-			var videos = _builder.GetMediaInstagram(InstaMediaType.Video, pickedSubsTopics, 1).ToList();
+			var profileColor = _profile.Theme.Colors.ElementAt(SecureRandom.Next(0, _profile.Theme.Colors.Count));
+
+			var topic_ = _builder.GetTopic(_profile.Topic).GetAwaiter().GetResult();
+
+			var media = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic,_profile.Topic).GetAwaiter().GetResult();
+			var videos = media.Select(s =>
+				new __Meta__<Media>(new Media
+				{
+					Medias = s.Value.ObjectItem.Medias.Where(x => x.MediaType == InstaMediaType.Image).ToList(),
+					errors = s.Value.ObjectItem.errors
+				})).ToList();
 
 			if (videos.Count <= 0) return null;
 			List<byte[]> videoBytes = new List<byte[]>();
-			Parallel.ForEach(videos.ElementAtOrDefault(SecureRandom.Next(videos.Count - 1)).MediaData, media =>
+
+			Parallel.ForEach(videos, v =>
 			{
-				videoBytes.Add(media.DownloadMedia());
+				videoBytes.Add(v.ObjectItem.Medias.FirstOrDefault().MediaUrl.First().DownloadMedia());
 			});
 
 			System.Drawing.Color profileColorRGB = System.Drawing.Color.FromArgb(profileColor.Alpha, profileColor.Red, profileColor.Green, profileColor.Blue);
@@ -62,7 +74,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 
 			UploadVideoModel uploadVideo = new UploadVideoModel
 			{
-				Caption = _builder.GenerateMediaInfo(topicSelect, _profile.Language),
+				Caption = _builder.GenerateMediaInfo(topic_, _profile.Language),
 				Location = location != null ? new InstaLocationShort
 				{
 					Address = location.Address,

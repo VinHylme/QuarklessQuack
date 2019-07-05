@@ -5,6 +5,11 @@ using System.Text;
 
 namespace QuarklessContexts.Models.ServicesModels.DatabaseModels
 {
+	public class SubTopics
+	{
+		public string Topic { get; set; }
+		public List<string> RelatedTopics { get; set; }
+	}
 	public class TopicsModel
 	{
 		[BsonId]
@@ -12,6 +17,6 @@ namespace QuarklessContexts.Models.ServicesModels.DatabaseModels
 		[BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
 		public string _id { get; set; }
 		public string TopicName { get; set; }
-		public List<string> SubTopics { get; set; }
+		public List<SubTopics> SubTopics { get; set; }
 	}
 }

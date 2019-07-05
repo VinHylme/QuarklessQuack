@@ -26,14 +26,11 @@ namespace QuarklessLogic.Handlers.TextGeneration
 			if (type < 0 && type > 2) throw new Exception("invalid type");
 			string joinedPath = string.Format(filePath,
 				type == 0 ? "_comments" : type == 1 ? "_captions" : type == 2 ? "_bios" : null);
-			var reader = File.ReadAllLines(joinedPath)
-				.Skip(1)
-				.Select(a => a.Split("\","))
-				.Where(c => c.Length > 2 && !c.Contains("@"))
-				.Select(v => new { Text = v[0].Replace("\"", ""), Topic = v[1].Replace("\"", ""), Language = v[2].Replace("\"", "") })
-				.Where(_ => _.Topic.ToLower().Equals(topic) && _.Language.Equals(language)).ToList();
-
-			if(reader==null && reader.Count<=0) return null;
+			var reader = File.ReadAllLines(joinedPath).Skip(1).Select(_=>_.Split(",")).
+				Where(l=>l.Count(p=>!string.IsNullOrEmpty(p))==3).
+				Select(v=>new { Text = v[0].Replace("\"", ""), Topic = v[1].Replace("\"", ""), Language = v[2].Replace("\"", "") })
+				.Where(x=>!x.Text.Contains("@"));
+			if(reader==null && reader.Count()<=0) return null;
 			string s = Regex.Replace(string.Join(',', reader.Select(sa => sa.Text)), @"\s+", " ").TrimEnd(' ');
 			TDict t = MarkovHelper.BuildTDict(s, size);
 			return MarkovHelper.BuildString(t, limit, true).TrimEnd(' ');

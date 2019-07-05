@@ -1,12 +1,11 @@
 ﻿using Quarkless.Services.Interfaces;
 using QuarklessContexts.Models.Profiles;
-using QuarklessContexts.Models.Timeline;
-using System;
+using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 
 namespace Quarkless.Services.Factories
 {
 	public abstract class ActionBuilderFactory
 	{
-		public abstract IActionCommit Commit(IContentManager builder, ProfileModel profile);
+		public abstract IActionCommit Commit(IContentManager builder, IHeartbeatLogic heartbeatLogic, ProfileModel profile);
 	}
 }

@@ -17,7 +17,8 @@ paramsModel = {
     "color": fields.String(None),
     "type": fields.String(None),
     "no_download": fields.Boolean(True),
-    "related_images": fields.String(None),
+    "related_images":fields.Boolean(False),
+    "similar_images": fields.String(None),
     "format": fields.String(None),
     "color_type": fields.String(None),
     "usage_rights": fields.String(None),
@@ -34,18 +35,29 @@ model = api.model('Model',paramsModel)
 
 googleApiClient = google_images_download.googleimagesdownload()  # class instantiation
 
+@api.route('/relatedKeywords')
+class SearchRelated(Resource):
+    @api.expect(model)
+    def post(self):
+        print(api.payload)
+        path = googleApiClient.download(api.payload)
+        
+        return path;
+
 @api.route('/searchImages')
 class SearchImage(Resource):
     @api.expect(model)
     def post(self):
         print(api.payload)
         path = googleApiClient.download(api.payload)
-        response  = []
-        for key,value in path[0].items():
-            response.append({"Topic" : key, "MediaUrl" : value})
+        mediaResponse  = []
+
+        for k,v in path[0].items():
+            for n in v:
+                mediaResponse.append({"Topic":k, "MediaUrl": n})
 
         result = {
-            "Medias" : response,
+            "MediasObject" : mediaResponse,
             "errors" : path[1]
         }
         return result

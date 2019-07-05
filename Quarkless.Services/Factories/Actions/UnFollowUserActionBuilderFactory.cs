@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Quarkless.Services.ActionBuilders.EngageActions;
+﻿using Quarkless.Services.ActionBuilders.EngageActions;
 using Quarkless.Services.Interfaces;
 using QuarklessContexts.Models.Profiles;
-using QuarklessContexts.Models.Timeline;
+using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 
 namespace Quarkless.Services.Factories.Actions
 {
 	public class UnFollowUserActionBuilderFactory : ActionBuilderFactory
 	{
-		public override IActionCommit Commit(IContentManager builder, ProfileModel profile) => new UnFollowUserAction(builder,profile);
+		public override IActionCommit Commit(IContentManager builder, IHeartbeatLogic heartbeatLogic, ProfileModel profile) => new UnFollowUserAction(builder,heartbeatLogic,profile);
 	}
 }

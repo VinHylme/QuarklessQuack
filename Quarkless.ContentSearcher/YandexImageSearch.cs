@@ -15,7 +15,14 @@ namespace ContentSearcher
 		SeleniumClient.SeleniumClient seleniumClient = new SeleniumClient.SeleniumClient();
 		public YandexImageSearch()
 		{
-			seleniumClient.AddArguments("headless");
+			seleniumClient.AddArguments(
+				"headless",
+				"--log-level=3",
+				"--silent",
+				"--disable-extensions",
+				"test-type",
+				"--ignore-certificate-errors",
+				"no-sandbox");			
 		}
 		public Media Search(IEnumerable<GroupImagesAlike> ImagesLikeUrls, int limit)
 		{
@@ -27,12 +34,12 @@ namespace ContentSearcher
 					try
 					{
 						var result = seleniumClient.Reader(fullurl_, "serp-item_pos_", limit);
-						MediaResponse imageResponse = new MediaResponse
-						{
+						TotalFound.Medias.AddRange(result.Where(s=>!s.Contains(".gif")).Select(a=> new MediaResponse{
 							Topic = url.TopicGroup,
-							MediaUrl = result.Where(s => !s.Contains(".gif")).ToList()
-						};
-						TotalFound.Medias.Add(imageResponse);
+							MediaUrl = new List<string>{ a },
+							MediaFrom = MediaFrom.Yandex,
+							MediaType = InstagramApiSharp.Classes.Models.InstaMediaType.Image
+						}));
 					}
 					catch (Exception ee)
 					{

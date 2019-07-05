@@ -3,7 +3,6 @@ using QuarklessContexts.Models;
 using QuarklessContexts.Models.Timeline;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Quarkless.Services.Interfaces
 {

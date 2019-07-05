@@ -21,6 +21,10 @@ namespace QuarklessContexts.Extensions
 		}
 		public static IEnumerable<T> TakeAny<T>(this IEnumerable<T> @items, int amount)
 		{
+			if(@items.Count() < amount)
+			{
+				amount = @items.Count()-1;
+			}
 			List<T> uniqueItems = new List<T>();
 			while (uniqueItems.Count < amount)
 			{

@@ -166,5 +166,23 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 			await _instagramAccountRedis.SetInstagramAccountDetail(accountId,instagramAccountId,toshortmodel);
 			return await _instagramAccountRepository.PartialUpdateInstagramAccount(instagramAccountId, instagramAccountModel);
 		}
+		public async Task<IEnumerable<ShortInstagramAccountModel>> GetActiveAgentInstagramAccounts()
+		{
+			try
+			{
+				var account = await _instagramAccountRepository.GetActiveAgentInstagramAccounts();
+				if (account != null)
+				{
+					return account;
+				}
+
+				return null;
+			}
+			catch (Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+				return null;
+			}
+		}
 	}
 }

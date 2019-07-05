@@ -23,9 +23,13 @@ namespace QuarklessLogic.Handlers.TranslateService
 				"--no-sandbox",
 				"--disable-web-security",
 				"--allow-running-insecure-content",
-				"--enable-features=NetworkService"
+				"--enable-features=NetworkService",
+				"--log-level=3",
+				"--silent",
+				"--disable-extensions",
+				"test-type",
+				"--ignore-certificate-errors"
 			);
-			//_seleniumClient.Initialise();
 		}
 
 		public IEnumerable<string> DetectLanguageViaGoogle(bool selectMostOccuring = false, string splitPattern = "-", params string[] @texts)

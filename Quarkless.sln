@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quarkless.MediaAnalyser", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.ContentSearcher", "Quarkless.ContentSearcher\Quarkless.ContentSearcher.csproj", "{0FFD07C2-F183-4CC4-B96A-F004D06D113E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quarkless.HeartBeater", "Quarkless.HeartBeater\Quarkless.HeartBeater.csproj", "{94FD3B34-872F-4544-A250-B14C428BF62E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -81,6 +83,10 @@ Global
 		{0FFD07C2-F183-4CC4-B96A-F004D06D113E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0FFD07C2-F183-4CC4-B96A-F004D06D113E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0FFD07C2-F183-4CC4-B96A-F004D06D113E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94FD3B34-872F-4544-A250-B14C428BF62E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94FD3B34-872F-4544-A250-B14C428BF62E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94FD3B34-872F-4544-A250-B14C428BF62E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94FD3B34-872F-4544-A250-B14C428BF62E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

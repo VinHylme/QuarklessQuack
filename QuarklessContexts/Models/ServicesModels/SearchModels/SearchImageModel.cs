@@ -15,7 +15,8 @@ namespace QuarklessContexts.Models.ServicesModels.SearchModels
 		public string color { get; set; }
 		public string type { get; set; }
 		public bool no_download { get; set; }
-		public string related_images { get; set; }
+		public bool related_images { get; set; }
+		public string similar_images { get; set; }
 		public string format { get; set; }
 		public string color_type { get; set; }
 		public string usage_rights { get; set; }

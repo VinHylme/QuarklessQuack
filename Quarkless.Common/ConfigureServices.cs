@@ -10,11 +10,9 @@ using Quarkless.Queue.Jobs.Interfaces;
 using Quarkless.Queue.Services;
 using Quarkless.Services;
 using Quarkless.Services.ContentBuilder.TopicBuilder;
-using Quarkless.Services.ContentSearch;
 using Quarkless.Services.Interfaces;
 using QuarklessContexts.Contexts;
 using QuarklessContexts.InstaClient;
-using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.ReportHandler;
 using QuarklessLogic.Handlers.RequestBuilder.RequestBuilder;
@@ -33,10 +31,12 @@ using QuarklessLogic.Logic.ProfileLogic;
 using QuarklessLogic.Logic.ProxyLogic;
 using QuarklessLogic.RestSharpClient;
 using QuarklessLogic.ServicesLogic;
+using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic;
 using QuarklessRepositories.InstagramAccountRepository;
 using QuarklessRepositories.ProfileRepository;
 using QuarklessRepositories.ProxyRepository;
+using QuarklessRepositories.RedisRepository.HeartBeaterRedis;
 using QuarklessRepositories.RedisRepository.InstagramAccountRedis;
 using QuarklessRepositories.RedisRepository.RedisClient;
 using QuarklessRepositories.Repository.ServicesRepositories;
@@ -73,6 +73,7 @@ namespace Quarkless.Common
 			services.AddTransient<IAgentManager, AgentManager>();
 			services.AddTransient<IMediaLogic,MediaLogic>();
 			services.AddTransient<ITimelineLogic,TimelineLogic>();
+			services.AddTransient<IHeartbeatLogic, HeartbeatLogic>();
 		}
 		public static void AddRepositories(this IServiceCollection services, Accessors _accessors)
 		{
@@ -94,19 +95,19 @@ namespace Quarkless.Common
 			services.AddTransient<ICommentsRepository,CommentsRepository>();
 			services.AddTransient<IHashtagsRepository,HashtagsRepository>();
 			services.AddTransient<ITimelineRepository,TimelineRepository>();
+			services.AddTransient<IHeartbeatRepository, HeartbeatRepository>();
 			services.AddTransient<IInstagramAccountRedis,InstagramAccountRedis>();
 			services.Configure<RedisOptions>(o =>
 			{
 				o.ConnectionString = _accessors.RedisConnectionString;
 				o.DefaultKeyExpiry = TimeSpan.FromDays(7);
 			});
-			services.AddSingleton<IRedisClient,RedisClient>();
+			services.AddTransient<IRedisClient,RedisClient>();
 		}
 		public static void AddHandlers(this IServiceCollection services)
 		{
 			services.AddTransient<IReportHandler, ReportHandler>();
 			services.AddTransient<IRestSharpClientManager, RestSharpClientManager>();
-			services.AddTransient<IContentSearch, ContentSearch>();
 			services.AddTransient<ITopicServicesLogic, TopicServicesLogic>();
 
 			services.AddTransient<IClientContextProvider, ClientContextProvider>();
@@ -116,14 +117,14 @@ namespace Quarkless.Common
 			services.AddTransient<ITranslateService,TranslateService>();
 			services.AddTransient<IUtilProviders,UtilProviders>();
 			services.AddSingleton<IContentManager, ContentManager>();
-			services.AddSingleton<ITextGeneration,TextGeneration>();		
+			services.AddSingleton<ITextGeneration,TextGeneration>();
 		}
 		public static void AddContexts(this IServiceCollection services)
 		{
 			services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 			services.AddTransient<IUserContext, UserContext>();
-			services.AddSingleton<IRequestBuilder,RequestBuilder>();
-			services.AddSingleton<ITopicBuilder, TopicBuilder>();
+			services.AddTransient<IRequestBuilder,RequestBuilder>();
+			services.AddTransient<ITopicBuilder, TopicBuilder>();
 		}
 	}
 }

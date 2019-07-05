@@ -17,7 +17,15 @@ namespace QuarklessRepositories.RedisRepository.InstagramAccountRedis
 		{
 			_redisClient = redisClient;
 		}
-
+		/// <summary>
+		/// not implemented
+		/// </summary>
+		/// <returns></returns>
+		public async Task<IEnumerable<ShortInstagramAccountModel>> GetInstagramAccountActiveDetail()
+		{
+			var res = _redisClient.GetKeys(1000).ToList();
+			return null;
+		}
 		public async Task<ShortInstagramAccountModel> GetInstagramAccountDetail(string userId, string instaId)
 		{
 			string userkeyid = $"{userId}:{instaId}";

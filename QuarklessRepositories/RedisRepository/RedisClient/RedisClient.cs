@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using StackExchange.Redis;
 using static QuarklessRepositories.RedisRepository.RedisClient.RedisKeys;
 
@@ -11,11 +15,12 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 {
 	public static class KeyFormater
 	{
-		private const string formatTemplate = "hashtaggrow:user:({0}:{1})";
 		public static string FormatKey(string userId, HashtagGrowKeys hashtagGrowKey)
 		{
-			return string.Format(formatTemplate,userId,hashtagGrowKey.ToString());
+			string formatTemplate = $"HashtagGrow:{hashtagGrowKey.ToString()}:({userId}:{hashtagGrowKey.ToString()})";
+			return formatTemplate;
 		}
+
 	}
 	public class RedisClient : IRedisClient
 	{
@@ -34,7 +39,7 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 					_redis.ConnectionRestored += _redis_ConnectionRestored;
 					_defaultKeyExpiry = options.Value.DefaultKeyExpiry;
 				}
-				catch
+				catch(Exception ee)
 				{
 					return;
 				}
@@ -71,6 +76,19 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 		#endregion
 
 		#region Getters / Setters
+		public IEnumerable<RedisKey> GetKeys(int limit)
+		{
+			try
+			{
+				var res = _redis.GetServer(_redis.GetEndPoints().First()).Keys(pageSize:limit);
+				return res;
+			}
+			catch(Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+				return null;
+			}
+		}
 		public async Task<bool> KeyExists(string userId, HashtagGrowKeys hashtagGrowKey)
 		{
 			RedisKey redisKey = KeyFormater.FormatKey(userId, hashtagGrowKey);
@@ -119,7 +137,7 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 			await WithExceptionLogAsync(async () =>
 			{
 				var redisMembers = await _redis.GetDatabase().SetMembersAsync(redisKey);
-				members.AddRange(redisMembers.Select(m => (T)Convert.ChangeType(m, typeof(T))));
+				members.AddRange(redisMembers.Select(m => JsonConvert.DeserializeObject<T>(((string) m))));
 			}, userId, redisKey.ToString());
 
 			return members;

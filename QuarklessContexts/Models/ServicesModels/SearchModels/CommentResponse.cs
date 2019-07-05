@@ -11,5 +11,8 @@ namespace QuarklessContexts.Models.ServicesModels.SearchModels
 		public int TotalChildComments { get; set; }
 		public bool DidReportForSpam { get; set; }
 		public string Text { get; set; }
+		public bool HaslikedBefore { get; set; }
+		public DateTime CreatedAt { get; set; }
+		public string Status { get; set; }
 	}
 }

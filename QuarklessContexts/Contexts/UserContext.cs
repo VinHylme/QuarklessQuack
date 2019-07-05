@@ -54,6 +54,7 @@ namespace QuarklessContexts.Contexts
 		{
 			get
 			{
+				if(_httpContextAccessor.HttpContext==null) return null;
 				if (_httpContextAccessor.HttpContext?.User?.Identity != null || _httpContextAccessor.HttpContext.User.Identity.IsAuthenticated)
 				{
 					return _httpContextAccessor.HttpContext.Request.Headers["FocusInstaAccount"].FirstOrDefault();				

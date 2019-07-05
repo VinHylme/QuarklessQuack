@@ -9,7 +9,8 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 		public enum HashtagGrowKeys
 		{
 			Timeline,
-			Usersessions
+			Usersessions,
+			MetaData
 		}
 	}
 }

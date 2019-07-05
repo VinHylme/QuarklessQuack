@@ -25,9 +25,11 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 		private readonly IReportHandler _reportHandler;
 		private readonly IAPIClientContext _context;
 		private readonly IHashtagLogic _hashtagLogic;
+		private UserStoreDetails tempuser;
 		private readonly Random _random;
 		private IAPIClientContainer _aPIClientContainer {get; set;}
-		public TopicBuilder(ITopicServicesLogic topicServicesLogic, IHashtagLogic hashtagLogic, IReportHandler reportHandler,IAPIClientContext aPIClient)
+		public TopicBuilder(ITopicServicesLogic topicServicesLogic, IHashtagLogic hashtagLogic, IReportHandler reportHandler,
+			IAPIClientContext aPIClient)
 		{
 			_topicServicesLogic = topicServicesLogic;
 			_reportHandler = reportHandler;
@@ -38,48 +40,47 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 		}
 		public void Init(UserStoreDetails userStore)
 		{
-			_aPIClientContainer = new APIClientContainer(_context,userStore.OAccountId,userStore.OInstagramAccountUser);
+			tempuser = userStore;
 		}
-		public async Task<TopicsModel> Build(string topic, int takeSuggested = -1, int takeHowMany = -1)
+		public async Task<TopicsModel> Build(string topic, int takeSuggested = 15, int takeHowMany = -1)
 		{
 			try
 			{
-				if(_aPIClientContainer==null) return null;
+				if(takeSuggested < 0) return null;
 				//search for similar hashtags
 				var dbRes = await _topicServicesLogic.GetTopicByName(topic);
 				if(dbRes!=null && dbRes.SubTopics.Count > 3)
 				{
 					return dbRes;
 				}
+				_aPIClientContainer = new APIClientContainer(_context, tempuser.OAccountId, tempuser.OInstagramAccountUser);
+				if(_aPIClientContainer==null) return null;
 				var hashtagsRes = await _aPIClientContainer.Hashtag.SearchHashtagAsync(topic);
 				if (hashtagsRes.Succeeded)
 				{
 					var hashtags = hashtagsRes.Value;
-					var totalHashtags = hashtags.Select(_ => _.Name).ToList();
-					if (takeSuggested > 0)
-					{
-						var related = hashtags.Take(takeSuggested).Select(_ =>
-						{
-							Thread.Sleep(500);
-							var res = _aPIClientContainer.Hashtag.GetHashtagsSectionsAsync(_.Name,PaginationParameters.MaxPagesToLoad(1)).GetAwaiter().GetResult();
-							if (res.Succeeded)
-							{
-								return res.Value.RelatedHashtags.Select(h=>h.Name);
-							}
-							return null;
-						}).SquashMe();
-						if(related!=null && related.Count()>0)
-							totalHashtags.AddRange(related);
-					}
-
 					TopicsModel topic_model = new TopicsModel
 					{
 						TopicName = topic,
-						SubTopics = totalHashtags.Take(takeHowMany > 0 ? takeHowMany : totalHashtags.Count-1).ToList()
-					};
-
+						SubTopics = hashtags.Take(takeSuggested).Select(s => {
+							if (s != null)
+							{
+								var res = _aPIClientContainer.Hashtag
+								.GetHashtagsSectionsAsync(s.Name, PaginationParameters.MaxPagesToLoad(1))
+								.GetAwaiter().GetResult();
+								if (res.Succeeded)
+								{
+									return new SubTopics
+									{
+										Topic = s.Name,
+										RelatedTopics = res.Value.RelatedHashtags.Select(a => a.Name).ToList()
+									};
+								}
+							}
+							return null;
+						}).ToList()
+					};		
 					var resUpdate = await _topicServicesLogic.AddOrUpdateTopic(topic_model);
-
 					if (resUpdate)
 					{
 						//warrior, warriors, warrior2, artwarrior
