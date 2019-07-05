@@ -16,7 +16,7 @@ namespace Quarkless.HeartBeater
 	{
 		static void Main(string[] args)
 		{
-			var settingPath = Path.GetFullPath(Path.Combine(@"..\..\..\..\Quarkless"));
+			var settingPath = Path.GetFullPath(Path.Combine(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Quarkless"));
 			IConfiguration configuration = new ConfigurationBuilder().
 				SetBasePath(settingPath).AddJsonFile("appsettings.json").Build();
 

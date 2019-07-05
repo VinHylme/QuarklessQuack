@@ -80,20 +80,19 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					.GetAwaiter().GetResult().ToList();
 
 				List<byte[]> userMediaBytes = new List<byte[]>();
-				if (currentUsersMedia.Count <= 0) return null;
+				if (currentUsersMedia.Count > 0) { 
+					var filtered = currentUsersMedia.Select(s=> 
+					new __Meta__<Media>(new Media
+					{ 
+							Medias = s.Value.ObjectItem.Medias.Where(x=>x.MediaType == InstaMediaType.Image).ToList(),
+							errors = s.Value.ObjectItem.errors})
+					).ToList();
 
-				var filtered = currentUsersMedia.Select(s=> 
-				new __Meta__<Media>(new Media
-				{ 
-						Medias = s.Value.ObjectItem.Medias.Where(x=>x.MediaType == InstaMediaType.Image).ToList(),
-						errors = s.Value.ObjectItem.errors})
-				).ToList();
-
-				Parallel.ForEach(filtered, act =>
-				{			
-					userMediaBytes.Add(act.ObjectItem.Medias.First().MediaUrl.First().DownloadMedia());
-				});
-
+					Parallel.ForEach(filtered, act =>
+					{			
+						userMediaBytes.Add(act.ObjectItem.Medias.First().MediaUrl.First().DownloadMedia());
+					});
+				}
 				List<byte[]> imagesBytes = new List<byte[]>();
 
 				var filterResults = TotalResults.Select(s=>
@@ -103,9 +102,12 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					errors = s.Value.ObjectItem.errors
 				})).ToList();
 
-
-				Parallel.ForEach(filterResults.TakeAny(SecureRandom.Next(filterResults.Count / 2)), 
+				if(filterResults.Count <=0 ) return null;
+				Parallel.ForEach(filterResults.TakeAny(SecureRandom.Next(filterResults.Count)), 
 					s => imagesBytes.Add(s.ObjectItem?.Medias.FirstOrDefault().MediaUrl.FirstOrDefault().DownloadMedia()));
+
+				if(imagesBytes.Count <= 0) return null;
+
 				if (userMediaBytes.Count > 0) { 
 					imagesBytes = userMediaBytes.Where(u => u != null)
 						.RemoveDuplicateImages(imagesBytes, 0.69)

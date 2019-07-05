@@ -61,7 +61,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					{
 						select.Value.SeenBy.Add(by);
 						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostLiked, _profile.Topic, select.Value).GetAwaiter().GetResult();
-						return select.Value.ObjectItem.ElementAtOrDefault(select.Value.ObjectItem.Count).UserId;
+						return select.Value.ObjectItem.ElementAtOrDefault(select.Value.ObjectItem.Count-1).UserId;
 					}
 				}
 			}
@@ -107,7 +107,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					{
 						select.Value.SeenBy.Add(by);
 						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostCommented, _profile.Topic, select.Value).GetAwaiter().GetResult();
-						return select.Value.ObjectItem.ElementAtOrDefault(select.Value.ObjectItem.Count).UserId;
+						return select.Value.ObjectItem.ElementAtOrDefault(select.Value.ObjectItem.Count-1).UserId;
 					}
 				}
 			}

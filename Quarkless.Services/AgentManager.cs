@@ -358,12 +358,12 @@ namespace Quarkless.Services
 			var followScheduleOptions = new FollowActionOptions(nextAvaliableDate.Value.AddMinutes(SecureRandom.Next(1, 4)), FollowActionType.Any);
 			var commentScheduleOptions = new CommentingActionOptions(nextAvaliableDate.Value.AddMinutes(SecureRandom.Next(1, 4)), CommentingActionType.Any);
 			
-			actionsContainerManager.AddAction(imageAction,imageScheduleOptions,0.10);
-			actionsContainerManager.AddAction(likeAction,likeScheduleOptions,0.55);
-			actionsContainerManager.AddAction(followAction,followScheduleOptions,0.20);
+			actionsContainerManager.AddAction(imageAction,imageScheduleOptions,0.2);
+			actionsContainerManager.AddAction(likeAction,likeScheduleOptions,0.5);
+			actionsContainerManager.AddAction(followAction,followScheduleOptions,0.15);
 			actionsContainerManager.AddAction(commentAction,commentScheduleOptions,0.15);
 
-			Timer instanceRefresher = new Timer(TimeSpan.FromSeconds(2.5).TotalMilliseconds);
+			Timer instanceRefresher = new Timer(TimeSpan.FromSeconds(10).TotalMilliseconds);
 			Timer tokenRefresh = new Timer(TimeSpan.FromMinutes(50).TotalMilliseconds);
 
 			_userStoreDetails.ORefreshToken = _authHandler.GetUserByUsername(_userStoreDetails.OAccountId).GetAwaiter().GetResult().Tokens.Where(_ => _.Name == "refresh_token").FirstOrDefault().Value;
@@ -421,7 +421,7 @@ namespace Quarkless.Services
 								nextAvaliableDate = PickAGoodTime();
 								if (nextAvaliableDate != null)
 								{
-									_.ExecutionTime = nextAvaliableDate.Value.AddSeconds(Average(timeSett.Value.Min, timeSett.Value.Max));
+									_.ExecutionTime = nextAvaliableDate.Value;
 									AddToTimeline(_);
 								}
 							});		

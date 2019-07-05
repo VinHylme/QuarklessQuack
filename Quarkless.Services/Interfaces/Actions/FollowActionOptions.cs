@@ -10,7 +10,7 @@ namespace Quarkless.Services.Interfaces.Actions
 		public DateTimeOffset ExecutionTime { get; set; }
 		public static Range FollowActionDailyLimit { get; set; } = new Range(200, 250);
 		public static Range FollowActionHourlyLimit { get; set; } = new Range(30, 60);
-		public static Range TimeFrameSeconds { get; set; } = new Range(25, 50);
+		public static Range TimeFrameSeconds { get; set; } = new Range(40, 60);
 
 		public FollowActionOptions(DateTimeOffset executionTime, FollowActionType followActionType)
 		{
