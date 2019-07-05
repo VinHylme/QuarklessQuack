@@ -421,8 +421,15 @@ namespace Quarkless.Services
 								nextAvaliableDate = PickAGoodTime();
 								if (nextAvaliableDate != null)
 								{
-									_.ExecutionTime = nextAvaliableDate.Value;
+									_.ExecutionTime = nextAvaliableDate.Value.AddSeconds(Average(timeSett.Value.Min, timeSett.Value.Max));
 									AddToTimeline(_);
+								}
+								else
+								{
+									instanceRefresher.Stop();
+									Task.Delay(TimeSpan.FromMinutes(55)).ContinueWith(t=>{
+										instanceRefresher.Start();
+									});
 								}
 							});		
 						}
