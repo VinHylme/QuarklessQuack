@@ -1,11 +1,13 @@
 ﻿using InstagramApiSharp;
 using Quarkless.Services.Extensions;
 using QuarklessContexts.Extensions;
+using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.ReportHandler;
 using QuarklessLogic.Logic.HashtagLogic;
+using QuarklessLogic.Logic.ProfileLogic;
 using QuarklessLogic.ServicesLogic;
 using System;
 using System.Collections.Generic;
@@ -22,15 +24,17 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 		///Add Google suggested keywords for a given topic
 
 		private readonly ITopicServicesLogic _topicServicesLogic;
+		private readonly IProfileLogic _profileLogic;
 		private readonly IReportHandler _reportHandler;
 		private readonly IAPIClientContext _context;
 		private readonly IHashtagLogic _hashtagLogic;
 		private UserStoreDetails tempuser;
 		private readonly Random _random;
 		private IAPIClientContainer _aPIClientContainer {get; set;}
-		public TopicBuilder(ITopicServicesLogic topicServicesLogic, IHashtagLogic hashtagLogic, IReportHandler reportHandler,
+		public TopicBuilder(ITopicServicesLogic topicServicesLogic,IProfileLogic profileLogic, IHashtagLogic hashtagLogic, IReportHandler reportHandler,
 			IAPIClientContext aPIClient)
 		{
+			_profileLogic = profileLogic;
 			_topicServicesLogic = topicServicesLogic;
 			_reportHandler = reportHandler;
 			_context = aPIClient;
@@ -41,6 +45,78 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 		public void Init(UserStoreDetails userStore)
 		{
 			tempuser = userStore;
+		}
+		public async Task<Topics> BuildTopics(ProfileModel profile, int takeSuggested = 15)
+		{
+			try
+			{
+				if (takeSuggested < 0) return null;
+				
+				_aPIClientContainer = new APIClientContainer(_context, tempuser.OAccountId, tempuser.OInstagramAccountUser);
+				if (_aPIClientContainer == null) return null;
+				var hashtagsRes = await _aPIClientContainer.Hashtag.SearchHashtagAsync(profile.Topics.TopicFriendlyName);
+				if (hashtagsRes.Succeeded)
+				{
+					List<string> related = new List<string>();
+					if (profile.Topics.SubTopics != null) { 
+						foreach(var srt in profile.Topics.SubTopics)
+						{
+							var res = await _aPIClientContainer.Hashtag.GetHashtagsSectionsAsync(srt.TopicName,PaginationParameters.MaxPagesToLoad(1));
+							if(res.Succeeded && res.Value.RelatedHashtags.Count > 0)
+							{
+								srt.RelatedTopics = res.Value.RelatedHashtags.Select(t=>t.Name).ToList();
+							}
+						}
+					}
+					var hashtags = hashtagsRes.Value;
+					List<QuarklessContexts.Models.Profiles.SubTopics> subTopics = new List<QuarklessContexts.Models.Profiles.SubTopics>();
+					if (profile.AutoGenerateTopics) { 
+						subTopics = hashtags.Take(takeSuggested).Select(s => {
+							if (s != null)
+							{
+								var res = _aPIClientContainer.Hashtag
+								.GetHashtagsSectionsAsync(s.Name, PaginationParameters.MaxPagesToLoad(1))
+								.GetAwaiter().GetResult();
+								if (res.Succeeded)
+								{
+									return new QuarklessContexts.Models.Profiles.SubTopics
+									{
+										TopicName = s.Name,
+										RelatedTopics = res.Value.RelatedHashtags.Select(a => a.Name).ToList()
+									};
+								}
+							}
+							return null;
+						}).ToList();
+					}
+
+					if (profile.Topics.SubTopics != null && profile.Topics.SubTopics.Count > 0)
+					{
+						subTopics.AddRange(profile.Topics.SubTopics);
+					}
+					subTopics = subTopics.Distinct().ToList();
+					var newtopics = new Topics
+					{
+						TopicType = profile.Topics.TopicType,
+						SubTopics = subTopics,
+						TopicFriendlyName = profile.Topics.TopicFriendlyName
+					};
+					var updateProfile = await _profileLogic.PartialUpdateProfile(profile._id,new ProfileModel
+					{
+						Topics = newtopics
+					});
+
+					return newtopics;
+				}
+				_reportHandler.MakeReport(hashtagsRes.Info);
+				return null;
+			}
+			catch (Exception ee)
+			{
+				_reportHandler.MakeReport(ee);
+				return null;
+			}
+
 		}
 		public async Task<TopicsModel> Build(string topic, int takeSuggested = 15, int takeHowMany = -1)
 		{
@@ -70,7 +146,7 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 								.GetAwaiter().GetResult();
 								if (res.Succeeded)
 								{
-									return new SubTopics
+									return new QuarklessContexts.Models.ServicesModels.DatabaseModels.SubTopics
 									{
 										Topic = s.Name,
 										RelatedTopics = res.Value.RelatedHashtags.Select(a => a.Name).ToList()

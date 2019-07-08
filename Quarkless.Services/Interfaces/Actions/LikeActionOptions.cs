@@ -13,7 +13,7 @@ namespace Quarkless.Services.Interfaces.Actions
 		public DateTimeOffset ExecutionTime { get; set; }
 		public static Range LikeActionDailyLimit { get; set; } = new Range(900,1000);
 		public static Range LikeActionHourlyLimit { get; set; } = new Range(30,60);
-		public static Range TimeFrameSeconds { get; set; } = new Range(33,58);
+		public static Range TimeFrameSeconds { get; set; } = new Range(2,5);
 		public LikeActionOptions(DateTimeOffset executionTime, LikeActionType likeActionType)
 		{
 			this.ExecutionTime = executionTime;

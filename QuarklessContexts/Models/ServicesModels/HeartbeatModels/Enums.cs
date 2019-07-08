@@ -6,7 +6,9 @@ namespace QuarklessContexts.Models.ServicesModels.HeartbeatModels
 {
 	public enum MetaDataType
 	{
+		None,
 		FetchMediaForSpecificUserGoogle,
+		FetchMediaForSepcificUserYandexQuery,
 		FetchMediaForSpecificUserYandex,
 		FetchUserOwnProfile,
 		FetchUsersFollowingList,

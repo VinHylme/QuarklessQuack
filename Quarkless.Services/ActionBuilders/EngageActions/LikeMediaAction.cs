@@ -2,6 +2,7 @@
 using Quarkless.Services.Interfaces;
 using Quarkless.Services.Interfaces.Actions;
 using Quarkless.Services.StrategyBuilders;
+using QuarklessContexts.Classes.Carriers;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models;
@@ -48,7 +49,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		private string LikeUserFeedMedia()
 		{
-			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchUsersFeed, _profile.Topic, _profile.InstagramAccountId).GetAwaiter().GetResult();
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchUsersFeed, _profile.Topics.TopicFriendlyName, _profile.InstagramAccountId).GetAwaiter().GetResult();
 			if (fetchMedias != null)
 			{
 				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
@@ -62,7 +63,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					if (!select.Value.SeenBy.Contains(by))
 					{
 						select.Value.SeenBy.Add(by);
-						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFeed, _profile.Topic, select.Value,_profile.InstagramAccountId).GetAwaiter().GetResult();
+						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFeed, _profile.Topics.TopicFriendlyName, select.Value,_profile.InstagramAccountId).GetAwaiter().GetResult();
 						return select.Value.ObjectItem.Medias.FirstOrDefault().MediaId;
 					}
 				}
@@ -71,7 +72,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		private string LikeUsersMediaByTopic()
 		{
-			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic, _profile.Topic).GetAwaiter().GetResult();
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic, _profile.Topics.TopicFriendlyName).GetAwaiter().GetResult();
 			if (fetchMedias != null)
 			{
 				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
@@ -85,7 +86,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					if (!select.Value.SeenBy.Contains(by))
 					{
 						select.Value.SeenBy.Add(by);
-						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByTopic, _profile.Topic, select.Value).GetAwaiter().GetResult();
+						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByTopic, _profile.Topics.TopicFriendlyName, select.Value).GetAwaiter().GetResult();
 						return select.Value.ObjectItem.Medias.FirstOrDefault().MediaId;
 					}
 				}
@@ -94,7 +95,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		private string LikeUsersMediaLikers(bool inDepth = false)
 		{
-			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByLikers, _profile.Topic).GetAwaiter().GetResult();
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByLikers, _profile.Topics.TopicFriendlyName).GetAwaiter().GetResult();
 			if (fetchMedias != null)
 			{
 				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
@@ -108,7 +109,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					if (!select.Value.SeenBy.Contains(by))
 					{
 						select.Value.SeenBy.Add(by);
-						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByLikers, _profile.Topic, select.Value).GetAwaiter().GetResult();
+						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByLikers, _profile.Topics.TopicFriendlyName, select.Value).GetAwaiter().GetResult();
 						return select.Value.ObjectItem.Medias.FirstOrDefault().MediaId;
 					}
 				}
@@ -117,7 +118,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		private string LikeUsersMediaCommenters()
 		{
-			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByCommenters, _profile.Topic).GetAwaiter().GetResult();
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByCommenters, _profile.Topics.TopicFriendlyName).GetAwaiter().GetResult();
 			if (fetchMedias != null)
 			{
 				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
@@ -131,17 +132,27 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					if (!select.Value.SeenBy.Contains(by))
 					{
 						select.Value.SeenBy.Add(by);
-						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByCommenters, _profile.Topic, select.Value).GetAwaiter().GetResult();
+						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByCommenters, _profile.Topics.TopicFriendlyName, select.Value).GetAwaiter().GetResult();
 						return select.Value.ObjectItem.Medias.FirstOrDefault().MediaId;
 					}
 				}
 			}
 			return null;
 		}
-		public IEnumerable<TimelineEventModel> Push(IActionOptions actionOptions)
+		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
+			ResultCarrier<IEnumerable<TimelineEventModel>> Results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
 			LikeActionOptions likeActionOptions = actionOptions as LikeActionOptions;
-			if (likeStrategySettings == null && user==null) return null;
+			if (likeStrategySettings == null && user==null)
+			{
+				Results.IsSuccesful = false;
+				Results.Info = new ErrorResponse
+				{
+					Message = $"user is null, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
+					StatusCode = System.Net.HttpStatusCode.NotFound
+				};
+				return Results;
+			};
 			try
 			{
 				Console.WriteLine("Like Action Started");
@@ -183,7 +194,16 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 							nominatedMedia = LikeUsersMediaLikers(true);
 							break;
 					}
-					if (string.IsNullOrEmpty(nominatedMedia)) return null;
+					if (string.IsNullOrEmpty(nominatedMedia))
+					{
+						Results.IsSuccesful = false;
+						Results.Info = new ErrorResponse
+						{
+							Message = $"could not find any good media to like, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
+							StatusCode = System.Net.HttpStatusCode.NotFound
+						};
+						return Results;
+					}
 					RestModel restModel = new RestModel
 					{
 						BaseUrl = string.Format(UrlConstants.LikeMedia, nominatedMedia),
@@ -191,7 +211,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						User = user,
 						JsonBody = null
 					};
-					return new List<TimelineEventModel>
+					Results.IsSuccesful = true;
+					Results.Results = new List<TimelineEventModel>
 					{
 						new TimelineEventModel
 						{
@@ -200,10 +221,11 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 							ExecutionTime = likeActionOptions.ExecutionTime
 						}
 					};
+					return Results;
 				}
 				else if(likeStrategySettings.LikeStrategy == LikeStrategyType.TwoDollarCent)
 				{
-					var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic, _profile.Topic).GetAwaiter().GetResult();
+					var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic, _profile.Topics.TopicFriendlyName).GetAwaiter().GetResult();
 					if (fetchMedias != null)
 					{
 						int timerCounter = 0;
@@ -222,7 +244,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 								if (!media.SeenBy.Contains(by))
 								{
 									media.SeenBy.Add(by);
-									_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFeed, _profile.Topic,media, _profile.InstagramAccountId).GetAwaiter().GetResult();
+									_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFeed, _profile.Topics.TopicFriendlyName, media, _profile.InstagramAccountId).GetAwaiter().GetResult();
 									var nominatedMedia = media.ObjectItem.Medias.FirstOrDefault().MediaId;
 									if (nominatedMedia != null)
 									{
@@ -244,15 +266,29 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 								
 							}
 						}
-						return events_;
+						Results.IsSuccesful = true;
+						Results.Results = events_;
+						return Results;
 					}
 				}
-				return null;
+				Results.IsSuccesful = false;
+				Results.Info = new ErrorResponse
+				{
+					Message = $"strategy not implemented, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
+					StatusCode = System.Net.HttpStatusCode.Forbidden
+				};
+				return Results;
 			}
 			catch (Exception ee)
 			{
-				Console.WriteLine(ee.Message);
-				return null;
+				Results.IsSuccesful = false;
+				Results.Info = new ErrorResponse
+				{
+					Message = $"{ee.Message}, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
+					StatusCode = System.Net.HttpStatusCode.InternalServerError,
+					Exception = ee
+				};
+				return Results;
 			}
 		}
 

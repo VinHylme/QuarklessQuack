@@ -213,19 +213,6 @@ namespace Quarkless.Services
 				}
 			return null;
 		}
-		private bool RunAction(IActionCommit action, IActionOptions actionOptions)
-		{
-			var executeAction = action.Push(actionOptions).ToList();
-			if (executeAction != null)
-			{
-				executeAction.ForEach(_ =>
-				{
-					if(_!=null)
-						AddToTimeline(_);
-				});
-			}
-			return false;
-		}
 		private ScheduleWindow GetTodaysScheduleWindow (string accountId, TimelineDateType timelineDateType, string instagramId = null, int limit = 1000)
 		{
 			var todays = _timelineLogic.GetAllEventsForUser(accountId, DateTime.UtcNow, instaId: instagramId, 
@@ -265,11 +252,11 @@ namespace Quarkless.Services
 			ScheduleWindow schedule = new ScheduleWindow();
 			if (isHourly)
 			{
-				schedule = GetLastHoursScheduleWindow(accid,TimelineDateType.Both,instaacc,limit);
+				schedule = GetLastHoursScheduleWindow(accid,TimelineDateType.Backwards,instaacc,limit);
 			}
 			else
 			{
-				schedule = GetTodaysScheduleWindow(accid,TimelineDateType.Both,instaacc,limit);
+				schedule = GetTodaysScheduleWindow(accid,TimelineDateType.Both, instaacc,limit);
 			}
 			switch (action)
 			{
@@ -331,8 +318,15 @@ namespace Quarkless.Services
 				})
 				.IncludeUser(_userStoreDetails);
 
-			DateTime? PickAGoodTime() { 
-				var sft = _timelineLogic.GetScheduledEventsForUserByDate(accountId,DateTime.UtcNow,instaId:instagramAccountId,limit:5000,timelineDateType:TimelineDateType.Forward);
+			DateTime? PickAGoodTime(string actionName = null) {
+				IEnumerable<TimelineItem> sft;
+				if (string.IsNullOrEmpty(actionName)) { 
+					sft = _timelineLogic.GetScheduledEventsForUserByDate(accountId,DateTime.UtcNow,instaId:instagramAccountId,limit:5000,timelineDateType:TimelineDateType.Forward);
+				}
+				else
+				{
+					sft = _timelineLogic.GetScheduledEventsForUserForActionByDate(accountId, actionName, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward);
+				}
 				var datesPlanned = sft.Select(_=>_.EnqueueTime);
 				if (datesPlanned != null && datesPlanned.Count()>0) { 
 					DateTime current = DateTime.UtcNow;
@@ -358,21 +352,36 @@ namespace Quarkless.Services
 			var followScheduleOptions = new FollowActionOptions(nextAvaliableDate.Value.AddMinutes(SecureRandom.Next(1, 4)), FollowActionType.Any);
 			var commentScheduleOptions = new CommentingActionOptions(nextAvaliableDate.Value.AddMinutes(SecureRandom.Next(1, 4)), CommentingActionType.Any);
 			
-			actionsContainerManager.AddAction(imageAction,imageScheduleOptions,0.2);
-			actionsContainerManager.AddAction(likeAction,likeScheduleOptions,0.5);
-			actionsContainerManager.AddAction(followAction,followScheduleOptions,0.15);
-			actionsContainerManager.AddAction(commentAction,commentScheduleOptions,0.15);
+			actionsContainerManager.AddAction(imageAction,imageScheduleOptions,0.19);
+			actionsContainerManager.AddAction(likeAction,likeScheduleOptions,0.40);
+			actionsContainerManager.AddAction(followAction,followScheduleOptions,0.20);
+			actionsContainerManager.AddAction(commentAction,commentScheduleOptions,0.21);
 
-			Timer instanceRefresher = new Timer(TimeSpan.FromSeconds(10).TotalMilliseconds);
+			Timer instanceRefresher = new Timer(TimeSpan.FromSeconds(6).TotalMilliseconds);
 			Timer tokenRefresh = new Timer(TimeSpan.FromMinutes(50).TotalMilliseconds);
+			Timer maintainerRefresher = new Timer(TimeSpan.FromMinutes(30).TotalMilliseconds);
+			maintainerRefresher.Start();
+			maintainerRefresher.Elapsed += (o, e) =>
+			{
+				var time = PickAGoodTime();
+				if (time.HasValue) { 
+					ActionsManager.Begin.Commit(ActionType.MaintainAccount, _contentManager, _heartbeatLogic, profile)
+					.IncludeStrategy(new AccountCheckerStrategySettings 
+					{
+						AccountCheckerStrategy = AccountCheckerStrategy.Default,
+						OffsetPerAction = TimeSpan.FromSeconds(25)
+					})
+					.IncludeUser(_userStoreDetails)
+					.Push(new AccountCheckerActionOptions() { ExecutionTime = time.Value});
+				}
+			};
 
 			_userStoreDetails.ORefreshToken = _authHandler.GetUserByUsername(_userStoreDetails.OAccountId).GetAwaiter().GetResult().Tokens.Where(_ => _.Name == "refresh_token").FirstOrDefault().Value;
-
 			tokenRefresh.Start();
 			tokenRefresh.Elapsed += (o, e) =>
 			{
 				var res = _authHandler.RefreshLogin(_userStoreDetails.ORefreshToken,_userStoreDetails.OAccountId).GetAwaiter().GetResult();
-				if(res.StatusCode == HttpStatusCode.OK || res.StatusCode == HttpStatusCode.Accepted)
+				if(res.IsSuccesful)
 				{
 					var newtoken = res.Results.AuthenticationResult.IdToken;
 					_userStoreDetails.OAccessToken = newtoken;
@@ -391,6 +400,8 @@ namespace Quarkless.Services
 					});
 				}
 			};
+
+			
 			bool started = false;
 			bool isrunning = false;
 			instanceRefresher.Start();
@@ -417,8 +428,9 @@ namespace Quarkless.Services
 						{
 							Parallel.ForEach(finishedAction, _ =>
 							{
-								var timeSett = actionsContainerManager.FindActionLimit(_.ActionName.Split('_')[0].ToLower());
-								nextAvaliableDate = PickAGoodTime();
+								string actionName = _.ActionName.Split('_')[0].ToLower();
+								var timeSett = actionsContainerManager.FindActionLimit(actionName);
+								nextAvaliableDate = PickAGoodTime(actionName);
 								if (nextAvaliableDate != null)
 								{
 									_.ExecutionTime = nextAvaliableDate.Value.AddSeconds(Average(timeSett.Value.Min, timeSett.Value.Max));

@@ -54,7 +54,6 @@ namespace Quarkless.Worker
 			"vape",
 			"art",
 			"auto",
-			"waterpaint",
 			"healthcare",
 			"skincare",
 			"science",
@@ -69,7 +68,8 @@ namespace Quarkless.Worker
 			"decor",
 			"diy",
 			"nature",
-			"architecture"
+			"fashion",
+			"style",
 		};
 		List<ActionContainer> Devourers { get; set; } = new List<ActionContainer>();
 		Dictionary<ActionType, Action> Producer = new Dictionary<ActionType, Action>();
@@ -111,7 +111,7 @@ namespace Quarkless.Worker
 				}
 			}).ContinueWith(t=>
 			{
-				_workerManagerQueue.RequestWorker(WorkerType.Extracter, WorkerType.Fetcher, Producer.Count-1);
+				//_workerManagerQueue.RequestWorker(WorkerType.Extracter, WorkerType.Fetcher, Producer.Count-1);
 				producerRan = false;
 			});
 		}
@@ -180,7 +180,6 @@ namespace Quarkless.Worker
 		}
 		public void Schedule(TimerSettings timerSettings, ExecutionSettings executionSettings, params ActionExecuters[] actionExecuters)
 		{
-			Flush();
 
 			if (actionExecuters.Count()<=0) throw new Exception("actions should exist");
 			foreach(var action in actionExecuters)
@@ -209,22 +208,22 @@ namespace Quarkless.Worker
 					if (_workerManagerQueue.JobCount > 0) {
 						if (actionDevourPosition > Devourers.Count - 1)
 							actionDevourPosition = 0;
-
-						var function = Devourers.ElementAt(actionDevourPosition++);
-						
-						if(!function.Retry)
-							function.Action();
-
-						Thread.Sleep(TimeSpan.FromSeconds(executionSettings.ThreadRefreshFrame));
+						else { 
+							var function = Devourers.ElementAt(actionDevourPosition++);	
+							if(!function.Retry)
+								function.Action();
+							Thread.Sleep(TimeSpan.FromSeconds(executionSettings.ThreadRefreshFrame));
+						}
 					}
 					else if (_workerManagerQueue.JobCount <= timerSettings.ProducerThreshHoldLimit && !producerRan)
 					{
 						if(actionProducePosition > Producer.Count-1)
-							actionProducePosition++;
+							actionProducePosition = 0;
 
 						producerRan = true;
-						_workerManagerQueue.RequestWorker(WorkerType.Fetcher, WorkerType.Extracter, Producer.Count-1);
 						Producer.ElementAt(actionProducePosition++).Value();
+						//_workerManagerQueue.RequestWorker(WorkerType.Fetcher, WorkerType.Extracter, Producer.Count - 1);
+
 					}
 
 					if (!isWaiting) { 

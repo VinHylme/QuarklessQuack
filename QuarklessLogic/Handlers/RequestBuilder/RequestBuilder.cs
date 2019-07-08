@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Models.Timeline;
-using QuarklessLogic.RestSharpClient;
+using QuarklessLogic.Handlers.RestSharpClient;
 using RestSharp;
 using System.Collections.Generic;
 namespace QuarklessLogic.Handlers.RequestBuilder.RequestBuilder

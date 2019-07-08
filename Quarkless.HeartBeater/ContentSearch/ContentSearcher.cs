@@ -5,11 +5,10 @@ using Newtonsoft.Json;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessLogic.Handlers.ClientProvider;
-using QuarklessLogic.RestSharpClient;
+using QuarklessLogic.Handlers.RestSharpClient;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Quarkless.HeartBeater.ContentSearch
@@ -110,33 +109,24 @@ namespace Quarkless.HeartBeater.ContentSearch
 			}
 			return null;
 		}
-		public async Task<List<UserResponse<CommentResponse>>> SearchInstagramMediaCommenters(string mediaId, int limit)
+		public async Task<List<UserResponse<InstaComment>>> SearchInstagramMediaCommenters(string mediaId, int limit)
 		{
 			try { 
 				var userCommentersRes = await _container.Comment.GetMediaCommentsAsync(mediaId, PaginationParameters.MaxPagesToLoad(limit));
 				if (userCommentersRes.Succeeded)
 				{
 					var results = userCommentersRes.Value.Comments;
-					List<UserResponse<CommentResponse>> commentResp = new List<UserResponse<CommentResponse>>();
+					List<UserResponse<InstaComment>> commentResp = new List<UserResponse<InstaComment>>();
 					foreach(var res in results)
 					{
-						commentResp.Add(new UserResponse<CommentResponse>
+						commentResp.Add(new UserResponse<InstaComment>
 						{
-							Object = new CommentResponse
-							{
-								CommentId = res.Pk,
-								DidReportForSpam = res.DidReportAsSpam,
-								LikeCount = res.LikesCount,
-								Text = res.Text,
-								TotalChildComments = res.ChildCommentCount,
-								HaslikedBefore = res.HasLikedComment,
-								CreatedAt = res.CreatedAt,
-								Status = res.Status,
-							},
+							Object = res,
+							MediaId = mediaId,
 							FullName = res.User.FullName,
 							IsPrivate = res.User.IsPrivate,
 							IsVerified = res.User.IsVerified,
-							ProfilePicture = res.User.ProfilePicture,
+							ProfilePicture = res?.User?.ProfilePicture,
 							UserId = res.User.Pk,
 							Username = res.User.UserName
 						});
@@ -176,8 +166,20 @@ namespace Quarkless.HeartBeater.ContentSearch
 						mediaDetail.HasLikedBefore = s.HasLiked;
 						mediaDetail.HasAudio = s.HasAudio;
 						mediaDetail.IsCommentsDisabled = s.IsCommentsDisabled;
-						mediaDetail.Location = s.Location;
+						mediaDetail.Location = s?.Location;
 						mediaDetail.ViewCount = s.ViewCount;
+						mediaDetail.Caption = s?.Caption?.Text;
+						mediaDetail.Explore = s?.Explore;
+						mediaDetail.FilterType = s.FilterType;
+						mediaDetail.HasSeen = s.IsSeen;
+						mediaDetail.NumberOfQualities = s.NumberOfQualities;
+						mediaDetail.PhotosOfI = s.PhotoOfYou;
+						mediaDetail.PreviewComments = s?.PreviewComments;
+						mediaDetail.ProductTags = s?.ProductTags;
+						mediaDetail.ProductType = s.ProductType;
+						mediaDetail.TopLikers = s?.TopLikers;
+						mediaDetail.TakenAt = s.TakenAt;
+						mediaDetail.UserTags = s?.UserTags;
 						mediaDetail.IsFollowing = s?.User?.FriendshipStatus?.Following;
 						mediaDetail.CommentCount = s.CommentsCount;
 						mediaDetail.Topic = topic;
@@ -237,8 +239,20 @@ namespace Quarkless.HeartBeater.ContentSearch
 						mediaDetail.HasLikedBefore = s.HasLiked;
 						mediaDetail.HasAudio = s.HasAudio;
 						mediaDetail.IsCommentsDisabled = s.IsCommentsDisabled;
-						mediaDetail.Location = s.Location;
+						mediaDetail.Location = s?.Location;
 						mediaDetail.ViewCount = s.ViewCount;
+						mediaDetail.Caption = s?.Caption?.Text;
+						mediaDetail.Explore = s?.Explore;
+						mediaDetail.FilterType = s.FilterType;
+						mediaDetail.HasSeen = s.IsSeen;
+						mediaDetail.NumberOfQualities = s.NumberOfQualities;
+						mediaDetail.PhotosOfI = s.PhotoOfYou;
+						mediaDetail.PreviewComments = s?.PreviewComments;
+						mediaDetail.ProductTags = s?.ProductTags;
+						mediaDetail.ProductType = s.ProductType;
+						mediaDetail.TopLikers = s?.TopLikers;
+						mediaDetail.TakenAt = s.TakenAt;
+						mediaDetail.UserTags = s?.UserTags;
 						mediaDetail.IsFollowing = s?.User?.FriendshipStatus?.Following;
 						mediaDetail.CommentCount = s.CommentsCount;
 						mediaDetail.MediaFrom = MediaFrom.Instagram;
@@ -295,8 +309,20 @@ namespace Quarkless.HeartBeater.ContentSearch
 					mediaDetail.HasLikedBefore = s.HasLiked;
 					mediaDetail.HasAudio = s.HasAudio;
 					mediaDetail.IsCommentsDisabled = s.IsCommentsDisabled;
-					mediaDetail.Location = s.Location;
+					mediaDetail.Location = s?.Location;
 					mediaDetail.ViewCount = s.ViewCount;
+					mediaDetail.Caption = s?.Caption?.Text;
+					mediaDetail.Explore = s?.Explore;
+					mediaDetail.FilterType = s.FilterType;
+					mediaDetail.HasSeen = s.IsSeen;
+					mediaDetail.NumberOfQualities = s.NumberOfQualities;
+					mediaDetail.PhotosOfI = s.PhotoOfYou;
+					mediaDetail.PreviewComments = s?.PreviewComments;
+					mediaDetail.ProductTags = s?.ProductTags;
+					mediaDetail.ProductType = s.ProductType;
+					mediaDetail.TopLikers = s?.TopLikers;
+					mediaDetail.TakenAt = s.TakenAt;
+					mediaDetail.UserTags = s?.UserTags;
 					mediaDetail.IsFollowing = s?.User?.FriendshipStatus?.Following;
 					mediaDetail.CommentCount = s.CommentsCount;
 					mediaDetail.MediaFrom = MediaFrom.Instagram;
@@ -338,6 +364,7 @@ namespace Quarkless.HeartBeater.ContentSearch
 			}
 			return medias;
 		}
+		#region Probably Old 
 		public async Task<Media> SearchMediaInstagram(List<string> topics, InstaMediaType mediaType, int limit)
 		{
 			Media mediaresp = new Media();
@@ -435,6 +462,7 @@ namespace Quarkless.HeartBeater.ContentSearch
 			}
 			return mediaresp;
 		}
+		#endregion
 		public struct TempMedia
 		{
 			public struct Medias
@@ -462,10 +490,36 @@ namespace Quarkless.HeartBeater.ContentSearch
 			}
 			return null;
 		}
+		public Media SearchSimilarImagesViaGoogle(List<GroupImagesAlike> imagesAlikes, int limit)
+		{
+			Media medias = new Media();
+			foreach(var images in imagesAlikes) { 
+				SearchImageModel searchImage = new SearchImageModel
+				{
+					no_download = true,
+					similar_images = images.Url,
+					limit = limit,
+				};
+				var res = _restSharpClient.PostRequest("http://127.0.0.1:5000","searchImages",JsonConvert.SerializeObject(searchImage));
+				TempMedia responseValues = JsonConvert.DeserializeObject<TempMedia>(res.Content);
+				medias.Medias.AddRange(responseValues.MediasObject.Select(s => new MediaResponse
+				{
+					Topic = images.TopicGroup,
+					MediaFrom = MediaFrom.Google,
+					MediaType = InstaMediaType.Image,
+					MediaUrl = new List<string> { s.MediaUrl }
+				}).ToList());
+			}
+			return medias;
+		}
 		public Media SearchViaYandexBySimilarImages(List<GroupImagesAlike> imagesSimilarUrls, int limit)
 		{
 			var images = _yandexImageSearch.Search(imagesSimilarUrls, limit);
 			return images;
+		}
+		public Media SearchViaYandex(YandexSearchQuery yandexSearchQuery, int limit)
+		{
+			return _yandexImageSearch.SearchQueryREST(yandexSearchQuery,limit);
 		}
 	}
 }

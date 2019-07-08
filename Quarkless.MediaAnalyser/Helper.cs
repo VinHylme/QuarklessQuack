@@ -38,6 +38,27 @@ namespace Quarkless.MediaAnalyser
 			var targetHash = ImagePhash.ComputeDigest(targetImage.ByteToBitmap().ToLuminanceImage());
 			return ImagePhash.GetCrossCorrelation(ogHash,targetHash) > scorePerctange;
 		}
+		public static bool ImageSizeCheckFromByte(this byte[] imageData, Size imSize)
+		{
+			if (imageData != null)
+			{
+				try
+				{
+					var bitmap = imageData.ByteToBitmap();
+					if (bitmap != null)
+					{
+						if(bitmap.Width > imSize.Width && bitmap.Height > imSize.Height)
+							return true;
+					}
+				}
+				catch(Exception ee)
+				{
+					Console.WriteLine(ee.Message);
+					return false;
+				}
+			}
+			return false;
+		}
 		public static IEnumerable<byte[]> SelectImageOnSize(this IEnumerable<byte[]> imageData, Size imSize)
 		{
 			List<byte[]> toreturn = new List<byte[]>();
@@ -59,6 +80,71 @@ namespace Quarkless.MediaAnalyser
 				}
 			}
 			return toreturn;
+		}
+		public static IEnumerable<byte[]> DuplicateImages(this IEnumerable<byte[]> images, double score = 0.90)
+		{
+			if (images.Count() <= 0) return null;
+			ImageHolder[] imageHolder = new ImageHolder[images.Count()];
+			Parallel.For(0, imageHolder.Length, pos =>
+			{
+				imageHolder[pos].OriginalImageData = images.ElementAtOrDefault(pos);
+				imageHolder[pos].ReducedImageData = images.ElementAtOrDefault(pos)
+				.Constrain(new Size(400, 400))
+				.EntropyCrop(125)
+				.DetectEdges(new Laplacian3X3EdgeFilter(), true);
+			});
+			List<byte[]> results = new List<byte[]>();
+			for (int posX = 0; posX < imageHolder.Length; posX++)
+			{
+				bool isDuplicate = false;
+				for (int posY = 1; posY < imageHolder.Length; posY++)
+				{
+					if (posY != posX) { 
+						if (imageHolder[posX].ReducedImageData.ImageIsDuplicate(imageHolder[posY].ReducedImageData, score))
+						{
+							isDuplicate = true;
+							break;
+						}
+					}
+				};
+				if (isDuplicate)
+				{
+					results.Add(imageHolder[posX].OriginalImageData);
+				}
+			};
+			return results;
+		}
+
+		public static IEnumerable<byte[]> DistinctImages(this IEnumerable<byte[]> images, double score = 0.75)
+		{
+			if(images.Count()<=0) return null;
+			ImageHolder[] imageHolder = new ImageHolder[images.Count()];
+			Parallel.For(0, imageHolder.Length, pos =>
+			{
+				imageHolder[pos].OriginalImageData = images.ElementAtOrDefault(pos);
+				imageHolder[pos].ReducedImageData = images.ElementAtOrDefault(pos)
+				.Constrain(new Size(200,200))
+				.EntropyCrop(180)
+				.DetectEdges(new Laplacian3X3EdgeFilter(),true);
+			});
+			List<byte[]> results = new List<byte[]>();
+			for(int posX = 0; posX < imageHolder.Length; posX++) 
+			{
+				bool isDuplicate = false;
+				for (int posY = 1; posY < imageHolder.Length; posY++)
+				{
+					if (imageHolder[posX].ReducedImageData.ImageIsDuplicate(imageHolder[posY].ReducedImageData, score))
+					{
+						isDuplicate = true;
+						break;
+					}
+				};
+				if (!isDuplicate)
+				{
+					results.Add(imageHolder[posX].OriginalImageData);
+				}
+			};
+			return results;
 		}
 		public static IEnumerable<byte[]> RemoveDuplicateImages (this IEnumerable<byte[]> selfImages,
 			IEnumerable<byte[]> targetImages, double scorePercantage)
@@ -206,6 +292,50 @@ namespace Quarkless.MediaAnalyser
 				return ms.ToArray();
 			}
 		}
+		public static Dictionary<Color,int> GetColorPercentage(this Bitmap bmp)
+		{
+			if(bmp == null) throw new ArgumentNullException("null is not allowed");
+			bmp = bmp.ReduceBitmap(350,350);
+			BitmapData srcData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, bmp.PixelFormat);
+			Dictionary<Color, int> frequency = new Dictionary<Color, int>();
+			int bytesPerPixel = Image.GetPixelFormatSize(srcData.PixelFormat) / 8;
+
+			int stride = srcData.Stride;
+
+			IntPtr scan0 = srcData.Scan0;
+
+			long[] totals = new long[] { 0, 0, 0 };
+
+			int width = bmp.Width * bytesPerPixel;
+			int height = bmp.Height;
+
+			unsafe
+			{
+				byte* p = (byte*)(void*)scan0;
+
+				for (int y = 0; y < height; y++)
+				{
+					for (int x = 0; x < width; x += bytesPerPixel)
+					{
+						totals[0] += p[x + 0];
+						totals[1] += p[x + 1];
+						totals[2] += p[x + 2];
+						Color color = Color.FromArgb(p[x+0],p[x+1],p[x+2]);
+						if (frequency.ContainsKey(color))
+						{
+							frequency[color]++;
+						}
+						else
+						{
+							frequency.Add(color,1);
+						}
+					}
+
+					p += stride;
+				}
+			}
+			return frequency;
+		}
 		public static Color GetDominantColor(this Bitmap bmp)
 		{
 			if (bmp == null)
@@ -276,7 +406,20 @@ namespace Quarkless.MediaAnalyser
 			var sel = images.ElementAtOrDefault(pos);
 			return sel;
 		}
-		private static int ColorDiff(Color c1, Color c2)
+		public static bool SimilarColors(this IEnumerable<Color> @freq, IEnumerable<Color> target, int threshhold = 8)
+		{
+			int contains = 0;
+			foreach (var tc in target)
+			{
+				var diff = freq.Select(x=>ColorDiff(x,tc)).Min(s=>s);
+				if (diff < threshhold)
+				{
+					contains++;
+				}
+			}
+			return contains > 0;
+		}
+		public static int ColorDiff(this Color c1, Color c2)
 		{
 			return (int)Math.Sqrt((c1.R - c2.R) * (c1.R - c2.R)
 								   + (c1.G - c2.G) * (c1.G - c2.G)

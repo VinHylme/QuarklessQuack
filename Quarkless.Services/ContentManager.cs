@@ -2,6 +2,7 @@
 using Quarkless.Services.Extensions;
 using Quarkless.Services.Interfaces;
 using QuarklessContexts.Extensions;
+using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using QuarklessLogic.Handlers.TextGeneration;
 using System;
@@ -37,30 +38,36 @@ namespace Quarkless.Services
 		}
 		public string GenerateText(string topic,string lang, int type, int limit, int size)
 		{
-			return _textGeneration.MarkovTextGenerator(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\Datas\normalised_data\{0}.csv",
-				type,topic,lang,size,limit) ;
+			//return _textGeneration.MarkovTextGenerator(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\Datas\normalised_data\{0}.csv",
+			//	type,topic,lang,size,limit) ;
+			return _textGeneration.MarkovIt(type,topic,lang,size,limit).GetAwaiter().GetResult();
 		}
-		public string GenerateMediaInfo(TopicsModel topicSelect, string language)
+		public string GenerateMediaInfo(Topics topicSelect, string language, string credit = null)
 		{
-			var hash = GetHashTags(topicSelect.TopicName, 300, 30).GetAwaiter().GetResult().ToList();
+			var hash = GetHashTags(topicSelect.TopicFriendlyName, 300, 30).GetAwaiter().GetResult().ToList();
 			hash = hash.TakeAny(15).ToList();
 
-			var totaltopics = topicSelect.SubTopics.Select(a=>a.Topic).ToList();
+			var totaltopics = topicSelect.SubTopics.Select(a=>a.TopicName).ToList();
 			totaltopics.AddRange(topicSelect.SubTopics.Select(a=>a.RelatedTopics).SquashMe());
-			totaltopics.Add(topicSelect.TopicName);
+			totaltopics.Add(topicSelect.TopicFriendlyName);
 			hash.AddRange(totaltopics.TakeAny(30).Select(s => $"#{s}"));
 			var hashtags = hash.Take(29).JoinEvery(Environment.NewLine, 3);
-			var caption_ = GenerateText(topicSelect.TopicName.ToLower(), language.ToUpper(), 1, SecureRandom.Next(1,3), SecureRandom.Next(2,6));
-			return caption_ + Environment.NewLine + hashtags;
+			var caption_ = GenerateText(topicSelect.TopicFriendlyName.ToLower(), language.ToUpper(), 1, SecureRandom.Next(1,3), SecureRandom.Next(2,6)).Split(',')[0];
+			string creditLine = string.Empty;
+			if (credit != null)
+				creditLine = $"credit: @{credit}";
+
+			return caption_ + Environment.NewLine + creditLine + Environment.NewLine + hashtags;
 		}
 		public string GenerateComment(string topic, string language)
 		{
-			return GenerateText(topic.ToLower(), language.ToUpper(),0,1,SecureRandom.Next(1,3));
+			var comment = GenerateText(topic.ToLower(), language.ToUpper(), 0 , SecureRandom.Next(1,3) ,SecureRandom.Next(3,10)).Split(',')[0];
+			return comment;
 		}
 
-		public Task<TopicsModel> GetTopic(string topic, int takeSuggested = -1, int limit = -1)
+		public Task<Topics> GetTopic(ProfileModel profile, int takeSuggested = -1)
 		{
-			return _topicBuilder.Build(topic,takeSuggested,limit);
+			return _topicBuilder.BuildTopics(profile,takeSuggested);
 		}
 	}
 }

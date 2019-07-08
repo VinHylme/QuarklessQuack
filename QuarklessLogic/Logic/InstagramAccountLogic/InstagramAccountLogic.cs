@@ -24,9 +24,9 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 			_instagramAccountRepository = instagramAccountRepository;
 			_instagramAccountRedis = instagramAccountRedis;
 		}
-		public async Task<ResultBase<bool>> AddInstagramAccount(string accountId, StateData state, AddInstagramAccountRequest addInstagram)
+		public async Task<ResultCarrier<bool>> AddInstagramAccount(string accountId, StateData state, AddInstagramAccountRequest addInstagram)
 		{
-			ResultBase<bool> @Result = new ResultBase<bool>();
+			ResultCarrier<bool> @Result = new ResultCarrier<bool>();
 				try {
 					var device = state.DeviceInfo.DeviceModel;
 					var instamodel = new InstagramAccountModel
@@ -49,18 +49,26 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 						var assign = await _proxyLogic.AssignProxy(new AssignedTo { Account_Id = result.AccountId, InstaId = result._id.ToString()});
 						if (assign)
 						{
+							Result.IsSuccesful = true;
 							Result.Results = true;
 							return Result;
 
 						}
-						Result.Message = $"Failed to assign proxy to user {result.AccountId}, instagram account {result.Username}";
+						Result.Info = new ErrorResponse
+						{
+							Message =  $"Failed to assign proxy to user {result.AccountId}, instagram account {result.Username}",
+						};
 					}
-					Result.Message = $"Failed to add instagram user of {result.AccountId}, instagram account {result.Username}";
+					Result.Info = new ErrorResponse{Message = $"Failed to add instagram user of {result.AccountId}, instagram account {result.Username}" };
 					return null;
 				}
 				catch(Exception ee)
 				{
-					Result.Message = $"Exepction trying to add user: {addInstagram.Username}, error: {ee.Message}";
+					Result.Info = new ErrorResponse
+					{ 
+						Message = $"Exepction trying to add user: {addInstagram.Username}, error: {ee.Message}",
+						Exception = ee
+					};
 					return Result;
 				}	
 		}

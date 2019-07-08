@@ -65,9 +65,9 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 			return null;
 		}
 		#endregion
-		public async Task<ResultBase<GetUserResponse>> GetUser(string accessToken)
+		public async Task<ResultCarrier<GetUserResponse>> GetUser(string accessToken)
 		{
-			var Responseresult = new ResultBase<GetUserResponse>();
+			var Responseresult = new ResultCarrier<GetUserResponse>();
 			var req = new GetUserRequest
 			{
 				AccessToken = accessToken
@@ -78,43 +78,49 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 				var userResp = await _cognito.GetUserAsync(req);
 				if(userResp.HttpStatusCode == System.Net.HttpStatusCode.OK)
 				{
-					Responseresult.StatusCode = userResp.HttpStatusCode;
 					Responseresult.Results = userResp;
+					Responseresult.IsSuccesful = true;
 					return Responseresult;
 				}
 				else
 				{
-					Responseresult.StatusCode = userResp.HttpStatusCode;
 					return Responseresult;
 				}
 			}
 			catch(Exception ee)
 			{
-				Responseresult.StatusCode = System.Net.HttpStatusCode.ExpectationFailed;
-				Responseresult.Message = ee.Message;
+				Responseresult.Info = new ErrorResponse
+				{
+					StatusCode = System.Net.HttpStatusCode.ExpectationFailed,
+					Message = ee.Message
+				};
 				return Responseresult;
 			}
 		}
-		public ResultBase<CognitoUser> GetUserById(string userId)
+		public ResultCarrier<CognitoUser> GetUserById(string userId)
 		{
-			ResultBase<CognitoUser> responseResults= new ResultBase<CognitoUser>();
+			ResultCarrier<CognitoUser> responseResults= new ResultCarrier<CognitoUser>();
 			try
 			{
 				var results =  _cognitoUser.GetUser(userId);
 				responseResults.Results = results;
+				responseResults.IsSuccesful = true;
 				return responseResults;
 			}
 			catch(Exception ee)
 			{
-				responseResults.Message = ee.Message;
-				responseResults.StatusCode = System.Net.HttpStatusCode.ExpectationFailed;
+				responseResults.Info = new ErrorResponse
+				{
+					StatusCode = System.Net.HttpStatusCode.ExpectationFailed,
+					Message = ee.Message
+				};
 				_reportHandler.MakeReport($"Failed to get user: {userId}, error: {ee.Message}");
 				return responseResults;
 			}
 		}
-		public async Task<ResultBase<InitiateAuthResponse>> RefreshLogin(string refreshToken, string userName)
+		public async Task<ResultCarrier<InitiateAuthResponse>> RefreshLogin(string refreshToken, string userName)
 		{
-			ResultBase<InitiateAuthResponse> resultBase = new ResultBase<InitiateAuthResponse>();
+			ResultCarrier<InitiateAuthResponse> resultBase = new ResultCarrier<InitiateAuthResponse>();
 			InitiateAuthRequest initiateAuthRequest = new InitiateAuthRequest()
 			{
 				ClientId = _cognitoUser.ClientID,
@@ -130,8 +136,8 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 				var results = await _cognito.InitiateAuthAsync(initiateAuthRequest);
 				if(results.HttpStatusCode == System.Net.HttpStatusCode.OK)
 				{
-					resultBase.StatusCode = results.HttpStatusCode;
 					resultBase.Results = results;
+					resultBase.IsSuccesful = true;
 					return resultBase;
 				}
 				results.HttpStatusCode = results.HttpStatusCode;
@@ -140,14 +146,17 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 			catch(Exception ee)
 			{
 				_reportHandler.MakeReport($"Failed to refresh token for user: {userName}, error: {ee.Message}");
-				resultBase.Message = ee.Message;
-				resultBase.StatusCode = System.Net.HttpStatusCode.ExpectationFailed;
+				resultBase.Info = new ErrorResponse
+				{
+					StatusCode = System.Net.HttpStatusCode.ExpectationFailed,
+					Message = ee.Message
+				};
 				return resultBase;
 			}
 			
 		}
 
-		public async Task<ResultBase<AdminInitiateAuthResponse>> Login(LoginRequest loginRequest)
+		public async Task<ResultCarrier<AdminInitiateAuthResponse>> Login(LoginRequest loginRequest)
 		{
 			var authReq = new AdminInitiateAuthRequest
 			{
@@ -155,7 +164,7 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 				ClientId = _cognitoUser.ClientID,
 				AuthFlow = AuthFlowType.ADMIN_NO_SRP_AUTH,
 			};
-			ResultBase<AdminInitiateAuthResponse> result = new ResultBase<AdminInitiateAuthResponse>();
+			ResultCarrier<AdminInitiateAuthResponse> result = new ResultCarrier<AdminInitiateAuthResponse>();
 			authReq.AuthParameters.Add("USERNAME", loginRequest.Username);
 			authReq.AuthParameters.Add("PASSWORD", loginRequest.Password);		
 			authReq.AuthParameters.Add("SECRET_HASH", _accessHandler.GetHash(loginRequest.Username,_cognitoUser.ClientID));
@@ -163,20 +172,23 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 			{
 				var authResp = await _cognito.AdminInitiateAuthAsync(authReq);
 				result.Results = authResp;
-				result.StatusCode = authResp.HttpStatusCode;
+				result.IsSuccesful = true;
 				return result;
 			}
 			catch (Exception ee)
 			{
-				result.StatusCode = System.Net.HttpStatusCode.ExpectationFailed;
-				result.Message = ee.Message;
+				result.Info = new ErrorResponse
+				{
+					StatusCode = System.Net.HttpStatusCode.ExpectationFailed,
+					Message = ee.Message
+				};	
 				_reportHandler.MakeReport($"Could Not login user: {loginRequest.Username}, error: {ee.Message}");
 				return result;
 			}
 		}
-		public async Task<ResultBase<AdminAddUserToGroupResponse>> AddUserToGroup(string groupName, string username)
+		public async Task<ResultCarrier<AdminAddUserToGroupResponse>> AddUserToGroup(string groupName, string username)
 		{
-			ResultBase<AdminAddUserToGroupResponse> responseResults = new ResultBase<AdminAddUserToGroupResponse>();
+			ResultCarrier<AdminAddUserToGroupResponse> responseResults = new ResultCarrier<AdminAddUserToGroupResponse>();
 
 			try
 			{
@@ -190,28 +202,33 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 				if(results.HttpStatusCode == System.Net.HttpStatusCode.OK)
 				{
 					responseResults.Results = results;
-					responseResults.StatusCode = results.HttpStatusCode;
+					responseResults.IsSuccesful = true;
 					return responseResults;
 				}
 				else
 				{
-					responseResults.StatusCode = results.HttpStatusCode;
-					responseResults.Message = "Failed to add user to group";
+					responseResults.Info = new ErrorResponse
+					{
+						StatusCode = results.HttpStatusCode					
+					};
 					return responseResults;
 				}
 
 			}
 			catch (Exception ee)
 			{
-				responseResults.Message = ee.Message;
-				responseResults.StatusCode = System.Net.HttpStatusCode.ExpectationFailed;
+				responseResults.Info = new ErrorResponse
+				{
+					StatusCode = System.Net.HttpStatusCode.ExpectationFailed,
+					Message = ee.Message
+				};
 				_reportHandler.MakeReport($"Could Not add user to group : {username}, error: {ee.Message}");
 				return responseResults;
 			}
 		}
-		public async Task<ResultBase<ConfirmSignUpResponse>> ConfirmSignUp(EmailConfirmationModel emailConfirmationModel)
+		public async Task<ResultCarrier<ConfirmSignUpResponse>> ConfirmSignUp(EmailConfirmationModel emailConfirmationModel)
 		{
-			ResultBase<ConfirmSignUpResponse> Responseresult = new ResultBase<ConfirmSignUpResponse>();
+			ResultCarrier<ConfirmSignUpResponse> Responseresult = new ResultCarrier<ConfirmSignUpResponse>();
 
 			var confirmRequest = new ConfirmSignUpRequest
 			{
@@ -226,23 +243,27 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 				var results = await _cognito.ConfirmSignUpAsync(confirmRequest);
 				if(results.HttpStatusCode == System.Net.HttpStatusCode.OK) {
 					Responseresult.Results = results;
-					Responseresult.StatusCode = results.HttpStatusCode;
+					Responseresult.IsSuccesful = true;
+
 					return Responseresult;
 				}
 				return null;
 			}
 			catch(Exception ee) 
 			{
-				Responseresult.StatusCode = System.Net.HttpStatusCode.ExpectationFailed;
-				Responseresult.Message = ee.Message;
+				Responseresult.Info = new ErrorResponse
+				{
+					StatusCode = System.Net.HttpStatusCode.ExpectationFailed,
+					Message = ee.Message
+				};
 				_reportHandler.MakeReport($"Could Not confirm user: {emailConfirmationModel.Username}, error: {ee.Message}");
 
 				return Responseresult;
 			}
 		}
-		public async Task<ResultBase<RespondToAuthChallengeResponse>> SetNewPassword(NewPasswordRequest Newrequest)
+		public async Task<ResultCarrier<RespondToAuthChallengeResponse>> SetNewPassword(NewPasswordRequest Newrequest)
 		{
-			ResultBase<RespondToAuthChallengeResponse> Responseresult = new ResultBase<RespondToAuthChallengeResponse>();
+			ResultCarrier<RespondToAuthChallengeResponse> Responseresult = new ResultCarrier<RespondToAuthChallengeResponse>();
 
 			Dictionary<String, String> challengeResponses = new Dictionary<string, string>();
 			challengeResponses.Add("USERNAME", Newrequest.Username);
@@ -264,26 +285,29 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 				if (resCha.HttpStatusCode == System.Net.HttpStatusCode.OK)
 				{
 					Responseresult.Results = resCha;
-					Responseresult.StatusCode = resCha.HttpStatusCode;
+					Responseresult.IsSuccesful = true;
+
 					return Responseresult;
 				}
 				else
 				{
-					Responseresult.StatusCode = resCha.HttpStatusCode;
 					return Responseresult;
 				}
 			}
 			catch(Exception ee)
 			{
-				Responseresult.StatusCode = System.Net.HttpStatusCode.ExpectationFailed;
-				Responseresult.Message = ee.Message;
+				Responseresult.Info = new ErrorResponse
+				{
+					StatusCode = System.Net.HttpStatusCode.ExpectationFailed,
+					Message = ee.Message
+				};
 				_reportHandler.MakeReport($"Could Not set new password for user: {Newrequest.Username}, error: {ee.Message}");
 				return Responseresult;
 			}
 		}
-		public async Task<ResultBase<SignUpResponse>> Register(RegisterAccountModel registerAccount)
+		public async Task<ResultCarrier<SignUpResponse>> Register(RegisterAccountModel registerAccount)
 		{
-			ResultBase<SignUpResponse> Responseresult = new ResultBase<SignUpResponse>();
+			ResultCarrier<SignUpResponse> Responseresult = new ResultCarrier<SignUpResponse>();
 			try { 
 			var registerAccountRequest = new SignUpRequest
 			{
@@ -309,20 +333,22 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 			var response = await _cognito.SignUpAsync(registerAccountRequest);
 			if (response.HttpStatusCode == System.Net.HttpStatusCode.OK)
 			{
-				Responseresult.StatusCode = response.HttpStatusCode;
 				Responseresult.Results = response;
+				Responseresult.IsSuccesful = true;
 				return Responseresult;
 			}
 			else
 			{
-				Responseresult.StatusCode = response.HttpStatusCode;		
 				return Responseresult;
 			}
 			}
 			catch(Exception ee)
 			{
-				Responseresult.StatusCode = System.Net.HttpStatusCode.ExpectationFailed;
-				Responseresult.Message = ee.Message;
+				Responseresult.Info = new ErrorResponse
+				{
+					StatusCode = System.Net.HttpStatusCode.ExpectationFailed,
+					Message = ee.Message
+				};
 				_reportHandler.MakeReport($"Could Not register user: {registerAccount.Username}, error: {ee.Message}");
 				return Responseresult;
 			}

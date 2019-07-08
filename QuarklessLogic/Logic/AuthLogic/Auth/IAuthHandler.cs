@@ -13,13 +13,13 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 		Task<bool> CreateAccount(AccountUser accountUser, string password);
 		Task<AccountUser> GetUserByUsername(string username);
 		Task<bool> UpdateUser(AccountUser accountUser);
-		Task<ResultBase<AdminInitiateAuthResponse>> Login(LoginRequest loginRequest);
-		Task<ResultBase<RespondToAuthChallengeResponse>> SetNewPassword(NewPasswordRequest Newrequest);
-		Task<ResultBase<SignUpResponse>> Register(RegisterAccountModel registerAccount);
-		Task<ResultBase<GetUserResponse>> GetUser(string accessToken);
-		Task<ResultBase<ConfirmSignUpResponse>> ConfirmSignUp(EmailConfirmationModel emailConfirmationModel);
-		Task<ResultBase<AdminAddUserToGroupResponse>> AddUserToGroup(string groupName, string username);
-		ResultBase<CognitoUser> GetUserById(string userId);
-		Task<ResultBase<InitiateAuthResponse>> RefreshLogin(string refreshToken, string userName);
+		Task<ResultCarrier<AdminInitiateAuthResponse>> Login(LoginRequest loginRequest);
+		Task<ResultCarrier<RespondToAuthChallengeResponse>> SetNewPassword(NewPasswordRequest Newrequest);
+		Task<ResultCarrier<SignUpResponse>> Register(RegisterAccountModel registerAccount);
+		Task<ResultCarrier<GetUserResponse>> GetUser(string accessToken);
+		Task<ResultCarrier<ConfirmSignUpResponse>> ConfirmSignUp(EmailConfirmationModel emailConfirmationModel);
+		Task<ResultCarrier<AdminAddUserToGroupResponse>> AddUserToGroup(string groupName, string username);
+		ResultCarrier<CognitoUser> GetUserById(string userId);
+		Task<ResultCarrier<InitiateAuthResponse>> RefreshLogin(string refreshToken, string userName);
 	}
 }

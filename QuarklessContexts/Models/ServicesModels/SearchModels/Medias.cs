@@ -16,14 +16,26 @@ namespace QuarklessContexts.Models.ServicesModels.SearchModels
 	[Serializable]
 	public class MediaResponse
 	{
+		public DateTime TakenAt { get; set; }
 		public string Topic { get; set; }
 		public List<string> MediaUrl { get; set; } = new List<string>();
 		public int LikesCount { get; set; }
+		public string Caption { get; set; }
+		public InstaMediaExplore Explore { get; set ;}
 		public int ViewCount { get; set; }
 		public string CommentCount { get; set; }
 		public string MediaId { get; set; }
 		public bool HasLikedBefore { get; set; }
 		public bool HasAudio { get; set; }
+		public int NumberOfQualities { get; set; }
+		public bool PhotosOfI { get; set; }
+		public List<InstaComment> PreviewComments { get; set; }
+		public List<InstaProductTag> ProductTags { get; set; }
+		public List<InstaUserTag> UserTags { get; set; }
+		public InstaMediaIdList TopLikers { get; set; }
+		public string ProductType { get; set; }
+		public bool HasSeen { get; set; }
+		public string FilterType { get; set; }
 		public bool? IsFollowing { get; set; }
 		public bool IsCommentsDisabled { get; set; }
 		public InstaLocation Location { get; set; }

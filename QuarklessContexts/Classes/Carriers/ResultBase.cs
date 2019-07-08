@@ -1,11 +1,18 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 
 namespace QuarklessContexts.Classes.Carriers
 {
-	public class ResultBase<T>
+	public struct ErrorResponse
 	{
-		public string Message { get; set; }
-		public HttpStatusCode StatusCode { get; set; }
+		public string Message ;
+		public HttpStatusCode StatusCode;
+		public Exception Exception;
+	}
+	public class ResultCarrier<T>
+	{
+		public bool IsSuccesful { get; set; }
+		public ErrorResponse Info {get; set;}
 		public T Results { get; set; }
 	}
 }

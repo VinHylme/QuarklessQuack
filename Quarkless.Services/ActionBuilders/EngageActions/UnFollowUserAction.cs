@@ -2,6 +2,7 @@
 using Quarkless.Services.Interfaces;
 using Quarkless.Services.Interfaces.Actions;
 using Quarkless.Services.StrategyBuilders;
+using QuarklessContexts.Classes.Carriers;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models;
@@ -37,13 +38,23 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			this.unFollowStrategySettings = strategy as UnFollowStrategySettings;
 			return this;
 		}
-		public IEnumerable<TimelineEventModel> Push(IActionOptions actionOptions)
+		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
+			ResultCarrier<IEnumerable<TimelineEventModel>> Results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
 			FollowActionOptions followActionOptions = actionOptions as FollowActionOptions;
-			if(user==null) return null;
+			if(user==null)
+			{
+				Results.IsSuccesful = false;
+				Results.Info = new ErrorResponse
+				{
+					Message = $"user is null, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
+					StatusCode = System.Net.HttpStatusCode.NotFound
+				};
+				return Results;
+			}
 			if(unFollowStrategySettings.UnFollowStrategy == UnFollowStrategyType.Default)
 			{
-				var fetchedUsers = _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersFollowingList, _profile.Topic, _profile.InstagramAccountId).GetAwaiter().GetResult();
+				var fetchedUsers = _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersFollowingList, _profile.Topics.TopicFriendlyName, _profile.InstagramAccountId).GetAwaiter().GetResult();
 
 				if (fetchedUsers != null)
 				{
@@ -60,7 +71,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						if (!nominatedUser.Value.SeenBy.Contains(by))
 						{
 							nominatedUser.Value.SeenBy.Add(by);
-							_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFollowingList, _profile.Topic, nominatedUser.Value).GetAwaiter().GetResult();
+							_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFollowingList, _profile.Topics.TopicFriendlyName, nominatedUser.Value).GetAwaiter().GetResult();
 							RestModel restModel = new RestModel
 							{
 								BaseUrl = string.Format(UrlConstants.UnfollowUser, nominatedUser.Value.ObjectItem.FirstOrDefault().UserId),
@@ -68,7 +79,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 								JsonBody = null,
 								User = user
 							};
-							return new List<TimelineEventModel>
+							Results.IsSuccesful = true;
+							Results.Results = new List<TimelineEventModel>
 							{
 								new TimelineEventModel
 								{
@@ -77,6 +89,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 									ExecutionTime =followActionOptions.ExecutionTime
 								}
 							};
+							return Results;
 						}
 					}			
 				}
@@ -85,7 +98,13 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			{
 
 			}
-			return null;
+			Results.IsSuccesful = false;
+			Results.Info = new ErrorResponse
+			{
+				Message = $"strategy not implemented yet, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
+				StatusCode = System.Net.HttpStatusCode.Forbidden
+			};
+			return Results;
 		}
 
 		public IActionCommit IncludeUser(UserStoreDetails userStoreDetails)

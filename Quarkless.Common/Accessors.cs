@@ -34,6 +34,20 @@ namespace Quarkless.Common
 		{
 			return File.ReadAllText(path);
 		}
+		public string YandexAPIKey
+		{
+			get
+			{
+				return _configuration["APIServices:Yandex"];
+			}
+		}
+		public string DetectAPI
+		{
+			get
+			{
+				return _configuration["APIServices:DetectLanguageAPI"];
+			}
+		}
 		public string ImageSearchEndpoint
 		{
 			get

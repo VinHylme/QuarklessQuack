@@ -13,6 +13,8 @@ using OpenQA.Selenium.Firefox;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Remote;
 using OpenQA.Selenium.Support.UI;
+using QuarklessContexts.Extensions;
+
 namespace ContentSearcher.SeleniumClient
 {
 	public class SeleniumClient : ISeleniumClient
@@ -31,6 +33,10 @@ namespace ContentSearcher.SeleniumClient
 				AcceptInsecureCertificates = true,
 				PageLoadStrategy = PageLoadStrategy.Normal
 			};
+		}
+		public void AddProxy(Proxy proxy)
+		{
+			_chromeOptions.Proxy = proxy;
 		}
 		public void Initialise()
 		{
@@ -93,7 +99,7 @@ namespace ContentSearcher.SeleniumClient
 			List<string> results = new List<string>();
 			try
 			{
-				using (IWebDriver Driver_ = new ChromeDriver(ChromeDriverService.CreateDefaultService(@"..\..\..\..\Requires\chrome"), _chromeOptions))
+				using (IWebDriver Driver_ = new ChromeDriver(ChromeDriverService.CreateDefaultService(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\chrome\"), _chromeOptions))
 				{
 					foreach (var text in data)
 					{
@@ -121,6 +127,73 @@ namespace ContentSearcher.SeleniumClient
 				return null;
 			}
 		}
+
+		public IEnumerable<string> YandexImageSearch(string url, string imageurl, string targetElement, int limit = 5,  string patternRegex = @"(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|gif|png)")
+		{
+			try
+			{
+				using(Driver = new ChromeDriver(_chromeService, _chromeOptions))
+				{
+					Driver.Navigate().GoToUrl(url);
+
+					IWebElement searchButton = Driver.FindElement(By.ClassName("input__button"));
+					TextCopy.Clipboard.SetText(imageurl);
+					
+					searchButton.Click();
+					IWebElement searchField = Driver.FindElement(By.Name("cbir-url"));
+					searchField.SendKeys(Keys.Control + 'v');
+					IWebElement submitButton = Driver.FindElement(By.Name("cbir-submit"));
+					submitButton.Click();
+					Thread.Sleep(2000);
+
+					IWebElement similarButton = Driver.FindElement(By.ClassName("similar__link"));
+					//var hrefval = similarButton.GetAttribute("href");
+
+					((IJavaScriptExecutor)Driver).ExecuteScript("arguments[0].click();", similarButton);
+					Thread.Sleep(3000);
+					Driver.FindElement(By.ClassName("pane2__close-icon")).Click();
+					List<IWebElement> elements = Driver.FindElements(By.XPath($"//div[contains(@class,'{targetElement}')]")).ToList();
+
+					if (elements == null) { throw new Exception("results empty"); }
+
+					while (elements.Count < limit)
+					{
+						ScrollPage(1);
+						var uniqueFind = Driver.FindElements(By.XPath($"//div[contains(@class,'{targetElement}')]"));
+						elements.AddRange(uniqueFind);
+						elements = elements.Distinct().ToList();
+					}
+
+					List<string> urls = new List<string>();
+					for (int x = 0; x <= limit; x++)
+					{
+						var tohtml = elements[x].GetAttribute("outerHTML");
+
+						var decoded = HttpUtility.HtmlDecode(tohtml);
+						var imageUrl = Regex.Matches(decoded, patternRegex).Select(_ => _.Value).FirstOrDefault();
+						if (string.IsNullOrEmpty(imageUrl))
+						{
+							if (x > elements.Count)
+							{
+								throw new Exception("can't find any images, all returning null");
+							}
+							x = x == 0 ? 0 : x--;
+							continue;
+						}
+						else
+						{
+							urls.Add(imageUrl);
+						}
+					}
+					return urls.TakeAny(SecureRandom.Next(urls.Count));
+				}
+			}
+			catch(Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+				return null;
+			}
+		}
 		public IEnumerable<string> Reader(string url, string targetElement, int limit = 5, string patternRegex = @"(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|gif|png)")
 		{
 			try
@@ -130,8 +203,7 @@ namespace ContentSearcher.SeleniumClient
 					Driver.Navigate().GoToUrl(url);
 					List<IWebElement> elements = Driver.FindElements(By.XPath($"//div[contains(@class,'{targetElement}')]")).ToList();
 
-					if (elements == null) { throw new Exception("results empty"); }
-
+					if (elements == null && elements.Count<=0) { return null; }
 					while (elements.Count < limit)
 					{
 						ScrollPage(1);

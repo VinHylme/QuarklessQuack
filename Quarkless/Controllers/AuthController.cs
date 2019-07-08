@@ -37,7 +37,7 @@ namespace Quarkless.Controllers
 					});
 				}
 				else { 
-					if(results.StatusCode == System.Net.HttpStatusCode.OK) { 
+					if(results.IsSuccesful) { 
 						
 						var responseConcatenate = new { 
 								results.Results.AuthenticationResult.IdToken,
@@ -84,7 +84,7 @@ namespace Quarkless.Controllers
 					}
 				} 
 			}
-			return NotFound(results.Message);
+			return NotFound(results.Info.Message);
 		}
 
 		[AllowAnonymous]
@@ -167,10 +167,10 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> ChallangeNewPassword([FromBody]NewPasswordRequest newPasswordRequest)
 		{
 			var results = await _authHandler.SetNewPassword(newPasswordRequest);
-			if(results.Results!=null)
+			if(results.Results!=null && results.IsSuccesful)
 				return Ok(results.Results.AuthenticationResult);
 
-			return BadRequest($"Request Invalid: {results.StatusCode}");
+			return BadRequest($"Request Invalid: {results.Info.StatusCode}");
 		}
     }
 }

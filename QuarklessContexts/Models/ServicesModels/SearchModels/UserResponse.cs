@@ -8,6 +8,7 @@ namespace QuarklessContexts.Models.ServicesModels.SearchModels
 	public class UserResponse<TObject>
 	{
 		public TObject Object { get; set; }
+		public string MediaId { get; set; }
 		public long UserId { get; set; }
 		public string Username { get; set; }
 		public string FullName { get; set; }

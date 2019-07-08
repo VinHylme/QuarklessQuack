@@ -6,10 +6,9 @@ using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.Handlers.ClientProvider;
+using QuarklessLogic.Handlers.RestSharpClient;
 using QuarklessLogic.Logic.InstagramAccountLogic;
 using QuarklessLogic.Logic.ProfileLogic;
-using QuarklessLogic.RestSharpClient;
-using QuarklessLogic.ServicesLogic;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using System;
 using System.Collections.Generic;
@@ -26,7 +25,7 @@ namespace Quarkless.HeartBeater.__Init__
 	public struct Assignments
 	{
 		public IAPIClientContainer Worker { get; set; }
-		public TopicsModel Topic { get; set; }
+		public Topics Topic { get; set; }
 		public RequestAccountModel InstagramRequests { get; set; }
 	}
 	public class Init : IInit
@@ -68,12 +67,17 @@ namespace Quarkless.HeartBeater.__Init__
 						if (x < requesters.Count) { 
 							var wo_ = workers.ElementAtOrDefault(x);
 							_topicBuilder.Init(new UserStoreDetails { OAccountId = wo_.AccountId, OInstagramAccountUser = wo_._id, OInstagramAccountUsername = wo_.Username });
-							
-							var topic_ = await _topicBuilder.Build(requesters.ElementAtOrDefault(x).Profile.Topic.ToLower(), 15); 
+							var currAcc = requesters.ElementAtOrDefault(x);
+							var profileTopic = currAcc.Profile.Topics;
+							if (profileTopic.SubTopics == null || profileTopic.SubTopics.Count <= 2 && profileTopic.SubTopics.Any(s=>s.RelatedTopics.Count>3))
+							{
+								profileTopic = _topicBuilder.BuildTopics(currAcc.Profile).GetAwaiter().GetResult();
+							}
+
 							Assignments.Add(new Assignments
 							{
 								InstagramRequests = requesters.ElementAt(x),
-								Topic = topic_,
+								Topic = profileTopic,
 								Worker = new APIClientContainer(_context, wo_.AccountId, wo_._id)
 							});
 						}
@@ -87,12 +91,18 @@ namespace Quarkless.HeartBeater.__Init__
 						var worker_ = workers.ElementAtOrDefault(wpos);
 						if (worker_ != null) { 
 							_topicBuilder.Init(new UserStoreDetails { OAccountId = worker_.AccountId, OInstagramAccountUser = worker_._id, OInstagramAccountUsername = worker_.Username });
-							var topic = await _topicBuilder.Build(requesters.ElementAtOrDefault(y).Profile.Topic.ToLower(),25);
-							if(topic==null) return ;
+							var currAcc = requesters.ElementAtOrDefault(y);
+							var profileTopic = currAcc.Profile.Topics;
+
+							if (profileTopic.SubTopics == null || profileTopic.SubTopics.Count <= 2)
+							{
+								profileTopic = _topicBuilder.BuildTopics(currAcc.Profile).GetAwaiter().GetResult();
+							}
+
 							Assignments.Add(new Assignments
 							{
 								InstagramRequests = requesters.ElementAtOrDefault(y),
-								Topic = topic,
+								Topic = profileTopic,
 								Worker = new APIClientContainer(_context,worker_.AccountId,worker_._id)
 							});
 						}
@@ -112,7 +122,7 @@ namespace Quarkless.HeartBeater.__Init__
 				//google and yandex search are seperate
 				var go =Task.Run(()=>metadataBuilder.BuildGoogleImages());
 				var yan =Task.Run(()=> metadataBuilder.BuildYandexImages());
-			
+				var yanq = Task.Run(()=>metadataBuilder.BuildYandexImagesQuery());
 				//independed can run by themselves seperate tiem
 				var profileRefresh = Task.Run(() => { 
 					metadataBuilder.BuildUsersOwnMedias();
@@ -125,6 +135,7 @@ namespace Quarkless.HeartBeater.__Init__
 				var followingList = Task.Run(() => {
 					metadataBuilder.BuildUserFollowList();
 				});
+
 				Task.WaitAll(ins);  //depended on the initial media fetch
 				var likers = Task.Run(() => { 
 					metadataBuilder.BuildUserFromLikers();
@@ -137,9 +148,9 @@ namespace Quarkless.HeartBeater.__Init__
 					metadataBuilder.BuildMediaFromUsersCommenters();
 				});
 
-				Task.WaitAll(go,yan,likers,commenters,profileRefresh,feedRefresher);
+				Task.WaitAll(go, yan,yanq, likers, commenters, profileRefresh, feedRefresher);
 					//Build Around specific Users
-				}
+			}
 			catch(Exception ee)
 			{
 				Console.WriteLine(ee.Message);

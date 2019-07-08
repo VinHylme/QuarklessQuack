@@ -32,6 +32,7 @@ namespace Quarkless.Services
 		LikePost,
 		UnlikePost,
 		LikeComment,
-		UnlikeComment
+		UnlikeComment,
+		MaintainAccount
 	}
 }

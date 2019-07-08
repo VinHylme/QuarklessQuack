@@ -2,6 +2,7 @@
 using Quarkless.Services.Interfaces;
 using Quarkless.Services.Interfaces.Actions;
 using Quarkless.Services.StrategyBuilders;
+using QuarklessContexts.Classes.Carriers;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models;
 using QuarklessContexts.Models.Timeline;
@@ -55,10 +56,12 @@ namespace Quarkless.Services
 		Finished,
 		Failed
 	}
+
 	public class ActionWorkerModel
 	{
 		public CommitContainer ActionContainer { get; set; }
 		public ActionState ActionState { get; set; }
+		public ErrorResponse Response { get; set; }
 	}
 
 	public class ActionsContainerManager
@@ -108,12 +111,13 @@ namespace Quarkless.Services
 				{
 					outToTake.ActionState = ActionState.Began;
 					var runningRes = outToTake.ActionContainer.Action.Push(outToTake.ActionContainer.Options);
-					if (runningRes != null)
+					if (runningRes != null && runningRes.IsSuccesful)
 					{
 						outToTake.ActionState = ActionState.Finished;
-						finishedActions.Enqueue(runningRes);
+						finishedActions.Enqueue(runningRes.Results);
 					}
 					outToTake.ActionState = ActionState.Failed;
+					outToTake.Response = runningRes.Info;
 					failedWorks.Enqueue(outToTake);
 				}
 			}

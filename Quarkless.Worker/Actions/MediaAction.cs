@@ -32,13 +32,12 @@ namespace Quarkless.Worker.Actions
 				if (repo is IPostServicesRepository)
 					this._postServicesRepository = (IPostServicesRepository)repo;
 			}
-
-			_reportHandler.SetupReportHandler("MediaActions", context.GetContext.InstagramAccount.AccountId, context.GetContext.InstagramAccount.Username);
 		}
 
 		public async Task<object> Operate()
 		{
 			Console.WriteLine("BEGINING MEDIA");
+
 			var res = await context_.Hashtag.GetTopHashtagMediaListAsync(Topic, PaginationParameters.MaxPagesToLoad(Limit));
 			if (res.Succeeded)
 			{

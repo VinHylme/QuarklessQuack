@@ -3,6 +3,7 @@ using Quarkless.Services.Factories;
 using Quarkless.Services.Interfaces;
 using Quarkless.Services.Interfaces.Actions;
 using Quarkless.Services.StrategyBuilders;
+using QuarklessContexts.Classes.Carriers;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models;
@@ -46,7 +47,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		private long FollowBasedOnLikers()
 		{
-			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersViaPostLiked, _profile.Topic).GetAwaiter().GetResult();
+			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersViaPostLiked, _profile.Topics.TopicFriendlyName).GetAwaiter().GetResult();
 			if (fetchMedias != null)
 			{
 				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
@@ -60,7 +61,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					if (!select.Value.SeenBy.Contains(by))
 					{
 						select.Value.SeenBy.Add(by);
-						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostLiked, _profile.Topic, select.Value).GetAwaiter().GetResult();
+						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostLiked, _profile.Topics.TopicFriendlyName, select.Value).GetAwaiter().GetResult();
 						return select.Value.ObjectItem.ElementAtOrDefault(select.Value.ObjectItem.Count-1).UserId;
 					}
 				}
@@ -69,7 +70,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		private long FollowBasedOnTopic()
 		{
-			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic, _profile.Topic).GetAwaiter().GetResult();
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic, _profile.Topics.TopicFriendlyName).GetAwaiter().GetResult();
 			if (fetchMedias != null)
 			{
 				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
@@ -83,7 +84,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					if (!select.Value.SeenBy.Contains(by))
 					{
 						select.Value.SeenBy.Add(by);
-						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByTopic, _profile.Topic, select.Value).GetAwaiter().GetResult();
+						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByTopic, _profile.Topics.TopicFriendlyName, select.Value).GetAwaiter().GetResult();
 						return select.Value.ObjectItem.Medias.FirstOrDefault().User.UserId;
 					}
 				}
@@ -92,7 +93,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		private long FollowBasedOnCommenters()
 		{
-			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<CommentResponse>>>(MetaDataType.FetchUsersViaPostCommented, _profile.Topic).GetAwaiter().GetResult();
+			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<CommentResponse>>>(MetaDataType.FetchUsersViaPostCommented, _profile.Topics.TopicFriendlyName).GetAwaiter().GetResult();
 			if (fetchMedias != null)
 			{
 				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
@@ -106,17 +107,27 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					if (!select.Value.SeenBy.Contains(by))
 					{
 						select.Value.SeenBy.Add(by);
-						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostCommented, _profile.Topic, select.Value).GetAwaiter().GetResult();
+						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostCommented, _profile.Topics.TopicFriendlyName, select.Value).GetAwaiter().GetResult();
 						return select.Value.ObjectItem.ElementAtOrDefault(select.Value.ObjectItem.Count-1).UserId;
 					}
 				}
 			}
 			return 0;
 		}
-		public IEnumerable<TimelineEventModel> Push(IActionOptions actionOptions)
+		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
+			ResultCarrier<IEnumerable<TimelineEventModel>> Results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
 			FollowActionOptions followActionOptions = actionOptions as FollowActionOptions; 
-			if(user == null) return null;
+			if(user == null)
+			{
+				Results.IsSuccesful = false;
+				Results.Info = new ErrorResponse
+				{
+					Message = $"user is null, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
+					StatusCode = System.Net.HttpStatusCode.NotFound
+				};
+				return Results;
+			}
 			try
 			{
 				Console.WriteLine("Follow Action Started");
@@ -149,7 +160,15 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						nominatedFollower = FollowBasedOnTopic();
 						break;
 				}
-				if (nominatedFollower == 0) return null;
+				if (nominatedFollower == 0){
+					Results.IsSuccesful = false;
+					Results.Info = new ErrorResponse
+					{
+						Message = $"could not find a nominated person to follow, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
+						StatusCode = System.Net.HttpStatusCode.NotFound
+					};
+					return Results;
+				}
 
 				RestModel restModel = new RestModel
 				{
@@ -158,7 +177,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					JsonBody = null,
 					User = user
 				};
-				return new List<TimelineEventModel>
+				Results.IsSuccesful = true;
+				Results.Results = new List<TimelineEventModel>
 				{
 					new TimelineEventModel
 					{
@@ -167,11 +187,18 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						ExecutionTime =followActionOptions.ExecutionTime
 					}
 				};
+				return Results;
 			}
 			catch (Exception ee)
 			{
-				Console.WriteLine(ee.Message);
-				return null;
+				Results.IsSuccesful = false;
+				Results.Info = new ErrorResponse
+				{
+					Message = $"{ee.Message}, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
+					StatusCode = System.Net.HttpStatusCode.InternalServerError,
+					Exception = ee
+				};
+				return Results;
 			}
 		}
 

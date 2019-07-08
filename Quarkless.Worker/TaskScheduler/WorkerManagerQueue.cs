@@ -272,7 +272,8 @@ namespace Quarkless.Worker
 		public async Task<object> RunProducer(WorkerType worker,ActionType actionType, IReportHandler reportHandler, string topic, int limit, List<object> items = null, params IServiceRepository[] serviceRepositories)
 		{
 			var worker_ = GetWorkerByType(worker);
-			if (worker_ != null && worker_._worker!=null) { 
+			if (worker_ != null && worker_._worker!=null) {
+				try { 
 				var results = await worker_.Execute(actionType,reportHandler,topic,limit, items, serviceRepositories);
 				if(!(results is bool))
 				{
@@ -295,8 +296,13 @@ namespace Quarkless.Worker
 						}
 					}
 				}
-				AddWorker(worker_);
-				return results;
+					AddWorker(worker_);
+					return results;
+				}
+				catch(Exception ee)
+				{
+					AddWorker(worker_);
+				}
 			}
 			return null;
 		}

@@ -1,4 +1,6 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
+using QuarklessContexts.Enums;
+using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using System.Collections.Generic;
 
 namespace QuarklessContexts.Models.Profiles
@@ -45,6 +47,7 @@ namespace QuarklessContexts.Models.Profiles
 	{
 		public bool IsTumblry { get; set; }
 		public List<string> Sites { get; set; }
+		public int ImageType { get; set; }
 		public string PostSize { get; set; }
 		public List<int> SearchTypes {get; set; } = new List<int>();
 		public AdditionalConfigurations()
@@ -57,6 +60,18 @@ namespace QuarklessContexts.Models.Profiles
 			};
 		}
 	}
+	public class SubTopics
+	{
+		public string TopicName { get; set; }
+		public List<string> RelatedTopics { get; set; }
+	}
+	public class Topics
+	{
+		[BsonRepresentation(MongoDB.Bson.BsonType.Int32)]
+		public TopicTypes TopicType { get; set; }
+		public string TopicFriendlyName { get; set; } 
+		public List<SubTopics> SubTopics { get; set; }
+	}
 	public class ProfileModel
 	{
 		[BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
@@ -68,8 +83,9 @@ namespace QuarklessContexts.Models.Profiles
 		public string Name { get; set; }
 		public string Description { get; set; }
 		public string Language { get; set; }
-		public string Topic { get; set; }
-		public List<string> TopicList { get; set; }
+		public Topics Topics { get; set; }
+		public bool AutoGenerateTopics { get; set; }
+		public Location UserLocation { get; set; }
 		public List<string> UserTargetList { get; set; }
 		public List<Location> LocationTargetList { get; set; }
 		public AdditionalConfigurations AdditionalConfigurations { get; set; }

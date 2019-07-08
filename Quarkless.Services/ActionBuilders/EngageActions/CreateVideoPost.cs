@@ -18,6 +18,7 @@ using QuarklessContexts.Models;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
+using QuarklessContexts.Classes.Carriers;
 
 namespace Quarkless.Services.ActionBuilders.EngageActions
 {
@@ -41,19 +42,29 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			return this;
 		}
 
-		public IEnumerable<TimelineEventModel> Push(IActionOptions actionOptions)
+		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
 			VideoActionOptions videoActionOptions = actionOptions as VideoActionOptions;
-			if(user==null) return null;
+			ResultCarrier<IEnumerable<TimelineEventModel>> Results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
+
+			if (user==null){
+				Results.IsSuccesful = false;
+				Results.Info = new ErrorResponse
+				{
+					Message = $"user is null, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
+					StatusCode = System.Net.HttpStatusCode.NotFound
+				};
+				return Results;
+			}
 
 			string exactSize = _profile.AdditionalConfigurations.PostSize;
 			var location = _profile.LocationTargetList?.ElementAtOrDefault(SecureRandom.Next(_profile.LocationTargetList.Count));
 
 			var profileColor = _profile.Theme.Colors.ElementAt(SecureRandom.Next(0, _profile.Theme.Colors.Count));
 
-			var topic_ = _builder.GetTopic(_profile.Topic).GetAwaiter().GetResult();
+			var topic_ = _builder.GetTopic(_profile).GetAwaiter().GetResult();
 
-			var media = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic,_profile.Topic).GetAwaiter().GetResult();
+			var media = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic,_profile.Topics.TopicFriendlyName).GetAwaiter().GetResult();
 			var videos = media.Select(s =>
 				new __Meta__<Media>(new Media
 				{
@@ -61,7 +72,16 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					errors = s.Value.ObjectItem.errors
 				})).ToList();
 
-			if (videos.Count <= 0) return null;
+			if (videos.Count <= 0)
+			{
+				Results.IsSuccesful = false;
+				Results.Info = new ErrorResponse
+				{
+					Message = $"no videos found, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
+					StatusCode = System.Net.HttpStatusCode.NotFound
+				};
+				return Results;
+			}
 			List<byte[]> videoBytes = new List<byte[]>();
 
 			Parallel.ForEach(videos, v =>
@@ -102,7 +122,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				JsonBody = JsonConvert.SerializeObject(uploadVideo, Formatting.Indented),
 				User = user
 			};
-			return new List<TimelineEventModel>
+			Results.IsSuccesful = true;
+			Results.Results = new List<TimelineEventModel>
 			{
 				new TimelineEventModel
 				{
@@ -111,6 +132,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					ExecutionTime = videoActionOptions.ExecutionTime
 				}
 			};
+			return Results;
 		}
 
 		public IActionCommit IncludeUser(UserStoreDetails userStoreDetails)

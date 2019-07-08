@@ -20,40 +20,49 @@ namespace QuarklessRepositories.InstagramAccountRepository
 			_context = context;
 		}
 
-		public async Task<ResultBase<IEnumerable<InstagramAccountModel>>> GetInstagramAccountsOfUser(string userId, int type)
+		public async Task<ResultCarrier<IEnumerable<InstagramAccountModel>>> GetInstagramAccountsOfUser(string userId, int type)
 		{
-			ResultBase<IEnumerable<InstagramAccountModel>> Result = new ResultBase<IEnumerable<InstagramAccountModel>>();
+			ResultCarrier<IEnumerable<InstagramAccountModel>> Result = new ResultCarrier<IEnumerable<InstagramAccountModel>>();
 			try
 			{
 				var builder = Builders<InstagramAccountModel>.Filter;
 				var filter = builder.Eq("AccountId",userId) & builder.Eq("Type",type);
 
 				var accounts = await _context.InstagramAccounts.FindAsync(filter);
+				Result.IsSuccesful = true;
 				Result.Results = accounts.ToList();
 				return Result;
 			}
 			catch (Exception ee)
 			{
-				Result.Message = $"Failed to get instagram accounts for user: {userId}, error: {ee.Message}";
+				Result.Info = new ErrorResponse
+				{
+					Exception = ee,
+					Message = $"Failed to get instagram accounts for user: {userId}, error: {ee.Message}"
+				};
 				return Result;
 			}
 		}
-		public async Task<ResultBase<InstagramAccountModel>> GetInstagramAccount(string accountId, string instagramAccountId)
+		public async Task<ResultCarrier<InstagramAccountModel>> GetInstagramAccount(string accountId, string instagramAccountId)
 		{
-			ResultBase<InstagramAccountModel> Result = new ResultBase<InstagramAccountModel>();
+			ResultCarrier<InstagramAccountModel> Result = new ResultCarrier<InstagramAccountModel>();
 			try
 			{
 				var builders = Builders<InstagramAccountModel>.Filter;
 
 				var filter = builders.Eq("AccountId", accountId) & builders.Eq("_id",ObjectId.Parse(instagramAccountId));
 				var accounts = await _context.InstagramAccounts.FindAsync(filter);
-
+				Result.IsSuccesful = true;
 				Result.Results = accounts.FirstOrDefault();
 				return Result;
 			}
 			catch (Exception ee)
 			{
-				Result.Message = $"Failed to get instagram accounts for user: {accountId} for account {instagramAccountId}, error: {ee.Message}";
+				Result.Info = new ErrorResponse
+				{
+					Exception = ee,
+					Message = $"Failed to get instagram accounts for user: {accountId} for account {instagramAccountId}, error: {ee.Message}"
+				};
 				return Result;
 			}
 		}
@@ -100,9 +109,9 @@ namespace QuarklessRepositories.InstagramAccountRepository
 			}
 		}
 
-		public async Task<ResultBase<StateData>> GetInstagramAccountStateData(string accountId, string instagramAccountId)
+		public async Task<ResultCarrier<StateData>> GetInstagramAccountStateData(string accountId, string instagramAccountId)
 		{
-			ResultBase<StateData> Result = new ResultBase<StateData>();
+			ResultCarrier<StateData> Result = new ResultCarrier<StateData>();
 			try
 			{
 				var builders = Builders<InstagramAccountModel>.Filter;
@@ -112,13 +121,17 @@ namespace QuarklessRepositories.InstagramAccountRepository
 					AllowPartialResults = true,
 					Projection = Builders<InstagramAccountModel>.Projection.Include("State")
 				});
-
+				Result.IsSuccesful = true;
 				Result.Results = state.ToList().Select(_=>_.State).SingleOrDefault();
 				return Result;
 			}
 			catch (Exception ee)
 			{
-				Result.Message = $"Failed to get instagram accounts for user: {accountId} for account {instagramAccountId}, error: {ee.Message}";
+				Result.Info = new ErrorResponse
+				{
+					Exception = ee,
+					Message = $"Failed to get instagram accounts for user: {accountId} for account {instagramAccountId}, error: {ee.Message}"
+				};
 				return Result;
 			}
 		}

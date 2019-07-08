@@ -16,6 +16,7 @@ using QuarklessContexts.InstaClient;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.ReportHandler;
 using QuarklessLogic.Handlers.RequestBuilder.RequestBuilder;
+using QuarklessLogic.Handlers.RestSharpClient;
 using QuarklessLogic.Handlers.TextGeneration;
 using QuarklessLogic.Handlers.TranslateService;
 using QuarklessLogic.Handlers.Util;
@@ -29,7 +30,6 @@ using QuarklessLogic.Logic.InstaUserLogic;
 using QuarklessLogic.Logic.MediaLogic;
 using QuarklessLogic.Logic.ProfileLogic;
 using QuarklessLogic.Logic.ProxyLogic;
-using QuarklessLogic.RestSharpClient;
 using QuarklessLogic.ServicesLogic;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic;
@@ -39,6 +39,8 @@ using QuarklessRepositories.ProxyRepository;
 using QuarklessRepositories.RedisRepository.HeartBeaterRedis;
 using QuarklessRepositories.RedisRepository.InstagramAccountRedis;
 using QuarklessRepositories.RedisRepository.RedisClient;
+using QuarklessRepositories.Repository.CorpusRepositories.Comments;
+using QuarklessRepositories.Repository.CorpusRepositories.Medias;
 using QuarklessRepositories.Repository.ServicesRepositories;
 using QuarklessRepositories.Repository.ServicesRepositories.CommentsRepository;
 using QuarklessRepositories.Repository.ServicesRepositories.HashtagsRepository;
@@ -97,10 +99,17 @@ namespace Quarkless.Common
 			services.AddTransient<ITimelineRepository,TimelineRepository>();
 			services.AddTransient<IHeartbeatRepository, HeartbeatRepository>();
 			services.AddTransient<IInstagramAccountRedis,InstagramAccountRedis>();
+			services.AddTransient<ICommentCorpusRepository, CommentCorpusRepository>();
+			services.AddTransient<IMediaCorpusRepository,MediaCorpusRepository>();
 			services.Configure<RedisOptions>(o =>
 			{
 				o.ConnectionString = _accessors.RedisConnectionString;
 				o.DefaultKeyExpiry = TimeSpan.FromDays(7);
+			});
+			services.Configure<TranslateOptions>(options =>
+			{
+				options.DetectLangAPIKey =_accessors.DetectAPI;
+				options.YandexAPIKey = _accessors.YandexAPIKey;
 			});
 			services.AddTransient<IRedisClient,RedisClient>();
 		}

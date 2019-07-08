@@ -2,6 +2,7 @@
 using Quarkless.Services.Interfaces;
 using Quarkless.Services.Interfaces.Actions;
 using Quarkless.Services.StrategyBuilders;
+using QuarklessContexts.Classes.Carriers;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models;
@@ -47,7 +48,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		
 		private HolderComment CommentingByTopic()
 		{
-			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByCommenters,_profile.Topic).GetAwaiter().GetResult();
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByCommenters,_profile.Topics.TopicFriendlyName).GetAwaiter().GetResult();
 			if (fetchMedias!=null) { 
 				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
 				if (select.HasValue) {
@@ -58,8 +59,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					};
 					if (!select.Value.SeenBy.Contains(by)) { 
 						select.Value.SeenBy.Add(by);
-						_heartbeatLogic.UpdateMetaData<Media>(MetaDataType.FetchMediaByCommenters,_profile.Topic, select.Value).GetAwaiter().GetResult();
-						return new HolderComment { Topic = _profile.Topic, MediaId = select.Value.ObjectItem.Medias.FirstOrDefault().MediaId};
+						_heartbeatLogic.UpdateMetaData<Media>(MetaDataType.FetchMediaByCommenters,_profile.Topics.TopicFriendlyName, select.Value).GetAwaiter().GetResult();
+						return new HolderComment { Topic = _profile.Topics.TopicFriendlyName, MediaId = select.Value.ObjectItem.Medias.FirstOrDefault().MediaId};
 					}
 				}
 			}
@@ -67,7 +68,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		private HolderComment CommentingByLikers()
 		{
-			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByLikers, _profile.Topic).GetAwaiter().GetResult();
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByLikers, _profile.Topics.TopicFriendlyName).GetAwaiter().GetResult();
 			if (fetchMedias != null)
 			{
 				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
@@ -81,8 +82,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					if (!select.Value.SeenBy.Contains(by))
 					{
 						select.Value.SeenBy.Add(by);
-						_heartbeatLogic.UpdateMetaData<Media>(MetaDataType.FetchMediaByCommenters, _profile.Topic, select.Value).GetAwaiter().GetResult();
-						return new HolderComment { Topic = _profile.Topic, MediaId = select.Value.ObjectItem.Medias.FirstOrDefault().MediaId };
+						_heartbeatLogic.UpdateMetaData<Media>(MetaDataType.FetchMediaByCommenters, _profile.Topics.TopicFriendlyName, select.Value).GetAwaiter().GetResult();
+						return new HolderComment { Topic = _profile.Topics.TopicFriendlyName, MediaId = select.Value.ObjectItem.Medias.FirstOrDefault().MediaId };
 					}
 				}
 			}
@@ -98,11 +99,20 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		/// </summary>
 		/// <param name="actionOptions"></param>
 		/// <returns></returns>
-		public IEnumerable<TimelineEventModel> Push(IActionOptions actionOptions)
+		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
 			CommentingActionOptions commentingActionOptions = actionOptions as CommentingActionOptions;
-			
-			if(commentingActionOptions==null && user==null) return null ;
+			ResultCarrier<IEnumerable<TimelineEventModel>> Results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
+			if(commentingActionOptions==null && user==null)
+			{
+				Results.IsSuccesful = false;
+				Results.Info = new ErrorResponse
+				{
+					Message = $"commenting options is null, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
+					StatusCode = System.Net.HttpStatusCode.NotFound
+				};
+				return Results;
+			}
 			try
 			{
 				if(commentingStrategySettings.CommentingStrategy == CommentingStrategy.Default)
@@ -132,7 +142,16 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 							nominatedMedia = CommentingByLikers();
 							break;
 					}
-					if(string.IsNullOrEmpty(nominatedMedia.MediaId)) return null;
+					if(string.IsNullOrEmpty(nominatedMedia.MediaId))
+					{
+						Results.IsSuccesful = false;
+						Results.Info = new ErrorResponse
+						{
+							Message = $"No nominated media found, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
+							StatusCode = System.Net.HttpStatusCode.NotFound
+						};
+						return Results;
+					}
 					CreateCommentRequest createComment = new CreateCommentRequest
 					{
 						Text = _builder.GenerateComment(nominatedMedia.Topic, _profile.Language)
@@ -144,23 +163,35 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						JsonBody = JsonConvert.SerializeObject(createComment),
 						User = user
 					};
-
-					return new List<TimelineEventModel>
+					Results.IsSuccesful = true;
+					Results.Results = new List<TimelineEventModel>
 					{
 						new TimelineEventModel{
 							ActionName = $"Comment_{commentingStrategySettings.CommentingStrategy.ToString()}_{commentingActionSelected.ToString()}",
 							Data = restModel,
-							ExecutionTime = commentingActionOptions.ExecutionTime 
-						} 
+							ExecutionTime = commentingActionOptions.ExecutionTime
+						}
 					};
+					return Results;
 				}
-				
-				return null;
+				Results.IsSuccesful = false;
+				Results.Info = new ErrorResponse
+				{
+					Message = $"wrong strategy used, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
+					StatusCode = System.Net.HttpStatusCode.NotFound
+				};
+				return Results;
 			}
 			catch(Exception ee)
 			{
-				Console.WriteLine(ee.Message);
-				return null;
+				Results.IsSuccesful = false;
+				Results.Info = new ErrorResponse
+				{
+					Message = $"{ee.Message}, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
+					StatusCode = System.Net.HttpStatusCode.InternalServerError,
+					Exception = ee
+				};
+				return Results;
 			}
 		}
 		public IActionCommit IncludeUser(UserStoreDetails userStoreDetails)

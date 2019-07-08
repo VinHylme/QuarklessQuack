@@ -58,6 +58,22 @@ namespace Quarkless.Controllers
 		}
 
 		[HttpPost]
+		[Route("api/media/delete/{mediaId}/{mediaType}")]
+		public async Task<IActionResult> DeleteMedia(string mediaId, int mediaType)
+		{
+			if (_userContext.UserAccountExists && mediaId != null)
+			{
+				var results = await _mediaLogic.DeleteMediaAsync(mediaId,mediaType);
+				if (results.Succeeded)
+				{
+					return Ok(results.Value);
+				}
+				return NotFound(results.Info);
+			}
+			return BadRequest("invalid");
+		}
+
+		[HttpPost]
 		[Route("api/media/like/{mediaId}")]
 		public async Task<IActionResult> LikeMedia(string mediaId)
 		{

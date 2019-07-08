@@ -8,6 +8,7 @@ using QuarklessContexts.Models.Logger;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.Proxies;
 using QuarklessContexts.Models.ServicesModels;
+using QuarklessContexts.Models.ServicesModels.Corpus;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using System;
 using System.Threading.Tasks;
@@ -102,9 +103,11 @@ namespace QuarklessRepositories.RepositoryClientManager
 		}
 
 		public IMongoCollection<CaptionsModel> Captions => _contentDatabase.GetCollection<CaptionsModel>("Captions");
-		public IMongoCollection<HashtagsModel> Hashtags => _contentDatabase.GetCollection<HashtagsModel>("Hashtags");
+		public IMongoCollection<HashtagsModel> Hashtags => _contentDatabase.GetCollection<HashtagsModel>("CHashtags");
 		public IMongoCollection<UserBiographyModel> UserBiography => _contentDatabase.GetCollection<UserBiographyModel>("BiographyDetail");
 		public IMongoCollection<JobDto> Timeline => _schedulerDatabase.GetCollection<JobDto>("Timeline.jobGraph");
+		public IMongoCollection<CommentCorpus> CorpusComments => _contentDatabase.GetCollection<CommentCorpus>("CComments");
+		public IMongoCollection<MediaCorpus> CorpusMedia => _contentDatabase.GetCollection<MediaCorpus>("CMedias");
 		internal async Task<bool> CreateCollection(string collectionName, BsonDocument document = null)
 		{
 			try

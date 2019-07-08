@@ -1,7 +1,7 @@
 ﻿using Quarkless.Queue.Interfaces.Jobs;
 using Quarkless.Queue.Jobs.JobOptions;
 using QuarklessContexts.Enums;
-using QuarklessLogic.RestSharpClient;
+using QuarklessLogic.Handlers.RestSharpClient;
 using System;
 using System.Diagnostics;
 using System.Threading;

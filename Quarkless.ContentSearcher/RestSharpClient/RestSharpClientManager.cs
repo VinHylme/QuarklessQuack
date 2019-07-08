@@ -2,12 +2,13 @@
 using Newtonsoft.Json.Linq;
 using QuarklessContexts.Models.Timeline;
 using RestSharp;
+using RestSharp.Authenticators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 
-namespace QuarklessLogic.RestSharpClient
+namespace QuarklessLogic.Handlers.RestSharpClient
 {
 	public class RestSharpClientManager : IRestSharpClientManager
 	{
@@ -35,8 +36,9 @@ namespace QuarklessLogic.RestSharpClient
 			foreach (var cookie in cookies)
 				RestClient.CookieContainer.Add(cookie);
 		}
+
 		public IRestResponse PostRequest(string url, string resource, string jsonBody, UserStoreDetails userStore = null, 
-			IEnumerable<Parameter> parameters = null, IEnumerable<HttpHeader> headers=null)
+			IEnumerable<Parameter> parameters = null, IEnumerable<HttpHeader> headers=null,string username = null, string password = null)
 		{
 			try
 			{
@@ -45,7 +47,7 @@ namespace QuarklessLogic.RestSharpClient
 					request.AddJsonBody(jsonBody);
 
 				RestClient.BaseUrl = new Uri(url);
-
+				RestClient.Authenticator = new HttpBasicAuthenticator(username,password);
 				if (parameters!=null && parameters.Count() > 0)
 				{
 					foreach (var param_ in parameters)
