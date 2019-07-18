@@ -12,6 +12,19 @@ namespace InstagramApiSharp.API.Processors
     /// </summary>
     public interface IStoryProcessor
     {
+
+        /// <summary>
+        ///     Request for joing chats from story
+        /// </summary>
+        /// <param name="storyChatId">Story chat id (<see cref="InstaStoryChatStickerItem.StoryChatId"/>)</param>
+        Task<IResult<bool>> StoryChatRequestAsync(long storyChatId);
+
+        /// <summary>
+        ///     Cancel story chat request
+        /// </summary>
+        /// <param name="storyChatId">Story chat id (<see cref="InstaStoryChatStickerItem.StoryChatId"/>)</param>
+        Task<IResult<bool>> CancelStoryChatRequestAsync(long storyChatId);
+
         /// <summary>
         ///     Reply a photo to story
         /// </summary>

@@ -57,6 +57,11 @@ namespace InstagramApiSharp.API
         bool IsUserAuthenticated { get; }
 
         /// <summary>
+        ///     Load instagram's api version from session file
+        ///     <para>Default is False</para>
+        /// </summary>
+        bool LoadApiVersionFromSessionFile { get; set; }
+        /// <summary>
         ///     Live api functions.
         /// </summary>
         ILiveProcessor LiveProcessor { get; }
@@ -347,8 +352,12 @@ namespace InstagramApiSharp.API
 
         //////////////////////////////////////////////////////////////////////////////////////////////////
         /////////////////////////////////// Challenge for logged in user /////////////////////////////////
-        
 
+        /// <summary>
+        ///     Set Challenge Info when server asks for a challenge on calling functions
+        /// </summary>
+        /// <param name="Challenge">Challenge info</param>
+        void SetChallengeInfo(InstaChallengeLoginInfo Challenge);
 
         /// <summary>
         ///     Get challenge data for logged in user

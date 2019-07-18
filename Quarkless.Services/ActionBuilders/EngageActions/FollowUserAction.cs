@@ -25,7 +25,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		Any = 0,
 		FollowBasedOnLikers = 1,
 		FollowBasedOnCommenters = 2,
-		FollowBasedOnTopic = 3
+		FollowBasedOnTopic = 3,
+		FollowBasedOnLocation = 4 
 	}
 	public class FollowUserAction : IActionCommit
 	{
@@ -47,69 +48,88 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		private long FollowBasedOnLikers()
 		{
-			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersViaPostLiked, _profile.Topics.TopicFriendlyName).GetAwaiter().GetResult();
+			By by = new By
+			{
+				ActionType = (int)ActionType.FollowUser,
+				User = _profile.InstagramAccountId
+			};
+			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersViaPostLiked, _profile.Topics.TopicFriendlyName)
+				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
+				.Where(s => s.ObjectItem.Count > 0);
 			if (fetchMedias != null)
 			{
 				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
-				if (select.HasValue)
+				if (select!=null)
 				{
-					By by = new By
-					{
-						ActionType = (int)ActionType.FollowUser,
-						User = _profile.InstagramAccountId
-					};
-					if (!select.Value.SeenBy.Contains(by))
-					{
-						select.Value.SeenBy.Add(by);
-						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostLiked, _profile.Topics.TopicFriendlyName, select.Value).GetAwaiter().GetResult();
-						return select.Value.ObjectItem.ElementAtOrDefault(select.Value.ObjectItem.Count-1).UserId;
-					}
+					select.SeenBy.Add(by);
+					_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostLiked, _profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
+					return select.ObjectItem.ElementAtOrDefault(select.ObjectItem.Count-1).UserId;
 				}
 			}
 			return 0;
 		}
 		private long FollowBasedOnTopic()
 		{
-			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic, _profile.Topics.TopicFriendlyName).GetAwaiter().GetResult();
+			By by = new By
+			{
+				ActionType = (int)ActionType.FollowUser,
+				User = _profile.InstagramAccountId
+			};
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic, _profile.Topics.TopicFriendlyName)
+				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
+				.Where(s => s.ObjectItem.Medias.Count > 0);
 			if (fetchMedias != null)
 			{
 				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
-				if (select.HasValue)
+				if (select!=null)
 				{
-					By by = new By
-					{
-						ActionType = (int)ActionType.FollowUser,
-						User = _profile.InstagramAccountId
-					};
-					if (!select.Value.SeenBy.Contains(by))
-					{
-						select.Value.SeenBy.Add(by);
-						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByTopic, _profile.Topics.TopicFriendlyName, select.Value).GetAwaiter().GetResult();
-						return select.Value.ObjectItem.Medias.FirstOrDefault().User.UserId;
-					}
+					select.SeenBy.Add(by);
+					_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByTopic, _profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
+					return select.ObjectItem.Medias.FirstOrDefault().User.UserId;		
+				}
+			}
+			return 0;
+		}
+		private long FollowBasedOnLocation()
+		{
+			By by = new By
+			{
+				ActionType = (int)ActionType.FollowUser,
+				User = _profile.InstagramAccountId
+			};
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByUserLocationTargetList, _profile.Topics.TopicFriendlyName,_profile.InstagramAccountId)
+				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
+				.Where(s => s.ObjectItem.Medias.Count > 0);
+			if (fetchMedias != null)
+			{
+				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
+				if (select!=null)
+				{
+					select.SeenBy.Add(by);
+					_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByUserLocationTargetList, _profile.Topics.TopicFriendlyName, select,_profile.InstagramAccountId).GetAwaiter().GetResult();
+					return select.ObjectItem.Medias.FirstOrDefault().User.UserId;	
 				}
 			}
 			return 0;
 		}
 		private long FollowBasedOnCommenters()
 		{
-			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<CommentResponse>>>(MetaDataType.FetchUsersViaPostCommented, _profile.Topics.TopicFriendlyName).GetAwaiter().GetResult();
+			By by = new By
+			{
+				ActionType = (int)ActionType.FollowUser,
+				User = _profile.InstagramAccountId
+			};
+			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<CommentResponse>>>(MetaDataType.FetchUsersViaPostCommented, _profile.Topics.TopicFriendlyName)
+				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
+				.Where(s => s.ObjectItem.Count > 0);
 			if (fetchMedias != null)
 			{
 				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
-				if (select.HasValue)
+				if (select!=null)
 				{
-					By by = new By
-					{
-						ActionType = (int)ActionType.FollowUser,
-						User = _profile.InstagramAccountId
-					};
-					if (!select.Value.SeenBy.Contains(by))
-					{
-						select.Value.SeenBy.Add(by);
-						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostCommented, _profile.Topics.TopicFriendlyName, select.Value).GetAwaiter().GetResult();
-						return select.Value.ObjectItem.ElementAtOrDefault(select.Value.ObjectItem.Count-1).UserId;
-					}
+					select.SeenBy.Add(by);
+					_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostCommented, _profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
+					return select.ObjectItem.ElementAtOrDefault(select.ObjectItem.Count-1).UserId;
 				}
 			}
 			return 0;
@@ -138,11 +158,13 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				{
 					List<Chance<FollowActionType>> followActionsChances = new List<Chance<FollowActionType>>
 					{
-						new Chance<FollowActionType>{Object = FollowActionType.FollowBasedOnCommenters, Probability = 0.30},
-						new Chance<FollowActionType>{Object = FollowActionType.FollowBasedOnLikers, Probability = 0.55},
+						new Chance<FollowActionType>{Object = FollowActionType.FollowBasedOnCommenters, Probability = 0.25},
+						new Chance<FollowActionType>{Object = FollowActionType.FollowBasedOnLikers, Probability = 0.40},
 						new Chance<FollowActionType>{Object = FollowActionType.FollowBasedOnTopic, Probability = 0.15}
 					};
-					followActionTypeSelected = SecureRandom.ProbabilityRoll(followActionsChances);
+					if (_profile.LocationTargetList != null)
+						if (_profile.LocationTargetList.Count > 0)
+							followActionsChances.Add(new Chance<FollowActionType> { Object = FollowActionType.FollowBasedOnLocation, Probability = 0.20 });
 				}
 				else
 				{
@@ -158,6 +180,9 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						break;
 					case FollowActionType.FollowBasedOnTopic:
 						nominatedFollower = FollowBasedOnTopic();
+						break;
+					case FollowActionType.FollowBasedOnLocation:
+						nominatedFollower = FollowBasedOnLocation();
 						break;
 				}
 				if (nominatedFollower == 0){

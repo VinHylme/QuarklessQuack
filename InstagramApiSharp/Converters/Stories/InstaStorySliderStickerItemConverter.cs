@@ -21,7 +21,9 @@ namespace InstagramApiSharp.Converters
                 SliderVoteAverage = SourceObject.SliderVoteAverage == null? 0 : SourceObject.SliderVoteAverage.Value,
                 SliderVoteCount = SourceObject.SliderVoteCount == null ? 0 : SourceObject.SliderVoteCount.Value,
                 TextColor = SourceObject.TextColor,
-                ViewerCanVote = SourceObject.ViewerCanVote
+                ViewerCanVote = SourceObject.ViewerCanVote,
+                ViewerVote = SourceObject.ViewerVote ?? -1,
+                BackgroundColor = SourceObject.BackgroundColor
             };
             return slider;
         }

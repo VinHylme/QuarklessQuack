@@ -21,5 +21,9 @@ namespace InstagramApiSharp.Classes.ResponseWrappers
         public long? SliderVoteCount { get; set; }
         [JsonProperty("slider_vote_average")]
         public double? SliderVoteAverage { get; set; }
+        [JsonProperty("viewer_vote")]
+        public double? ViewerVote { get; set; }
+        [JsonProperty("background_color")]
+        public string BackgroundColor { get; set; }
     }
 }

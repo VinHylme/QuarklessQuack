@@ -1,9 +1,6 @@
-﻿using System;
-
-namespace InstagramApiSharp.Classes.Models
+﻿namespace InstagramApiSharp.Classes.Models
 {
-	[Serializable]
-	public class InstaLocation : InstaLocationShort
+    public class InstaLocation : InstaLocationShort
     {
         public double Rotation { get; set; }
 

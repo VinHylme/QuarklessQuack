@@ -17,11 +17,12 @@ namespace Quarkless.Services.Factories
 			_factories = new Dictionary<ActionType, ActionBuilderFactory>
 			{
 				{ ActionType.FollowUser, new FollowUserActionBuilderFactory() },
-				{ ActionType.CreatePostTypeImage, new CreateImagePostActionBuilderFactory() },
-				{ ActionType.CreatePostTypeVideo, new CreateVideoPostActionBuilderFactory() },
+				{ ActionType.CreatePost, new CreatePostActionBuilderFactory() },
 				{ ActionType.LikePost, new LikeMediaPostActionBuilderFactory()},
 				{ ActionType.CreateCommentMedia, new CreateCommentMediaActionBuilderFactory() },
-				{ ActionType.MaintainAccount, new AccountCheckerActionBuilderFactory() }
+				{ ActionType.MaintainAccount, new AccountCheckerActionBuilderFactory() },
+				{ ActionType.UnFollowUser, new UnFollowUserActionBuilderFactory() },
+				{ ActionType.LikeComment, new LikeCommentActionBuilderFactory() }
 			};
 		}
 

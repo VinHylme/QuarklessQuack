@@ -9,7 +9,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 	{
 		Task<string> GetStateDataFromString();
 		Task<bool> TryLogin(string username, string password);
-
+		Task<IResult<bool>> AcceptConsent();
 		Task<IResult<InstaActivityFeed>> GetRecentActivityFeedAsync(int limit);
 		Task<IResult<InstaFriendshipStatus>> AcceptFriendshipRequestAsync(long userId);
 		Task<IResult<InstaFriendshipFullStatus>> BlockUser(long userId);

@@ -38,10 +38,13 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 						FollowingCount = null,
 						Password = addInstagram.Password,
 						Username = addInstagram.Username,
-						TotalLikes = null,
 						TotalPostsCount = null,
 						Type = addInstagram.Type,
-						AgentState = false
+						AgentSettings = new AgentSettings
+						{
+							AgentState = (int) AgentState.NotStarted
+						},
+						DateAdded = DateTime.UtcNow
 					};
 					var result = await _instagramAccountRepository.AddInstagramAccount(instamodel);
 					if(result!=null)
@@ -60,7 +63,7 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 						};
 					}
 					Result.Info = new ErrorResponse{Message = $"Failed to add instagram user of {result.AccountId}, instagram account {result.Username}" };
-					return null;
+					return Result;
 				}
 				catch(Exception ee)
 				{
@@ -105,12 +108,13 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 
 					var shortInsta = new ShortInstagramAccountModel{
 						AccountId = res.AccountId,
-						AgentState = res.AgentState,
+						AgentSettings = res.AgentSettings,
 						FollowersCount = res.FollowersCount,
 						FollowingCount = res.FollowingCount,
 						Id = res._id,
 						TotalPostsCount = res.TotalPostsCount,
-						Username = res.Username
+						Username = res.Username,
+						DateAdded = res.DateAdded
 					};
 					await _instagramAccountRedis.SetInstagramAccountDetail(accountId,instagramAccountId,shortInsta);
 					return shortInsta;
@@ -164,12 +168,13 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 			ShortInstagramAccountModel toshortmodel = new ShortInstagramAccountModel
 			{
 				AccountId = instagramAccountModel.AccountId,
-				AgentState = instagramAccountModel.AgentState,
+				AgentSettings = instagramAccountModel.AgentSettings,
 				FollowersCount = instagramAccountModel.FollowersCount,
 				FollowingCount = instagramAccountModel.FollowingCount,
 				Id = instagramAccountModel._id,
 				TotalPostsCount = instagramAccountModel.TotalPostsCount,
-				Username = instagramAccountModel.Username
+				Username = instagramAccountModel.Username,
+				DateAdded = instagramAccountModel.DateAdded
 			};
 			await _instagramAccountRedis.SetInstagramAccountDetail(accountId,instagramAccountId,toshortmodel);
 			return await _instagramAccountRepository.PartialUpdateInstagramAccount(instagramAccountId, instagramAccountModel);

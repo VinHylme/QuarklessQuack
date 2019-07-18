@@ -12,7 +12,7 @@ namespace Quarkless.Services.StrategyBuilders
 	public class UnFollowStrategySettings : IStrategySettings
 	{
 		public UnFollowStrategyType UnFollowStrategy { get; set; }
-		public int NumberOfActions { get; set; }
-		public DateTimeOffset OffsetPerAction { get; set; }
+		public int NumberOfUnfollows { get; set; }
+		public TimeSpan OffsetPerAction { get; set; }
 	}
 }

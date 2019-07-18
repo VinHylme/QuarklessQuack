@@ -10,7 +10,8 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 		{
 			Timeline,
 			Usersessions,
-			MetaData
+			MetaData,
+			Timelinejob
 		}
 	}
 }

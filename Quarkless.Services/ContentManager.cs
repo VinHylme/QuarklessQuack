@@ -4,6 +4,7 @@ using Quarkless.Services.Interfaces;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
+using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.Handlers.TextGeneration;
 using System;
 using System.Collections.Generic;
@@ -32,9 +33,9 @@ namespace Quarkless.Services
 
 			return totalFound;
 		}
-		public async Task<IEnumerable<string>> GetHashTags (string topic, int limit, int pickAmount)
+		public async Task<IEnumerable<string>> GetHashTags (string topic, string subcategory, string language, int limit, int pickAmount)
 		{
-			return await _topicBuilder.BuildHashtags(topic,limit,pickAmount);
+			return await _topicBuilder.BuildHashtags(topic,subcategory,language,limit,pickAmount);
 		}
 		public string GenerateText(string topic,string lang, int type, int limit, int size)
 		{
@@ -42,17 +43,32 @@ namespace Quarkless.Services
 			//	type,topic,lang,size,limit) ;
 			return _textGeneration.MarkovIt(type,topic,lang,size,limit).GetAwaiter().GetResult();
 		}
-		public string GenerateMediaInfo(Topics topicSelect, string language, string credit = null)
+		public string GenerateMediaInfo(Topics topicSelect, string topicSelected, string language, string credit = null)
 		{
-			var hash = GetHashTags(topicSelect.TopicFriendlyName, 300, 30).GetAwaiter().GetResult().ToList();
-			hash = hash.TakeAny(15).ToList();
+			List<string> selections = new List<string>();
+			List<string> hashtagsToUse = new List<string>();
+			//possibly analyse image and give out relevant hashtags
+			QuarklessContexts.Models.Profiles.SubTopics selectASubTopic;
+			if (!string.IsNullOrEmpty(topicSelected))
+			{
+				var dist = topicSelect.SubTopics.Select(s=>s.TopicName.Similarity(topicSelected)).Min(x=>x);
+				var pos = topicSelect.SubTopics.FindIndex(n => n.TopicName.Similarity(topicSelected) == dist);
+				selectASubTopic = topicSelect.SubTopics.ElementAtOrDefault(pos);
+			}
+			else { 
+				selectASubTopic = topicSelect.SubTopics.ElementAtOrDefault(SecureRandom.Next(topicSelect.SubTopics.Count-1));
+			}
+			if (selectASubTopic != null)
+			{
+				selections.Add(topicSelect.TopicFriendlyName);
+				selections.Add(selectASubTopic.TopicName);
+				selections.AddRange(selectASubTopic.RelatedTopics);
+				selections.AddRange(GetHashTags(topicSelect.TopicFriendlyName, topicSelected, language, 200, 15).GetAwaiter().GetResult());
+			}
 
-			var totaltopics = topicSelect.SubTopics.Select(a=>a.TopicName).ToList();
-			totaltopics.AddRange(topicSelect.SubTopics.Select(a=>a.RelatedTopics).SquashMe());
-			totaltopics.Add(topicSelect.TopicFriendlyName);
-			hash.AddRange(totaltopics.TakeAny(30).Select(s => $"#{s}"));
-			var hashtags = hash.Take(29).JoinEvery(Environment.NewLine, 3);
-			var caption_ = GenerateText(topicSelect.TopicFriendlyName.ToLower(), language.ToUpper(), 1, SecureRandom.Next(1,3), SecureRandom.Next(2,6)).Split(',')[0];
+			hashtagsToUse.AddRange(selections.Take(SecureRandom.Next(24,27)).Select(s=> $"#{s}"));
+			var hashtags = hashtagsToUse.JoinEvery(Environment.NewLine, 3);
+			var caption_ = GenerateText(topicSelect.TopicFriendlyName.ToLower(), language.ToUpper(), 1, SecureRandom.Next(4), SecureRandom.Next(2,6)).Split(',')[0];
 			string creditLine = string.Empty;
 			if (credit != null)
 				creditLine = $"credit: @{credit}";
@@ -61,12 +77,13 @@ namespace Quarkless.Services
 		}
 		public string GenerateComment(string topic, string language)
 		{
-			var comment = GenerateText(topic.ToLower(), language.ToUpper(), 0 , SecureRandom.Next(1,3) ,SecureRandom.Next(3,10)).Split(',')[0];
+			var comment = GenerateText(topic.ToLower(), language.ToUpper(), 0 , SecureRandom.Next(4) ,SecureRandom.Next(2,6)).Split(',')[0];
 			return comment;
 		}
 
-		public Task<Topics> GetTopic(ProfileModel profile, int takeSuggested = -1)
+		public Task<Topics> GetTopic(UserStoreDetails userstoredetails, ProfileModel profile, int takeSuggested = -1)
 		{
+			_topicBuilder.Init(userstoredetails);
 			return _topicBuilder.BuildTopics(profile,takeSuggested);
 		}
 	}

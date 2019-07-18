@@ -17,6 +17,7 @@ namespace QuarklessLogic.Handlers.RequestBuilder.Consts
 		public const string ReplyComment = ApiPath + "comments/reply/{0}/{1}";
 		#endregion
 		#region Media
+		public const string UploadCarousel = ApiPath + "media/upload/carousel";
 		public const string UploadPhoto = ApiPath + "media/upload/photo";
 		public const string UploadVideo = ApiPath + "media/upload/video";
 		public const string DeleteMedia = ApiPath + "/media/delete/{0}/{1}";

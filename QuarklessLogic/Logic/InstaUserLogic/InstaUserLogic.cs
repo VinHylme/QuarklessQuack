@@ -34,6 +34,18 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 				return false;
 			}
 		}
+		public async Task<IResult<bool>> AcceptConsent()
+		{
+			try
+			{
+				return await Client.GetContext.ActionClient.AcceptConsentAsync();
+			}
+			catch(Exception ee)
+			{
+				_reportHandler.MakeReport(ee);
+				return null;
+			}
+		}
 		public async Task<string> GetStateDataFromString()
 		{
 			try

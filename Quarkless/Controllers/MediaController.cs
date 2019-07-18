@@ -2,6 +2,7 @@
 using QuarklessContexts.Contexts;
 using QuarklessContexts.Models.MediaModels;
 using QuarklessContexts.Models.UserAuth.AuthTypes;
+using QuarklessLogic.Logic.InstaUserLogic;
 using QuarklessLogic.Logic.MediaLogic;
 using System;
 using System.Collections.Generic;
@@ -19,9 +20,11 @@ namespace Quarkless.Controllers
 	public class MediaController : ControllerBase
 	{
 		private readonly IMediaLogic _mediaLogic;
+		private readonly IInstaUserLogic _instaUserLogic;
 		private readonly IUserContext _userContext;
-		public MediaController(IUserContext userContext, IMediaLogic mediaLogic)
+		public MediaController(IUserContext userContext, IMediaLogic mediaLogic, IInstaUserLogic instaUserLogic)
 		{
+			_instaUserLogic = instaUserLogic;
 			_mediaLogic = mediaLogic;
 			_userContext = userContext;
 		}
@@ -37,6 +40,35 @@ namespace Quarkless.Controllers
 				{
 					return Ok(results.Value);
 				}
+				else
+				{
+					if (results.Info.ResponseType == InstagramApiSharp.Classes.ResponseType.ConsentRequired)
+					{
+						await _instaUserLogic.AcceptConsent();
+					}
+				}
+				return NotFound(results.Info);
+			}
+			return BadRequest("invalid");
+		}
+		[HttpPost]
+		[Route("api/media/upload/carousel")]
+		public async Task<IActionResult> UploadCarousel([FromBody]UploadAlbumModel uploadAlbum)
+		{
+			if (_userContext.UserAccountExists && uploadAlbum != null)
+			{
+				var results = await _mediaLogic.UploadAlbumAsync(uploadAlbum);
+				if (results.Succeeded)
+				{
+					return Ok(results.Value);
+				}
+				else
+				{
+					if (results.Info.ResponseType == InstagramApiSharp.Classes.ResponseType.ConsentRequired)
+					{
+						await _instaUserLogic.AcceptConsent();
+					}
+				}
 				return NotFound(results.Info);
 			}
 			return BadRequest("invalid");
@@ -51,6 +83,13 @@ namespace Quarkless.Controllers
 				if (results.Succeeded)
 				{
 					return Ok(results.Value);
+				}
+				else
+				{
+					if (results.Info.ResponseType == InstagramApiSharp.Classes.ResponseType.ConsentRequired)
+					{
+						await _instaUserLogic.AcceptConsent();
+					}
 				}
 				return NotFound(results.Info);
 			}
@@ -68,6 +107,13 @@ namespace Quarkless.Controllers
 				{
 					return Ok(results.Value);
 				}
+				else
+				{
+					if (results.Info.ResponseType == InstagramApiSharp.Classes.ResponseType.ConsentRequired)
+					{
+						await _instaUserLogic.AcceptConsent();
+					}
+				}
 				return NotFound(results.Info);
 			}
 			return BadRequest("invalid");
@@ -83,6 +129,17 @@ namespace Quarkless.Controllers
 				if (results.Succeeded)
 				{
 					return Ok(results.Value);
+				}
+				else
+				{
+					if(results.Info.ResponseType == InstagramApiSharp.Classes.ResponseType.ConsentRequired)
+					{
+						await _instaUserLogic.AcceptConsent();
+					}
+					else if(results.Info.ResponseType == InstagramApiSharp.Classes.ResponseType.Spam)
+					{
+						
+					}
 				}
 				return NotFound(results.Info);
 			}

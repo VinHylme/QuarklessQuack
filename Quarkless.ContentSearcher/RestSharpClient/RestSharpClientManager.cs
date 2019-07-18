@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using QuarklessContexts.Models.Proxies;
 using QuarklessContexts.Models.Timeline;
 using RestSharp;
 using RestSharp.Authenticators;
@@ -17,6 +18,7 @@ namespace QuarklessLogic.Handlers.RestSharpClient
 		public RestSharpClientManager()
 		{
 			RestClient = new RestClient();
+			RestClient.CookieContainer = new CookieContainer();
 		}
 
 		public void SetBaseUrl(string url)
@@ -36,9 +38,29 @@ namespace QuarklessLogic.Handlers.RestSharpClient
 			foreach (var cookie in cookies)
 				RestClient.CookieContainer.Add(cookie);
 		}
-
+		public void AddProxy(ProxyModel proxy)
+		{
+			if (proxy != null)
+			{
+				WebProxy prox = new WebProxy(new Uri("http://"+proxy.Address + ":" + proxy.Port+"/"));
+				if (proxy.NeedServerAuth)
+				{
+					prox.Credentials = new NetworkCredential
+					{
+						UserName = proxy.Username,
+						Password = proxy.Password
+					};
+				}
+				else
+				{
+					prox.UseDefaultCredentials = true;
+				}
+				RestClient.Proxy = prox;
+			}
+		}
 		public IRestResponse PostRequest(string url, string resource, string jsonBody, UserStoreDetails userStore = null, 
-			IEnumerable<Parameter> parameters = null, IEnumerable<HttpHeader> headers=null,string username = null, string password = null)
+			IEnumerable<Parameter> parameters = null, IEnumerable<HttpHeader> headers=null,
+			string username = null, string password = null)
 		{
 			try
 			{
@@ -47,7 +69,10 @@ namespace QuarklessLogic.Handlers.RestSharpClient
 					request.AddJsonBody(jsonBody);
 
 				RestClient.BaseUrl = new Uri(url);
-				RestClient.Authenticator = new HttpBasicAuthenticator(username,password);
+				if (!string.IsNullOrEmpty(username)) { 
+					RestClient.Authenticator = new HttpBasicAuthenticator(username,password);
+				}
+				
 				if (parameters!=null && parameters.Count() > 0)
 				{
 					foreach (var param_ in parameters)
@@ -73,12 +98,14 @@ namespace QuarklessLogic.Handlers.RestSharpClient
 				return null;
 			}
 		}
-		public IRestResponse GetRequest(string resource, IEnumerable<Parameter> parameters=null, IEnumerable<HttpHeader> headers=null)
+		public IRestResponse GetRequest(string url, string resource, IEnumerable<Parameter> parameters=null, IEnumerable<HttpHeader> headers=null)
 		{
 			try
 			{
-				var request = new RestRequest(resource,Method.GET);
-				if(parameters!=null && parameters.Count() > 0)
+				var request = string.IsNullOrEmpty(resource) ? new RestRequest(Method.GET) : new RestRequest(resource, Method.GET);
+				RestClient.BaseUrl = new Uri(url);
+
+				if (parameters!=null && parameters.Count() > 0)
 				{
 					foreach(var param_ in parameters)
 						request.AddParameter(param_);

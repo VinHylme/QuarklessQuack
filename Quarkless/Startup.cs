@@ -126,8 +126,11 @@ namespace Quarkless
 				options.UseRedisStorage(Redis, new Hangfire.Redis.RedisStorageOptions
 				{
 					Prefix = "Timeline",
-					SucceededListSize = 100000,
-					DeletedListSize = 10000
+					SucceededListSize = 5000,
+					DeletedListSize = 1000,
+					ExpiryCheckInterval = TimeSpan.FromHours(1),
+					InvisibilityTimeout = TimeSpan.FromMinutes(30),
+					UseTransactions = true
 				});
 				options.UseSerializerSettings(new Newtonsoft.Json.JsonSerializerSettings(){ 
 					ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
@@ -135,7 +138,8 @@ namespace Quarkless
 			});
 
 			GlobalConfiguration.Configuration.UseActivator(new WorkerActivator(services.BuildServiceProvider(false)));
-
+			GlobalConfiguration.Configuration.UseRedisStorage(Redis).WithJobExpirationTimeout(TimeSpan.FromDays(1));
+			GlobalJobFilters.Filters.Add(new ProlongExpirationTimeAttribute());
 			//GlobalConfiguration.Configuration.UseMongoStorage(_accessors.ConnectionString, _accessors.SchedulerDatabase, new MongoStorageOptions()
 			//{
 			//	Prefix = "Timeline",

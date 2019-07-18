@@ -18,6 +18,8 @@ namespace QuarklessContexts.Models.ServicesModels.SearchModels
 	{
 		public DateTime TakenAt { get; set; }
 		public string Topic { get; set; }
+		public string Domain { get; set; }
+		public string Title { get; set; }
 		public List<string> MediaUrl { get; set; } = new List<string>();
 		public int LikesCount { get; set; }
 		public string Caption { get; set; }

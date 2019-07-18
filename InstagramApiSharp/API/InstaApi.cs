@@ -67,6 +67,12 @@ namespace InstagramApiSharp.API
             internal set { _isUserAuthenticated = value; _userAuthValidate.IsUserAuthenticated = value; }
         }
         /// <summary>
+        ///     Load instagram's api version from session file
+        ///     <para>Default is False</para>
+        /// </summary>
+        public bool LoadApiVersionFromSessionFile { get; set; } = false;
+
+        /// <summary>
         ///     Current <see cref="HttpClient"/>
         /// </summary>
         public HttpClient HttpClient { get => _httpRequestProcessor.Client; }
@@ -932,6 +938,13 @@ namespace InstagramApiSharp.API
         #endregion Register new account with Phone number and email
 
         #region Authentication and challenge functions
+        
+        /// <summary>
+        /// Set Challenge Info when server asks for a challenge on calling functions
+        /// </summary>
+        /// <param name="Challenge"></param>
+        public void SetChallengeInfo(InstaChallengeLoginInfo Challenge) => _challengeinfo = Challenge;
+
         /// <summary>
         ///     Accept consent required (only for GDPR countries)
         /// </summary>
@@ -2958,7 +2971,9 @@ namespace InstagramApiSharp.API
             }
 
             if (data.InstaApiVersion == null)
-                data.InstaApiVersion = InstaApiVersionType.Version94;
+                data.InstaApiVersion = InstaApiVersionType.Version100;
+            if(!LoadApiVersionFromSessionFile)
+                data.InstaApiVersion = InstaApiVersionType.Version100;
             _apiVersionType = data.InstaApiVersion.Value;
             _apiVersion = InstaApiVersionList.GetApiVersionList().GetApiVersion(_apiVersionType);
             _httpHelper = new HttpHelper(_apiVersion);
@@ -2998,7 +3013,9 @@ namespace InstagramApiSharp.API
             }
 
             if (data.InstaApiVersion == null)
-                data.InstaApiVersion = InstaApiVersionType.Version94;
+                data.InstaApiVersion = InstaApiVersionType.Version100;
+            if (!LoadApiVersionFromSessionFile)
+                data.InstaApiVersion = InstaApiVersionType.Version100;
             _apiVersionType = data.InstaApiVersion.Value;
             _apiVersion = InstaApiVersionList.GetApiVersionList().GetApiVersion(_apiVersionType);
             _httpHelper = new HttpHelper(_apiVersion);
@@ -3040,7 +3057,9 @@ namespace InstagramApiSharp.API
             }
 
             if (stateData.InstaApiVersion == null)
-                stateData.InstaApiVersion = InstaApiVersionType.Version94;
+                stateData.InstaApiVersion = InstaApiVersionType.Version100;
+            if (!LoadApiVersionFromSessionFile)
+                stateData.InstaApiVersion = InstaApiVersionType.Version100;
             _apiVersionType = stateData.InstaApiVersion.Value;
             _apiVersion = InstaApiVersionList.GetApiVersionList().GetApiVersion(_apiVersionType);
             _httpHelper = new HttpHelper(_apiVersion);

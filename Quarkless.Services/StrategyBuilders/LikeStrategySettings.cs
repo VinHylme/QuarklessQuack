@@ -11,7 +11,7 @@ namespace Quarkless.Services.StrategyBuilders
 	}
 	public class LikeStrategySettings : IStrategySettings
 	{
-		public LikeStrategyType LikeStrategy { get; set; }
+		public LikeStrategyType LikeStrategy { get; set; } = LikeStrategyType.Default;
 		public int NumberOfActions { get; set; }
 		public TimeSpan OffsetPerAction { get; set; }
 	}

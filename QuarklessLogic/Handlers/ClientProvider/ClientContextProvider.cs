@@ -65,7 +65,7 @@ namespace QuarklessLogic.Handlers.ClientProvider
 				{
 					InstagramAccount = instaAcc,
 					Profile = profileOfInstaAcc,
-					//Proxy = proxyOfInstaAcc
+					Proxy = proxyOfInstaAcc
 				});
 
 				if (client != null && client.ReturnClient != null)
@@ -85,14 +85,15 @@ namespace QuarklessLogic.Handlers.ClientProvider
 						InstagramAccount = new ShortInstagramAccountModel
 						{
 							AccountId = instaAcc.AccountId,
-							AgentState = instaAcc.AgentState,
+							AgentSettings = instaAcc.AgentSettings,
 							FollowersCount = instaAcc.FollowersCount,
 							FollowingCount = instaAcc.FollowingCount,
 							Id = instaAcc._id,
 							TotalPostsCount = instaAcc.TotalPostsCount,
 							Username = instaAcc.Username
 						},
-						Profile = profileOfInstaAcc
+						Profile = profileOfInstaAcc,
+						Proxy = proxyOfInstaAcc
 					};
 				}
 				else

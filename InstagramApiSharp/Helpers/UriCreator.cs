@@ -2557,5 +2557,19 @@ namespace InstagramApiSharp.Helpers
                 throw new Exception("Cant create URI for direct broadcast reel react");
             return instaUri;
         }
+
+        public static Uri GetStoryChatRequestUri()
+        {
+            if (!Uri.TryCreate(BaseInstagramUri, InstaApiConstants.MEDIA_STORY_CHAT_REQUEST, out var instaUri))
+                throw new Exception("Cant create URI for story chat request");
+            return instaUri;
+        }
+
+        public static Uri GetStoryChatCancelRequestUri()
+        {
+            if (!Uri.TryCreate(BaseInstagramUri, InstaApiConstants.MEDIA_STORY_CHAT_CANCEL_REQUEST, out var instaUri))
+                throw new Exception("Cant create URI for story chat cancel request");
+            return instaUri;
+        }
     }
 }

@@ -1,9 +1,6 @@
-﻿using System;
-
-namespace InstagramApiSharp.Classes.Models
+﻿namespace InstagramApiSharp.Classes.Models
 {
-	[Serializable]
-	public class InstaLocationShort
+    public class InstaLocationShort
     {
         public string ExternalSource { get; set; }
 

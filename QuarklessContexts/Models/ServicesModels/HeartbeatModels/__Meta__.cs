@@ -4,20 +4,19 @@ using System.Text;
 
 namespace QuarklessContexts.Models.ServicesModels.HeartbeatModels
 {
-	public struct By
+	public class By
 	{
 		public string User { get; set; }
 		public int ActionType { get; set;}
 	}
-	public struct __Meta__<T>
+	public class __Meta__<T>
 	{
 		public T ObjectItem { get; set; }
-		public List<By> SeenBy { get; set; }
+		public List<By> SeenBy { get; set; } = new List<By>();
 
 		public __Meta__(T objectItem)
 		{
 			this.ObjectItem = objectItem;
-			SeenBy = new List<By>();
 		}
 	}
 }

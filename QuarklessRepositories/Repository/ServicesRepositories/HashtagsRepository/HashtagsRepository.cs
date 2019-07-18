@@ -74,10 +74,14 @@ namespace QuarklessRepositories.Repository.ServicesRepositories.HashtagsReposito
 				return null;
 			}
 		}
-
 		public async Task<IEnumerable<HashtagsModel>> GetHashtagsByTopic(string topic, int limit)
 		{
-			var query = new FilterDefinitionBuilder<HashtagsModel>().Eq("Topic",topic.ToLower());
+			var query = new FilterDefinitionBuilder<HashtagsModel>().Eq("Topic", topic.ToLower());
+			var countSize = await _context.Hashtags.CountDocumentsAsync(query);
+			if (countSize < limit)
+			{
+				limit = (int) countSize;
+			}
 			return (await _context.Hashtags.FindAsync(query, new FindOptions<HashtagsModel, HashtagsModel>
 			{
 				Skip = SecureRandom.Next((int)(await _context.Hashtags.CountDocumentsAsync(query)) - limit),

@@ -62,9 +62,9 @@ namespace Quarkless.Services.ActionBuilders.MaintainActions
 				{
 					foreach(var userMedia in currentUsersMedia)
 					{
-						if (userMedia.HasValue)
+						if (userMedia != null)
 						{
-							var medias = userMedia.Value.ObjectItem.Medias;
+							var medias = userMedia.ObjectItem.Medias;
 							foreach(var umedia in medias)
 							{
 								foreach(var url in umedia.MediaUrl)
@@ -81,7 +81,7 @@ namespace Quarkless.Services.ActionBuilders.MaintainActions
 					}
 
 					var images = usersMediaInBytes.Where(a => a.mediaType == (int)InstaMediaType.Image);
-					var duplicates = images.Select(s=>s.mediaData).DuplicateImages();
+					var duplicates = images.Select(s=>s.mediaData).DuplicateImages(0.95);
 					if(duplicates!=null && duplicates.Count() > 0) { 
 						List<TimelineEventModel> tosend = new List<TimelineEventModel>();
 						for (int x = 0; x < duplicates.Count(); x++)

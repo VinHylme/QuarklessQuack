@@ -4,7 +4,7 @@ using System.Text;
 
 namespace QuarklessContexts.Models.Timeline
 {
-	public class TimelineDeletedItem
+	public class TimelineDeletedItem : ITimelineItem
 	{
 		public string ItemId { get; set; }
 		public string ActionName { get; set; }
@@ -13,7 +13,7 @@ namespace QuarklessContexts.Models.Timeline
 		public UserStoreDetails User { get; set; }
 		public string Url { get; set; }
 	}
-	public class TimelineFailedItem
+	public class TimelineFailedItem : ITimelineItem
 	{
 		public string ItemId { get; set; }
 		public string ActionName { get; set; }
@@ -23,7 +23,7 @@ namespace QuarklessContexts.Models.Timeline
 		public UserStoreDetails User { get; set; }
 		public string Url { get; set; }
 	}
-	public class TimelineFinishedItem
+	public class TimelineFinishedItem : ITimelineItem
 	{
 		public string ItemId { get; set; }
 		public string ActionName { get; set; }
@@ -33,7 +33,7 @@ namespace QuarklessContexts.Models.Timeline
 		public UserStoreDetails User { get; set; }
 		public string Url { get; set; }
 	}
-	public class TimelineInProgressItem
+	public class TimelineInProgressItem : ITimelineItem
 	{
 		public string ItemId { get; set; }
 		public string ActionName { get; set; }
@@ -48,7 +48,11 @@ namespace QuarklessContexts.Models.Timeline
 		public Type TimelineType { get; set; }
 		public object Message { get; set; }
 	}
-	public class TimelineItem
+	public interface ITimelineItem
+	{
+
+	}
+	public class TimelineItem : ITimelineItem
 	{
 		public string ItemId { get; set; }
 		public string ActionName { get; set; }
@@ -66,7 +70,7 @@ namespace QuarklessContexts.Models.Timeline
 		public string StateName { get; set; }
 		public IDictionary<string,string> Data = new Dictionary<string, string>();
 	}
-	public class TimelineItemDetail
+	public class TimelineItemDetail : ITimelineItem
 	{
 		public string ItemId { get; set; }
 		public string ActionName { get; set; }

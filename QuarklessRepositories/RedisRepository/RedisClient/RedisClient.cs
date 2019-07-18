@@ -129,6 +129,18 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 
 			return exists;
 		}
+		public async Task<IEnumerable<T>> GetMembers<T>(HashtagGrowKeys hashtagGrowKeys)
+		{
+			var members = new List<T>();
+			RedisKey redisKey = hashtagGrowKeys.ToString();
+			await WithExceptionLogAsync(async () =>
+			{
+				var redisMembers = await _redis.GetDatabase().SetMembersAsync(redisKey);
+				members.AddRange(redisMembers.Select(m=>JsonConvert.DeserializeObject<T>(((string)m))));
+			},"",redisKey.ToString());
+
+			return members;
+		}
 		public async Task<IEnumerable<T>> GetMembers<T>(string userId, HashtagGrowKeys hashtagGrowKey)
 		{
 			RedisKey redisKey = KeyFormater.FormatKey(userId, hashtagGrowKey);

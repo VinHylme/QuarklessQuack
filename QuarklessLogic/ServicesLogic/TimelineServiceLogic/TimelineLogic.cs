@@ -11,8 +11,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 	public enum TimelineDateType
 	{
 		Backwards,
-		Forward,
-		Both
+		Forward	
 	}
 	public class TimelineLogic : ITimelineLogic
 	{
@@ -28,10 +27,10 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 		#region Add Event To Queue
 		public bool AddEventToTimeline(string actionName, RestModel restBody, DateTimeOffset executeTime)
 		{
-			restBody.RequestHeaders.AddRange(
+			restBody.RequestHeaders =
 				_requestBuilder.DefaultHeaders(
 				restBody.User.OInstagramAccountUser,
-				restBody.User.OAccessToken));
+				restBody.User.OAccessToken).ToList();
 
 			var eventId = _taskService.ScheduleEvent(actionName, restBody, executeTime);
 			return eventId != null;
@@ -71,8 +70,6 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 					var eventsF = GetScheduledEventsForUser(username, instaId, limit: limit)
 						.Where(_ => _.EnqueueTime >= date && _.EnqueueTime <= endDate);
 					return eventsF;
-				case TimelineDateType.Both:
-					return GetScheduledEventsForUser(username, instaId, limit: limit);
 			}
 			return null;
 		}
@@ -97,8 +94,6 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 					var eventsF = GetFinishedEventsForUser(username, instaId, limit: limit)
 						.Where(_ => _.SuccededAt >= date && _.SuccededAt <= endDate);
 					return eventsF;
-				case TimelineDateType.Both:
-					return GetFinishedEventsForUser(username, instaId, limit: limit);
 			}
 			return null;
 		}
@@ -123,8 +118,6 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 					var eventsF = GetCurrentlyRunningEventsForUser(username, instaid, limit: limit)
 						.Where(_ => _.StartedAt >= date && _.StartedAt <= endDate);
 					return eventsF;
-				case TimelineDateType.Both:
-					return GetCurrentlyRunningEventsForUser(username, instaid, limit: limit);
 			}
 			return null;
 		}
@@ -149,8 +142,6 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 					var eventsF = GetDeletedEventsForUser(username, instaId, limit: limit)
 						.Where(_ => _.DeletedAt >= date && _.DeletedAt <= endDate);
 					return eventsF;
-				case TimelineDateType.Both:
-					return GetDeletedEventsForUser(username, instaId, limit: limit);
 			}
 			return null;
 		}
@@ -175,8 +166,6 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 					var eventsF = GetFailedEventsForUser(username, instaId, limit: limit)
 						.Where(_ => _.FailedAt >= date && _.FailedAt <= endDate);
 					return eventsF;
-				case TimelineDateType.Both:
-					return GetFailedEventsForUser(username, instaId, limit: limit);
 			}
 			return null;
 		}
@@ -201,9 +190,6 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 					var eventsF = GetScheduledEventsForUser(username, instaId, limit: limit)
 						.Where(_ => (_.EnqueueTime >= date && _.EnqueueTime <= endDate) && _?.ActionName?.Split('_')?[0]?.ToLower() == (actionName.ToLower()));
 					return eventsF;
-				case TimelineDateType.Both:
-					return GetScheduledEventsForUser(username, instaId, limit: limit)
-					.Where(_ => _?.ActionName?.Split('_')?[0]?.ToLower() == (actionName.ToLower()));
 			}
 			return null;
 		}
@@ -225,7 +211,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 				},
 				TimelineType = typeof(TimelineItem)
 			}));
-			totalEvents.AddRange(GetFinishedEventsForUserByDate(userName, startDate, endDate, instaId, limit, timelineDateType).Select(_ => new ResultBase<TimelineItem>
+			/*totalEvents.AddRange(GetFinishedEventsForUserByDate(userName, startDate, endDate, instaId, limit, timelineDateType).Select(_ => new ResultBase<TimelineItem>
 			{
 				Response = new TimelineItem
 				{
@@ -238,7 +224,8 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 				},
 				Message = _.Results,
 				TimelineType = typeof(TimelineFinishedItem)
-			}));
+			}));*/
+			/*
 			totalEvents.AddRange(GetCurrentlyRunningEventsForUserByDate(userName, startDate, endDate, limit, instaId, timelineDateType).Select(_ => new ResultBase<TimelineItem>
 			{
 				Response = new TimelineItem
@@ -252,6 +239,8 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 				},
 				TimelineType = typeof(TimelineInProgressItem)
 			}));
+			*/
+			/*
 			totalEvents.AddRange(GetDeletedEventsForUserByDate(userName, startDate, endDate, instaId, limit, timelineDateType).Select(_ => new ResultBase<TimelineItem>
 			{
 				Response = new TimelineItem
@@ -279,6 +268,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 				Message = _.Error,
 				TimelineType = typeof(TimelineFailedItem)
 			}));
+			*/
 			return totalEvents;
 		}
 

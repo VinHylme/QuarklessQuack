@@ -174,7 +174,7 @@ namespace Quarkless.Controllers
 			}
 			return BadRequest("invalid");
 		}
-		[HttpGet]
+		[HttpPost]
 		[Route("api/comments/like/{commentId}")]
 		public async Task<IActionResult> LikeComment(string commentId)
 		{

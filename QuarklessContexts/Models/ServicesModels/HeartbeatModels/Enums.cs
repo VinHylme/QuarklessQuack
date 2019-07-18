@@ -10,14 +10,26 @@ namespace QuarklessContexts.Models.ServicesModels.HeartbeatModels
 		FetchMediaForSpecificUserGoogle,
 		FetchMediaForSepcificUserYandexQuery,
 		FetchMediaForSpecificUserYandex,
+
 		FetchUserOwnProfile,
 		FetchUsersFollowingList,
 		FetchUsersFollowSuggestions,
+
 		FetchUsersFeed,
 		FetchMediaByTopic,
+		
+		FetchMediaByUserTargetList,
+		FetchMediaByUserLocationTargetList,
+		
 		FetchMediaByLikers,
 		FetchMediaByCommenters,
 		FetchUsersViaPostLiked,
-		FetchUsersViaPostCommented
+		FetchUsersViaPostCommented,
+
+		FetchCommentsViaPostCommented,
+		FetchCommentsViaPostsLiked,
+		FetchCommentsViaUserTargetList,
+		FetchCommentsViaLocationTargetList,
+		FetchCommentsViaUserFeed
 	}
 }

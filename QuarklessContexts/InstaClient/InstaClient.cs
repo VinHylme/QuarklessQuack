@@ -10,6 +10,7 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace QuarklessContexts.InstaClient
@@ -40,7 +41,7 @@ namespace QuarklessContexts.InstaClient
 		}
 		private HttpClientHandler SetupProxy(ProxyModel proxyModel)
 		{
-			var proxy = new WebProxy(proxyModel.Address, proxyModel.Port)
+			var proxy = new WebProxy(Regex.Replace(proxyModel.Address,"[http://|https://]",""), proxyModel.Port)
 			{
 				BypassProxyOnLocal = false,
 				UseDefaultCredentials = false
@@ -50,19 +51,13 @@ namespace QuarklessContexts.InstaClient
 			{
 				proxy.Credentials = new NetworkCredential(userName: proxyModel.Username, password: proxyModel.Password);
 			}
+
 			var httpClientHandler = new HttpClientHandler()
 			{
 				Proxy = proxy,
 			};
 
-			if (proxyModel.NeedServerAuth)
-			{
-				httpClientHandler.PreAuthenticate = true;
-				httpClientHandler.UseDefaultCredentials = false;
-				httpClientHandler.Credentials = new NetworkCredential(
-					userName: proxyModel.Username,
-					password: proxyModel.Password);
-			}
+
 			return httpClientHandler;
 		}
 
@@ -79,10 +74,11 @@ namespace QuarklessContexts.InstaClient
 					.SetRequestDelay(RequestDelay.FromSeconds(1, 2))
 					.Build();
 				instancenew.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
-				instancenew.SetApiVersion(InstagramApiSharp.Enums.InstaApiVersionType.Version94);
+				instancenew.SetApiVersion(InstagramApiSharp.Enums.InstaApiVersionType.Version100);
 				instancenew.SetUser(new UserSessionData { UserName = instagramAccount.InstagramAccount.Username, Password = instagramAccount.InstagramAccount.Password});
 				if (instagramAccount.Proxy != null)
 					instancenew.UseHttpClientHandler(SetupProxy(instagramAccount.Proxy));
+
 				var res = instancenew.LoginAsync().GetAwaiter().GetResult();
 				if (res.Succeeded)
 				{
@@ -105,7 +101,7 @@ namespace QuarklessContexts.InstaClient
 					.SetRequestDelay(RequestDelay.FromSeconds(1,2))
 					.Build();
 
-				instance.SetApiVersion(InstagramApiSharp.Enums.InstaApiVersionType.Version94);
+				instance.SetApiVersion(InstagramApiSharp.Enums.InstaApiVersionType.Version100);
 				instance.SetDevice(instagramAccount.InstagramAccount.State.DeviceInfo);
 
 				if(instagramAccount.Proxy!=null)

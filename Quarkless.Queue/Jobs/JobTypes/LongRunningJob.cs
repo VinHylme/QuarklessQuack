@@ -26,8 +26,6 @@ namespace Quarkless.Queue.Jobs.JobTypes
 
 		public void Perform(LongRunningJobOptions jobOptions)
 		{
-			Console.WriteLine("LongRunningTask: Started");
-
 			if(jobOptions.Rest==null) return;
 			
 			switch (jobOptions.Rest.RequestType)
@@ -37,14 +35,9 @@ namespace Quarkless.Queue.Jobs.JobTypes
 						jobOptions.Rest.User, jobOptions.Rest.Parameters,jobOptions.Rest.RequestHeaders);
 					break;
 				case RequestType.GET:
-					 _restSharpClient.GetRequest(jobOptions.Rest.ResourceAction,jobOptions.Rest.Parameters,jobOptions.Rest.RequestHeaders);
+					 _restSharpClient.GetRequest(jobOptions.Rest.BaseUrl,jobOptions.Rest.ResourceAction,jobOptions.Rest.Parameters,jobOptions.Rest.RequestHeaders);
 					break;
 			}
-
-			var stopWatch = Stopwatch.StartNew();
-			Thread.Sleep(TimeSpan.FromSeconds(jobOptions.ExecutionTime.Minute));
-
-			Console.WriteLine($"LongRunningTask: Finished ({stopWatch.Elapsed})");
 			return;
 		}
 	}

@@ -48,6 +48,10 @@ namespace QuarklessContexts.Models.ServicesModels.SearchModels
 		Blue,
 		[Description("violet")]
 		Violet,
+		[Description("pink")]
+		Pink,
+		[Description("purple")]
+		Purple,
 		[Description("white")]
 		White,
 		[Description("black")]

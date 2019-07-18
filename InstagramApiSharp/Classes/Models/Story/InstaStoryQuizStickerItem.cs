@@ -31,5 +31,7 @@ namespace InstagramApiSharp.Classes.Models
         public string StartBackgroundColor { get; set; }
 
         public string EndBackgroundColor { get; set; }
+
+        public long ViewerAnswer { get; set; } = -1;
     }
 }

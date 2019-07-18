@@ -7,6 +7,7 @@ using ContentSearcher;
 using InstagramApiSharp.Classes.Models;
 using Newtonsoft.Json;
 using QuarklessContexts.Extensions;
+using QuarklessContexts.Models.Proxies;
 using QuarklessContexts.Models.ServicesModels.Corpus;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
@@ -37,45 +38,73 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 		}
 		public async Task AddMetaData<T>(MetaDataType metaDataType, string topic, __Meta__<T> data, string userId = null)
 		{
-			await _heartbeatRepository.AddMetaData(metaDataType,topic,data,userId);
+			var contains = await _heartbeatRepository.MetaDataContains(metaDataType, topic, JsonConvert.SerializeObject(data), userId);
+			if (!contains)
+			{
+				await _heartbeatRepository.AddMetaData(metaDataType, topic, data, userId);
+			}
 		}
 		public async Task UpdateMetaData<T>(MetaDataType metaDataType, string topic, __Meta__<T> data, string userId = null)
 		{
 			//if typeof media
 			//else if
 			var dataToRemove = (await _heartbeatRepository.GetMetaData<T>(metaDataType,topic,userId));
-			var dto = dataToRemove.Where(_ => JsonConvert.SerializeObject(_.Value.ObjectItem) == JsonConvert.SerializeObject(data.ObjectItem)).FirstOrDefault();
-			if (dto.HasValue) { 
-				await _heartbeatRepository.DeleteMetaDataFromSet(metaDataType, topic, dto.Value, userId);
+			var dto = dataToRemove.Where(_ => JsonConvert.SerializeObject(_.ObjectItem) == JsonConvert.SerializeObject(data.ObjectItem)).FirstOrDefault();
+			if (dto!=null) { 
+				await _heartbeatRepository.DeleteMetaDataFromSet(metaDataType, topic, dto, userId);
 				await _heartbeatRepository.AddMetaData(metaDataType, topic, data, userId);
 			}
 		}
-		public async Task<__Meta__<Media>?> GetMediaMetaData(MetaDataType metaDataType, string topic)
+		public async Task<__Meta__<Media>> GetMediaMetaData(MetaDataType metaDataType, string topic)
 		{
 			return await _heartbeatRepository.GetMediaMetaData(metaDataType,topic);
 		}
-		public async Task<IEnumerable<__Meta__<T>?>> GetMetaData<T>(MetaDataType metaDataType, string topic, string userId = null)
+		public async Task<IEnumerable<__Meta__<T>>> GetMetaData<T>(MetaDataType metaDataType, string topic, string userId = null)
 		{
 			return await _heartbeatRepository.GetMetaData<T>(metaDataType,topic, userId);
 		}
-		public async Task<__Meta__<List<UserResponse<string>>>?> GetUserFromLikers(MetaDataType metaDataType, string topic)
+		public async Task<__Meta__<List<UserResponse<string>>>> GetUserFromLikers(MetaDataType metaDataType, string topic)
 		{
 			return await _heartbeatRepository.GetUserFromLikers(metaDataType, topic);
 		}
-		public async Task RefreshMetaData(MetaDataType metaDataType, string topic, string userId = null)
+		public async Task RefreshMetaData(MetaDataType metaDataType, string topic, string userId = null, ProxyModel proxy = null)
 		{
 			try {
 				var datas = (await GetMetaData<object>(metaDataType,topic,userId)).ToList();
-				if(metaDataType == MetaDataType.FetchMediaByTopic)
+				if (datas == null || datas.Count() <= 0) return;
+				By by = new By { ActionType = 101, User = "Refreshed" };
+				List<__Meta__<object>> datass = new List<__Meta__<object>>();
+				foreach(var data in datas.TakeAny(10))
+				{
+
+					if(data.SeenBy is null)
+					{
+						datass.Add(data);
+					}
+					else
+					{
+						if (!data.SeenBy.Any(sb => sb.User == by.User && sb.ActionType == by.ActionType))
+						{
+							datass.Add(data);
+						}
+					}
+				
+				}
+
+				if (proxy != null)
+				{
+					_utilProviders.TranslateService.AddProxy(proxy);
+				}
+				if (metaDataType == MetaDataType.FetchMediaByTopic)
 				{
 					//first check limit
 					var mediasfe = await _mediaRepository.GetMediasCount(topic);
 					if (mediasfe <= 5000) { 
 						ConcurrentBag<MediaCorpus> mediaCorpus = new ConcurrentBag<MediaCorpus>();
 						ConcurrentBag<HashtagsModel> hashtags = new ConcurrentBag<HashtagsModel>();
-						datas.ForEach(data => {
-							var medias = JsonConvert.DeserializeObject<Media>(JsonConvert.SerializeObject(data.Value.ObjectItem));
-							Parallel.ForEach(medias.Medias.TakeAny(10), media =>
+						datass.ForEach(data => {
+							var medias = JsonConvert.DeserializeObject<Media>(JsonConvert.SerializeObject(data.ObjectItem));
+							Parallel.ForEach(medias.Medias, media =>
 							{
 								if (!string.IsNullOrEmpty(media.Caption))
 								{
@@ -120,9 +149,9 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 							_mediaRepository.AddMedias(mediaCorpus).GetAwaiter().GetResult();
 						}
 						if (hashtags.Count > 0)
-					{
-						_hashtagsRepository.AddHashtags(hashtags).GetAwaiter().GetResult();
-					}
+						{
+							_hashtagsRepository.AddHashtags(hashtags).GetAwaiter().GetResult();
+						}
 					}
 				}
 				else if(metaDataType == MetaDataType.FetchUsersViaPostCommented)
@@ -131,9 +160,9 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 					if (commentsfe <= 5000) { 
 						ConcurrentBag<CommentCorpus> commentCorpus = new ConcurrentBag<CommentCorpus>();
 						ConcurrentBag<HashtagsModel> hashtagsComments = new ConcurrentBag<HashtagsModel>();
-						datas.ForEach(data => {
-							var comments = JsonConvert.DeserializeObject<List<UserResponse<InstaComment>>>(JsonConvert.SerializeObject(data.Value.ObjectItem));
-							Parallel.ForEach(comments.TakeAny(20), comment =>
+						datass.ForEach(data => {
+							var comments = JsonConvert.DeserializeObject<List<UserResponse<InstaComment>>>(JsonConvert.SerializeObject(data.ObjectItem));
+							Parallel.ForEach(comments, comment =>
 							{
 								if (!string.IsNullOrEmpty(comment.Object.Text))
 								{
@@ -177,7 +206,24 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 					}
 					}
 				}
-				await _heartbeatRepository.RefreshMetaData(metaDataType,topic,userId);
+				if(metaDataType == MetaDataType.FetchMediaByTopic || metaDataType == MetaDataType.FetchUsersViaPostCommented)
+				{ 
+					for(int i = 0 ; i < datass.Count; i++)
+					{
+						datass[i].SeenBy = new List<By>();
+
+					}
+					foreach (var datatran in datass)
+					{
+						datatran.SeenBy = new List<By>();
+						datatran.SeenBy.Add(new By
+						{
+							ActionType = 101,
+							User = "Refreshed"
+						});
+					}
+				}
+				//await _heartbeatRepository.RefreshMetaData(metaDataType,topic,userId);
 			}
 			catch(Exception ee)
 			{

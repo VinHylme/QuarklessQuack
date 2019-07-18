@@ -1,17 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Web;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
-using OpenQA.Selenium.Firefox;
-using OpenQA.Selenium.Interactions;
-using OpenQA.Selenium.Remote;
 using OpenQA.Selenium.Support.UI;
 using QuarklessContexts.Extensions;
 
@@ -33,10 +27,6 @@ namespace ContentSearcher.SeleniumClient
 				AcceptInsecureCertificates = true,
 				PageLoadStrategy = PageLoadStrategy.Normal
 			};
-		}
-		public void AddProxy(Proxy proxy)
-		{
-			_chromeOptions.Proxy = proxy;
 		}
 		public void Initialise()
 		{
@@ -92,7 +82,6 @@ namespace ContentSearcher.SeleniumClient
 				return null;
 			}
 		}
-
 		public IEnumerable<string> DetectLanguageViaGoogle(string url, string targetElement,
 			bool getValues = false, params string[] data)
 		{
@@ -127,7 +116,6 @@ namespace ContentSearcher.SeleniumClient
 				return null;
 			}
 		}
-
 		public IEnumerable<string> YandexImageSearch(string url, string imageurl, string targetElement, int limit = 5,  string patternRegex = @"(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|gif|png)")
 		{
 			try
@@ -144,6 +132,8 @@ namespace ContentSearcher.SeleniumClient
 					searchField.SendKeys(Keys.Control + 'v');
 					IWebElement submitButton = Driver.FindElement(By.Name("cbir-submit"));
 					submitButton.Click();
+					
+					var pagehere = Driver.PageSource;
 					Thread.Sleep(2000);
 
 					IWebElement similarButton = Driver.FindElement(By.ClassName("similar__link"));
@@ -203,7 +193,7 @@ namespace ContentSearcher.SeleniumClient
 					Driver.Navigate().GoToUrl(url);
 					List<IWebElement> elements = Driver.FindElements(By.XPath($"//div[contains(@class,'{targetElement}')]")).ToList();
 
-					if (elements == null && elements.Count<=0) { return null; }
+					if (elements == null || elements.Count<=0) { return null; }
 					while (elements.Count < limit)
 					{
 						ScrollPage(1);
@@ -243,6 +233,44 @@ namespace ContentSearcher.SeleniumClient
 				return null;
 			}
 		}
+		public IEnumerable<string> YandexImageSearchREST(string baseurl, string url, int pageLimit = 5)
+		{
+			try
+			{
+				using(Driver = new ChromeDriver(_chromeService, _chromeOptions))
+				{
+					Driver.Navigate().GoToUrl(baseurl);
+					var souce = Driver.PageSource;
+					Driver.Navigate().GoToUrl(url);
+					var manageD = Driver.Manage().Cookies.AllCookies;
+					var source = Driver.PageSource;
+				}
+
+
+				return null;
+			}
+			catch(Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+				return null;
+			}
+		}
+		public IEnumerable<Cookie> GetCookiesOfPage(string url)
+		{
+			try
+			{
+				using(Driver = new ChromeDriver(_chromeService, _chromeOptions))
+				{
+					Driver.Navigate().GoToUrl(url);
+					return Driver.Manage().Cookies.AllCookies;
+				}
+			}
+			catch(Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+				return null;
+			}
+		}
 		public void AddArguments(params string[] args)
 		{
 			foreach (var arg in args)
@@ -250,5 +278,6 @@ namespace ContentSearcher.SeleniumClient
 				_chromeOptions.AddArgument(arg);
 			}
 		}
+
 	}
 }

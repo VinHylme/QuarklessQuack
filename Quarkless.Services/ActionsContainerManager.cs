@@ -11,6 +11,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Timers;
 
 namespace Quarkless.Services
 {
@@ -23,16 +24,16 @@ namespace Quarkless.Services
 			{
 				case nameof(CreateCommentAction):
 					return ActionType.CreateCommentMedia;
-				case nameof(CreateImagePost):
-					return ActionType.CreatePostTypeImage;
-				case nameof(CreateVideoPost):
-					return ActionType.CreatePostTypeVideo;
+				case nameof(CreatePost):
+					return ActionType.CreatePost;
 				case nameof(FollowUserAction):
 					return ActionType.FollowUser;
 				case nameof(LikeMediaAction):
 					return ActionType.LikePost;
 				case nameof(UnFollowUserAction):
 					return ActionType.UnFollowUser;
+				case nameof(LikeCommentAction):
+					return ActionType.LikeComment;
 			}
 			return null;
 		}
@@ -42,6 +43,7 @@ namespace Quarkless.Services
 		public ActionType ActionType;
 		public IActionCommit Action;
 		public IActionOptions Options;
+		public DateTime? Remaining { get; set; } = null;
 		public CommitContainer(IActionCommit actionCommit, IActionOptions actionOptions)
 		{
 			Action = actionCommit;
@@ -92,7 +94,7 @@ namespace Quarkless.Services
 		public void AddWork(CommitContainer action)
 		{
 			if(working.Count >= 100) return;
-			var action_from_list = actions.Find(_=>_.Object == action);
+			var action_from_list = actions.Where(x=>x.Object.Remaining==null).ToList().Find(_=>_.Object == action);
 			if (action_from_list != null)
 			{
 				working.Enqueue(new ActionWorkerModel
@@ -116,9 +118,12 @@ namespace Quarkless.Services
 						outToTake.ActionState = ActionState.Finished;
 						finishedActions.Enqueue(runningRes.Results);
 					}
-					outToTake.ActionState = ActionState.Failed;
-					outToTake.Response = runningRes.Info;
-					failedWorks.Enqueue(outToTake);
+					else
+					{
+						outToTake.ActionState = ActionState.Failed;
+						outToTake.Response = runningRes.Info;
+						failedWorks.Enqueue(outToTake);
+					}
 				}
 			}
 			catch(Exception ee)
@@ -126,12 +131,31 @@ namespace Quarkless.Services
 				Console.Write(ee.Message);
 			}
 		}
+		public bool HasMetTimeLimit()
+		{
+			DateTime dateNow = DateTime.UtcNow;
+			foreach(var actio in actions)
+			{
+				if (actio.Object.Remaining != null)
+				{
+					if (dateNow > actio.Object.Remaining.Value)
+					{
+						actio.Object.Remaining = null;
+						return true;
+					}
+				}
+			}
+			return false;
+		}
 		public CommitContainer GetRandomAction()
 		{
 			var rollAction = SecureRandom.ProbabilityRoll(actions);
 			return rollAction;
 		}
-
+		public void TriggerAction(ActionType action, DateTime time)
+		{
+			var lm = actions.Where(ac=>ac.Object.ActionType == action).FirstOrDefault().Object.Remaining = time;
+		}
 		public IEnumerable<TimelineEventModel> GetFinishedActions()
 		{
 			if(finishedActions.Count>0)
@@ -144,20 +168,20 @@ namespace Quarkless.Services
 			var actionFrameValue = (Range)actionOptionFrame.GetValue(actionContainer.Options);
 			return actionFrameValue;
 		}
-		public Range? FindActionLimit(string actionName)
+		public Range? FindActionLimit(ActionType actionName)
 		{
 			switch (actionName)
 			{
-				case ActionNames.CreatePhoto:
-					return ImageActionOptions.TimeFrameSeconds;
-				case ActionNames.Comment:
+				case ActionType.CreatePost:
+					return PostActionOptions.TimeFrameSeconds;
+				case ActionType.CreateCommentMedia:
 					return CommentingActionOptions.TimeFrameSeconds;
-				case ActionNames.CreateVideo:
-					return VideoActionOptions.TimeFrameSeconds;
-				case ActionNames.FollowUser:
+				case ActionType.FollowUser:
 					return FollowActionOptions.TimeFrameSeconds;
-				case ActionNames.LikeMedia: 
+				case ActionType.LikePost:
 					return LikeActionOptions.TimeFrameSeconds;
+				case ActionType.LikeComment:
+					return LikeCommentActionOptions.TimeFrameSeconds;
 			}
 			return null;
 		}

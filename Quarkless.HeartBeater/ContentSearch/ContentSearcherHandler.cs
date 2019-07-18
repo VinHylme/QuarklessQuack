@@ -2,7 +2,10 @@
 using InstagramApiSharp;
 using InstagramApiSharp.Classes.Models;
 using Newtonsoft.Json;
+using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.Profiles;
+using QuarklessContexts.Models.Proxies;
+using QuarklessContexts.Models.ResponseModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.RestSharpClient;
@@ -13,15 +16,16 @@ using System.Threading.Tasks;
 
 namespace Quarkless.HeartBeater.ContentSearch
 {
-	public class ContentSearcher : IContentSearcher
+	public class ContentSearcherHandler : IContentSearcherHandler
 	{
 		private IAPIClientContainer _container;
 		private readonly IRestSharpClientManager _restSharpClient;
 		private readonly YandexImageSearch _yandexImageSearch;
-		public ContentSearcher(IRestSharpClientManager restSharpClient, IAPIClientContainer worker)
+		public ContentSearcherHandler(IAPIClientContainer worker, ProxyModel proxy = null)
 		{
-			_restSharpClient = restSharpClient;
-			_yandexImageSearch = new YandexImageSearch();
+			_restSharpClient = new RestSharpClientManager();
+			_restSharpClient.AddProxy(proxy);
+			_yandexImageSearch = new YandexImageSearch(_restSharpClient);
 			_container = worker;
 		}
 		public void ChangeUser(IAPIClientContainer newUser)
@@ -295,6 +299,158 @@ namespace Quarkless.HeartBeater.ContentSearch
 			}
 			return null;
 		}
+		public async Task<Media> SearchTopLocationMediaDetailInstagram(Location location, int limit)
+		{
+			var locationres = await _container.Location.SearchPlacesAsync(location.Coordinates.Latitude,location.Coordinates.Longitude,PaginationParameters.MaxPagesToLoad(limit));
+			if (locationres.Succeeded)
+			{
+				long id = locationres.Value.Items.ElementAt(SecureRandom.Next(locationres.Value.Items.Count - 1)).Location.Pk;
+				var mediasRes = await _container.Location.GetTopLocationFeedsAsync(id,PaginationParameters.MaxPagesToLoad(limit));
+				if (mediasRes.Succeeded)
+				{
+					return new Media
+					{
+						Medias = mediasRes.Value.Medias.Select(s =>
+						{
+							MediaResponse mediaDetail = new MediaResponse();
+							mediaDetail.LikesCount = s.LikesCount;
+							mediaDetail.MediaId = s.Pk;
+							mediaDetail.HasLikedBefore = s.HasLiked;
+							mediaDetail.HasAudio = s.HasAudio;
+							mediaDetail.IsCommentsDisabled = s.IsCommentsDisabled;
+							mediaDetail.Location = s?.Location;
+							mediaDetail.ViewCount = s.ViewCount;
+							mediaDetail.Caption = s?.Caption?.Text;
+							mediaDetail.Explore = s?.Explore;
+							mediaDetail.FilterType = s.FilterType;
+							mediaDetail.HasSeen = s.IsSeen;
+							mediaDetail.NumberOfQualities = s.NumberOfQualities;
+							mediaDetail.PhotosOfI = s.PhotoOfYou;
+							mediaDetail.PreviewComments = s?.PreviewComments;
+							mediaDetail.ProductTags = s?.ProductTags;
+							mediaDetail.ProductType = s.ProductType;
+							mediaDetail.TopLikers = s?.TopLikers;
+							mediaDetail.TakenAt = s.TakenAt;
+							mediaDetail.UserTags = s?.UserTags;
+							mediaDetail.IsFollowing = s?.User?.FriendshipStatus?.Following;
+							mediaDetail.CommentCount = s.CommentsCount;
+							mediaDetail.MediaFrom = MediaFrom.Instagram;
+							mediaDetail.MediaType = s.MediaType;
+							mediaDetail.User = new UserResponse
+							{
+								FullName = s.User.FullName,
+								IsPrivate = s.User.IsPrivate,
+								IsVerified = s.User.IsVerified,
+								ProfilePicture = s.User.ProfilePicture,
+								UserId = s.User.Pk,
+								Username = s.User.UserName
+							};
+							var totalurls = new List<string>();
+							if (s.MediaType == InstaMediaType.Image)
+							{
+								totalurls.Add(s.Images.FirstOrDefault().Uri);
+							}
+							else if (s.MediaType == InstaMediaType.Video)
+							{
+								totalurls.Add(s.Videos.FirstOrDefault().Uri);
+							}
+							else if (s.MediaType == InstaMediaType.Carousel)
+							{
+								s.Carousel.Select(x =>
+								{
+									var videos = x.Videos.FirstOrDefault().Uri;
+									if (videos != null)
+										totalurls.Add(videos);
+									var images = x.Images.FirstOrDefault().Uri;
+									if (images != null)
+										totalurls.Add(images);
+									return s;
+								});
+							}
+							mediaDetail.MediaUrl = totalurls;
+							return mediaDetail;
+						}).ToList()
+					};
+				}
+			}
+		return null;
+		}
+		public async Task<Media> SearchRecentLocationMediaDetailInstagram(Location location, int limit)
+		{
+			var locationres = await _container.Location.SearchPlacesAsync(location.Coordinates.Latitude, location.Coordinates.Longitude, PaginationParameters.MaxPagesToLoad(limit));
+			if (locationres.Succeeded)
+			{
+				long id = locationres.Value.Items.ElementAt(SecureRandom.Next(locationres.Value.Items.Count - 1)).Location.Pk;
+				var mediasRes = await _container.Location.GetRecentLocationFeedsAsync(id, PaginationParameters.MaxPagesToLoad(limit));
+				if (mediasRes.Succeeded)
+				{
+					return new Media
+					{
+						Medias = mediasRes.Value.Medias.Select(s =>
+						{
+							MediaResponse mediaDetail = new MediaResponse();
+							mediaDetail.LikesCount = s.LikesCount;
+							mediaDetail.MediaId = s.Pk;
+							mediaDetail.HasLikedBefore = s.HasLiked;
+							mediaDetail.HasAudio = s.HasAudio;
+							mediaDetail.IsCommentsDisabled = s.IsCommentsDisabled;
+							mediaDetail.Location = s?.Location;
+							mediaDetail.ViewCount = s.ViewCount;
+							mediaDetail.Caption = s?.Caption?.Text;
+							mediaDetail.Explore = s?.Explore;
+							mediaDetail.FilterType = s.FilterType;
+							mediaDetail.HasSeen = s.IsSeen;
+							mediaDetail.NumberOfQualities = s.NumberOfQualities;
+							mediaDetail.PhotosOfI = s.PhotoOfYou;
+							mediaDetail.PreviewComments = s?.PreviewComments;
+							mediaDetail.ProductTags = s?.ProductTags;
+							mediaDetail.ProductType = s.ProductType;
+							mediaDetail.TopLikers = s?.TopLikers;
+							mediaDetail.TakenAt = s.TakenAt;
+							mediaDetail.UserTags = s?.UserTags;
+							mediaDetail.IsFollowing = s?.User?.FriendshipStatus?.Following;
+							mediaDetail.CommentCount = s.CommentsCount;
+							mediaDetail.MediaFrom = MediaFrom.Instagram;
+							mediaDetail.MediaType = s.MediaType;
+							mediaDetail.User = new UserResponse
+							{
+								FullName = s.User.FullName,
+								IsPrivate = s.User.IsPrivate,
+								IsVerified = s.User.IsVerified,
+								ProfilePicture = s.User.ProfilePicture,
+								UserId = s.User.Pk,
+								Username = s.User.UserName
+							};
+							var totalurls = new List<string>();
+							if (s.MediaType == InstaMediaType.Image)
+							{
+								totalurls.Add(s.Images.FirstOrDefault().Uri);
+							}
+							else if (s.MediaType == InstaMediaType.Video)
+							{
+								totalurls.Add(s.Videos.FirstOrDefault().Uri);
+							}
+							else if (s.MediaType == InstaMediaType.Carousel)
+							{
+								s.Carousel.Select(x =>
+								{
+									var videos = x.Videos.FirstOrDefault().Uri;
+									if (videos != null)
+										totalurls.Add(videos);
+									var images = x.Images.FirstOrDefault().Uri;
+									if (images != null)
+										totalurls.Add(images);
+									return s;
+								});
+							}
+							mediaDetail.MediaUrl = totalurls;
+							return mediaDetail;
+						}).ToList()
+					};
+				}
+			}
+			return null;
+		}
 		public async Task<Media> SearchUserFeedMediaDetailInstagram(string[] seenMedias = null, bool requestRefresh = false, int limit = 1)
 		{
 			Media medias = new Media();
@@ -473,51 +629,87 @@ namespace Quarkless.HeartBeater.ContentSearch
 			public List<Medias> MediasObject;
 			public int errors { get; set; }
 		}
-		public Media SearchViaGoogle(SearchImageModel searchImageQuery)
+		public SearchResponse<Media> SearchViaGoogle(SearchImageModel searchImageQuery)
 		{
-			var results = _restSharpClient.PostRequest("http://127.0.0.1:5000/", "searchImages", JsonConvert.SerializeObject(searchImageQuery), null);
-			if (results.IsSuccessful)
-			{
-				TempMedia responseValues = JsonConvert.DeserializeObject<TempMedia>(results.Content);
-				var casted = new Media{ Medias = responseValues.MediasObject.Select(s=>new MediaResponse
+			SearchResponse<Media> response = new SearchResponse<Media>();
+			try
+			{ 
+				var results = _restSharpClient.PostRequest("http://127.0.0.1:5000/", "searchImages", JsonConvert.SerializeObject(searchImageQuery), null);
+				if (results.IsSuccessful)
+				{
+					TempMedia responseValues = JsonConvert.DeserializeObject<TempMedia>(results.Content);
+					if(responseValues.MediasObject.Count <= 0)
+					{
+						response.StatusCode = ResponseCode.InternalServerError;
+						response.Message = $"Google search returned no results for object: {JsonConvert.SerializeObject(searchImageQuery)}";
+						return response;
+					}
+
+					var casted = new Media{ Medias = responseValues.MediasObject.Select(s=>new MediaResponse
 					{
 						Topic = s.Topic,
 						MediaFrom = MediaFrom.Google,
 						MediaType = InstaMediaType.Image,
 						MediaUrl = new List<string> {  s.MediaUrl }
 					}).ToList()};
-				return casted;
+					response.StatusCode = ResponseCode.Success;
+					response.Result = casted;
+					return response;
+				}
 			}
-			return null;
-		}
-		public Media SearchSimilarImagesViaGoogle(List<GroupImagesAlike> imagesAlikes, int limit)
-		{
-			Media medias = new Media();
-			foreach(var images in imagesAlikes) { 
-				SearchImageModel searchImage = new SearchImageModel
-				{
-					no_download = true,
-					similar_images = images.Url,
-					limit = limit,
-				};
-				var res = _restSharpClient.PostRequest("http://127.0.0.1:5000","searchImages",JsonConvert.SerializeObject(searchImage));
-				TempMedia responseValues = JsonConvert.DeserializeObject<TempMedia>(res.Content);
-				medias.Medias.AddRange(responseValues.MediasObject.Select(s => new MediaResponse
-				{
-					Topic = images.TopicGroup,
-					MediaFrom = MediaFrom.Google,
-					MediaType = InstaMediaType.Image,
-					MediaUrl = new List<string> { s.MediaUrl }
-				}).ToList());
+			catch(Exception ee)
+			{
+				response.Message = ee.Message;
+				response.StatusCode = ResponseCode.InternalServerError;
+				return response;
 			}
-			return medias;
+			response.StatusCode = ResponseCode.ReachedEndAndNull;
+			response.Message = $"SearchViaGoogle failed for  object{JsonConvert.SerializeObject(searchImageQuery)}";
+			return response;
 		}
-		public Media SearchViaYandexBySimilarImages(List<GroupImagesAlike> imagesSimilarUrls, int limit)
+		public SearchResponse<Media> SearchSimilarImagesViaGoogle(List<GroupImagesAlike> imagesAlikes, int limit)
 		{
-			var images = _yandexImageSearch.Search(imagesSimilarUrls, limit);
+			SearchResponse<Media> response = new SearchResponse<Media>();
+			try { 
+				foreach(var images in imagesAlikes) { 
+					SearchImageModel searchImage = new SearchImageModel
+					{
+						no_download = true,
+						similar_images = images.Url,
+						limit = limit,
+					};
+					var res = _restSharpClient.PostRequest("http://127.0.0.1:5000","searchImages",JsonConvert.SerializeObject(searchImage));
+					TempMedia responseValues = JsonConvert.DeserializeObject<TempMedia>(res.Content);
+					if (responseValues.MediasObject.Count <= 0)
+					{
+						response.StatusCode = ResponseCode.InternalServerError;
+						response.Message = $"Google search returned no results for object: {JsonConvert.SerializeObject(searchImage)}";
+						return response;
+					}
+					response.Result.Medias.AddRange(responseValues.MediasObject.Select(s => new MediaResponse
+					{
+						Topic = images.TopicGroup,
+						MediaFrom = MediaFrom.Google,
+						MediaType = InstaMediaType.Image,
+						MediaUrl = new List<string> { s.MediaUrl }
+					}).ToList());
+				}
+				response.StatusCode = ResponseCode.Success;
+				return response;
+			}
+			catch(Exception ee)
+			{
+				response.Message = ee.Message;
+				response.StatusCode = ResponseCode.InternalServerError;
+				return response;
+			}
+		}
+		public SearchResponse<Media> SearchViaYandexBySimilarImages(List<GroupImagesAlike> imagesSimilarUrls, int limit)
+		{
+			var images = _yandexImageSearch.SearchRelatedImagesREST(imagesSimilarUrls, limit);
 			return images;
 		}
-		public Media SearchViaYandex(YandexSearchQuery yandexSearchQuery, int limit)
+		public SearchResponse<Media> SearchViaYandex(YandexSearchQuery yandexSearchQuery, int limit)
 		{
 			return _yandexImageSearch.SearchQueryREST(yandexSearchQuery,limit);
 		}

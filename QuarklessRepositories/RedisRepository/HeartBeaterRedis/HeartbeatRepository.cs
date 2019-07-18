@@ -16,15 +16,31 @@ namespace QuarklessRepositories.RedisRepository.HeartBeaterRedis
 		{
 			_redis = redis;
 		}
+		public async Task<bool> MetaDataContains(MetaDataType metaDataType, string topic, string data, string userId)
+		{
+			bool contains = false;
+			await WithExceptionLogAsync(async () =>
+			{
+				if (userId != null)
+				{
+					contains = await _redis.SetMemberExists(metaDataType.ToString() + ":" + topic + ":" + userId, RedisKeys.HashtagGrowKeys.MetaData, data);
+				}
+				else
+				{
+					contains = await _redis.SetMemberExists(metaDataType.ToString() + ":" + topic, RedisKeys.HashtagGrowKeys.MetaData, data);
+				}
+			});
+			return contains;
+		}
 		public async Task AddMetaData<T>(MetaDataType metaDataType, string topic, __Meta__<T> data, string userId)
 		{
 			await WithExceptionLogAsync(async () => {
 				if (userId != null)
 				{
-					await _redis.SetAdd(metaDataType.ToString() + ":" + topic + ":"+ userId, RedisKeys.HashtagGrowKeys.MetaData, JsonConvert.SerializeObject(data), TimeSpan.FromHours(2));
+					await _redis.SetAdd(metaDataType.ToString() + ":" + topic + ":"+ userId, RedisKeys.HashtagGrowKeys.MetaData, JsonConvert.SerializeObject(data), TimeSpan.FromMinutes(45));
 				}
 				else { 
-					await _redis.SetAdd(metaDataType.ToString() + ":" + topic, RedisKeys.HashtagGrowKeys.MetaData, JsonConvert.SerializeObject(data), TimeSpan.FromHours(2));
+					await _redis.SetAdd(metaDataType.ToString() + ":" + topic, RedisKeys.HashtagGrowKeys.MetaData, JsonConvert.SerializeObject(data), TimeSpan.FromMinutes(45));
 				}
 			});
 		}
@@ -52,32 +68,32 @@ namespace QuarklessRepositories.RedisRepository.HeartBeaterRedis
 				}
 			});
 		}
-		public async Task<IEnumerable<__Meta__<T>?>> GetMetaData<T>(MetaDataType metaDataType, string topic, string userId)
+		public async Task<IEnumerable<__Meta__<T>>> GetMetaData<T>(MetaDataType metaDataType, string topic, string userId)
 		{
-			IEnumerable<__Meta__<T>?> response = null;
+			IEnumerable<__Meta__<T>> response = null;
 			await WithExceptionLogAsync(async () => {
 				if (userId != null)
 				{
-					response = await _redis.GetMembers<__Meta__<T>?>(metaDataType.ToString() + ":" + topic +":"+userId, RedisKeys.HashtagGrowKeys.MetaData);
+					response = await _redis.GetMembers<__Meta__<T>>(metaDataType.ToString() + ":" + topic +":"+userId, RedisKeys.HashtagGrowKeys.MetaData);
 				}
 				else { 
-					response = await _redis.GetMembers<__Meta__<T>?>(metaDataType.ToString() + ":" + topic, RedisKeys.HashtagGrowKeys.MetaData);
+					response = await _redis.GetMembers<__Meta__<T>>(metaDataType.ToString() + ":" + topic, RedisKeys.HashtagGrowKeys.MetaData);
 				}
 			});
 			return response;
 		}
-		public async Task<__Meta__<Media>?> GetMediaMetaData(MetaDataType metaDataType, string topic)
+		public async Task<__Meta__<Media>> GetMediaMetaData(MetaDataType metaDataType, string topic)
 		{
-			__Meta__<Media>? media = null;
+			__Meta__<Media> media = null;
 			await WithExceptionLogAsync(async () => {
 				media = JsonConvert.DeserializeObject<__Meta__<Media>>(await _redis.StringGet(metaDataType.ToString() + ":" + topic, RedisKeys.HashtagGrowKeys.MetaData));
 			});
 
 			return media;
 		}
-		public async Task<__Meta__<List<UserResponse<string>>>?> GetUserFromLikers(MetaDataType metaDataType, string topic)
+		public async Task<__Meta__<List<UserResponse<string>>>> GetUserFromLikers(MetaDataType metaDataType, string topic)
 		{
-			__Meta__<List<UserResponse<string>>>? response = null;
+			__Meta__<List<UserResponse<string>>> response = null;
 			await WithExceptionLogAsync(async() => {
 				response = JsonConvert.DeserializeObject<__Meta__<List<UserResponse<string>>>>(await _redis.StringGet(metaDataType.ToString() + ":" + topic, RedisKeys.HashtagGrowKeys.MetaData));
 			});

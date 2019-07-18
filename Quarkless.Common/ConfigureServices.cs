@@ -116,7 +116,7 @@ namespace Quarkless.Common
 		public static void AddHandlers(this IServiceCollection services)
 		{
 			services.AddTransient<IReportHandler, ReportHandler>();
-			services.AddTransient<IRestSharpClientManager, RestSharpClientManager>();
+			services.AddSingleton<IRestSharpClientManager, RestSharpClientManager>();
 			services.AddTransient<ITopicServicesLogic, TopicServicesLogic>();
 
 			services.AddTransient<IClientContextProvider, ClientContextProvider>();

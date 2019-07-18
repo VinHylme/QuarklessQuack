@@ -55,19 +55,21 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 				_aPIClientContainer = new APIClientContainer(_context, tempuser.OAccountId, tempuser.OInstagramAccountUser);
 				if (_aPIClientContainer == null) return null;
 				var hashtagsRes = await _aPIClientContainer.Hashtag.SearchHashtagAsync(profile.Topics.TopicFriendlyName);
+
 				if (hashtagsRes.Succeeded)
 				{
 					List<string> related = new List<string>();
 					if (profile.Topics.SubTopics != null) { 
 						foreach(var srt in profile.Topics.SubTopics)
 						{
-							var res = await _aPIClientContainer.Hashtag.GetHashtagsSectionsAsync(srt.TopicName,PaginationParameters.MaxPagesToLoad(1));
+							var res = await _aPIClientContainer.Hashtag.GetHashtagsSectionsAsync(srt.TopicName.Replace(" ",""),PaginationParameters.MaxPagesToLoad(1));
 							if(res.Succeeded && res.Value.RelatedHashtags.Count > 0)
 							{
 								srt.RelatedTopics = res.Value.RelatedHashtags.Select(t=>t.Name).ToList();
 							}
 						}
 					}
+
 					var hashtags = hashtagsRes.Value;
 					List<QuarklessContexts.Models.Profiles.SubTopics> subTopics = new List<QuarklessContexts.Models.Profiles.SubTopics>();
 					if (profile.AutoGenerateTopics) { 
@@ -79,15 +81,21 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 								.GetAwaiter().GetResult();
 								if (res.Succeeded)
 								{
-									return new QuarklessContexts.Models.Profiles.SubTopics
+									if (res.Value.RelatedHashtags.Count > 0) { 
+										return new QuarklessContexts.Models.Profiles.SubTopics
+										{
+											TopicName = s.Name,
+											RelatedTopics = res.Value.RelatedHashtags.Select(a => a.Name).ToList()
+										};
+									}
+									else
 									{
-										TopicName = s.Name,
-										RelatedTopics = res.Value.RelatedHashtags.Select(a => a.Name).ToList()
-									};
+										return null;
+									}
 								}
 							}
 							return null;
-						}).ToList();
+						}).Where(s=>s!=null).ToList();
 					}
 
 					if (profile.Topics.SubTopics != null && profile.Topics.SubTopics.Count > 0)
@@ -175,18 +183,29 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 			}
 		}
 
-		public async Task<IEnumerable<string>> BuildHashtags(string topic, int limit = 1, int pickRate = 20)
+		public async Task<IEnumerable<string>> BuildHashtags(string topic,string subcategory, string language, int limit = 1, int pickRate = 20)
 		{
-			var res = (await _hashtagLogic.GetHashtagsByTopic(topic,limit)).ToList();
-			int min = 0;
-			int max = res.Count()-1;	
-			List<string> hashtags = new List<string>();
-			while (hashtags.Count < pickRate) { 
-				var chosenHashtags = res.Select(sh=>sh.Hashtags).ElementAtOrDefault(SecureRandom.Next(min,max))
-					.Where(_=>_.Count(count=>count==' ')<=1).Select(s=>$"#{s}");
-				hashtags.AddRange(chosenHashtags.Where(s=>s.Length>=3 && s.Length<=20));
+			var res = (await _hashtagLogic.GetHashtagsByTopic(topic, limit)).ToList();
+			if(res!=null && res.Count > 0) { 
+				List<string> hashtags = new List<string>();
+				while (hashtags.Count < pickRate) { 
+
+					var chosenHashtags = res.Where(s=>s.Language.ToLower() == language.MapLanguages().ToLower())
+						.Select(sh=>sh.Hashtags);
+					var chosenHashtags_filtered = chosenHashtags
+						.ElementAtOrDefault(SecureRandom.Next(chosenHashtags.Count()))
+						.Where(_=>_.Count(count=>count==' ') <=1 )
+						.Select(s=>s);
+					if (chosenHashtags_filtered.Count() <=0) return null;
+					hashtags.AddRange(chosenHashtags_filtered.Where(s=>s.Length>=3 && s.Length<=20).Select(s=>s));
+				}
+
+				var orderedBySimilarity = hashtags.Select(s => new { SimilarityScore = s.Similarity(subcategory), Text = s })
+					.OrderByDescending(s => s.SimilarityScore).Select(t=>t.Text);
+
+				return orderedBySimilarity;
 			}
-			return hashtags;
+			return null;
 		}
 	}
 }

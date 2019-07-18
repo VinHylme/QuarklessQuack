@@ -9,6 +9,7 @@ namespace QuarklessRepositories.ProxyRepository
 		void AddProxies(List<ProxyModel> proxies);
 		void AddProxy(ProxyModel proxy);
 		Task<bool> AssignProxy(AssignedTo assignedTo);
+		Task<bool> RemoveUserFromProxy(AssignedTo assignedTo);
 		Task<IEnumerable<ProxyModel>> GetAllAssignedProxies();
 		Task<ProxyModel> GetAssignedProxyByInstaId(string instagramAccountId);
 		Task<ProxyModel> GetAssignedProxyOf(string accountId, string instagramAccountId);

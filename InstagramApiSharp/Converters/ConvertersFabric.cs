@@ -1039,5 +1039,29 @@ namespace InstagramApiSharp.Converters
         {
             return new InstaDirectRespondConverter { SourceObject = response };
         }
+
+        public IObjectConverter<InstaStoryChatStickerItem, InstaStoryChatStickerItemResponse> GetStoryChatStickerItemConverter(
+            InstaStoryChatStickerItemResponse response)
+        {
+            return new InstaStoryChatStickerItemConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryChatItem, InstaStoryChatItemResponse> GetStoryChatItemConverter(
+            InstaStoryChatItemResponse response)
+        {
+            return new InstaStoryChatItemConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaStoryChatRequestInfoItem, InstaStoryChatRequestInfoItemResponse> GetStoryChatRequestInfoItemConverter(
+            InstaStoryChatRequestInfoItemResponse response)
+        {
+            return new InstaStoryChatRequestInfoItemConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaPendingRequest, InstaPendingRequestResponse> GetPendingRequestConverter(
+            InstaPendingRequestResponse response)
+        {
+            return new InstaPendingRequestConverter { SourceObject = response };
+        }
     }
 }

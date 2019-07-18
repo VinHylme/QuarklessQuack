@@ -1,7 +1,8 @@
 ﻿using System.Linq;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
-
+using QuarklessContexts.Models.UserAuth.AuthTypes;
+using QuarklessContexts.Extensions;
 namespace QuarklessContexts.Contexts
 {
 	public class UserContext : IUserContext
@@ -30,7 +31,7 @@ namespace QuarklessContexts.Contexts
 				}
 			}
 		}
-		public string UserRoleLevel
+		public AuthTypes UserRoleLevel
 		{
 			get
 			{
@@ -39,13 +40,13 @@ namespace QuarklessContexts.Contexts
 					if (_httpContextAccessor.HttpContext.User.Claims != null)
 					{
 
-						return _httpContextAccessor.HttpContext.User.Claims.Where(_ => _.Type == "cognito:groups").Single().Value;
+						return _httpContextAccessor.HttpContext.User.Claims.Where(_ => _.Type == "cognito:groups").Single().Value.GetValueFromDescription<AuthTypes>();
 					}
-					return null;
+					return AuthTypes.Expired;
 				}
 				else
 				{
-					return null;
+					return AuthTypes.Expired;
 				}
 			}
 		}
@@ -65,6 +66,13 @@ namespace QuarklessContexts.Contexts
 				}
 			}
 			set { }
+		}
+		public bool IsAdmin
+		{
+			get
+			{
+				return CurrentUser!=null && UserRoleLevel == AuthTypes.Admin;
+			}
 		}
 		public bool UserAccountExists
 		{

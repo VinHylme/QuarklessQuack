@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -9,9 +8,80 @@ using Newtonsoft.Json.Linq;
 using QuarklessContexts.Models.Proxies;
 using QuarklessLogic.Handlers.ReportHandler;
 using QuarklessRepositories.ProxyRepository;
+using System.Linq;
+using System.Text.RegularExpressions;
+using Newtonsoft.Json;
+using System.ComponentModel;
+using QuarklessContexts.Extensions;
 
 namespace QuarklessLogic.Logic.ProxyLogic
 {
+	public enum ConnectionType
+	{
+		Any,
+
+		[Description("Residential")]
+		Residential,
+
+		[Description("Mobile")]
+		Mobile,
+
+		[Description("Datacenter")]
+		Datacenter
+	}
+	public struct IPResponse
+	{
+		[JsonProperty("ip")]
+		public string IP;
+	}
+	public class ProxyItem
+	{
+		[JsonProperty("proxy")]
+		public string Proxy { get; set; }
+
+		[JsonProperty("ip")]
+		public string IP { get; set; }
+
+		[JsonProperty("port")]
+		public string Port { get; set; }
+
+		[JsonProperty("type")]
+		public string Type { get; set; }
+
+		[JsonProperty("lastChecked")]
+		public int LastChecked { get; set; }
+
+		[JsonProperty("get")]
+		public bool Get { get; set; }
+
+		[JsonProperty("post")]
+		public bool Post { get; set; }
+
+		[JsonProperty("cookies")]
+		public bool Cookies { get; set; }
+
+		[JsonProperty("referer")]
+		public bool Referer { get; set; }
+
+		[JsonProperty("userAgent")]
+		public bool UserAgent { get; set; }
+
+		[JsonProperty("city")]
+		public string City { get; set; }
+
+		[JsonProperty("state")]
+		public string State { get; set; }
+
+		[JsonProperty("country")]
+		public string Country { get; set; }
+
+		[JsonProperty("currentThreads")]
+		public int CurrentThreads { get; set; }
+
+		[JsonProperty("threadsAllowed")]
+		public int ThreadsAllowed { get; set; }
+	}
+
 	public class ProxyLogic : IProxyLogic
 	{
 		private readonly IProxyRepostory _proxyRepostory;
@@ -26,6 +96,7 @@ namespace QuarklessLogic.Logic.ProxyLogic
 		public bool AddProxies(List<ProxyModel> proxies)
 		{
 			try { 
+				if(proxies.Any(s=>string.IsNullOrEmpty(s.Address))) return false;
 				_proxyRepostory.AddProxies(proxies);
 				return true;
 			}
@@ -98,26 +169,24 @@ namespace QuarklessLogic.Logic.ProxyLogic
 			}
 			return httpClientHandler;
 		}
-		public bool TestProxy(ProxyModel proxy)
+		public async Task <bool> TestProxy(ProxyItem proxy)
 		{
 			try
 			{
 				var req = (HttpWebRequest)HttpWebRequest.Create("http://ip-api.com/json");
-				req.Timeout = 5000;
+				req.Timeout = 4000;
 
-				req.Proxy = new WebProxy()
+				req.Proxy = new WebProxy($"http://{proxy.Proxy}/")
 				{
-					BypassProxyOnLocal = false,
-					Credentials = new NetworkCredential(proxy.Username, proxy.Password),
-					Address = new Uri($"http://{proxy.Username}:{proxy.Password}")
+					//BypassProxyOnLocal = false,
+					//Credentials = new NetworkCredential(proxy.Username, proxy.Password),
 				};
-
-				var resp = req.GetResponse();
+				var resp = await req.GetResponseAsync();
 				var json = new StreamReader(resp.GetResponseStream()).ReadToEnd();
 
 				var myip = (string)JObject.Parse(json)["query"];
 
-				if (myip == proxy.Address)
+				if (myip == proxy.IP)
 				{
 					return true;
 				}
@@ -138,6 +207,73 @@ namespace QuarklessLogic.Logic.ProxyLogic
 				return results;
 			}
 			return null;
+		}
+		public async Task<ProxyModel> RetrieveRandomProxy(bool get = true, bool post = true, bool cookies = true, bool referer = true,
+			bool userAgent = true, int port = -1, string city = null, string state = null, string country  = null, 
+			ConnectionType connectionType = ConnectionType.Any)
+		{
+			string baseUrl = $@"http://falcon.proxyrotator.com:51337/?apiKey=XR4E5JzkxMZcovaYQW2VUBw3PDj876eK&get={get}&post={post}&cookies={cookies}&referer={referer}&userAgent={userAgent}";
+			if(port!=-1)
+				baseUrl+=$"&port={port}";
+			if(!string.IsNullOrEmpty(city))
+				baseUrl+=$"&city={city}";
+			if(!string.IsNullOrEmpty(state))
+				baseUrl+=$"&state={state}";
+			if(!string.IsNullOrEmpty(country))
+				baseUrl+=$"&country=US";
+			if(connectionType != ConnectionType.Any)
+				baseUrl+=$"&connectionType={connectionType.GetDescription()}";
+			try { 
+				var jsonRespoonse = string.Empty;
+				ProxyItem proxyItem = new ProxyItem();
+				HttpWebRequest request = (HttpWebRequest)WebRequest.Create(baseUrl);
+
+				using (HttpWebResponse response = (HttpWebResponse) await request.GetResponseAsync())
+				using (Stream stream = response.GetResponseStream())
+				using (StreamReader reader = new StreamReader(stream))
+				{
+					jsonRespoonse = reader.ReadToEnd();
+
+					//the following class 'prxy' is the object from the json response from proxy rotator
+					proxyItem = JsonConvert.DeserializeObject<ProxyItem>(jsonRespoonse);
+				}
+				if (!string.IsNullOrEmpty(proxyItem?.Proxy) && !string.IsNullOrEmpty(proxyItem?.IP)) { 
+					if(await TestProxy(proxyItem))
+					{
+						return new ProxyModel{
+							Address = proxyItem.IP,
+							Port = int.Parse(proxyItem.Port),
+							Region = proxyItem.Country,
+							Type = proxyItem.Type
+						};
+					} 
+				}
+
+				await RetrieveRandomProxy(get,post,cookies,referer,userAgent,port,city,state,country,connectionType);
+			}
+			catch(Exception ee)
+			{
+				_reportHandler.MakeReport(ee);
+				return null;
+			}
+			return null;
+		}
+		public async Task<bool> RemoveUserFromProxy(AssignedTo assignedTo)
+		{
+			try
+			{
+				if ((await GetProxyAssignedTo(assignedTo.Account_Id, assignedTo.InstaId)) != null)
+				{
+					var results = await _proxyRepostory.RemoveUserFromProxy(assignedTo);
+					return results;
+				}
+				return false;
+			}
+			catch (Exception ee)
+			{
+				_reportHandler.MakeReport($"Failed to assign proxy to user: {assignedTo.Account_Id}, error: {ee}");
+				return false;
+			}
 		}
 	}
 }

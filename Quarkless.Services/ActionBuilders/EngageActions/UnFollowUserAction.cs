@@ -41,7 +41,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
 			ResultCarrier<IEnumerable<TimelineEventModel>> Results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
-			FollowActionOptions followActionOptions = actionOptions as FollowActionOptions;
+			UnfollowActionOptions followActionOptions = actionOptions as UnfollowActionOptions;
 			if(user==null)
 			{
 				Results.IsSuccesful = false;
@@ -52,51 +52,72 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				};
 				return Results;
 			}
-			if(unFollowStrategySettings.UnFollowStrategy == UnFollowStrategyType.Default)
+			By by = new By
 			{
-				var fetchedUsers = _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersFollowingList, _profile.Topics.TopicFriendlyName, _profile.InstagramAccountId).GetAwaiter().GetResult();
-
-				if (fetchedUsers != null)
+				ActionType = (int)ActionType.UnFollowUser,
+				User = _profile.InstagramAccountId
+			};
+			var fetchedUsers = _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersFollowingList, _profile.Topics.TopicFriendlyName, _profile.InstagramAccountId)
+				.GetAwaiter().GetResult().Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType));
+			if (fetchedUsers != null) { 
+				if (unFollowStrategySettings.UnFollowStrategy == UnFollowStrategyType.Default)
 				{
 					var nominatedUser = fetchedUsers.ElementAt(SecureRandom.Next(fetchedUsers.Count()));
 					//todo check if this user has been engaging with the user (commenting, liking, seeing story, etc)
-
-					if (nominatedUser.HasValue)
+					if (nominatedUser!=null)
 					{
-						By by = new By
+						nominatedUser.SeenBy.Add(by);
+						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFollowingList, _profile.Topics.TopicFriendlyName, nominatedUser).GetAwaiter().GetResult();
+						RestModel restModel = new RestModel
 						{
-							ActionType = (int)ActionType.UnFollowUser,
-							User = _profile.InstagramAccountId
+							BaseUrl = string.Format(UrlConstants.UnfollowUser, nominatedUser.ObjectItem.FirstOrDefault().UserId),
+							RequestType = RequestType.POST,
+							JsonBody = null,
+							User = user
 						};
-						if (!nominatedUser.Value.SeenBy.Contains(by))
+						Results.IsSuccesful = true;
+						Results.Results = new List<TimelineEventModel>
 						{
-							nominatedUser.Value.SeenBy.Add(by);
-							_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFollowingList, _profile.Topics.TopicFriendlyName, nominatedUser.Value).GetAwaiter().GetResult();
+							new TimelineEventModel
+							{
+								ActionName = $"UnfollowUser_{unFollowStrategySettings.UnFollowStrategy.ToString()}",
+								Data = restModel,
+								ExecutionTime =followActionOptions.ExecutionTime
+							}
+						};
+						return Results;
+					}		
+				}
+				else if(unFollowStrategySettings.UnFollowStrategy == UnFollowStrategyType.LeastEngagingN)
+				{
+					List<TimelineEventModel> events_ = new List<TimelineEventModel>();
+					for (int i = 0; i < unFollowStrategySettings.NumberOfUnfollows; i++)
+					{
+						var nominate = fetchedUsers.ElementAtOrDefault(i);
+						if (nominate != null)
+						{
+							nominate.SeenBy.Add(by);
+							_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFollowingList, _profile.Topics.TopicFriendlyName, nominate).GetAwaiter().GetResult();
 							RestModel restModel = new RestModel
 							{
-								BaseUrl = string.Format(UrlConstants.UnfollowUser, nominatedUser.Value.ObjectItem.FirstOrDefault().UserId),
+								BaseUrl = string.Format(UrlConstants.UnfollowUser, nominate.ObjectItem.FirstOrDefault().UserId),
 								RequestType = RequestType.POST,
 								JsonBody = null,
 								User = user
 							};
-							Results.IsSuccesful = true;
-							Results.Results = new List<TimelineEventModel>
+							events_.Add(new TimelineEventModel
 							{
-								new TimelineEventModel
-								{
-									ActionName = $"FollowUser_{unFollowStrategySettings.UnFollowStrategy.ToString()}",
-									Data = restModel,
-									ExecutionTime =followActionOptions.ExecutionTime
-								}
-							};
-							return Results;
+								ActionName = $"UnfollowUser_{unFollowStrategySettings.UnFollowStrategy.ToString()}",
+								Data = restModel,
+								ExecutionTime = followActionOptions.ExecutionTime.AddSeconds(i*unFollowStrategySettings.OffsetPerAction.TotalSeconds)
+							});
 						}
-					}			
+						continue;
+					}
+					Results.IsSuccesful = true;
+					Results.Results = events_;
+					return Results;
 				}
-			}
-			else if(unFollowStrategySettings.UnFollowStrategy == UnFollowStrategyType.LeastEngagingN)
-			{
-
 			}
 			Results.IsSuccesful = false;
 			Results.Info = new ErrorResponse

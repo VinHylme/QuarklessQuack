@@ -33,26 +33,13 @@ namespace QuarklessLogic.Handlers.TextGeneration
 			TDict t = MarkovHelper.BuildTDict(s, size);
 			return MarkovHelper.BuildString(t, limit, exact).TrimEnd(' ');
 		}
-		private string MapLanguages(string language)
-		{
-			var all = CultureInfo.GetCultures(CultureTypes.AllCultures);
-			var shortv = all.Where(s=>s.EnglishName.ToLower() == language.ToLower()).Select(s=>s.Name).SingleOrDefault();
-			if (!string.IsNullOrEmpty(shortv))
-			{
-				return shortv;
-			}
-			else
-			{
-				return null;
-			}
-		}
 		public async Task<string> MarkovIt(int type, string topic, string language, int size, int limit)
 		{
 			if (type < 0 && type > 2) throw new Exception("invalid type");
 			switch (type)
 			{
 				case 0:
-					var data = await _commentCorpusRepository.GetComments(topic,language.ToUpper(),MapLanguages(language),10000);
+					var data = await _commentCorpusRepository.GetComments(topic,language.ToUpper(),language.MapLanguages(),10000);
 					if (data != null)
 					{
 						string choice = Regex.Replace(string.Join(',', data.Where(s=>!s.Comment.Contains('@')).Select(sa => sa.Comment)), @"\s+", " ").TrimEnd(' ');
@@ -61,7 +48,7 @@ namespace QuarklessLogic.Handlers.TextGeneration
 					}
 					return null;
 				case 1:
-					var mdata = await _mediaCorpusRepository.GetMedias(topic, language.ToUpper(),MapLanguages(language),10000);
+					var mdata = await _mediaCorpusRepository.GetMedias(topic, language.ToUpper(),language.MapLanguages(),10000);
 					if (mdata != null)
 					{
 						string choice = Regex.Replace(string.Join(',', mdata.Where(sc=>!sc.Caption.Contains('@')).Select(sa => sa.Caption)), @"\s+", " ").TrimEnd(' ');

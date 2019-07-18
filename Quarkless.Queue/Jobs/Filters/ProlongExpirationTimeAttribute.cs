@@ -11,12 +11,12 @@ namespace Quarkless.Queue.Jobs.Filters
 	{
 		public void OnStateApplied(ApplyStateContext filterContext, IWriteOnlyTransaction transaction)
 		{
-			filterContext.JobExpirationTimeout = TimeSpan.FromDays(30);
+			filterContext.JobExpirationTimeout = TimeSpan.FromDays(1);
 		}
 
 		public void OnStateUnapplied(ApplyStateContext context, IWriteOnlyTransaction transaction)
 		{
-			context.JobExpirationTimeout = TimeSpan.FromDays(30);
+			context.JobExpirationTimeout = TimeSpan.FromDays(1);
 		}
 	}
 }

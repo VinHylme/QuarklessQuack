@@ -3,12 +3,15 @@ using Quarkless.Services.ContentBuilder.TopicBuilder;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.InstagramAccounts;
 using QuarklessContexts.Models.Profiles;
+using QuarklessContexts.Models.Proxies;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
+using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.RestSharpClient;
 using QuarklessLogic.Logic.InstagramAccountLogic;
 using QuarklessLogic.Logic.ProfileLogic;
+using QuarklessLogic.Logic.ProxyLogic;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using System;
 using System.Collections.Generic;
@@ -21,6 +24,7 @@ namespace Quarkless.HeartBeater.__Init__
 	{
 		public ShortInstagramAccountModel InstagramAccount { get; set; }
 		public ProfileModel Profile { get; set; } 
+		public ProxyModel ProxyUsing { get; set; }
 	}
 	public struct Assignments
 	{
@@ -33,17 +37,17 @@ namespace Quarkless.HeartBeater.__Init__
 		private readonly IAPIClientContext _context;
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
 		private readonly IProfileLogic _profileLogic;
+		private readonly IProxyLogic _proxyLogic;
 		private readonly ITopicBuilder _topicBuilder;
-		private readonly IRestSharpClientManager _restSharpClient;
 		private readonly IHeartbeatLogic _heartbeatLogic;
 		private List<Assignments> Assignments { get; set; }
-		public Init(IInstagramAccountLogic instagramAccountLogic, IProfileLogic profileLogic, 
-			IAPIClientContext context, IRestSharpClientManager restSharpClient, IHeartbeatLogic heartbeatLogic,
+		public Init(IInstagramAccountLogic instagramAccountLogic, IProfileLogic profileLogic, IProxyLogic proxyLogic,
+			IAPIClientContext context, IHeartbeatLogic heartbeatLogic,
 			ITopicBuilder topicBuilder)
 		{
 			_instagramAccountLogic = instagramAccountLogic;
 			_profileLogic = profileLogic;
-			_restSharpClient = restSharpClient;
+			_proxyLogic = proxyLogic;
 			_heartbeatLogic = heartbeatLogic;
 			_context = context;
 			_topicBuilder = topicBuilder;
@@ -69,7 +73,7 @@ namespace Quarkless.HeartBeater.__Init__
 							_topicBuilder.Init(new UserStoreDetails { OAccountId = wo_.AccountId, OInstagramAccountUser = wo_._id, OInstagramAccountUsername = wo_.Username });
 							var currAcc = requesters.ElementAtOrDefault(x);
 							var profileTopic = currAcc.Profile.Topics;
-							if (profileTopic.SubTopics == null || profileTopic.SubTopics.Count <= 2 && profileTopic.SubTopics.Any(s=>s.RelatedTopics.Count>3))
+							if (profileTopic.SubTopics == null || profileTopic.SubTopics.Count <= 1 || profileTopic.SubTopics.Any(s=> s.RelatedTopics==null || s.RelatedTopics.Count<3))
 							{
 								profileTopic = _topicBuilder.BuildTopics(currAcc.Profile).GetAwaiter().GetResult();
 							}
@@ -94,7 +98,7 @@ namespace Quarkless.HeartBeater.__Init__
 							var currAcc = requesters.ElementAtOrDefault(y);
 							var profileTopic = currAcc.Profile.Topics;
 
-							if (profileTopic.SubTopics == null || profileTopic.SubTopics.Count <= 2)
+							if (profileTopic.SubTopics == null || profileTopic.SubTopics.Count <= 1 || profileTopic.SubTopics.Any(s => s.RelatedTopics == null || s.RelatedTopics.Count < 3))
 							{
 								profileTopic = _topicBuilder.BuildTopics(currAcc.Profile).GetAwaiter().GetResult();
 							}
@@ -114,42 +118,48 @@ namespace Quarkless.HeartBeater.__Init__
 					}
 				}
 
-				MetadataBuilder metadataBuilder = new MetadataBuilder(Assignments,_restSharpClient, _context, _heartbeatLogic);
+				MetadataBuilder metadataBuilder = new MetadataBuilder(Assignments, _context, _heartbeatLogic,_proxyLogic);
 			
 				//Build Around Topics
 			
-				var ins = Task.Run(()=>metadataBuilder.BuildBase());
+				var ins = Task.Run(async () => await metadataBuilder.BuildBase());
 				//google and yandex search are seperate
-				var go =Task.Run(()=>metadataBuilder.BuildGoogleImages());
-				var yan =Task.Run(()=> metadataBuilder.BuildYandexImages());
-				var yanq = Task.Run(()=>metadataBuilder.BuildYandexImagesQuery());
+				var go =Task.Run(async () => await metadataBuilder.BuildGoogleImages(50));
+				var yan =Task.Run(async () => await metadataBuilder.BuildYandexImages(50));
+				var yanq = Task.Run(async () => await metadataBuilder.BuildYandexImagesQuery());
+				var profileRefresh = Task.Run(async () => await metadataBuilder.BuildUsersOwnMedias(_instagramAccountLogic));
 				//independed can run by themselves seperate tiem
-				var profileRefresh = Task.Run(() => { 
-					metadataBuilder.BuildUsersOwnMedias();
+
+				var feedRefresh = Task.Run(async () => await metadataBuilder.BuildUsersFeed()).ContinueWith(async x=> 
+				{
+					await metadataBuilder.BuildUsersFollowSuggestions();
+					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchUsersFeed, MetaDataType.FetchCommentsViaUserFeed, true);
 				});
-				var feedRefresher = Task.Run(() => { 
-					metadataBuilder.BuildUsersFeed();
-				}).ContinueWith(f=>{
-					metadataBuilder.BuildUsersFollowSuggestions();
+				var followingList = Task.Run(async () => await metadataBuilder.BuildUserFollowList());
+				var userTargetList = Task.Run(async () => await metadataBuilder.BuildUsersTargetListMedia()).ContinueWith(async x=>
+				{
+					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserTargetList, MetaDataType.FetchCommentsViaUserTargetList, true);
 				});
-				var followingList = Task.Run(() => {
-					metadataBuilder.BuildUserFollowList();
+				var locTargetList = Task.Run(async () => await metadataBuilder.BuildLocationTargetListMedia()).ContinueWith(async s =>
+				{
+					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserLocationTargetList, MetaDataType.FetchCommentsViaLocationTargetList, true);
+				}); ;
+
+				Task.WaitAll(ins);
+				var likers = Task.Run(async () => await metadataBuilder.BuildUserFromLikers()).ContinueWith(async a =>
+				{
+					await metadataBuilder.BuildMediaFromUsersLikers();
+					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByLikers, MetaDataType.FetchCommentsViaPostsLiked);
 				});
 
-				Task.WaitAll(ins);  //depended on the initial media fetch
-				var likers = Task.Run(() => { 
-					metadataBuilder.BuildUserFromLikers();
-				}).ContinueWith(a=>{
-					metadataBuilder.BuildMediaFromUsersLikers();
-				});
-				var commenters = Task.Run(() => { 
-					metadataBuilder.BuildUsersFromCommenters();
-				}).ContinueWith(c => {
-					metadataBuilder.BuildMediaFromUsersCommenters();
+				var commenters = Task.Run(async () => await metadataBuilder.BuildUsersFromCommenters()).ContinueWith(async c =>
+				{	
+					await metadataBuilder.BuildMediaFromUsersCommenters();
+					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByCommenters, MetaDataType.FetchCommentsViaPostCommented);
 				});
 
-				Task.WaitAll(go, yan,yanq, likers, commenters, profileRefresh, feedRefresher);
-					//Build Around specific Users
+				Task.WaitAll(go, yan, yanq, likers, commenters, profileRefresh, feedRefresh, userTargetList, locTargetList);
+				//Build Around specific Users
 			}
 			catch(Exception ee)
 			{
@@ -168,7 +178,8 @@ namespace Quarkless.HeartBeater.__Init__
 				return resp.Select(p=>new RequestAccountModel
 				{
 					InstagramAccount = p,
-					Profile = _profileLogic.GetProfile(p.AccountId,p.Id).GetAwaiter().GetResult()
+					Profile = _profileLogic.GetProfile(p.AccountId,p.Id).GetAwaiter().GetResult(),
+					ProxyUsing = _proxyLogic.GetProxyAssignedTo(p.AccountId,p.Id).GetAwaiter().GetResult()
 				}).ToList();
 			}
 			catch(Exception ee)

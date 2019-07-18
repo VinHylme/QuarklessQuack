@@ -44,7 +44,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 
 		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
-			VideoActionOptions videoActionOptions = actionOptions as VideoActionOptions;
+			PostActionOptions videoActionOptions = actionOptions as PostActionOptions;
 			ResultCarrier<IEnumerable<TimelineEventModel>> Results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
 
 			if (user==null){
@@ -62,15 +62,33 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 
 			var profileColor = _profile.Theme.Colors.ElementAt(SecureRandom.Next(0, _profile.Theme.Colors.Count));
 
-			var topic_ = _builder.GetTopic(_profile).GetAwaiter().GetResult();
-
+			Topics topic_;
+			if (_profile.Topics.SubTopics == null || _profile.Topics.SubTopics.Count <= 0)
+			{
+				topic_ = _builder.GetTopic(user, _profile, 20).GetAwaiter().GetResult();
+			}
+			else
+			{
+				topic_ = _profile.Topics;
+			}
+			By by = new By
+			{
+				ActionType = (int)ActionType.CreatePost,
+				User = _profile.InstagramAccountId
+			};
 			var media = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic,_profile.Topics.TopicFriendlyName).GetAwaiter().GetResult();
-			var videos = media.Select(s =>
-				new __Meta__<Media>(new Media
+			var videos = media.Select(p =>
+			{
+				return new __Meta__<Media>(new Media
 				{
-					Medias = s.Value.ObjectItem.Medias.Where(x => x.MediaType == InstaMediaType.Image).ToList(),
-					errors = s.Value.ObjectItem.errors
-				})).ToList();
+					Medias = p.ObjectItem.Medias.Where(x => x.MediaType == InstaMediaType.Image).ToList(),
+					errors = p.ObjectItem.errors
+				})
+				{
+					SeenBy = p.SeenBy
+				};
+			}).Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType)).ToList();
+
 
 			if (videos.Count <= 0)
 			{
@@ -94,7 +112,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 
 			UploadVideoModel uploadVideo = new UploadVideoModel
 			{
-				Caption = _builder.GenerateMediaInfo(topic_, _profile.Language),
+				Caption = _builder.GenerateMediaInfo(topic_,null, _profile.Language),
 				Location = location != null ? new InstaLocationShort
 				{
 					Address = location.Address,

@@ -5,11 +5,25 @@ using TDict = System.Collections.Generic.Dictionary<string, System.Collections.G
 using System.Linq;
 using System;
 using System.Security.Cryptography;
+using System.Globalization;
 
 namespace QuarklessContexts.Extensions
 {
 	static public class MarkovHelper
 	{
+		public static string MapLanguages(this string language)
+		{
+			var all = CultureInfo.GetCultures(CultureTypes.AllCultures);
+			var shortv = all.Where(s => s.EnglishName.ToLower() == language.ToLower()).Select(s => s.Name).SingleOrDefault();
+			if (!string.IsNullOrEmpty(shortv))
+			{
+				return shortv;
+			}
+			else
+			{
+				return null;
+			}
+		}
 		static public TDict BuildTDict(string s, int size)
 		{
 			TDict t = new TDict();

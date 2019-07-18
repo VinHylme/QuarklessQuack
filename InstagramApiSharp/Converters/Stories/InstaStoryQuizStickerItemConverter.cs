@@ -30,7 +30,8 @@ namespace InstagramApiSharp.Converters
                 QuizId = SourceObject.QuizId,
                 StartBackgroundColor = SourceObject.StartBackgroundColor,
                 TextColor = SourceObject.TextColor,
-                ViewerCanAnswer = SourceObject.ViewerCanAnswer
+                ViewerCanAnswer = SourceObject.ViewerCanAnswer,
+                ViewerAnswer = SourceObject.ViewerAnswer ?? -1
             };
 
             if (SourceObject.Tallies?.Count > 0)

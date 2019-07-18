@@ -35,6 +35,7 @@ namespace Quarkless.MediaAnalyser
 		public static bool ImageIsDuplicate(this byte[] image, byte[] targetImage, double scorePerctange)
 		{
 			var ogHash = ImagePhash.ComputeDigest(image.ByteToBitmap().ToLuminanceImage());
+			if(targetImage==null) return false;
 			var targetHash = ImagePhash.ComputeDigest(targetImage.ByteToBitmap().ToLuminanceImage());
 			return ImagePhash.GetCrossCorrelation(ogHash,targetHash) > scorePerctange;
 		}
@@ -182,6 +183,23 @@ namespace Quarkless.MediaAnalyser
 
 			return filteredRes;
 		}
+		public static double GetAspectRatio(this byte[] image)
+		{
+			var imagebit = image.ByteToBitmap();
+			return (double)((double)imagebit.Width / (double) imagebit.Height);
+		}
+		private static float DistnaceCalculate(float a, float b)
+		{
+			return Math.Abs(a - b);
+		}
+		public static double GetClosestAspectRatio(this byte[] image)
+		{
+			var imagebit = image.ByteToBitmap();
+			float aspect = (float) ((double) imagebit.Width / (double) imagebit.Height);
+			float[] AllowedAspectRatios = new float[] { 1.0f, 1.8f, 1.9f, 0.8f };
+			var dist = AllowedAspectRatios.Select(s=>DistnaceCalculate(aspect,s)).Min(x=>x);
+			return AllowedAspectRatios.ElementAt(AllowedAspectRatios.ToList().FindIndex(s=>DistnaceCalculate(aspect,s) == dist));
+		}
 		public static byte[] ResizeToClosestAspectRatio (this byte[] image)
 		{
 			var imageBitmap = image.ByteToBitmap();
@@ -190,10 +208,7 @@ namespace Quarkless.MediaAnalyser
 			float ogratio = (float) width / height;
 			float[] AllowedAspectRatios = new float[] {1.0f, 1.8f, 1.9f, 0.8f };
 
-			float DistnaceCalculate(float a, float b)
-			{
-				return Math.Abs(a-b);
-			}
+	
 			var lowestdistance = AllowedAspectRatios.ToList().Select(a =>
 			{
 				return DistnaceCalculate(ogratio,a);
@@ -276,6 +291,21 @@ namespace Quarkless.MediaAnalyser
 				}
 			}
 		}
+		public static IEnumerable<byte[]> CreateCarousel(this byte[] imageData, int splitBy = 3)
+		{
+			var toImage = imageData.ByteToBitmap();
+			var width = toImage.Width;
+			var widthOfSquare = width / splitBy;
+			int startX = 0;
+			List<byte[]> bundle = new List<byte[]>();
+
+			for(int i = 0; i < splitBy; i++)
+			{
+				bundle.Add(toImage.Clone(new Rectangle(startX, 0, widthOfSquare, toImage.Height), toImage.PixelFormat).BitmapToByte());
+				startX+=widthOfSquare;
+			}
+			return bundle;
+		}
 		public static Bitmap ByteToBitmap(this byte[] imagesByte)
 		{
 			if(imagesByte==null) return null;
@@ -295,7 +325,6 @@ namespace Quarkless.MediaAnalyser
 		public static Dictionary<Color,int> GetColorPercentage(this Bitmap bmp)
 		{
 			if(bmp == null) throw new ArgumentNullException("null is not allowed");
-			bmp = bmp.ReduceBitmap(350,350);
 			BitmapData srcData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, bmp.PixelFormat);
 			Dictionary<Color, int> frequency = new Dictionary<Color, int>();
 			int bytesPerPixel = Image.GetPixelFormatSize(srcData.PixelFormat) / 8;
@@ -406,13 +435,15 @@ namespace Quarkless.MediaAnalyser
 			var sel = images.ElementAtOrDefault(pos);
 			return sel;
 		}
-		public static bool SimilarColors(this IEnumerable<Color> @freq, IEnumerable<Color> target, int threshhold = 8)
+		public static bool SimilarColors(this IEnumerable<Color> @freq, IEnumerable<Color> target, double threshhold = 0)
 		{
 			int contains = 0;
 			foreach (var tc in target)
 			{
-				var diff = freq.Select(x=>ColorDiff(x,tc)).Min(s=>s);
-				if (diff < threshhold)
+				var diffMin = freq.Select(x=>ColorDiff(x,tc)).Min(s=>s);
+				var maximus = tc.R + tc.G + tc.B;
+				var targetPerc = Math.Abs((maximus * threshhold) - maximus);
+				if (diffMin < targetPerc)
 				{
 					contains++;
 				}

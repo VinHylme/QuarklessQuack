@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using QuarklessContexts.Extensions;
+using QuarklessContexts.Models.Proxies;
 using QuarklessLogic.Handlers.RestSharpClient;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,7 +49,8 @@ namespace QuarklessLogic.Handlers.TranslateService
 		private readonly IRestSharpClientManager _restSharpClient;
 		private readonly string _yandexAPIKey;
 		private readonly string _detectAPIKey;
-		public TranslateService(IOptions<TranslateOptions> tOptions, ISeleniumClient seleniumClient, IRestSharpClientManager restSharpClient)
+		public TranslateService(IOptions<TranslateOptions> tOptions, ISeleniumClient seleniumClient, 
+			IRestSharpClientManager restSharpClient)
 		{
 			_restSharpClient = restSharpClient;
 			_seleniumClient = seleniumClient;
@@ -69,6 +71,23 @@ namespace QuarklessLogic.Handlers.TranslateService
 			);
 		}
 		static int pos = 0;
+		public void AddProxy(ProxyModel proxy)
+		{
+			if (proxy != null)
+			{
+				_restSharpClient.AddProxy(proxy);
+				string proxyLine = string.Empty;
+				if (string.IsNullOrEmpty(proxy.Username))
+				{
+					proxyLine = $"{proxy.Address}:{proxy.Port}";
+				}
+				else
+				{
+					proxyLine = $"{proxy.Username}:{proxy.Password}@{proxy.Address}:{proxy.Port}";
+				}
+				_seleniumClient.AddArguments($"--proxy-server={proxyLine}");
+			}
+		}
 		public IEnumerable<string> DetectLanguageYandex(params string[] texts)
 		{
 			var trykey = _yandexAPIKey.Split('|');
