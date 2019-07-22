@@ -13,8 +13,8 @@ namespace QuarklessLogic.Logic.ProxyLogic
 		Task<bool> TestProxy(ProxyItem proxy);
 		Task<IEnumerable<ProxyModel>> GetAllAssignedProxies();
 		Task<ProxyModel> GetProxyAssignedTo(string accountId, string instagramAccountId);
-		Task<ProxyModel> RetrieveRandomProxy(bool get = true, bool post = true, bool cookies = true, bool referer = true,
-			bool userAgent = true, int port = -1, string city = null, string state = null, string country = null,
+		Task<ProxyModel> RetrieveRandomProxy(bool? get = null, bool? post = null, bool? cookies = null, bool? referer = null,
+			bool? userAgent = null, int port = -1, string city = null, string state = null, string country = null,
 			ConnectionType connectionType = ConnectionType.Any);
 	}
 }

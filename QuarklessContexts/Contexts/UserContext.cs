@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using QuarklessContexts.Models.UserAuth.AuthTypes;
 using QuarklessContexts.Extensions;
+using System;
+
 namespace QuarklessContexts.Contexts
 {
 	public class UserContext : IUserContext

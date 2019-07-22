@@ -52,6 +52,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
+			Console.WriteLine("Create Photo Action Started");
 			PostActionOptions imageActionOptions = actionOptions as PostActionOptions;
 			ResultCarrier<IEnumerable<TimelineEventModel>> Results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
 			if (user == null)
@@ -64,7 +65,6 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				};
 				return Results;
 			}
-			Console.WriteLine("Create Photo Action Started");
 			try
 			{
 				var location = _profile.LocationTargetList?.ElementAtOrDefault(SecureRandom.Next(_profile.LocationTargetList.Count));
@@ -80,7 +80,9 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 
 				List<__Meta__<Media>> TotalResults = new List<__Meta__<Media>>();
 				MetaDataType selectedAction = MetaDataType.None;
-				switch (_profile.AdditionalConfigurations.SearchTypes.ElementAtOrDefault(SecureRandom.Next(_profile.AdditionalConfigurations.SearchTypes.Count-1)))
+				int searchTypeSelected = _profile.AdditionalConfigurations.SearchTypes[SecureRandom.Next(_profile.AdditionalConfigurations.SearchTypes.Count)];
+
+				switch (searchTypeSelected)
 				{
 					case (int)SearchType.Google:
 						int[] ran = new int[] { 0, 1};
@@ -142,15 +144,18 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				&& (e.ActionType == by.ActionType))).ToList();
 
 				TempSelect _selectedMedia = new TempSelect();
-				System.Drawing.Size size = new System.Drawing.Size(900,700);
+				System.Drawing.Size size = new System.Drawing.Size(700,700);
+
 				List<Chance<InstaMediaType>> typeOfPost = new List<Chance<InstaMediaType>>()
 				{
 					new Chance<InstaMediaType>{ Object = InstaMediaType.Image, Probability = 0.40 },
 					new Chance<InstaMediaType>{ Object = InstaMediaType.Carousel, Probability = 0.60}
 				};
+
 				var typeSelected = SecureRandom.ProbabilityRoll(typeOfPost);
-				int carouselAmount = SecureRandom.Next(3,5);
+				int carouselAmount = 3;
 				int currAmount = 0;
+
 				lock (filteredResults) { 
 					foreach (var result in filteredResults)
 					{

@@ -34,7 +34,6 @@ namespace QuarklessLogic.ServicesLogic.AgentLogic
 					AgentSettings = new AgentSettings
 					{
 						AgentState = (int)newState,
-//						ActionStates = actionStates
 					}
 				});
 				return true;
@@ -48,7 +47,7 @@ namespace QuarklessLogic.ServicesLogic.AgentLogic
 		public async Task<AgentResponse> Start(string accountId, string instagramAccountId)
 		{
 			var _instaAccount = await _instagramAccountLogic.GetInstagramAccountShort(accountId, instagramAccountId);
-			//set to running
+
 			await _instagramAccountLogic.PartialUpdateInstagramAccount(accountId, instagramAccountId,
 				new InstagramAccountModel
 				{

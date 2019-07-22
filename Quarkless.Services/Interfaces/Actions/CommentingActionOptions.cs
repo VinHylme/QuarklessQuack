@@ -10,7 +10,7 @@ namespace Quarkless.Services.Interfaces.Actions
 		public DateTimeOffset ExecutionTime { get; set; }
 		public static Range CommentingActionDailyLimit { get; set; } = new Range(400, 400);
 		public static Range CommentingActionHourlyLimit { get; set; } = new Range(30, 60);
-		public static Range TimeFrameSeconds { get; set; } = new Range(20, 40);
+		public static Range TimeFrameSeconds { get; set; } = new Range(20, 35);
 
 		public CommentingActionOptions(DateTimeOffset executionTime, CommentingActionType commentingActionType)
 		{

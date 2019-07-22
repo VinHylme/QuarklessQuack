@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Quarkless.Queue.Interfaces.Jobs
+namespace QuarklessContexts.JobClass
 {
 	public interface IJobOptions
 	{

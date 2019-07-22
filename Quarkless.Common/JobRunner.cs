@@ -1,14 +1,14 @@
 ﻿using Hangfire;
 using Hangfire.Mongo.Dto;
 using Hangfire.Storage.Monitoring;
-using Quarkless.Queue.Interfaces.Jobs;
 using Quarkless.Queue.Jobs.Filters;
+using QuarklessContexts.JobClass;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Quarkless.Queue.Services
+namespace Quarkless.Common
 {
 	public class JobRunner : IJobRunner
 	{
@@ -16,7 +16,6 @@ namespace Quarkless.Queue.Services
 		public JobRunner(IBackgroundJobClient backgroundJobClient)
 		{ 
 			_backgroundJobClient = backgroundJobClient;
-			//GlobalJobFilters.Filters.Add(new ProlongExpirationTimeAttribute());
 		}
 		public string Queue<TJob, TJobOptions>(Action<TJobOptions> configureJob)
 			where TJob : IJob<TJobOptions>

@@ -3,12 +3,10 @@ using Quarkless.HeartBeater.__Init__;
 using Quarkless.HeartBeater.ContentSearch;
 using Quarkless.Services.Extensions;
 using QuarklessContexts.Extensions;
-using QuarklessContexts.Models.Proxies;
 using QuarklessContexts.Models.ResponseModels;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessLogic.Handlers.ClientProvider;
-using QuarklessLogic.Handlers.RestSharpClient;
 using QuarklessLogic.Logic.InstagramAccountLogic;
 using QuarklessLogic.Logic.ProxyLogic;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
@@ -103,7 +101,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			return query;
 		}
 
-		public async Task BuildGoogleImages(int limit = 15, int topicAmount = 1, int cutBy = 1)
+		public async Task BuildGoogleImages(int limit = 50, int topicAmount = 1, int cutBy = 1)
 		{
 			Console.WriteLine("Began - BuildGoogleImages");
 			var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -162,7 +160,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 				{
 					if(worker.Worker.GetContext.Proxy == null)
 					{				
-						var proxy = await _proxyLogic.RetrieveRandomProxy(connectionType: ConnectionType.Residential);
+						var proxy = await _proxyLogic.RetrieveRandomProxy(connectionType: ConnectionType.Datacenter, get:true,cookies:true);
 						if (proxy != null)
 						{
 							worker.Worker.GetContext.Proxy = proxy;
@@ -204,20 +202,12 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 										new __Meta__<Media>(x), worker.InstagramRequests.InstagramAccount.Id);
 								});
 							}
+							else if(yan.StatusCode == ResponseCode.Timeout)
+							{
+
+							}
 							else if(yan.StatusCode == ResponseCode.CaptchaRequired)
 							{
-								var workerAcc = worker.Worker.GetContext.InstagramAccount;
-								if (worker.Worker.GetContext.Proxy == null)
-								{
-									//_proxyLogic.AssignProxy(new AssignedTo { Account_Id = workerAcc.AccountId, InstaId = workerAcc.Id }).GetAwaiter().GetResult();
-								}
-								else
-								{
-									/*var results = _proxyLogic.AssignProxy(new AssignedTo { Account_Id = workerAcc.AccountId, InstaId = workerAcc.Id }).GetAwaiter().GetResult();
-									if (results) { 
-										_proxyLogic.RemoveUserFromProxy(new AssignedTo { Account_Id = workerAcc.AccountId, InstaId = workerAcc.Id});
-									}*/
-								}
 							
 							}
 						}
@@ -230,7 +220,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			}
 			Console.WriteLine($"Ended - BuildYandexImagesQuery : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
 		}
-		public async Task BuildYandexImages(int limit = 1, int takeTopicAmount = 1, int cutBy = 1)
+		public async Task BuildYandexImages(int limit = 3, int takeTopicAmount = 1, int cutBy = 1)
 		{
 			Console.WriteLine("Began - BuildYandexImages");
 			var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -240,7 +230,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 				{
 					if (worker.Worker.GetContext.Proxy == null)
 					{
-						var proxy = await _proxyLogic.RetrieveRandomProxy(connectionType: ConnectionType.Residential);
+						var proxy = await _proxyLogic.RetrieveRandomProxy(connectionType: ConnectionType.Datacenter, get:true, cookies: true);
 						if (proxy != null)
 						{
 							worker.Worker.GetContext.Proxy = proxy;
@@ -255,9 +245,12 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					{
 						var filter = imalike.Where(s => s.TopicGroup == worker.Topic.TopicFriendlyName);
 						var yan = searcher.SearchViaYandexBySimilarImages(filter.TakeAny(takeTopicAmount).ToList(),limit);
-						if(yan == null) 
+						if(yan == null 
+						|| yan.StatusCode == ResponseCode.CaptchaRequired 
+						|| yan.StatusCode == ResponseCode.InternalServerError 
+						|| yan.StatusCode == ResponseCode.ReachedEndAndNull) 
 						{
-							yan = searcher.SearchSimilarImagesViaGoogle(filter.TakeAny(takeTopicAmount).ToList(),limit);
+							yan = searcher.SearchSimilarImagesViaGoogle(filter.TakeAny(takeTopicAmount).ToList(),limit*25);
 						}
 						if (yan != null) { 
 							if (yan.StatusCode == ResponseCode.Success) { 
@@ -268,6 +261,11 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 									await _heartbeatLogic.AddMetaData(MetaDataType.FetchMediaForSpecificUserYandex, worker.Topic.TopicFriendlyName,
 										new __Meta__<Media>(x), worker.InstagramRequests.InstagramAccount.Id);
 								});
+							}
+							else if(yan.StatusCode == ResponseCode.Timeout)
+							{
+								//could try with a different proxy
+								//await BuildYandexImages(limit,takeTopicAmount,cutBy);
 							}
 							else if (yan.StatusCode == ResponseCode.CaptchaRequired)
 							{
@@ -280,20 +278,6 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 										await _heartbeatLogic.AddMetaData(MetaDataType.FetchMediaForSpecificUserYandex, worker.Topic.TopicFriendlyName,
 											new __Meta__<Media>(x), worker.InstagramRequests.InstagramAccount.Id);
 									});
-								}
-								var workerAcc = worker.Worker.GetContext.InstagramAccount;
-								if (worker.Worker.GetContext.Proxy == null)
-								{
-									//_proxyLogic.AssignProxy(new AssignedTo { Account_Id = workerAcc.AccountId, InstaId = workerAcc.Id });
-								}
-								else
-								{
-									/*
-									var results = _proxyLogic.AssignProxy(new AssignedTo { Account_Id = workerAcc.AccountId, InstaId = workerAcc.Id }).GetAwaiter().GetResult();
-									if (results)
-									{
-										_proxyLogic.RemoveUserFromProxy(new AssignedTo { Account_Id = workerAcc.AccountId, InstaId = workerAcc.Id }).GetAwaiter().GetResult();
-									}*/
 								}
 							}
 						}

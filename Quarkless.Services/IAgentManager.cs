@@ -7,5 +7,6 @@ namespace Quarkless.Services
 	{
 		Task<AgentResponse> StartAgent(string accountId, string instagramAccountId, string accessToken);
 		Task<AgentResponse> StopAgent(string accountId, string instagramAccountId);
+		Task Begin();
 	}
 }

@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Threading.Tasks;
 using Amazon.CognitoIdentityProvider;
+using AspNetCore.Identity.MongoDbCore.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using QuarklessContexts.Contexts.AccountContext;
@@ -37,46 +40,60 @@ namespace Quarkless.Controllers
 					});
 				}
 				else { 
-					if(results.IsSuccesful) { 
-						
+					if(results.IsSuccesful && results.Results.HttpStatusCode == System.Net.HttpStatusCode.OK) { 
 						var responseConcatenate = new { 
-								results.Results.AuthenticationResult.IdToken,
-								results.Results.AuthenticationResult.AccessToken,
-								loginRequest.Username, 
-								results.Results.AuthenticationResult.ExpiresIn, 
-								results.Results.AuthenticationResult.RefreshToken 
-							};
-							var userdb = await _authHandler.GetUserByUsername(loginRequest.Username);
-							if (userdb!=null)
+							results.Results.AuthenticationResult.IdToken,
+							results.Results.AuthenticationResult.AccessToken,
+							loginRequest.Username, 
+							results.Results.AuthenticationResult.ExpiresIn, 
+							results.Results.AuthenticationResult.RefreshToken 
+						};
+						var userdb = await _authHandler.GetUserByUsername(loginRequest.Username);
+						if (userdb!=null)
+						{
+							JwtSecurityTokenHandler hand = new JwtSecurityTokenHandler();
+							userdb.IsUserConfirmed = true;
+							var tokenClaims = hand.ReadJwtToken(responseConcatenate.IdToken);
+							userdb.Claims = tokenClaims.Claims.Select(x=>new MongoClaim 
 							{
-								userdb.IsUserConfirmed = true;
-								userdb.Tokens = new List<AspNetCore.Identity.MongoDbCore.Models.Token>
+								Issuer = x.Issuer,
+								Type = x.Type,
+								Value = x.Value
+							}).ToList();
+
+							userdb.Tokens = new List<Token>
+							{
+								new Token
 								{
-									new AspNetCore.Identity.MongoDbCore.Models.Token
-									{
-										LoginProvider = "aws",
-										Name = "refresh_token",
-										Value = responseConcatenate.RefreshToken
-									},
-									new AspNetCore.Identity.MongoDbCore.Models.Token
-									{
-										LoginProvider = "aws",
-										Name = "expires_in",
-										Value = responseConcatenate.ExpiresIn.ToString()
-									},
-									new AspNetCore.Identity.MongoDbCore.Models.Token
-									{
-										LoginProvider = "aws",
-										Name = "access_token",
-										Value = responseConcatenate.AccessToken
-									}
-								};
-								var aresu = await _authHandler.UpdateUser(userdb);
-								if (!aresu)
+									LoginProvider = "aws",
+									Name = "refresh_token",
+									Value = responseConcatenate.RefreshToken
+								},
+								new Token
 								{
-									//something went wrong with the db
+									LoginProvider = "aws",
+									Name = "expires_in",
+									Value = responseConcatenate.ExpiresIn.ToString()
+								},
+								new Token
+								{
+									LoginProvider = "aws",
+									Name = "access_token",
+									Value = responseConcatenate.AccessToken
+								},
+								new Token
+								{
+									LoginProvider = "aws",
+									Name = "id_token",
+									Value = responseConcatenate.IdToken
 								}
+							};
+							var aresu = await _authHandler.UpdateUser(userdb);
+							if (!aresu)
+							{
+								//something went wrong with the db
 							}
+						}
 						return Ok(responseConcatenate);
 					}
 					else { 

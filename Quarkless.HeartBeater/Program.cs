@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Common;
 using Quarkless.HeartBeater.__Init__;
 using Quarkless.HeartBeater.__MetadataBuilder__;
+using Quarkless.Services.ContentBuilder.TopicBuilder;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using QuarklessRepositories.RedisRepository.HeartBeaterRedis;
 using System;
@@ -27,6 +28,8 @@ namespace Quarkless.HeartBeater
 			services.AddHandlers();
 			services.AddRepositories(accessors);
 			services.AddTransient<IInit,Init>();
+			services.AddTransient<ITopicBuilder, TopicBuilder>();
+			services.AddLogging();
 			ServiceReacher serviceReacher = new ServiceReacher(services.BuildServiceProvider());
 			var results = WithExceptionLogAsync(async () =>
 			{

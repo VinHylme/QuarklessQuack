@@ -174,13 +174,9 @@ namespace QuarklessLogic.Logic.ProxyLogic
 			try
 			{
 				var req = (HttpWebRequest)HttpWebRequest.Create("http://ip-api.com/json");
-				req.Timeout = 4000;
+				req.Timeout = 2000;
+				req.Proxy = new WebProxy($"http://{proxy.Proxy}/");
 
-				req.Proxy = new WebProxy($"http://{proxy.Proxy}/")
-				{
-					//BypassProxyOnLocal = false,
-					//Credentials = new NetworkCredential(proxy.Username, proxy.Password),
-				};
 				var resp = await req.GetResponseAsync();
 				var json = new StreamReader(resp.GetResponseStream()).ReadToEnd();
 
@@ -208,22 +204,36 @@ namespace QuarklessLogic.Logic.ProxyLogic
 			}
 			return null;
 		}
-		public async Task<ProxyModel> RetrieveRandomProxy(bool get = true, bool post = true, bool cookies = true, bool referer = true,
-			bool userAgent = true, int port = -1, string city = null, string state = null, string country  = null, 
+		public async Task<ProxyModel> RetrieveRandomProxy(bool? get = null, bool? post = null, bool? cookies = null, bool? referer = null,
+			bool? userAgent = null, int port = -1, string city = null, string state = null, string country  = null, 
 			ConnectionType connectionType = ConnectionType.Any)
 		{
-			string baseUrl = $@"http://falcon.proxyrotator.com:51337/?apiKey=XR4E5JzkxMZcovaYQW2VUBw3PDj876eK&get={get}&post={post}&cookies={cookies}&referer={referer}&userAgent={userAgent}";
-			if(port!=-1)
-				baseUrl+=$"&port={port}";
-			if(!string.IsNullOrEmpty(city))
-				baseUrl+=$"&city={city}";
-			if(!string.IsNullOrEmpty(state))
-				baseUrl+=$"&state={state}";
-			if(!string.IsNullOrEmpty(country))
-				baseUrl+=$"&country=US";
-			if(connectionType != ConnectionType.Any)
-				baseUrl+=$"&connectionType={connectionType.GetDescription()}";
-			try { 
+			try
+			{
+				#region URL BUILD
+				string baseUrl = $@"http://falcon.proxyrotator.com:51337/?apiKey=XR4E5JzkxMZcovaYQW2VUBw3PDj876eK";
+				if (get != null)
+					baseUrl += $"&get={get}";
+				if (post != null)
+					baseUrl += $"&post={post}";
+				if (cookies != null)
+					baseUrl += $"&cookies={cookies}";
+				if (referer != null)
+					baseUrl += $"&referer={referer}";
+				if (userAgent != null)
+					baseUrl += $"&userAgent={userAgent}";
+				if (port != -1)
+					baseUrl += $"&port={port}";
+				if (!string.IsNullOrEmpty(city))
+					baseUrl += $"&city={city}";
+				if (!string.IsNullOrEmpty(state))
+					baseUrl += $"&state={state}";
+				if (!string.IsNullOrEmpty(country))
+					baseUrl += $"&country={country}";
+				if (connectionType != ConnectionType.Any)
+					baseUrl += $"&connectionType={connectionType.GetDescription()}";
+				#endregion
+
 				var jsonRespoonse = string.Empty;
 				ProxyItem proxyItem = new ProxyItem();
 				HttpWebRequest request = (HttpWebRequest)WebRequest.Create(baseUrl);
@@ -233,11 +243,11 @@ namespace QuarklessLogic.Logic.ProxyLogic
 				using (StreamReader reader = new StreamReader(stream))
 				{
 					jsonRespoonse = reader.ReadToEnd();
-
-					//the following class 'prxy' is the object from the json response from proxy rotator
 					proxyItem = JsonConvert.DeserializeObject<ProxyItem>(jsonRespoonse);
 				}
-				if (!string.IsNullOrEmpty(proxyItem?.Proxy) && !string.IsNullOrEmpty(proxyItem?.IP)) { 
+
+				if (!string.IsNullOrEmpty(proxyItem?.Proxy) && !string.IsNullOrEmpty(proxyItem?.IP)) {
+
 					if(await TestProxy(proxyItem))
 					{
 						return new ProxyModel{
@@ -246,17 +256,16 @@ namespace QuarklessLogic.Logic.ProxyLogic
 							Region = proxyItem.Country,
 							Type = proxyItem.Type
 						};
-					} 
+					}
 				}
 
-				await RetrieveRandomProxy(get,post,cookies,referer,userAgent,port,city,state,country,connectionType);
+				return await RetrieveRandomProxy(get, post, cookies, referer, userAgent, port, city, state, country, connectionType);
 			}
 			catch(Exception ee)
 			{
 				_reportHandler.MakeReport(ee);
 				return null;
 			}
-			return null;
 		}
 		public async Task<bool> RemoveUserFromProxy(AssignedTo assignedTo)
 		{

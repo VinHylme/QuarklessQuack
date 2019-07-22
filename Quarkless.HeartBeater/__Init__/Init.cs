@@ -123,18 +123,20 @@ namespace Quarkless.HeartBeater.__Init__
 				//Build Around Topics
 			
 				var ins = Task.Run(async () => await metadataBuilder.BuildBase());
-				//google and yandex search are seperate
+
+				//Google & Yandex search
 				var go =Task.Run(async () => await metadataBuilder.BuildGoogleImages(50));
-				var yan =Task.Run(async () => await metadataBuilder.BuildYandexImages(50));
-				var yanq = Task.Run(async () => await metadataBuilder.BuildYandexImagesQuery());
+				var yanq = Task.Run(async () => await metadataBuilder.BuildYandexImagesQuery(50));
+				var yan =Task.Run(async () => await metadataBuilder.BuildYandexImages());
+
 				var profileRefresh = Task.Run(async () => await metadataBuilder.BuildUsersOwnMedias(_instagramAccountLogic));
 				//independed can run by themselves seperate tiem
-
 				var feedRefresh = Task.Run(async () => await metadataBuilder.BuildUsersFeed()).ContinueWith(async x=> 
 				{
 					await metadataBuilder.BuildUsersFollowSuggestions();
 					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchUsersFeed, MetaDataType.FetchCommentsViaUserFeed, true);
 				});
+
 				var followingList = Task.Run(async () => await metadataBuilder.BuildUserFollowList());
 				var userTargetList = Task.Run(async () => await metadataBuilder.BuildUsersTargetListMedia()).ContinueWith(async x=>
 				{
@@ -144,14 +146,13 @@ namespace Quarkless.HeartBeater.__Init__
 				{
 					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserLocationTargetList, MetaDataType.FetchCommentsViaLocationTargetList, true);
 				}); ;
-
 				Task.WaitAll(ins);
+
 				var likers = Task.Run(async () => await metadataBuilder.BuildUserFromLikers()).ContinueWith(async a =>
 				{
 					await metadataBuilder.BuildMediaFromUsersLikers();
 					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByLikers, MetaDataType.FetchCommentsViaPostsLiked);
 				});
-
 				var commenters = Task.Run(async () => await metadataBuilder.BuildUsersFromCommenters()).ContinueWith(async c =>
 				{	
 					await metadataBuilder.BuildMediaFromUsersCommenters();
@@ -159,7 +160,6 @@ namespace Quarkless.HeartBeater.__Init__
 				});
 
 				Task.WaitAll(go, yan, yanq, likers, commenters, profileRefresh, feedRefresh, userTargetList, locTargetList);
-				//Build Around specific Users
 			}
 			catch(Exception ee)
 			{

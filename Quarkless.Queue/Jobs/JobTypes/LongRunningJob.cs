@@ -1,6 +1,6 @@
-﻿using Quarkless.Queue.Interfaces.Jobs;
-using Quarkless.Queue.Jobs.JobOptions;
+﻿using Quarkless.Queue.Jobs.JobOptions;
 using QuarklessContexts.Enums;
+using QuarklessContexts.JobClass;
 using QuarklessLogic.Handlers.RestSharpClient;
 using System;
 using System.Diagnostics;
@@ -32,7 +32,7 @@ namespace Quarkless.Queue.Jobs.JobTypes
 			{
 				case RequestType.POST:
 					 _restSharpClient.PostRequest(jobOptions.Rest.BaseUrl, jobOptions.Rest.ResourceAction, jobOptions.Rest.JsonBody,
-						jobOptions.Rest.User, jobOptions.Rest.Parameters,jobOptions.Rest.RequestHeaders);
+						jobOptions.Rest.User, jobOptions.Rest.Parameters, jobOptions.Rest.RequestHeaders);
 					break;
 				case RequestType.GET:
 					 _restSharpClient.GetRequest(jobOptions.Rest.BaseUrl,jobOptions.Rest.ResourceAction,jobOptions.Rest.Parameters,jobOptions.Rest.RequestHeaders);

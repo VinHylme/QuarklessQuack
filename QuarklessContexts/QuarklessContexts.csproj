@@ -10,8 +10,9 @@
 
   <ItemGroup>
     <PackageReference Include="AspNetCore.Identity.MongoDbCore" Version="1.1.1" />
-    <PackageReference Include="AWSSDK.CognitoIdentityProvider" Version="3.3.102.26" />
-    <PackageReference Include="RestSharp" Version="106.6.9" />
+    <PackageReference Include="AWSSDK.CognitoIdentityProvider" Version="3.3.102.34" />
+    <PackageReference Include="Hangfire.Core" Version="1.7.5" />
+    <PackageReference Include="RestSharp" Version="106.6.10" />
   </ItemGroup>
 
   <ItemGroup>

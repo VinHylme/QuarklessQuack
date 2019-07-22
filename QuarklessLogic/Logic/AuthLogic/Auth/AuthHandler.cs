@@ -1,6 +1,7 @@
 ﻿using Amazon.CognitoIdentityProvider;
 using Amazon.CognitoIdentityProvider.Model;
 using Amazon.Extensions.CognitoAuthentication;
+using AspNetCore.Identity.MongoDbCore.Models;
 using Microsoft.AspNetCore.Identity;
 using Newtonsoft.Json.Linq;
 using QuarklessContexts.Classes.Carriers;
@@ -8,8 +9,11 @@ using QuarklessContexts.Contexts.AccountContext;
 using QuarklessContexts.Models.UserAuth.Auth;
 using QuarklessLogic.Handlers.ReportHandler;
 using QuarklessLogic.Logic.AuthLogic.Auth.Manager;
+using QuarklessRepositories.RedisRepository.AccountCache;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace QuarklessLogic.Logic.AuthLogic.Auth
@@ -22,9 +26,11 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 		private readonly CognitoUserPool _cognitoUser;
 		private readonly IAuthAccessHandler _accessHandler;
 		private readonly IReportHandler _reportHandler;
-		public AuthHandler(IAuthAccessHandler accessHandler, IAmazonCognitoIdentityProvider provider, IReportHandler reportHandler, 
+		private readonly IAccountCache _accountCache;
+		public AuthHandler(IAuthAccessHandler accessHandler, IAccountCache accountCache, IAmazonCognitoIdentityProvider provider, IReportHandler reportHandler, 
 			CognitoUserPool cognitoUser, UserManager<AccountUser> userManager, SignInManager<AccountUser> signInManager)
 		{
+			_accountCache = accountCache;
 			_userManager = userManager;
 			_signInManager = signInManager;
 			_accessHandler = accessHandler;
@@ -50,15 +56,35 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 		}
 		public async Task<bool> CreateAccount(AccountUser accountUser, string password)
 		{
-			return (await _userManager.CreateAsync(accountUser,password)).Succeeded;
+			var createResp = await _userManager.CreateAsync(accountUser,password);
+			if (createResp.Succeeded)
+				await _accountCache.SetAccount(accountUser);
+			
+			return createResp.Succeeded;
 		}
 		public async Task<bool> UpdateUser(AccountUser accountUser)
 		{
-			return (await _userManager.UpdateAsync(accountUser)).Succeeded;
+			var updateResp = await _userManager.UpdateAsync(accountUser);
+			if(updateResp.Succeeded)
+				await _accountCache.SetAccount(accountUser);
+
+			return updateResp.Succeeded;
 		}
 		public async Task<AccountUser> GetUserByUsername(string username)
 		{
-			return await _userManager.FindByNameAsync(username);
+			var getResp = await _accountCache.GetAccount(username);
+			if (getResp != null)
+			{
+				return getResp;
+			}
+			var responseFromDb = await _userManager.FindByNameAsync(username);
+			if(responseFromDb!=null)
+			{
+				await _accountCache.SetAccount(responseFromDb);
+				return responseFromDb;
+			}
+
+			return null;
 		}
 		public AccountUser GetUserByUsernameOffline(string username)
 		{
@@ -138,9 +164,57 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 				{
 					resultBase.Results = results;
 					resultBase.IsSuccesful = true;
+					var userdb = await GetUserByUsername(userName);
+					if (userdb != null)
+					{
+						JwtSecurityTokenHandler hand = new JwtSecurityTokenHandler();
+						userdb.IsUserConfirmed = true;
+
+						var tokenClaims = hand.ReadJwtToken(results.AuthenticationResult.IdToken);
+						userdb.Claims = tokenClaims.Claims.Select(x => new MongoClaim
+						{
+							Issuer = x.Issuer,
+							Type = x.Type,
+							Value = x.Value
+						}).ToList();
+					userdb.Tokens = new List<Token>
+					{
+						new Token
+						{
+							LoginProvider = "aws",
+							Name = "refresh_token",
+							Value = refreshToken
+						},
+						new Token
+						{
+							LoginProvider = "aws",
+							Name = "expires_in",
+							Value = results.AuthenticationResult.ExpiresIn.ToString()
+						},
+						new Token
+						{
+							LoginProvider = "aws",
+							Name = "access_token",
+							Value = results.AuthenticationResult.AccessToken
+						},
+						new Token
+						{
+							LoginProvider = "aws",
+							Name = "id_token",
+							Value = results.AuthenticationResult.IdToken
+						}
+					};
+
+						var aresu = await UpdateUser(userdb);
+						if (!aresu)
+						{
+							//something went wrong with the db
+						}
+					}
 					return resultBase;
 				}
 				results.HttpStatusCode = results.HttpStatusCode;
+
 				return resultBase;
 			}
 			catch(Exception ee)

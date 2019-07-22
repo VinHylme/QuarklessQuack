@@ -16,6 +16,15 @@ using System.Web;
 namespace ContentSearcher
 {
 	#region ResponseModels
+	public struct MoreItem
+	{
+		[JsonProperty("url")]
+		public string Url { get; set; }
+		[JsonProperty("direction")]
+		public string Direction { get; set; }
+		[JsonProperty("visible")]
+		public bool Visible { get; set; }
+	}
 	public class SearchItem
 	{
 		[JsonProperty("serpitem")]
@@ -167,7 +176,7 @@ namespace ContentSearcher
 		private const string yandexImages = @"https://yandex.com/images/";
 		private const string yandexBaseImageUrl = @"https://yandex.com/images/search?url=";
 		private const string rpt = @"&rpt=imagelike";
-
+		private const string yandexUrl = @"https://yandex.com";
 		//private const string queryTypeId = "jQuery21407858805378890188_1563481544251";
 		//private const string imsearchTypeId = "jQuery21404334140969556852_1563358335242";
 
@@ -315,100 +324,175 @@ namespace ContentSearcher
 
 		public SearchResponse<List<SerpItem>> SearchRest(string imageUrl, int numberOfPages)
 		{
-			RequestSettings requestSettings = new RequestSettings
-			{
-				blocks = new Block[]
-				{
-					new Block
-					{
-						block = "serp-controller",
-						version = 2,
-					},
-					new Block
-					{
-						block = "serp-list_infinite_yes",
-						_params = new Params
-						{
-							initialPageNum = 0
-						},
-						version = 2
-					},
-					new Block
-					{
-						block = "more_direction_next",
-						version = 2
-					},
-					new Block
-					{
-						block = "gallery__items:ajax",
-						version = 2
-					}
-				},
-				bmt = new Bmt
-				{
-					lb = "({yjI=52Fx"
-				},
-				amt = new Amt
-				{
-					las = "justifier-height=1;thumb-underlay=1;justifier-setheight=1;fitimages-height=1;justifier-fitincuts=1"
-				}
-			};
-			List<HttpHeader> headers = new List<HttpHeader>();
-			SearchResponse<List<SerpItem>> response = new SearchResponse<List<SerpItem>>();
-			List<SerpItem> totalCollected = new List<SerpItem>();
-			var imageData = "&yu={0}&p={1}&source=collections&cbir_id={2}&url={3}&uinfo={4}";
-			long randnum2 = (long)(SecureRandom.NextDouble() * 9000000000000) + 1000000000000;
-			var ajaxCallbackCompleteUrl = string.Format(ajaxCallBackUrl,randnum2.ToString());
-			var tostringserialised = JsonConvert.SerializeObject(requestSettings);
-			try
-			{
-				var results = _restSharpClientManager.GetRequest(imageUrl, null);
-				if (results.ResponseUri.AbsolutePath.Contains("captcha"))
-				{
-					//chance ip and retry
-					response.StatusCode = ResponseCode.CaptchaRequired;
-					response.Message = "Yandex captcha needed";
-					return response;
-				}
-				else
-				{
-					headers.AddRange(results.Headers.Select(s => new RestSharp.HttpHeader { Name = s.Name, Value = s.Value.ToString() }));
-					if (headers.Count > 3)
-					{
-						for (int currPage = 0; currPage < numberOfPages; currPage++)
-						{
-							var cbirId = Regex.Match(results.Content, @"cbir_id=.*amp;").Value.Replace("&amp;", "").Replace("cbir_id=", "");
-							if (string.IsNullOrWhiteSpace(cbirId)||string.IsNullOrEmpty(cbirId))
-							{
-								imageData = "&yu={0}&p={1}&source=collections&url={2}&uinfo={3}";
-							}
-							var yoid = Regex.Match(Regex.Match(results.Content, @"((yandexuid)(.*?)[:](.*?)})").Value,@"\d+").Value;
-							var uinfo_complete = string.Format(uinfo_,Regex.Match(results.Content, @"(serpid)(.*?),").Value.Replace("\"","").Replace("serpid","").Replace(":","").Replace(",",""));
-							var imageDataPopulated = string.Format(imageData, yoid, currPage, cbirId, imageUrl, uinfo_complete);
-							var nextpageUrl = ajaxCallbackCompleteUrl + tostringserialised + imageDataPopulated;
-							var res = _restSharpClientManager.GetRequest(nextpageUrl, null);
-							if (!res.IsSuccessful || res.ResponseUri.AbsolutePath.Contains("captcha"))
-							{
-								response.StatusCode = ResponseCode.CaptchaRequired;
-								response.Result = totalCollected;
-							}
+			return seleniumClient.YandexSearchMe(imageUrl,numberOfPages);
+			#region REST VERSION (SPAM DETECTED A LOT)
+//			RequestSettings requestSettings = new RequestSettings
+//			{
+//				blocks = new Block[]
+//				{
+//					new Block
+//					{
+//						block = "serp-controller",
+//						version = 2,
+//					},
+//					new Block
+//					{
+//						block = "serp-list_infinite_yes",
+//						_params = new Params
+//						{
+//							initialPageNum = 0
+//						},
+//						version = 2
+//					},
+//					new Block
+//					{
+//						block = "more_direction_next",
+//						version = 2
+//					},
+//					new Block
+//					{
+//						block = "gallery__items:ajax",
+//						version = 2
+//					}
+//				},
+//				bmt = new Bmt
+//				{
+//					lb = "({yjI=52Fx"
+//				},
+//				amt = new Amt
+//				{
+//					las = "justifier-height=1;thumb-underlay=1;justifier-setheight=1;fitimages-height=1;justifier-fitincuts=1"
+//				}
+//			};
+			
+//			List<HttpHeader> headers = new List<HttpHeader>();
+//			SearchResponse<List<SerpItem>> response = new SearchResponse<List<SerpItem>>();
+//			List<SerpItem> totalCollected = new List<SerpItem>();
+//			var imageData = "&yu={0}&p={1}&source=collections&cbir_id={2}&url={3}&uinfo={4}";
+//			long randnum2 = (long)(SecureRandom.NextDouble() * 9000000000000) + 1000000000000;
+//			var ajaxCallbackCompleteUrl = string.Format(ajaxCallBackUrl,randnum2.ToString());
+//			var tostringserialised = JsonConvert.SerializeObject(requestSettings);
 
-							var regexMatch = Regex.Matches(res.Content, @"(serp-item)[\\](.*?)(counterPath)(.*?)(}})").Select(x => { var newres = x.Value.Replace("\\", "").Replace("serp-item" + "\":", ""); return newres.Substring(0, newres.Length - 1); });
-							totalCollected  = regexMatch.Select(s => JsonConvert.DeserializeObject<SerpItem>(s)).ToList();
-						}
-					}
-				}
-			}
-			catch (Exception ee)
-			{
-				response.Message = ee.Message;
-				response.StatusCode = ResponseCode.InternalServerError;
-				return response;
-			}
+//			try
+//			{
+//				var cookiesResp = _restSharpClientManager.GetRequest(yandexImages, null);
+//				IList<HttpHeader> localHeaders = new List<HttpHeader>();
+//				if (cookiesResp.IsSuccessful) { 
+//					_restSharpClientManager.AddCookies(cookiesResp.Cookies.Select(c => new System.Net.Cookie 
+//					{
+//						Comment = c.Comment,
+//						CommentUri = c.CommentUri,
+//						Discard = c.Discard,
+//						Domain = c.Domain,
+//						Expired = c.Expired,
+//						Expires = c.Expires,
+//						HttpOnly = c.HttpOnly,
+//						Name = c.Name,
+//						Path = c.Path,
+//						Port = c.Port,
+//						Secure = c.Secure,
+//						Value = c.Value,
+//						Version = c.Version
+//					}));
+//					localHeaders = cookiesResp.Headers.Select(h => new HttpHeader 
+//					{
+//						Name = h.Name,
+//						Value = h.Value.ToString()
+//					}).ToList();
+//				}
 
-			response.StatusCode = ResponseCode.Success;
-			response.Result = totalCollected;
-			return response;
+//				var results = _restSharpClientManager.GetRequest(imageUrl, null, headers:localHeaders.Where(s=>!s.Value.Equals("chunked")));
+//				if(results == null || (results.ResponseStatus == ResponseStatus.TimedOut || results.ResponseStatus == ResponseStatus.Error || results.ResponseStatus == ResponseStatus.Aborted))
+//				{
+//					response.StatusCode = ResponseCode.Timeout;
+//					response.Message = "Timed out";
+//					return response;
+//				}
+//				if (results.ResponseUri.AbsolutePath.Contains("captcha"))
+//				{
+//					//chance ip and retry
+//					response.StatusCode = ResponseCode.CaptchaRequired;
+//					response.Message = "Yandex captcha needed";
+//					return response;
+//				}
+//				else
+//				{
+//					headers.AddRange(results.Headers.Select(s => new HttpHeader { Name = s.Name, Value = s.Value.ToString() }));
+//					if (headers.Count > 3)
+//					{
+//						for (int currPage = 0; currPage < numberOfPages; )
+//						{
+//							//first items
+//							var regexMatch = Regex.Matches(results.Content, "{\"serp-item\":.*?}}").Select(x => 
+//							{ 
+//								var newresults = x.Value.Replace("{\"serp-item\":","");
+//								return newresults.Substring(0, newresults.Length - 1); 
+//							});
+
+//							if(regexMatch==null && regexMatch.Count()<=0)
+//							{
+//								break;
+//							}
+//							else { 
+//								var convertToSerpObject = regexMatch.Select(s=> JsonConvert.DeserializeObject<SerpItem>(s)).ToList();
+//								if(currPage>0)
+//									convertToSerpObject.RemoveAt(0); //duplicates
+
+//								totalCollected.AddRange(convertToSerpObject);
+//								currPage++;
+//								var moreavaliable = Regex.Match(results.Content, "{\"more\":.*?}}")
+//									.Value.Replace("{\"more\":","");
+//								if (string.IsNullOrEmpty(moreavaliable))
+//								{
+//									break;
+//								}
+//								else { 
+//									MoreItem moreItem = JsonConvert.DeserializeObject<MoreItem>(moreavaliable.Substring(0,moreavaliable.Length - 1));
+									
+//									results = _restSharpClientManager.GetRequest(yandexUrl + moreItem.Url, null,headers:localHeaders.Where(s=>!s.Value.Equals("chunked")));
+//								}
+////								var nextpageUrl = imageUrl.Insert(imageUrl.IndexOf('?')+1,$"p={currPage}&");
+////								results = _restSharpClientManager.GetRequest(nextpageUrl, null, headers:headers.Where(s=>!s.Value.Equals("chunked")));
+//							}
+//							#region api json version
+
+//							/*
+//							var cbirId = Regex.Match(results.Content, @"cbir_id=.*amp;").Value.Replace("&amp;", "").Replace("cbir_id=", "");
+//							if (string.IsNullOrWhiteSpace(cbirId)||string.IsNullOrEmpty(cbirId))
+//							{
+//								imageData = "&yu={0}&p={1}&source=collections&url={2}&uinfo={3}";
+//							}
+							
+//							var yoid = Regex.Match(Regex.Match(results.Content, @"((yandexuid)(.*?)[:](.*?)})").Value,@"\d+").Value;
+//							var uinfo_complete = string.Format(uinfo_,Regex.Match(results.Content, @"(serpid)(.*?),").Value.Replace("\"","").Replace("serpid","").Replace(":","").Replace(",",""));
+//							var imageDataPopulated = string.Format(imageData, yoid, currPage, cbirId, imageUrl, uinfo_complete);
+//							var nextpageUrl = ajaxCallbackCompleteUrl + tostringserialised + imageDataPopulated;
+							
+//							var res = _restSharpClientManager.GetRequest(nextpageUrl, null, headers:headers.Where(s => !s.Value.Equals("chunked")));
+//							if (!res.IsSuccessful || res.ResponseUri.AbsolutePath.Contains("captcha"))
+//							{
+//								response.StatusCode = ResponseCode.CaptchaRequired;
+//								response.Result = totalCollected;
+//							}
+//							*/
+//							//var regexMatch = Regex.Matches(res.Content, @"(serp-item)[\\](.*?)(counterPath)(.*?)(}})").Select(x => { var newres = x.Value.Replace("\\", "").Replace("serp-item" + "\":", ""); return newres.Substring(0, newres.Length - 1); });
+//							//totalCollected  = regexMatch.Select(s => JsonConvert.DeserializeObject<SerpItem>(s)).ToList();
+//							#endregion
+//						}
+//					}
+//				}
+//			}
+//			catch (Exception ee)
+//			{
+//				response.Message = ee.Message;
+//				response.StatusCode = ResponseCode.InternalServerError;
+//				return response;
+//			}
+
+//			response.StatusCode = ResponseCode.Success;
+//			response.Result = totalCollected;
+//			return response;
+			#endregion
 		}
 
 		public SearchResponse<Media> SearchRelatedImagesREST(IEnumerable<GroupImagesAlike> imagesAlikes, int numberOfPages)

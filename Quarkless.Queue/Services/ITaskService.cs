@@ -1,10 +1,9 @@
-﻿using Quarkless.Queue.Interfaces.Jobs;
-using Quarkless.Queue.Jobs.JobOptions;
+﻿using Quarkless.Queue.Jobs.JobOptions;
 using QuarklessContexts.Models.Timeline;
 using System;
 using System.Collections.Generic;
 
-namespace Quarkless.Queue.Jobs.Interfaces
+namespace Quarkless.Queue.Services
 {
 	public interface ITaskService
 	{

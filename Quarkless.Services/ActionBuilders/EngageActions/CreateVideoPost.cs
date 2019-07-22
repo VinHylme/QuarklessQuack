@@ -44,6 +44,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 
 		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
+			Console.WriteLine("Create Video Action Started");
 			PostActionOptions videoActionOptions = actionOptions as PostActionOptions;
 			ResultCarrier<IEnumerable<TimelineEventModel>> Results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
 

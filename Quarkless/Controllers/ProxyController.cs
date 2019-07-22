@@ -96,12 +96,12 @@ namespace Quarkless.Controllers
 			return BadRequest("Failed to get proxies");
 		}
 		[HttpPost]
-		[Route("api/admin/proxies/test")]
-		public IActionResult TestProxy(ProxyModel proxy)
+		[Route("api/admin/proxies/test/{ip}/{port}")]
+		public async Task<IActionResult> TestProxy(string ip, int port)
 		{
-			if (_userContext.IsAdmin && proxy != null)
+			if (_userContext.IsAdmin && string.IsNullOrEmpty(ip) && port<=0)
 			{
-				var res = _proxyLogic.TestProxy(proxy);
+				var res = await _proxyLogic.TestProxy(new ProxyItem{ IP = ip, Port = port.ToString(), Proxy = ip+":"+port });
 				if (res)
 				{
 					return Ok($"Proxy works fine");

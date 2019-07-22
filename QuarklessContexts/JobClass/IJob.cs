@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Quarkless.Queue.Interfaces.Jobs
+namespace QuarklessContexts.JobClass
 {
 	public interface IJob<in TJobOptions> where TJobOptions: IJobOptions
 	{

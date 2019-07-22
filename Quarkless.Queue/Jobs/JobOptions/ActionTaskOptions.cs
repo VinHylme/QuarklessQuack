@@ -1,4 +1,4 @@
-﻿using Quarkless.Queue.Interfaces.Jobs;
+﻿using QuarklessContexts.JobClass;
 using System;
 using System.Collections.Generic;
 using System.Text;

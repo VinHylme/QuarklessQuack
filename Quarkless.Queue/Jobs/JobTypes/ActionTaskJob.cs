@@ -1,5 +1,5 @@
-﻿using Quarkless.Queue.Interfaces.Jobs;
-using Quarkless.Queue.Jobs.JobOptions;
+﻿using Quarkless.Queue.Jobs.JobOptions;
+using QuarklessContexts.JobClass;
 using System;
 
 namespace Quarkless.Queue.Jobs.JobTypes

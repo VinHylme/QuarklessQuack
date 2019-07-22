@@ -1,7 +1,7 @@
 ﻿using Hangfire.Storage.Monitoring;
 using System;
 
-namespace Quarkless.Queue.Interfaces.Jobs
+namespace QuarklessContexts.JobClass
 {
 	public interface IJobRunner
 	{

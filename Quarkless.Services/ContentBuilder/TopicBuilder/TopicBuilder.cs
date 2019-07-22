@@ -12,6 +12,7 @@ using QuarklessLogic.ServicesLogic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 namespace Quarkless.Services.ContentBuilder.TopicBuilder
@@ -186,11 +187,12 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 		public async Task<IEnumerable<string>> BuildHashtags(string topic,string subcategory, string language, int limit = 1, int pickRate = 20)
 		{
 			var res = (await _hashtagLogic.GetHashtagsByTopic(topic, limit)).ToList();
+			Regex clean = new Regex(@"[^\w\d]");
 			if(res!=null && res.Count > 0) { 
 				List<string> hashtags = new List<string>();
 				while (hashtags.Count < pickRate) { 
 
-					var chosenHashtags = res.Where(s=>s.Language.ToLower() == language.MapLanguages().ToLower())
+					var chosenHashtags = res.Where(s=> clean.Replace(s.Language.ToLower(),"") == clean.Replace(language.MapLanguages().ToLower(),""))
 						.Select(sh=>sh.Hashtags);
 					var chosenHashtags_filtered = chosenHashtags
 						.ElementAtOrDefault(SecureRandom.Next(chosenHashtags.Count()))
@@ -199,11 +201,16 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 					if (chosenHashtags_filtered.Count() <=0) return null;
 					hashtags.AddRange(chosenHashtags_filtered.Where(s=>s.Length>=3 && s.Length<=20).Select(s=>s));
 				}
-
-				var orderedBySimilarity = hashtags.Select(s => new { SimilarityScore = s.Similarity(subcategory), Text = s })
-					.OrderByDescending(s => s.SimilarityScore).Select(t=>t.Text);
-
-				return orderedBySimilarity;
+				if (subcategory != null) { 
+					subcategory = Regex.Replace(subcategory, @"\w*.?com", "");
+					var orderedBySimilarity = hashtags.Select(s => new { SimilarityScore = s.Similarity(subcategory), Text = s })
+						.OrderByDescending(s => s.SimilarityScore).Select(t=>t.Text);
+					return orderedBySimilarity;
+				}
+				else
+				{
+					return hashtags;
+				}
 			}
 			return null;
 		}

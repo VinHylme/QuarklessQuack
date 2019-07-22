@@ -1,5 +1,4 @@
-﻿using Quarkless.Services;
-using Quarkless.Worker.Actions;
+﻿using Quarkless.Worker.Actions;
 using Quarkless.Worker.Models;
 using QuarklessContexts.Models.InstagramAccounts;
 using QuarklessLogic.Handlers.ClientProvider;

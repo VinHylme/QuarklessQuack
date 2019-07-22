@@ -1,18 +1,24 @@
-﻿using ContentSearcher.SeleniumClient;
+﻿using Amazon;
+using Amazon.CognitoIdentityProvider;
+using Amazon.Extensions.CognitoAuthentication;
+using Amazon.Extensions.NETCore.Setup;
+using ContentSearcher.SeleniumClient;
 using Hangfire;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
-using Quarkless.Queue.Interfaces.Jobs;
-using Quarkless.Queue.Jobs.Interfaces;
+using MongoDbGenericRepository;
 using Quarkless.Queue.Services;
-using Quarkless.Services;
-using Quarkless.Services.ContentBuilder.TopicBuilder;
-using Quarkless.Services.Interfaces;
 using QuarklessContexts.Contexts;
+using QuarklessContexts.Contexts.AccountContext;
 using QuarklessContexts.InstaClient;
+using QuarklessContexts.JobClass;
+using QuarklessContexts.Models.UserAuth.AuthTypes;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.ReportHandler;
 using QuarklessLogic.Handlers.RequestBuilder.RequestBuilder;
@@ -20,6 +26,8 @@ using QuarklessLogic.Handlers.RestSharpClient;
 using QuarklessLogic.Handlers.TextGeneration;
 using QuarklessLogic.Handlers.TranslateService;
 using QuarklessLogic.Handlers.Util;
+using QuarklessLogic.Logic.AuthLogic.Auth;
+using QuarklessLogic.Logic.AuthLogic.Auth.Manager;
 using QuarklessLogic.Logic.CollectionsLogic;
 using QuarklessLogic.Logic.CommentLogic;
 using QuarklessLogic.Logic.DiscoverLogic;
@@ -31,11 +39,13 @@ using QuarklessLogic.Logic.MediaLogic;
 using QuarklessLogic.Logic.ProfileLogic;
 using QuarklessLogic.Logic.ProxyLogic;
 using QuarklessLogic.ServicesLogic;
+using QuarklessLogic.ServicesLogic.AgentLogic;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic;
 using QuarklessRepositories.InstagramAccountRepository;
 using QuarklessRepositories.ProfileRepository;
 using QuarklessRepositories.ProxyRepository;
+using QuarklessRepositories.RedisRepository.AccountCache;
 using QuarklessRepositories.RedisRepository.HeartBeaterRedis;
 using QuarklessRepositories.RedisRepository.InstagramAccountRedis;
 using QuarklessRepositories.RedisRepository.RedisClient;
@@ -72,10 +82,70 @@ namespace Quarkless.Common
 			services.AddTransient<IInstaAccountOptionsLogic, InstaAccountOptionsLogic>();
 			services.AddTransient<IInstaClient,InstaClient>();
 			services.AddTransient<IHashtagLogic, HashtagLogic>();
-			services.AddTransient<IAgentManager, AgentManager>();
 			services.AddTransient<IMediaLogic,MediaLogic>();
 			services.AddTransient<ITimelineLogic,TimelineLogic>();
 			services.AddTransient<IHeartbeatLogic, HeartbeatLogic>();
+			services.AddTransient<IAgentLogic,AgentLogic>();
+		}
+		public static void AddAuthHandlers(this IServiceCollection services, Accessors _accessors, AWSOptions aWSOptions)
+		{
+			Environment.GetEnvironmentVariable("JWT_KEY");
+			Environment.SetEnvironmentVariable("AWS_ACCESS_KEY_ID", _accessors.AWSAccess.AccessKey);
+			Environment.SetEnvironmentVariable("AWS_SECRET_ACCESS_KEY", _accessors.AWSAccess.SecretKey);
+			Environment.SetEnvironmentVariable("AWS_REGION", _accessors.AWSAccess.Region);
+
+			RegionEndpoint regionEndpoint = RegionEndpoint.EUWest2;
+			IAmazonCognitoIdentityProvider amazonCognitoIdentityProvider = new AmazonCognitoIdentityProviderClient(_accessors.AWSAccess.AccessKey, _accessors.AWSAccess.SecretKey, regionEndpoint);
+			CognitoUserPool userPool = new CognitoUserPool(_accessors.AWSPool.PoolID, _accessors.AWSPool.AppClientID, amazonCognitoIdentityProvider, _accessors.AWSPool.AppClientSecret);
+			services.AddSingleton<IAmazonCognitoIdentityProvider>(amazonCognitoIdentityProvider);
+			services.AddSingleton<CognitoUserPool>(userPool);
+
+			var mongoDbContext = new MongoDbContext(_accessors.ConnectionString, "Accounts");
+
+			services.AddIdentity<AccountUser, AccountRole>()
+				.AddMongoDbStores<AccountUser, AccountRole, string>(mongoDbContext)
+				.AddDefaultTokenProviders();
+
+			services.AddDefaultAWSOptions(aWSOptions);
+
+			services.AddAuthorization(
+			auth => {
+				auth.DefaultPolicy = new AuthorizationPolicyBuilder(JwtBearerDefaults.AuthenticationScheme‌​)
+					.RequireAuthenticatedUser()
+					.Build();
+				auth.AddPolicy("TrialUsers", p => p.Requirements.Add(new GroupAuthorisationRequirement(AuthTypes.TrialUsers.ToString())));
+				auth.AddPolicy("BasicUsers", p => p.Requirements.Add(new GroupAuthorisationRequirement(AuthTypes.BasicUsers.ToString())));
+				auth.AddPolicy("PremiumUsers", p => p.Requirements.Add(new GroupAuthorisationRequirement(AuthTypes.PremiumUsers.ToString())));
+				auth.AddPolicy("EnterpriseUsers", p => p.Requirements.Add(new GroupAuthorisationRequirement(AuthTypes.EnterpriseUsers.ToString())));
+			});
+			services.AddAuthentication(
+				options =>
+				{
+					options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+					options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+				}).AddJwtBearer(
+				o =>
+				{
+
+					o.Audience = _accessors.AWSPool.AppClientID;
+					o.Authority = _accessors.AWSPool.AuthUrl;
+					o.RequireHttpsMetadata = false;
+					o.SaveToken = true;
+
+					o.Events = new JwtBearerEvents
+					{
+						OnTokenValidated = async ctx =>
+						{
+
+						}
+					};
+				}
+			);
+
+
+			services.AddSingleton<IAuthAccessHandler>(new AuthAccessHandler(_accessors.AWSPool.AppClientSecret));
+			services.AddScoped<IAuthHandler, AuthHandler>();
+			services.AddScoped<IAuthorizationHandler, AuthClientHandler>();
 		}
 		public static void AddRepositories(this IServiceCollection services, Accessors _accessors)
 		{
@@ -112,6 +182,8 @@ namespace Quarkless.Common
 				options.YandexAPIKey = _accessors.YandexAPIKey;
 			});
 			services.AddTransient<IRedisClient,RedisClient>();
+			services.AddTransient<IAccountCache, AccountCache>();
+
 		}
 		public static void AddHandlers(this IServiceCollection services)
 		{
@@ -125,7 +197,6 @@ namespace Quarkless.Common
 			services.AddTransient<ISeleniumClient,SeleniumClient>();
 			services.AddTransient<ITranslateService,TranslateService>();
 			services.AddTransient<IUtilProviders,UtilProviders>();
-			services.AddSingleton<IContentManager, ContentManager>();
 			services.AddSingleton<ITextGeneration,TextGeneration>();
 		}
 		public static void AddContexts(this IServiceCollection services)
@@ -133,7 +204,6 @@ namespace Quarkless.Common
 			services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 			services.AddTransient<IUserContext, UserContext>();
 			services.AddTransient<IRequestBuilder,RequestBuilder>();
-			services.AddTransient<ITopicBuilder, TopicBuilder>();
 		}
 	}
 }

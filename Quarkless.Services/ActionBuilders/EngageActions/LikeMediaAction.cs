@@ -159,6 +159,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
+			Console.WriteLine("Like Post Action Started");
+
 			ResultCarrier<IEnumerable<TimelineEventModel>> Results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
 			LikeActionOptions likeActionOptions = actionOptions as LikeActionOptions;
 			if (likeStrategySettings == null && user==null)
@@ -173,7 +175,6 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			};
 			try
 			{
-				Console.WriteLine("Like Action Started");
 				if (likeStrategySettings.LikeStrategy == LikeStrategyType.Default)
 				{
 					string nominatedMedia = string.Empty;

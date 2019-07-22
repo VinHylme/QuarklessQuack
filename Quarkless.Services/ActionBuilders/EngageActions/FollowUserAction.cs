@@ -136,6 +136,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
+			Console.WriteLine("Follow Action Started");
 			ResultCarrier<IEnumerable<TimelineEventModel>> Results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
 			FollowActionOptions followActionOptions = actionOptions as FollowActionOptions; 
 			if(user == null)
@@ -150,7 +151,6 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			}
 			try
 			{
-				Console.WriteLine("Follow Action Started");
 				long nominatedFollower = 0;
 				//todo add Location?
 				FollowActionType followActionTypeSelected = FollowActionType.FollowBasedOnTopic;

@@ -57,9 +57,10 @@ namespace Quarkless.Controllers
 			{
 				var accessToken = HttpContext.Request.Headers["Authorization"];
 				_userContext.FocusInstaAccount = instagramId;
-				var headers = _requestBuilder.DefaultHeaders(instagramId,accessToken); //token will expire after 1 hour, either increase token time or find another solution
+				var headers = _requestBuilder.DefaultHeaders(instagramId); //token will expire after 1 hour, either increase token time or find another solution
 				try {
 					eventItem.Rest.RequestHeaders.ToList().AddRange(headers);
+					eventItem.Rest.User.OAccessToken = accessToken;
 					_timelineLogic.AddEventToTimeline(eventItem.ActionName,eventItem.Rest, eventItem.ExecutionTime);
 					return Ok("Added to queue");
 				}

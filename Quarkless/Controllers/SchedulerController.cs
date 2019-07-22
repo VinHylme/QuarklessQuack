@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Quarkless.Services;
 using QuarklessContexts.Contexts;
 using QuarklessContexts.Models.UserAuth.AuthTypes;
+using QuarklessLogic.ServicesLogic.AgentLogic;
 using System.Threading.Tasks;
 
 namespace Quarkless.Controllers
@@ -16,8 +16,8 @@ namespace Quarkless.Controllers
 	public class SchedulerController : ControllerBase
     {
 		private readonly IUserContext _userContext;
-		private readonly IAgentManager _agentManager;
-		public SchedulerController(IUserContext userContext, IAgentManager agentManager)
+		private readonly IAgentLogic _agentManager;
+		public SchedulerController(IUserContext userContext, IAgentLogic agentManager)
 		{
 			_userContext = userContext;
 			_agentManager = agentManager;
@@ -32,7 +32,7 @@ namespace Quarkless.Controllers
 				var accessToken = HttpContext.Request.Headers["Authorization"];
 				if(string.IsNullOrEmpty(accessToken)) return BadRequest("Not Authorized");
 
-				return Ok(await _agentManager.StartAgent(_userContext.CurrentUser, instagramId, accessToken));
+				return Ok(await _agentManager.Start(_userContext.CurrentUser, instagramId));
 			}
 			return BadRequest("failed to start");
 		}
@@ -42,7 +42,7 @@ namespace Quarkless.Controllers
 		{
 			if (!string.IsNullOrEmpty(_userContext.CurrentUser))
 			{
-				return Ok(_agentManager.StopAgent(_userContext.CurrentUser,instagramId));
+				return Ok(_agentManager.Stop(_userContext.CurrentUser,instagramId));
 			}
 			return BadRequest("failed to stop");
 		}

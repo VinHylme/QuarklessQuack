@@ -14,7 +14,7 @@ namespace QuarklessLogic.Handlers.RequestBuilder.RequestBuilder
 			_restSharpClient = restSharpClient;
 		}
 
-		public IEnumerable<HttpHeader> DefaultHeaders(string instaUser, string token)
+		public IEnumerable<HttpHeader> DefaultHeaders(string instaUser)
 		{
 			return new List<HttpHeader>()
 			{
@@ -22,11 +22,6 @@ namespace QuarklessLogic.Handlers.RequestBuilder.RequestBuilder
 				{
 					Name = "FocusInstaAccount",
 					Value = instaUser
-				},
-				new HttpHeader
-				{
-					Name = "Authorization",
-					Value = token
 				}
 			};
 		}

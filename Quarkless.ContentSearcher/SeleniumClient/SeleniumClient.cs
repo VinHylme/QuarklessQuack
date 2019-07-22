@@ -4,10 +4,12 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web;
+using Newtonsoft.Json;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
 using QuarklessContexts.Extensions;
+using QuarklessContexts.Models.ResponseModels;
 
 namespace ContentSearcher.SeleniumClient
 {
@@ -30,7 +32,7 @@ namespace ContentSearcher.SeleniumClient
 		}
 		public void Initialise()
 		{
-			Driver = new ChromeDriver(_chromeService, _chromeOptions);
+			//Driver = new ChromeDriver(_chromeService, _chromeOptions);
 		}
 		public void ScrollPage(int counter)
 		{
@@ -113,6 +115,61 @@ namespace ContentSearcher.SeleniumClient
 			catch (Exception ee)
 			{
 				Console.Write(ee.Message);
+				return null;
+			}
+		}
+		public SearchResponse<List<SerpItem>> YandexSearchMe(string url, int pages)
+		{
+			try
+			{
+				List<SerpItem> totalCollected = new List<SerpItem>();
+				SearchResponse<List<SerpItem>> response = new SearchResponse<List<SerpItem>>();
+				using (var Driver = new ChromeDriver(_chromeService, _chromeOptions))
+				{
+					Driver.Navigate().GoToUrl(url);
+					if (Driver.Url.Contains("captcha"))
+					{
+						response.StatusCode = ResponseCode.CaptchaRequired;
+						response.Message = "Yandex captcha needed";
+						return response;
+					}
+					else
+					{
+						for(int currPage = 0; currPage < pages; currPage++)
+						{
+							var source = Driver.PageSource.Replace("&quot;","\"");
+
+							var regexMatch = Regex.Matches(source, "{\"serp-item\":.*?}}").Select(x =>
+							{
+								var newresults = x.Value.Replace("{\"serp-item\":", "");
+								return newresults.Substring(0, newresults.Length - 1);
+							});
+
+							if (regexMatch == null && regexMatch.Count() <= 0)
+							{
+								break;
+							}
+							else
+							{
+								var convertToSerpObject = regexMatch.Select(s => JsonConvert.DeserializeObject<SerpItem>(s)).ToList();
+								if (currPage > 0)
+									convertToSerpObject.RemoveAt(0); //duplicates
+
+								totalCollected.AddRange(convertToSerpObject);
+
+								var nextPageUrl = Driver.FindElement(By.ClassName("more__button")).GetAttribute("href");
+								Driver.Navigate().GoToUrl(nextPageUrl);
+							}
+						}
+					}
+				}
+				response.StatusCode = ResponseCode.Success;
+				response.Result = totalCollected;
+				return response;
+			}
+			catch(Exception io)
+			{
+				Console.WriteLine(io.Message);
 				return null;
 			}
 		}

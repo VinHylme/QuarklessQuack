@@ -291,18 +291,43 @@ namespace Quarkless.MediaAnalyser
 				}
 			}
 		}
+		public static Bitmap cropAtRect(this Bitmap b, Rectangle r)
+		{
+			Bitmap nb = new Bitmap(r.Width, r.Height);
+			Graphics g = Graphics.FromImage(nb);
+			g.DrawImage(b, -r.X, -r.Y);
+			return nb;
+		}
 		public static IEnumerable<byte[]> CreateCarousel(this byte[] imageData, int splitBy = 3)
 		{
+			Bitmap original = null;
+			Bitmap temp = null;
+			List<byte[]> bundle = new List<byte[]>();
+
 			var toImage = imageData.ByteToBitmap();
 			var width = toImage.Width;
-			var widthOfSquare = width / splitBy;
+			//eg run
+			//image of 1280 x 720 -> 1280/3 = 426.66
+			int widthOfSquare = (int) Math.Truncate((float)width / (float)splitBy);
 			int startX = 0;
-			List<byte[]> bundle = new List<byte[]>();
 
 			for(int i = 0; i < splitBy; i++)
 			{
-				bundle.Add(toImage.Clone(new Rectangle(startX, 0, widthOfSquare, toImage.Height), toImage.PixelFormat).BitmapToByte());
-				startX+=widthOfSquare;
+				try { 
+					original = imageData.ByteToBitmap();
+					var rect = new Rectangle(startX, 0, widthOfSquare, toImage.Height);
+					temp = original.cropAtRect(rect);
+					bundle.Add(temp.BitmapToByte());
+
+					startX+=widthOfSquare;
+				}
+				finally
+				{
+					if(original!=null)
+						original.Dispose();
+					if(temp!=null)
+						temp.Dispose();
+				}
 			}
 			return bundle;
 		}
@@ -319,6 +344,7 @@ namespace Quarkless.MediaAnalyser
 			using (MemoryStream ms = new MemoryStream())
 			{
 				bitmap.Save(ms, ImageFormat.Jpeg);
+				ms.Close();
 				return ms.ToArray();
 			}
 		}

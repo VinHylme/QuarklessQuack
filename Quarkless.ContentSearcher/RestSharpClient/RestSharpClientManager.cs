@@ -72,7 +72,10 @@ namespace QuarklessLogic.Handlers.RestSharpClient
 				if (!string.IsNullOrEmpty(username)) { 
 					RestClient.Authenticator = new HttpBasicAuthenticator(username,password);
 				}
-				
+				if (userStore != null) { 
+					if(userStore?.OAccessToken!=null)
+						RestClient.Authenticator = new JwtAuthenticator(userStore.OAccessToken);
+				}
 				if (parameters!=null && parameters.Count() > 0)
 				{
 					foreach (var param_ in parameters)

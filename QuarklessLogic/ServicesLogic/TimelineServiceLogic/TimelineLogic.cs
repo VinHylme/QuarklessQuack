@@ -1,4 +1,4 @@
-﻿using Quarkless.Queue.Jobs.Interfaces;
+﻿using Quarkless.Queue.Services;
 using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.Handlers.RequestBuilder.RequestBuilder;
 using QuarklessRepositories.Repository.TimelineRepository;
@@ -27,10 +27,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 		#region Add Event To Queue
 		public bool AddEventToTimeline(string actionName, RestModel restBody, DateTimeOffset executeTime)
 		{
-			restBody.RequestHeaders =
-				_requestBuilder.DefaultHeaders(
-				restBody.User.OInstagramAccountUser,
-				restBody.User.OAccessToken).ToList();
+			restBody.RequestHeaders = _requestBuilder.DefaultHeaders(restBody.User.OInstagramAccountUser).ToList();
 
 			var eventId = _taskService.ScheduleEvent(actionName, restBody, executeTime);
 			return eventId != null;

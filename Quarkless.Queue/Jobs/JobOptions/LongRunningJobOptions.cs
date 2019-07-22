@@ -1,4 +1,4 @@
-﻿using Quarkless.Queue.Interfaces.Jobs;
+﻿using QuarklessContexts.JobClass;
 using QuarklessContexts.Models.Timeline;
 using System;
 

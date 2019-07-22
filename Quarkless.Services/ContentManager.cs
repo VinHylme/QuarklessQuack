@@ -63,11 +63,13 @@ namespace Quarkless.Services
 				selections.Add(topicSelect.TopicFriendlyName);
 				selections.Add(selectASubTopic.TopicName);
 				selections.AddRange(selectASubTopic.RelatedTopics);
-				selections.AddRange(GetHashTags(topicSelect.TopicFriendlyName, topicSelected, language, 200, 15).GetAwaiter().GetResult());
+				var hashes = GetHashTags(topicSelect.TopicFriendlyName, topicSelected, language, 200, 15).GetAwaiter().GetResult();
+				if(hashes!=null && hashes.Count()>0)
+					selections.AddRange(hashes);
 			}
 
 			hashtagsToUse.AddRange(selections.Take(SecureRandom.Next(24,27)).Select(s=> $"#{s}"));
-			var hashtags = hashtagsToUse.JoinEvery(Environment.NewLine, 3);
+			var hashtags = hashtagsToUse.Select(j=>j.Replace(" ","")).JoinEvery(Environment.NewLine, 3);
 			var caption_ = GenerateText(topicSelect.TopicFriendlyName.ToLower(), language.ToUpper(), 1, SecureRandom.Next(4), SecureRandom.Next(2,6)).Split(',')[0];
 			string creditLine = string.Empty;
 			if (credit != null)
