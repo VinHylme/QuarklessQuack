@@ -19,7 +19,9 @@ namespace QuarklessContexts.Models.InstagramAccounts
 		public long? TotalPostsCount { get; set; }
 		public int? Type { get; set; } //0 = normal account, 1 = learner account
 		public string Device { get; set; }
-		public AgentSettings AgentSettings { get; set; }
+		public int? AgentState { get; set; }
+		[BsonRepresentation(BsonType.DateTime)]
+		public DateTime? LastPurgeCycle { get; set; }
 		public DateTime? DateAdded { get; set; }
 	}
 }

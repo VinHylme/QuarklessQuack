@@ -160,7 +160,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 				{
 					if(worker.Worker.GetContext.Proxy == null)
 					{				
-						var proxy = await _proxyLogic.RetrieveRandomProxy(connectionType: ConnectionType.Datacenter, get:true,cookies:true);
+						var proxy = await _proxyLogic.RetrieveRandomProxy(connectionType: ConnectionType.Any, get:true, cookies:true);
 						if (proxy != null)
 						{
 							worker.Worker.GetContext.Proxy = proxy;
@@ -230,7 +230,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 				{
 					if (worker.Worker.GetContext.Proxy == null)
 					{
-						var proxy = await _proxyLogic.RetrieveRandomProxy(connectionType: ConnectionType.Datacenter, get:true, cookies: true);
+						var proxy = await _proxyLogic.RetrieveRandomProxy(connectionType: ConnectionType.Any, get:true, cookies: true);
 						if (proxy != null)
 						{
 							worker.Worker.GetContext.Proxy = proxy;

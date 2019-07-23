@@ -76,7 +76,6 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 				List<__Meta__<object>> datass = new List<__Meta__<object>>();
 				foreach(var data in datas.TakeAny(10))
 				{
-
 					if(data.SeenBy is null)
 					{
 						datass.Add(data);
@@ -89,11 +88,6 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 						}
 					}
 				
-				}
-
-				if (proxy != null)
-				{
-					_utilProviders.TranslateService.AddProxy(proxy);
 				}
 				if (metaDataType == MetaDataType.FetchMediaByTopic)
 				{

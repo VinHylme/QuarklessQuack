@@ -34,7 +34,7 @@ namespace Quarkless.HeartBeater.ContentSearch
 		}
 		public async Task<IEnumerable<UserResponse<string>>> GetUserFollowingList(string username, int limit, string query = null)
 		{
-			var usersresp = await _container.User.GetUserFollowingAsync(username, PaginationParameters.MaxPagesToLoad(limit), query);
+			var usersresp = await _container.User.GetUserFollowingAsync(username, PaginationParameters.MaxPagesToLoad(limit), query, InstagramApiSharp.Enums.InstaFollowingOrderType.DateFollowedEarliest);
 			if (usersresp.Succeeded)
 			{
 				var users = usersresp.Value;

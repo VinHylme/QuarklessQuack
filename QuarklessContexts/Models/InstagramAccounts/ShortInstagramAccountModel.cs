@@ -66,6 +66,9 @@ namespace QuarklessContexts.Models.InstagramAccounts
 	public class AgentSettings
 	{
 		public int AgentState { get; set; }
+
+		[BsonRepresentation(BsonType.DateTime)]
+		public DateTime? LastPurgeCycle { get; set; }
 		//public ActionStates ActionStates { get; set; }
 	}
 
@@ -74,7 +77,9 @@ namespace QuarklessContexts.Models.InstagramAccounts
 		public string Id { get; set; }
 		public string AccountId { get; set; }
 		public string Username { get; set; }
-		public AgentSettings AgentSettings { get; set; }
+		public int? AgentState { get; set; }
+		[BsonRepresentation(BsonType.DateTime)]
+		public DateTime? LastPurgeCycle { get; set; }
 		public long? FollowersCount { get; set; }
 		public long? FollowingCount { get; set; }
 		public long? TotalPostsCount { get; set; }

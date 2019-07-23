@@ -144,7 +144,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				&& (e.ActionType == by.ActionType))).ToList();
 
 				TempSelect _selectedMedia = new TempSelect();
-				System.Drawing.Size size = new System.Drawing.Size(700,700);
+				System.Drawing.Size size = new System.Drawing.Size(900,900);
 
 				List<Chance<InstaMediaType>> typeOfPost = new List<Chance<InstaMediaType>>()
 				{

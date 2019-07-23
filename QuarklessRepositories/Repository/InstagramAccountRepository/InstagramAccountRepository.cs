@@ -139,17 +139,19 @@ namespace QuarklessRepositories.InstagramAccountRepository
 		public async Task<IEnumerable<ShortInstagramAccountModel>> GetActiveAgentInstagramAccounts()
 		{
 			var builders = Builders<InstagramAccountModel>.Filter;
-			var filter = (builders.Eq(_ => _.AgentSettings.AgentState,(int) AgentState.Running) | builders.Eq(_=>_.AgentSettings.AgentState,(int)AgentState.Sleeping)) & builders.Eq(_=>_.Type, 0);
+			var filter = (builders.Eq(_ => _.AgentState,(int) AgentState.Running) | builders.Eq(_=>_.AgentState,(int)AgentState.Sleeping)) & builders.Eq(_=>_.Type, 0);
 			var res = await _context.InstagramAccounts.FindAsync(filter);
 			return res.ToList().Select(r => new ShortInstagramAccountModel
 			{
 				AccountId = r.AccountId,
-				AgentSettings = r.AgentSettings,
+				AgentState = r.AgentState,
+				LastPurgeCycle = r.LastPurgeCycle,
 				FollowersCount = r.FollowersCount,
 				FollowingCount = r.FollowingCount, 
 				Id = r._id,
 				TotalPostsCount = r.TotalPostsCount,
 				Username = r.Username,
+				DateAdded = r.DateAdded
 			});
 		}
 

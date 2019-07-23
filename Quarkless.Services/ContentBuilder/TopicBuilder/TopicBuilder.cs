@@ -64,9 +64,17 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 						foreach(var srt in profile.Topics.SubTopics)
 						{
 							var res = await _aPIClientContainer.Hashtag.GetHashtagsSectionsAsync(srt.TopicName.Replace(" ",""),PaginationParameters.MaxPagesToLoad(1));
-							if(res.Succeeded && res.Value.RelatedHashtags.Count > 0)
+							if(res.Succeeded && res.Value.RelatedHashtags.Count > 3)
 							{
 								srt.RelatedTopics = res.Value.RelatedHashtags.Select(t=>t.Name).ToList();
+							}
+							else
+							{
+								var res_search = await _aPIClientContainer.Hashtag.SearchHashtagAsync(srt.TopicName.Replace(" ", ""));
+								if (res_search.Succeeded)
+								{
+									srt.RelatedTopics = res_search.Value.Select(t=>t.Name).ToList();
+								}
 							}
 						}
 					}
@@ -191,15 +199,23 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 			if(res!=null && res.Count > 0) { 
 				List<string> hashtags = new List<string>();
 				while (hashtags.Count < pickRate) { 
-
-					var chosenHashtags = res.Where(s=> clean.Replace(s.Language.ToLower(),"") == clean.Replace(language.MapLanguages().ToLower(),""))
-						.Select(sh=>sh.Hashtags);
-					var chosenHashtags_filtered = chosenHashtags
-						.ElementAtOrDefault(SecureRandom.Next(chosenHashtags.Count()))
-						.Where(_=>_.Count(count=>count==' ') <=1 )
-						.Select(s=>s);
-					if (chosenHashtags_filtered.Count() <=0) return null;
-					hashtags.AddRange(chosenHashtags_filtered.Where(s=>s.Length>=3 && s.Length<=20).Select(s=>s));
+					List<List<string>> chosenHashtags = new List<List<string>>();
+					foreach(var hashtagres in res)
+					{
+						if(!string.IsNullOrEmpty(hashtagres.Language)){
+							var hlang = clean.Replace(hashtagres.Language.ToLower(),"");
+							var langpicked = clean.Replace(language.MapLanguages().ToLower(),"");
+							chosenHashtags.Add(hashtagres.Hashtags);
+						}
+					}
+					if (chosenHashtags.Count > 0) { 
+						var chosenHashtags_filtered = chosenHashtags
+							.ElementAtOrDefault(SecureRandom.Next(chosenHashtags.Count()))
+							.Where(_=>_.Count(count=>count==' ' && !string.IsNullOrEmpty(_)) <=1 )
+							.Select(s=>s);
+						if (chosenHashtags_filtered.Count() <=0) return null;
+						hashtags.AddRange(chosenHashtags_filtered.Where(s=>s.Length>=3 && s.Length<=20).Select(s=>s));
+					}
 				}
 				if (subcategory != null) { 
 					subcategory = Regex.Replace(subcategory, @"\w*.?com", "");

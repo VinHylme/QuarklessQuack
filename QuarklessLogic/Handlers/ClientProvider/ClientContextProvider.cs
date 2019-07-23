@@ -85,7 +85,9 @@ namespace QuarklessLogic.Handlers.ClientProvider
 						InstagramAccount = new ShortInstagramAccountModel
 						{
 							AccountId = instaAcc.AccountId,
-							AgentSettings = instaAcc.AgentSettings,
+							AgentState = instaAcc.AgentState,
+							DateAdded = instaAcc.DateAdded,
+							LastPurgeCycle = instaAcc.LastPurgeCycle,
 							FollowersCount = instaAcc.FollowersCount,
 							FollowingCount = instaAcc.FollowingCount,
 							Id = instaAcc._id,

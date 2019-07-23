@@ -25,25 +25,6 @@ namespace QuarklessLogic.ServicesLogic.AgentLogic
 		{
 			return await _instagramAccountLogic.GetActiveAgentInstagramAccounts();
 		}
-		public async Task<bool> UpdateAgentStateForUser(string accountId, string instagramAccountId, AgentState newState, ActionStates actionStates)
-		{
-			try
-			{
-				await _instagramAccountLogic.PartialUpdateInstagramAccount(accountId, instagramAccountId, new InstagramAccountModel
-				{
-					AgentSettings = new AgentSettings
-					{
-						AgentState = (int)newState,
-					}
-				});
-				return true;
-			}
-			catch (Exception ee)
-			{
-				Console.WriteLine(ee.Message);
-				return false;
-			}
-		}
 		public async Task<AgentResponse> Start(string accountId, string instagramAccountId)
 		{
 			var _instaAccount = await _instagramAccountLogic.GetInstagramAccountShort(accountId, instagramAccountId);
@@ -51,10 +32,7 @@ namespace QuarklessLogic.ServicesLogic.AgentLogic
 			await _instagramAccountLogic.PartialUpdateInstagramAccount(accountId, instagramAccountId,
 				new InstagramAccountModel
 				{
-					AgentSettings = new AgentSettings
-					{
-						AgentState = (int)AgentState.Running,
-					}
+					AgentState = (int)AgentState.Running
 				});
 
 			return new AgentResponse
@@ -70,10 +48,7 @@ namespace QuarklessLogic.ServicesLogic.AgentLogic
 				await _instagramAccountLogic.PartialUpdateInstagramAccount(accountId, instagramAccountId,
 					new InstagramAccountModel
 					{
-						AgentSettings = new AgentSettings
-						{
-							AgentState = (int)AgentState.Stopped,
-						}
+						AgentState = (int)AgentState.Stopped	
 					});
 				return new AgentResponse
 				{

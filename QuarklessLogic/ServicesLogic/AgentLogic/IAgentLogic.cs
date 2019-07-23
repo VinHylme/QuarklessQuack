@@ -10,6 +10,5 @@ namespace QuarklessLogic.ServicesLogic.AgentLogic
 		Task<IEnumerable<ShortInstagramAccountModel>> GetActiveAccounts();
 		Task<AgentResponse> Start(string accountId, string instagramAccountId);
 		Task<AgentResponse> Stop(string accountId, string instagramAccountId);
-		Task<bool> UpdateAgentStateForUser(string accountId, string instagramAccountId, AgentState newState, ActionStates actionStates);
 	}
 }

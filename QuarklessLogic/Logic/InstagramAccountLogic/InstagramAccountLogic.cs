@@ -40,10 +40,8 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 						Username = addInstagram.Username,
 						TotalPostsCount = null,
 						Type = addInstagram.Type,
-						AgentSettings = new AgentSettings
-						{
-							AgentState = (int) AgentState.NotStarted
-						},
+						AgentState = (int) AgentState.NotStarted,
+						LastPurgeCycle = null,			
 						DateAdded = DateTime.UtcNow
 					};
 					var result = await _instagramAccountRepository.AddInstagramAccount(instamodel);
@@ -108,7 +106,8 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 
 					var shortInsta = new ShortInstagramAccountModel{
 						AccountId = res.AccountId,
-						AgentSettings = res.AgentSettings,
+						AgentState = res.AgentState,
+						LastPurgeCycle = res.LastPurgeCycle,
 						FollowersCount = res.FollowersCount,
 						FollowingCount = res.FollowingCount,
 						Id = res._id,
@@ -168,7 +167,8 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 			ShortInstagramAccountModel toshortmodel = new ShortInstagramAccountModel
 			{
 				AccountId = instagramAccountModel.AccountId,
-				AgentSettings = instagramAccountModel.AgentSettings,
+				AgentState = instagramAccountModel.AgentState,
+				LastPurgeCycle = instagramAccountModel.LastPurgeCycle,
 				FollowersCount = instagramAccountModel.FollowersCount,
 				FollowingCount = instagramAccountModel.FollowingCount,
 				Id = instagramAccountModel._id,
