@@ -38,11 +38,11 @@ namespace Quarkless.Controllers
 		}
 		[HttpPost]
 		[Route("api/scheduler/agent/stop/{instagramId}")]
-		public IActionResult StopAgent(string instagramId)
+		public async Task<IActionResult> StopAgent(string instagramId)
 		{
 			if (!string.IsNullOrEmpty(_userContext.CurrentUser))
 			{
-				return Ok(_agentManager.Stop(_userContext.CurrentUser,instagramId));
+				return Ok(await _agentManager.Stop(_userContext.CurrentUser,instagramId));
 			}
 			return BadRequest("failed to stop");
 		}

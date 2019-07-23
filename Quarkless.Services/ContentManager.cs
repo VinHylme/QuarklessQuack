@@ -68,7 +68,7 @@ namespace Quarkless.Services
 					selections.AddRange(hashes);
 			}
 
-			hashtagsToUse.AddRange(selections.Take(SecureRandom.Next(24,27)).Select(s=> $"#{s}"));
+			hashtagsToUse.AddRange(selections.Take(SecureRandom.Next(20,24)).Select(s=> $"#{s}"));
 			var hashtags = hashtagsToUse.Select(j=>j.Replace(" ","")).JoinEvery(Environment.NewLine, 3);
 			var caption_ = GenerateText(topicSelect.TopicFriendlyName.ToLower(), language.ToUpper(), 1, SecureRandom.Next(4), SecureRandom.Next(2,6)).Split(',')[0];
 			string creditLine = string.Empty;

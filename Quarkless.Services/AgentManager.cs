@@ -532,10 +532,10 @@ namespace Quarkless.Services
 							}
 							#endregion
 
-							//if (_instaAccount.DateAdded.HasValue)
-							//{
-							//	SetLimits(_instaAccount.DateAdded.Value);
-							//}
+							if (_instaAccount.DateAdded.HasValue)
+							{
+								SetLimits(_instaAccount.DateAdded.Value);
+							}
 
 							var totalforuser = GetTodaysScheduleWindow(_userStoreDetails.OAccountId, _userStoreDetails.OInstagramAccountUser);
 							if (totalforuser != null)
