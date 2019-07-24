@@ -205,16 +205,14 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 						if(!string.IsNullOrEmpty(hashtagres.Language)){
 							var hlang = clean.Replace(hashtagres.Language.ToLower(),"");
 							var langpicked = clean.Replace(language.MapLanguages().ToLower(),"");
-							chosenHashtags.Add(hashtagres.Hashtags);
+							if(hlang == langpicked)
+								chosenHashtags.Add(hashtagres.Hashtags.Where(s=>!string.IsNullOrEmpty(s)).ToList());
 						}
 					}
 					if (chosenHashtags.Count > 0) { 
-						var chosenHashtags_filtered = chosenHashtags
-							.ElementAtOrDefault(SecureRandom.Next(chosenHashtags.Count()))
-							.Where(_=>_.Count(count=>count==' ' && !string.IsNullOrEmpty(_)) <=1 )
-							.Select(s=>s);
+						var chosenHashtags_filtered = chosenHashtags.SquashMe().Where(space => space.Count(oc => oc == ' ') <= 1);
 						if (chosenHashtags_filtered.Count() <=0) return null;
-						hashtags.AddRange(chosenHashtags_filtered.Where(s=>s.Length>=3 && s.Length<=20).Select(s=>s));
+						hashtags.AddRange(chosenHashtags_filtered.Where(s => s.Length >= 3 && s.Length <= 20).Select(s=>s));
 					}
 				}
 				if (subcategory != null) { 

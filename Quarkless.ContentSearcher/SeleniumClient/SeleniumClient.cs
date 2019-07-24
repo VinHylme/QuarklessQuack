@@ -135,32 +135,7 @@ namespace ContentSearcher.SeleniumClient
 					}
 					else
 					{
-						for(int currPage = 0; currPage < pages; currPage++)
-						{
-							var source = Driver.PageSource.Replace("&quot;","\"");
-
-							var regexMatch = Regex.Matches(source, "{\"serp-item\":.*?}}").Select(x =>
-							{
-								var newresults = x.Value.Replace("{\"serp-item\":", "");
-								return newresults.Substring(0, newresults.Length - 1);
-							});
-
-							if (regexMatch == null && regexMatch.Count() <= 0)
-							{
-								break;
-							}
-							else
-							{
-								var convertToSerpObject = regexMatch.Select(s => JsonConvert.DeserializeObject<SerpItem>(s)).ToList();
-								if (currPage > 0)
-									convertToSerpObject.RemoveAt(0); //duplicates
-
-								totalCollected.AddRange(convertToSerpObject);
-
-								var nextPageUrl = Driver.FindElement(By.ClassName("more__button")).GetAttribute("href");
-								Driver.Navigate().GoToUrl(nextPageUrl);
-							}
-						}
+						totalCollected.AddRange(ReadSerpItems(Driver, pages));					
 					}
 				}
 				response.StatusCode = ResponseCode.Success;
@@ -241,15 +216,82 @@ namespace ContentSearcher.SeleniumClient
 				return null;
 			}
 		}
-		public IEnumerable<string> Reader(string url, string targetElement, int limit = 5, string patternRegex = @"(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|gif|png)")
+		private List<SerpItem> ReadSerpItems(IWebDriver driver, int pageLimit)
+		{
+			List<SerpItem> total = new List<SerpItem>();
+			for (int currPage = 0; currPage < pageLimit; currPage++)
+			{
+				var source = Driver.PageSource.Replace("&quot;", "\"");
+				var regexMatch = Regex.Matches(source, "{\"serp-item\":.*?}}").Select(x =>
+				{
+					var newresults = x.Value.Replace("{\"serp-item\":", "");
+					return newresults.Substring(0, newresults.Length - 1);
+				});
+				if (regexMatch == null && regexMatch.Count() <= 0)
+				{
+					break;
+				}
+				else
+				{
+					foreach(var serpString in regexMatch)
+					{
+						try
+						{
+							total.Add(JsonConvert.DeserializeObject<SerpItem>(serpString));
+						}
+						catch
+						{
+							Console.WriteLine("could not convert serp object");
+							continue;
+						}
+					}
+
+					if(total.Count>0)
+						total.RemoveAt(0); //remove the duplicate
+
+					var nextPageUrl = Driver.FindElement(By.ClassName("more__button")).GetAttribute("href");
+					Thread.Sleep(1000);
+					Driver.Navigate().GoToUrl(nextPageUrl);
+				}
+			}
+			return total;
+		}
+		public SearchResponse<List<SerpItem>> Reader(string url, int limit = 1)
 		{
 			try
 			{
+				List<SerpItem> totalCollected = new List<SerpItem>();
+				SearchResponse<List<SerpItem>> response = new SearchResponse<List<SerpItem>>();
 				using (Driver = new ChromeDriver(_chromeService, _chromeOptions))
 				{
 					Driver.Navigate().GoToUrl(url);
+					if (Driver.Url.Contains("captcha"))
+					{
+						response.StatusCode = ResponseCode.CaptchaRequired;
+						response.Message = "Yandex captcha needed";
+						return response;
+					}
+					else
+					{
+						Thread.Sleep(500);
+						try { 
+							var mispelltag = Driver.FindElement(By.ClassName("misspell__message"));
+							if (mispelltag != null)
+						{
+							var gotosuggestedurl = "https://yandex.com" + Regex.Match(mispelltag.GetAttribute("outerHTML"), "href=.*?/images.*?>").Value.Replace("href=","").Replace(">","").Replace("\"","");
+							Driver.Navigate().GoToUrl(gotosuggestedurl);
+							Thread.Sleep(2000);
+						}
+						}
+						catch
+						{
+							Console.WriteLine("nothing suggested for yandex search query");
+						}
+						totalCollected.AddRange(ReadSerpItems(Driver,limit));
+					}
+					#region old stuff
+					/*
 					List<IWebElement> elements = Driver.FindElements(By.XPath($"//div[contains(@class,'{targetElement}')]")).ToList();
-
 					if (elements == null || elements.Count<=0) { return null; }
 					while (elements.Count < limit)
 					{
@@ -281,8 +323,12 @@ namespace ContentSearcher.SeleniumClient
 						}
 					}
 					var waitResults = new WebDriverWait(Driver, TimeSpan.FromSeconds(10));
-					return urls;
+					return urls;*/
+					#endregion
 				}
+				response.StatusCode = ResponseCode.Success;
+				response.Result = totalCollected;
+				return response;
 			}
 			catch (Exception ee)
 			{
@@ -335,6 +381,5 @@ namespace ContentSearcher.SeleniumClient
 				_chromeOptions.AddArgument(arg);
 			}
 		}
-
 	}
 }

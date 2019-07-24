@@ -56,17 +56,12 @@ namespace Quarkless
 				options.UseRedisStorage(Redis, new Hangfire.Redis.RedisStorageOptions
 				{
 					Prefix = "Timeline",
-					SucceededListSize = 5000,
+					SucceededListSize = 1000,
 					DeletedListSize = 1000,
 					ExpiryCheckInterval = TimeSpan.FromHours(1),
 					InvisibilityTimeout = TimeSpan.FromMinutes(30),
 					UseTransactions = true
 				});
-				
-				//options.UseSerializerSettings(new Newtonsoft.Json.JsonSerializerSettings()
-				//{
-				//	ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
-				//});
 			});
 
 			GlobalConfiguration.Configuration.UseActivator(new WorkerActivator(services.BuildServiceProvider(false)));

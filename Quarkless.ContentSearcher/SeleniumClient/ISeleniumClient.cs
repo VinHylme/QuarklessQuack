@@ -1,4 +1,5 @@
 ﻿using OpenQA.Selenium;
+using QuarklessContexts.Models.ResponseModels;
 using System.Collections.Generic;
 
 namespace ContentSearcher.SeleniumClient
@@ -12,6 +13,6 @@ namespace ContentSearcher.SeleniumClient
 		IEnumerable<Cookie> GetCookiesOfPage(string url);
 		IEnumerable<string> DetectLangauge(string url, string targetElement, params string[] data);
 		IEnumerable<string> DetectLanguageViaGoogle(string url, string targetElement, bool getValues = false, params string[] data);
-		IEnumerable<string> Reader(string url, string targetElement, int limit = 5, string patternRegex = "(http(s?):)([/|.|\\w|\\s|-])*\\.(?:jpg|gif|png)");
+		SearchResponse<List<SerpItem>> Reader(string url, int limit = 5 );
 	}
 }

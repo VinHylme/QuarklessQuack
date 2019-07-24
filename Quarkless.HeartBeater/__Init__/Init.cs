@@ -52,121 +52,118 @@ namespace Quarkless.HeartBeater.__Init__
 		}
 		public async Task Endeavor(Settings settings)
 		{
-			while (true) { 
-				Console.WriteLine("Heartbeat started");
-				Console.WriteLine("------------------");
-				var watch = System.Diagnostics.Stopwatch.StartNew();
-				try
-				{ 
-					var workers = await GetAccounts(settings.Accounts.Select(_ => _.Username).ToArray());
-					var requesters = await GetActiveInstagramAccountRequests();
-					var ratio = (double) workers.Count() / requesters.Count;
+			Console.WriteLine("Heartbeat started");
+			Console.WriteLine("------------------");
+			var watch = System.Diagnostics.Stopwatch.StartNew();
+			try
+			{ 
+				var workers = await GetAccounts(settings.Accounts.Select(_ => _.Username).ToArray());
+				var requesters = await GetActiveInstagramAccountRequests();
+				var ratio = (double) workers.Count() / requesters.Count;
 
-					if (ratio > 1)
-					{
-						for(int x = 0; x < workers.Count(); x++)
-						{
-							if (x < requesters.Count) { 
-								var wo_ = workers.ElementAtOrDefault(x);
-								_topicBuilder.Init(new UserStoreDetails { OAccountId = wo_.AccountId, OInstagramAccountUser = wo_._id, OInstagramAccountUsername = wo_.Username });
-								var currAcc = requesters.ElementAtOrDefault(x);
-								var profileTopic = currAcc.Profile.Topics;
-								if (profileTopic.SubTopics == null || profileTopic.SubTopics.Count <= 1 || profileTopic.SubTopics.Any(s=> s.RelatedTopics==null || s.RelatedTopics.Count<3))
-								{
-									profileTopic = _topicBuilder.BuildTopics(currAcc.Profile).GetAwaiter().GetResult();
-								}
-
-								Assignments.Add(new Assignments
-								{
-									InstagramRequests = requesters.ElementAt(x),
-									Topic = profileTopic,
-									Worker = new APIClientContainer(_context, wo_.AccountId, wo_._id)
-								});
-							}
-						}
-					}
-					else
-					{
-						int wpos = 0;
-						for(int y = 0; y < requesters.Count ; y++,wpos++)
-						{
-							var worker_ = workers.ElementAtOrDefault(wpos);
-							if (worker_ != null) { 
-								_topicBuilder.Init(new UserStoreDetails { OAccountId = worker_.AccountId, OInstagramAccountUser = worker_._id, OInstagramAccountUsername = worker_.Username });
-								var currAcc = requesters.ElementAtOrDefault(y);
-								var profileTopic = currAcc.Profile.Topics;
-
-								if (profileTopic.SubTopics == null || profileTopic.SubTopics.Count <= 1 || profileTopic.SubTopics.Any(s => s.RelatedTopics == null || s.RelatedTopics.Count < 3))
-								{
-									profileTopic = _topicBuilder.BuildTopics(currAcc.Profile).GetAwaiter().GetResult();
-								}
-
-								Assignments.Add(new Assignments
-								{
-									InstagramRequests = requesters.ElementAtOrDefault(y),
-									Topic = profileTopic,
-									Worker = new APIClientContainer(_context,worker_.AccountId,worker_._id)
-								});
-							}
-							else
-							{
-								wpos = 0;
-								y--;
-							}
-						}
-					}
-
-					MetadataBuilder metadataBuilder = new MetadataBuilder(Assignments, _context, _heartbeatLogic,_proxyLogic);
-			
-					//Build Around Topics
-			
-					var ins = Task.Run(async () => await metadataBuilder.BuildBase());
-
-					//Google & Yandex search
-					var go =Task.Run(async () => await metadataBuilder.BuildGoogleImages(50));
-					var yanq = Task.Run(async () => await metadataBuilder.BuildYandexImagesQuery(50));
-					var yan =Task.Run(async () => await metadataBuilder.BuildYandexImages());
-
-					var profileRefresh = Task.Run(async () => await metadataBuilder.BuildUsersOwnMedias(_instagramAccountLogic));
-					//independed can run by themselves seperate tiem
-					var feedRefresh = Task.Run(async () => await metadataBuilder.BuildUsersFeed()).ContinueWith(async x=> 
-					{
-						await metadataBuilder.BuildUsersFollowSuggestions();
-						await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchUsersFeed, MetaDataType.FetchCommentsViaUserFeed, true);
-					});
-
-					var followingList = Task.Run(async () => await metadataBuilder.BuildUserFollowList());
-					var userTargetList = Task.Run(async () => await metadataBuilder.BuildUsersTargetListMedia()).ContinueWith(async x=>
-					{
-						await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserTargetList, MetaDataType.FetchCommentsViaUserTargetList, true);
-					});
-					var locTargetList = Task.Run(async () => await metadataBuilder.BuildLocationTargetListMedia()).ContinueWith(async s =>
-					{
-						await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserLocationTargetList, MetaDataType.FetchCommentsViaLocationTargetList, true);
-					}); ;
-					Task.WaitAll(ins);
-
-					var likers = Task.Run(async () => await metadataBuilder.BuildUserFromLikers()).ContinueWith(async a =>
-					{
-						await metadataBuilder.BuildMediaFromUsersLikers();
-						await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByLikers, MetaDataType.FetchCommentsViaPostsLiked);
-					});
-					var commenters = Task.Run(async () => await metadataBuilder.BuildUsersFromCommenters()).ContinueWith(async c =>
-					{	
-						await metadataBuilder.BuildMediaFromUsersCommenters();
-						await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByCommenters, MetaDataType.FetchCommentsViaPostCommented);
-					});
-
-					Task.WaitAll(go, yan, yanq, likers, commenters, profileRefresh, feedRefresh, userTargetList, locTargetList);
-				}
-				catch(Exception ee)
+				if (ratio > 1)
 				{
-					Console.WriteLine(ee.Message);
+					for(int x = 0; x < workers.Count(); x++)
+					{
+						if (x < requesters.Count) { 
+							var wo_ = workers.ElementAtOrDefault(x);
+							_topicBuilder.Init(new UserStoreDetails { OAccountId = wo_.AccountId, OInstagramAccountUser = wo_._id, OInstagramAccountUsername = wo_.Username });
+							var currAcc = requesters.ElementAtOrDefault(x);
+							var profileTopic = currAcc.Profile.Topics;
+							if (profileTopic.SubTopics == null || profileTopic.SubTopics.Count <= 1 || profileTopic.SubTopics.Any(s=> s.RelatedTopics==null || s.RelatedTopics.Count<3))
+							{
+								profileTopic = _topicBuilder.BuildTopics(currAcc.Profile).GetAwaiter().GetResult();
+							}
+
+							Assignments.Add(new Assignments
+							{
+								InstagramRequests = requesters.ElementAt(x),
+								Topic = profileTopic,
+								Worker = new APIClientContainer(_context, wo_.AccountId, wo_._id)
+							});
+						}
+					}
 				}
-				watch.Stop();
-				Console.WriteLine($"Heartbeat ended : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
-				await Task.Delay(TimeSpan.FromMinutes(5));
+				else
+				{
+					int wpos = 0;
+					for(int y = 0; y < requesters.Count ; y++,wpos++)
+					{
+						var worker_ = workers.ElementAtOrDefault(wpos);
+						if (worker_ != null) { 
+							_topicBuilder.Init(new UserStoreDetails { OAccountId = worker_.AccountId, OInstagramAccountUser = worker_._id, OInstagramAccountUsername = worker_.Username });
+							var currAcc = requesters.ElementAtOrDefault(y);
+							var profileTopic = currAcc.Profile.Topics;
+
+							if (profileTopic.SubTopics == null || profileTopic.SubTopics.Count <= 1 || profileTopic.SubTopics.Any(s => s.RelatedTopics == null || s.RelatedTopics.Count < 3))
+							{
+								profileTopic = _topicBuilder.BuildTopics(currAcc.Profile).GetAwaiter().GetResult();
+							}
+
+							Assignments.Add(new Assignments
+							{
+								InstagramRequests = requesters.ElementAtOrDefault(y),
+								Topic = profileTopic,
+								Worker = new APIClientContainer(_context,worker_.AccountId,worker_._id)
+							});
+						}
+						else
+						{
+							wpos = 0;
+							y--;
+						}
+					}
+				}
+
+				MetadataBuilder metadataBuilder = new MetadataBuilder(Assignments, _context, _heartbeatLogic,_proxyLogic);
+			
+				//Build Around Topics
+			
+				var ins = Task.Run(async () => await metadataBuilder.BuildBase());
+
+				//Google & Yandex search
+				var go =Task.Run(async () => await metadataBuilder.BuildGoogleImages(50));
+				var yanq = Task.Run(async () => await metadataBuilder.BuildYandexImagesQuery(1));
+				var yan =Task.Run(async () => await metadataBuilder.BuildYandexImages());
+
+				var profileRefresh = Task.Run(async () => await metadataBuilder.BuildUsersOwnMedias(_instagramAccountLogic));
+				//independed can run by themselves seperate tiem
+				var feedRefresh = Task.Run(async () => await metadataBuilder.BuildUsersFeed()).ContinueWith(async x=> 
+				{
+					await metadataBuilder.BuildUsersFollowSuggestions();
+					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchUsersFeed, MetaDataType.FetchCommentsViaUserFeed, true);
+				});
+
+				var followingList = Task.Run(async () => await metadataBuilder.BuildUserFollowList());
+				var userTargetList = Task.Run(async () => await metadataBuilder.BuildUsersTargetListMedia()).ContinueWith(async x=>
+				{
+					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserTargetList, MetaDataType.FetchCommentsViaUserTargetList, true);
+				});
+				var locTargetList = Task.Run(async () => await metadataBuilder.BuildLocationTargetListMedia()).ContinueWith(async s =>
+				{
+					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserLocationTargetList, MetaDataType.FetchCommentsViaLocationTargetList, true);
+				}); ;
+				Task.WaitAll(ins);
+
+				var likers = Task.Run(async () => await metadataBuilder.BuildUserFromLikers()).ContinueWith(async a =>
+				{
+					await metadataBuilder.BuildMediaFromUsersLikers();
+					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByLikers, MetaDataType.FetchCommentsViaPostsLiked);
+				});
+				var commenters = Task.Run(async () => await metadataBuilder.BuildUsersFromCommenters()).ContinueWith(async c =>
+				{	
+					await metadataBuilder.BuildMediaFromUsersCommenters();
+					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByCommenters, MetaDataType.FetchCommentsViaPostCommented);
+				});
+
+				Task.WaitAll(go, yan, yanq, likers, commenters, profileRefresh, feedRefresh, userTargetList, locTargetList);
 			}
+			catch(Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+			}
+			watch.Stop();
+			Console.WriteLine($"Heartbeat ended : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
 		}
 
 		private async Task<List<RequestAccountModel>> GetActiveInstagramAccountRequests()

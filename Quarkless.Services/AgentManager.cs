@@ -435,18 +435,12 @@ namespace Quarkless.Services
 		public async Task Begin()
 		{
 			IEnumerable<ShortInstagramAccountModel> allActives = await _agentLogic.GetActiveAccounts();
-			
-			Timer stateChecker = new Timer(TimeSpan.FromSeconds(15).Ticks);
-			stateChecker.Start();
-			stateChecker.Elapsed += async (o, e) => {
-				allActives = await _agentLogic.GetActiveAccounts();
-			};
-			
+		
 			while (true) {
-
+				allActives = await _agentLogic.GetActiveAccounts();
 				if (allActives != null) { 
 					await allActives.ParallelForEachAsync(async _instaAccount =>
-					{
+					{	
 						UserStoreDetails _userStoreDetails = new UserStoreDetails();
 						try 
 						{
@@ -532,29 +526,13 @@ namespace Quarkless.Services
 							}
 							#endregion
 
-							if (_instaAccount.DateAdded.HasValue)
-							{
-								SetLimits(_instaAccount.DateAdded.Value);
-							}
-
-							var totalforuser = GetTodaysScheduleWindow(_userStoreDetails.OAccountId, _userStoreDetails.OInstagramAccountUser);
-							if (totalforuser != null)
-							{
-								if (totalforuser.All.Count() > 100)
-									_instaAccount.AgentState = (int)AgentState.Sleeping;
-								else if (totalforuser.All.Count() <= 0)
-									_instaAccount.AgentState = (int)AgentState.Running;
-							}
-							else
-								_instaAccount.AgentState = (int)AgentState.Running;
-
-							await _instagramAccountLogic.PartialUpdateInstagramAccount(_userStoreDetails.OAccountId, _userStoreDetails.OInstagramAccountUser, new InstagramAccountModel
-							{
-								AgentState = _instaAccount.AgentState,								
-							});
-
-							_instaAccount = await _instagramAccountLogic.GetInstagramAccountShort(_userStoreDetails.OAccountId, _userStoreDetails.OInstagramAccountUser);
-
+							//if (_instaAccount.DateAdded.HasValue)
+							//{
+							//	SetLimits(_instaAccount.DateAdded.Value);
+							//}
+							
+							var totalforuser = GetTodaysScheduleWindow(_userStoreDetails.OAccountId, _userStoreDetails.OInstagramAccountUser)?.All?.ToList();
+						
 							#region Action Initialise
 							ActionsContainerManager actionsContainerManager = new ActionsContainerManager();
 
@@ -601,8 +579,18 @@ namespace Quarkless.Services
 							#endregion
 
 							if (_instaAccount == null) return;
+							if(_instaAccount.AgentState == (int)AgentState.NotStarted)
+							{
+								_instaAccount.AgentState = (int) AgentState.Running;
+							}
 							if (_instaAccount.AgentState == (int)AgentState.Running)
 							{
+								if (totalforuser != null) { 
+									if (totalforuser.Count > 100)
+									{
+										_instaAccount.AgentState = (int) AgentState.Sleeping;
+									} 
+								}
 								var nominatedAction = actionsContainerManager.GetRandomAction();
 								actionsContainerManager.AddWork(nominatedAction);
 								actionsContainerManager.RunAction();
@@ -639,6 +627,10 @@ namespace Quarkless.Services
 							}
 							else if (_instaAccount.AgentState == (int)AgentState.Sleeping)
 							{
+								if (totalforuser == null)
+									_instaAccount.AgentState = (int) AgentState.Running;
+								else if(totalforuser.Count<=0)
+									_instaAccount.AgentState = (int)AgentState.Running;
 
 							}
 							else if (_instaAccount.AgentState == (int)AgentState.Stopped)
@@ -646,14 +638,18 @@ namespace Quarkless.Services
 								//__InstanceRefresher__.Stop();
 							}
 
+							await _instagramAccountLogic.PartialUpdateInstagramAccount(_userStoreDetails.OAccountId, _userStoreDetails.OInstagramAccountUser, new InstagramAccountModel
+							{
+								AgentState = _instaAccount.AgentState,
+							});
 						}
-						catch(Exception ee)
+						catch (Exception ee)
 						{
 							Console.WriteLine(ee.Message);
 						}
 					});
 				}
-				await Task.Delay(TimeSpan.FromSeconds(1.5));
+				await Task.Delay(TimeSpan.FromSeconds(3));
 			}
 		}
 		

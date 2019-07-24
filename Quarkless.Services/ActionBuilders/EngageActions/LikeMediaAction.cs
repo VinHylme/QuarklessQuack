@@ -159,7 +159,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
-			Console.WriteLine("Like Post Action Started");
+			Console.WriteLine($"Like Post Action Started: {user.OAccountId}, {user.OInstagramAccountUsername}, {user.OInstagramAccountUser}");
 
 			ResultCarrier<IEnumerable<TimelineEventModel>> Results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
 			LikeActionOptions likeActionOptions = actionOptions as LikeActionOptions;

@@ -23,6 +23,7 @@ namespace Quarkless.HeartBeater.ContentSearch
 		Task<Media> SearchUsersMediaDetailInstagram(string userName, int limit);
 		SearchResponse<Media> SearchViaGoogle(SearchImageModel searchImageQuery);
 		SearchResponse<Media> SearchViaYandex(YandexSearchQuery yandexSearchQuery, int limit);
+		SearchResponse<Media> SearchYandexSimilarSafeMode(List<GroupImagesAlike> imagesAlikes, int limit);
 		SearchResponse<Media> SearchViaYandexBySimilarImages(List<GroupImagesAlike> imagesSimilarUrls, int limit);
 		SearchResponse<Media> SearchSimilarImagesViaGoogle(List<GroupImagesAlike> imagesAlikes, int limit);
 	}

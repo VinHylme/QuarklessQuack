@@ -60,11 +60,12 @@ namespace Quarkless.Services
 			}
 			if (selectASubTopic != null)
 			{
-				selections.Add(topicSelect.TopicFriendlyName);
 				selections.Add(selectASubTopic.TopicName);
+				selections.Add(topicSelect.TopicFriendlyName);
 				selections.AddRange(selectASubTopic.RelatedTopics);
+
 				var hashes = GetHashTags(topicSelect.TopicFriendlyName, topicSelected, language, 200, 15).GetAwaiter().GetResult();
-				if(hashes!=null && hashes.Count()>0)
+				if(hashes!=null && hashes.Count() > 0)
 					selections.AddRange(hashes);
 			}
 

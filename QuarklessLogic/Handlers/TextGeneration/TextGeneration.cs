@@ -36,22 +36,24 @@ namespace QuarklessLogic.Handlers.TextGeneration
 		public async Task<string> MarkovIt(int type, string topic, string language, int size, int limit)
 		{
 			if (type < 0 && type > 2) throw new Exception("invalid type");
+			Regex exlude = new Regex(@"(^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$)|(@)|(\d{5})");
+			
 			switch (type)
 			{
 				case 0:
-					var data = await _commentCorpusRepository.GetComments(topic,language.ToUpper(),language.MapLanguages(),10000);
+					var data = await _commentCorpusRepository.GetComments(topic,language.ToUpper(),language.MapLanguages(),5000);
 					if (data != null)
 					{
-						string choice = Regex.Replace(string.Join(',', data.Where(s=>!s.Comment.Contains('@')).Select(sa => sa.Comment)), @"\s+", " ").TrimEnd(' ');
+						string choice = Regex.Replace(string.Join(',', data.Where(s=>!s.Comment.Contains('@') || !exlude.IsMatch(s.Comment)).Select(sa => sa.Comment)), @"\s+", " ").TrimEnd(' ');
 						TDict t = MarkovHelper.BuildTDict(choice, size);
 						return MarkovHelper.BuildString(t, limit, true).TrimEnd(' ');
 					}
 					return null;
 				case 1:
-					var mdata = await _mediaCorpusRepository.GetMedias(topic, language.ToUpper(),language.MapLanguages(),10000);
+					var mdata = await _mediaCorpusRepository.GetMedias(topic, language.ToUpper(),language.MapLanguages(),5000);
 					if (mdata != null)
 					{
-						string choice = Regex.Replace(string.Join(',', mdata.Where(sc=>!sc.Caption.Contains('@')).Select(sa => sa.Caption)), @"\s+", " ").TrimEnd(' ');
+						string choice = Regex.Replace(string.Join(',', mdata.Where(sc=>!sc.Caption.Contains('@') || !exlude.IsMatch(sc.Caption)).Select(sa => sa.Caption)), @"\s+", " ").TrimEnd(' ');
 						TDict t = MarkovHelper.BuildTDict(choice, size);
 						return MarkovHelper.BuildString(t, limit, true).TrimEnd(' ');
 					}

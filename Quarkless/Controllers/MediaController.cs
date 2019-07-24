@@ -33,7 +33,7 @@ namespace Quarkless.Controllers
 		[Route("api/media/upload/photo")]
 		public async Task<IActionResult> UploadPhoto([FromBody]UploadPhotoModel uploadPhoto)
 		{
-			if (_userContext.UserAccountExists && uploadPhoto != null)
+			 if (_userContext.UserAccountExists && uploadPhoto != null)
 			{
 				var results = await _mediaLogic.UploadPhotoAsync(uploadPhoto);
 				if (results.Succeeded)

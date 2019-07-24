@@ -11,7 +11,7 @@ namespace QuarklessContexts.Models.Proxies
 		public string InstaId { get; set; }
 
 		[BsonRepresentation(BsonType.DateTime)]
-		public DateTime AssignedDate { get; set; }
+		public DateTime? AssignedDate { get; set; }
 	}
 	public class ProxyModel
 	{

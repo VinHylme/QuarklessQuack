@@ -81,14 +81,14 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			_heartbeatLogic = heartbeatLogic;
 			_context = aPIClient;
 		}
-		private SearchImageModel GoogleQueryBuilder(string color, List<string> topics, List<string> sites, int limit = 10,
+		private SearchImageModel GoogleQueryBuilder(string color, string topics, List<string> sites, int limit = 10,
 		string imageType = null, string exactSize = null, string similarImage = null)
 		{
 			var query = new SearchImageModel
 			{
 				color = color,
 				prefix_keywords = string.Join(", ", sites),
-				keywords = string.Join(", ", topics),
+				keywords = topics,
 				limit = limit,
 				no_download = true,
 				print_urls = true,
@@ -117,16 +117,22 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					
 					if (res==null || res.Count() <= 0 || res.Where(x => x!=null).All(s=>!s.SeenBy.Any(sb=> sb.User == by.User && sb.ActionType==by.ActionType))){
 						List<string> topicTotal = new List<string>();
-						var subtopics = worker.Topic.SubTopics.Select(a=>a.TopicName);
-						var related = worker.Topic.SubTopics.Select(s=>s.RelatedTopics).SquashMe();
-						topicTotal.AddRange(subtopics);
-						topicTotal.AddRange(related);
-						var topicSelect = topicTotal.Distinct().TakeAny(topicAmount).ToList();
+
+						var selectSubTopic = worker.Topic.SubTopics.ElementAt(SecureRandom.Next(worker.Topic.SubTopics.Count - 1));
+						if (selectSubTopic == null)
+							return;
+						string searchQueryTopics = selectSubTopic.TopicName + "," + selectSubTopic.RelatedTopics.ElementAt(SecureRandom.Next(selectSubTopic.RelatedTopics.Count - 1));
+
+						//var subtopics = worker.Topic.SubTopics.Select(a=>a.TopicName);
+						//var related = worker.Topic.SubTopics.Select(s=>s.RelatedTopics).SquashMe();
+						//topicTotal.AddRange(subtopics);
+						//topicTotal.AddRange(related);
+						//var topicSelect = topicTotal.Distinct().TakeAny(topicAmount).ToList();
 
 						var prf = worker.InstagramRequests.Profile;
 						var colrSelect = prf.Theme.Colors.ElementAt(SecureRandom.Next(prf.Theme.Colors.Count));
 						var imtype = ((ImageType)prf.AdditionalConfigurations.ImageType).GetDescription();
-						var go = searcher.SearchViaGoogle(GoogleQueryBuilder(colrSelect.Name, topicSelect,
+						var go = searcher.SearchViaGoogle(GoogleQueryBuilder(colrSelect.Name, searchQueryTopics,
 							prf.AdditionalConfigurations.Sites,limit,exactSize:prf.AdditionalConfigurations.PostSize,imageType:imtype));
 						if (go != null) { 
 							if (go.StatusCode == ResponseCode.Success)
@@ -160,7 +166,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 				{
 					if(worker.Worker.GetContext.Proxy == null)
 					{				
-						var proxy = await _proxyLogic.RetrieveRandomProxy(connectionType: ConnectionType.Any, get:true, cookies:true);
+						var proxy = await _proxyLogic.RetrieveRandomProxy(connectionType: ConnectionType.Mobile, get:true, cookies:true);
 						if (proxy != null)
 						{
 							worker.Worker.GetContext.Proxy = proxy;
@@ -173,16 +179,21 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					var by = new By { ActionType = 0, User = worker.InstagramRequests.InstagramAccount.Id };
 					
 					if (res == null || res.Count() <= 0 || res.Where(x => x != null).All(s => !s.SeenBy.Any(sb => sb.User == by.User && sb.ActionType == by.ActionType)))
-					{
-						var subtopics = worker.Topic.SubTopics.Select(a => a.TopicName).ToList();
-						subtopics.AddRange(worker.Topic.SubTopics.Select(s=>s.RelatedTopics).SquashMe());
+					{					
+						var selectSubTopic = worker.Topic.SubTopics.ElementAt(SecureRandom.Next(worker.Topic.SubTopics.Count-1));
+						if (selectSubTopic == null)
+							return ;
+						
+						string searchQuery = selectSubTopic.TopicName + " " +  selectSubTopic.RelatedTopics.ElementAt(SecureRandom.Next(selectSubTopic.RelatedTopics.Count - 1));
+
 						var prf = worker.InstagramRequests.Profile;
-						var colrSelect = prf.Theme.Colors.ElementAt(SecureRandom.Next(prf.Theme.Colors.Count));
+						var colrSelect = prf.Theme.Colors.ElementAt(SecureRandom.Next(prf.Theme.Colors.Count - 1));
 
 						var convertedSize = prf.AdditionalConfigurations.PostSize!=null ? prf.AdditionalConfigurations.PostSize.Split(','):null;
 						YandexSearchQuery yandexSearchQuery =new YandexSearchQuery
 						{
-							SearchQuery = worker.Topic.TopicFriendlyName + " " + subtopics.ElementAt(SecureRandom.Next(subtopics.Count()-1)),
+							OriginalTopic = worker.Topic.TopicFriendlyName,
+							SearchQuery = searchQuery,
 							Color = colrSelect.Name.GetValueFromDescription<ColorType>(),
 							Format = FormatType.Any,
 							Orientation = Orientation.Any,
@@ -190,7 +201,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 							Type = (ImageType) prf.AdditionalConfigurations.ImageType
 						};
 
-						var yan = searcher.SearchViaYandex(yandexSearchQuery,limit);
+						var yan = searcher.SearchViaYandex(yandexSearchQuery, limit);
 						if (yan != null) { 
 							if (yan.StatusCode == ResponseCode.Success)
 							{
@@ -230,7 +241,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 				{
 					if (worker.Worker.GetContext.Proxy == null)
 					{
-						var proxy = await _proxyLogic.RetrieveRandomProxy(connectionType: ConnectionType.Any, get:true, cookies: true);
+						var proxy = await _proxyLogic.RetrieveRandomProxy(connectionType: ConnectionType.Mobile, get:true, cookies: true);
 						if (proxy != null)
 						{
 							worker.Worker.GetContext.Proxy = proxy;
@@ -251,6 +262,10 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 						|| yan.StatusCode == ResponseCode.ReachedEndAndNull) 
 						{
 							yan = searcher.SearchSimilarImagesViaGoogle(filter.TakeAny(takeTopicAmount).ToList(),limit*25);
+							if (yan == null)
+							{
+								yan = searcher.SearchYandexSimilarSafeMode(filter.TakeAny(takeTopicAmount).ToList(), limit * 25);
+							}
 						}
 						if (yan != null) { 
 							if (yan.StatusCode == ResponseCode.Success) { 

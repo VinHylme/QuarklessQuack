@@ -123,7 +123,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		/// <returns></returns>
 		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
-			Console.WriteLine("Create Comment Action Started");
+			Console.WriteLine($"Create Comment Action Started: {user.OAccountId}, {user.OInstagramAccountUsername}, {user.OInstagramAccountUser}");
 			CommentingActionOptions commentingActionOptions = actionOptions as CommentingActionOptions;
 			ResultCarrier<IEnumerable<TimelineEventModel>> Results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
 			if(commentingActionOptions==null && user==null)

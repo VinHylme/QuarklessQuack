@@ -52,7 +52,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
-			Console.WriteLine("Create Photo Action Started");
+			Console.WriteLine($"Create Photo Action Started: {user.OAccountId}, {user.OInstagramAccountUsername}, {user.OInstagramAccountUser}");
 			PostActionOptions imageActionOptions = actionOptions as PostActionOptions;
 			ResultCarrier<IEnumerable<TimelineEventModel>> Results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
 			if (user == null)
@@ -67,8 +67,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			}
 			try
 			{
-				var location = _profile.LocationTargetList?.ElementAtOrDefault(SecureRandom.Next(_profile.LocationTargetList.Count));
-				var profileColor = _profile.Theme.Colors.ElementAt(SecureRandom.Next(0, _profile.Theme.Colors.Count));
+				var location = _profile.LocationTargetList?.ElementAtOrDefault(SecureRandom.Next(_profile.LocationTargetList.Count-1));
+				var profileColor = _profile.Theme.Colors[(SecureRandom.Next(0, _profile.Theme.Colors.Count-1))];
 				Topics topic_;
 				if(_profile.Topics.SubTopics==null || _profile.Topics.SubTopics.Count <= 0) { 
 					topic_ = _builder.GetTopic(user, _profile, 20).GetAwaiter().GetResult();
@@ -295,7 +295,14 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					UploadPhotoModel uploadPhoto = new UploadPhotoModel
 					{
 						Caption = _builder.GenerateMediaInfo(topic_, selectedImageMedia.Topic, _profile.Language, credit),
-						Image = instaimage
+						Image = instaimage,
+						Location = _profile.BusinessLocation !=null ? new InstaLocationShort
+						{
+							Address = _profile.BusinessLocation.Address,
+							Lat = _profile.BusinessLocation.Coordinates.Latitude,
+							Lng = _profile.BusinessLocation.Coordinates.Longitude,
+							Name = _profile.BusinessLocation.City
+						} : null
 					};
 					restModel.BaseUrl = UrlConstants.UploadPhoto;
 					restModel.JsonBody = JsonConvert.SerializeObject(uploadPhoto);
@@ -307,6 +314,13 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					UploadAlbumModel uploadAlbum = new UploadAlbumModel
 					{
 						Caption = _builder.GenerateMediaInfo(topic_,selectedCarouselMedia.Topic,_profile.Language,credit),
+						Location = _profile.BusinessLocation != null ? new InstaLocationShort
+						{
+							Address = _profile.BusinessLocation.Address,
+							Lat = _profile.BusinessLocation.Coordinates.Latitude,
+							Lng = _profile.BusinessLocation.Coordinates.Longitude,
+							Name = _profile.BusinessLocation.City
+						} : null,
 						Album = _selectedMedia.MediaData.Select(f=> new InstaAlbumUpload 
 							{ 
 								ImageToUpload = new InstaImageUpload { ImageBytes = f.MediaBytes.ResizeToClosestAspectRatio()

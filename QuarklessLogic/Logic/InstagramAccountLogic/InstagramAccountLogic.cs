@@ -94,11 +94,10 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 			try
 			{
 				var redisRes = await _instagramAccountRedis.GetInstagramAccountDetail(accountId,instagramAccountId);
-				if (redisRes != null && redisRes.Recreate().Count>3)
+				if (redisRes != null && redisRes.Recreate().Count>3 && redisRes.Id!=null)
 				{
 					return redisRes;
 				}
-
 				var account = await _instagramAccountRepository.GetInstagramAccount(accountId, instagramAccountId);
 				if (account.Results != null)
 				{
@@ -115,7 +114,7 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 						Username = res.Username,
 						DateAdded = res.DateAdded
 					};
-					await _instagramAccountRedis.SetInstagramAccountDetail(accountId,instagramAccountId,shortInsta);
+					await _instagramAccountRedis.SetInstagramAccountDetail(accountId, instagramAccountId, shortInsta);
 					return shortInsta;
 				}
 				return null;

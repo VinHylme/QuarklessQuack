@@ -252,34 +252,25 @@ namespace ContentSearcher
 			try
 			{
 				var url = BuildUrl(yandexSearchQuery);
-
-				//var serpSearch = SearchRest(url,limit);
-				//if(serpSearch.StatusCode == ResponseCode.Success || (serpSearch.StatusCode == ResponseCode.CaptchaRequired && serpSearch?.Result?.Count > 0))
-				//{
-				//	TotalFound.Medias.AddRange(serpSearch.Result.Select(o => new MediaResponse
-				//	{
-				//		MediaType = InstagramApiSharp.Classes.Models.InstaMediaType.Image,
-				//		MediaFrom = MediaFrom.Yandex,
-				//		MediaUrl = new List<string> { o?.Preview.OrderByDescending(s => s.FileSizeInBytes).FirstOrDefault().Url },
-				//		Caption = o?.Snippet?.Text,
-				//		Title = o?.Snippet?.Title,
-				//		Domain = o?.Snippet?.Domain 
-				//	}));
-				//}
-
-				var result = seleniumClient.Reader(url, "serp-item_pos_", limit);
-				if ( result==null || result.Count() <= 0)
-				{
-					response.StatusCode = ResponseCode.CaptchaRequired;
-					return response;
+				var result = seleniumClient.Reader(url, limit);
+				if (result.Result != null) { 
+					TotalFound.Medias.AddRange(result.Result.Select(o => new MediaResponse
+					{
+						Topic = yandexSearchQuery.OriginalTopic,
+						MediaType = InstagramApiSharp.Classes.Models.InstaMediaType.Image,
+						MediaFrom = MediaFrom.Yandex,
+						MediaUrl = new List<string> { o?.Preview?.OrderByDescending(s => s?.FileSizeInBytes).FirstOrDefault()?.Url },
+						Caption = o?.Snippet?.Text,
+						Title = o?.Snippet?.Title,
+						Domain = o?.Snippet?.Domain
+					}));
 				}
-				TotalFound.Medias.AddRange(result.Where(s => !s.Contains(".gif")).Select(a => new MediaResponse
+				return new SearchResponse<Media>
 				{
-					Topic = yandexSearchQuery.SearchQuery,
-					MediaUrl = new List<string> { a },
-					MediaFrom = MediaFrom.Yandex,
-					MediaType = InstagramApiSharp.Classes.Models.InstaMediaType.Image
-				}));
+					Message = result.Message,
+					Result = TotalFound,
+					StatusCode = result.StatusCode
+				};
 			}
 			catch (Exception ee)
 			{
@@ -288,38 +279,40 @@ namespace ContentSearcher
 				response.Message = ee.Message;
 				return response;
 			}
-			response.Result = TotalFound;
-			response.StatusCode = ResponseCode.Success;
-			return response;;
 		}
-		public Media SearchSafeButSlow(IEnumerable<GroupImagesAlike> ImagesLikeUrls, int limit)
+		public SearchResponse<Media> SearchSafeButSlow(IEnumerable<GroupImagesAlike> ImagesLikeUrls, int limit)
 		{
-			//Media TotalFound = new Media();
-			//ImagesLikeUrls.ToList().ForEach(url =>
-			//{
-			//	if (url != null)
-			//	{
-			//		var fullurl_ = yandexImages;
-			//		try
-			//		{
-			//			var result = seleniumClient.YandexImageSearch(fullurl_, url.Url, "serp-item_pos_", limit);
-			//			TotalFound.Medias.AddRange(result.Where(s => !s.Contains(".gif")).Select(a => new MediaResponse
-			//			{
-			//				Topic = url.TopicGroup,
-			//				MediaUrl = new List<string> { a },
-			//				MediaFrom = MediaFrom.Yandex,
-			//				MediaType = InstagramApiSharp.Classes.Models.InstaMediaType.Image
-			//			}));
-			//		}
-			//		catch (Exception ee)
-			//		{
-			//			Console.Write(ee.Message);
-			//			TotalFound.errors++;
-			//		}
-			//	}
-			//});
-			//return TotalFound;
-			return null;
+			Media TotalFound = new Media();
+			SearchResponse<Media> response = new SearchResponse<Media>();
+
+			ImagesLikeUrls.ToList().ForEach(url =>
+			{
+				if (url != null)
+				{
+					var fullurl_ = yandexImages;
+					try
+					{
+						var result = seleniumClient.YandexImageSearch(fullurl_, url.Url, "serp-item_pos_", limit);
+						TotalFound.Medias.AddRange(result.Where(s => !s.Contains(".gif")).Select(a => new MediaResponse
+						{
+							Topic = url.TopicGroup,
+							MediaUrl = new List<string> { a },
+							MediaFrom = MediaFrom.Yandex,
+							MediaType = InstagramApiSharp.Classes.Models.InstaMediaType.Image
+						}));
+					}
+					catch (Exception ee)
+					{
+						Console.Write(ee.Message);
+						response.Message = ee.Message;
+						response.StatusCode = ResponseCode.InternalServerError;
+						TotalFound.errors++;
+					}
+				}
+			});
+			response.StatusCode = ResponseCode.Success;
+			response.Result = TotalFound;
+			return response;
 		}
 
 		public SearchResponse<List<SerpItem>> SearchRest(string imageUrl, int numberOfPages)

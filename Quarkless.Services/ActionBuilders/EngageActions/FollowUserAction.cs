@@ -136,7 +136,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
-			Console.WriteLine("Follow Action Started");
+			Console.WriteLine($"Follow Action Started: {user.OAccountId}, {user.OInstagramAccountUsername}, {user.OInstagramAccountUser}");
 			ResultCarrier<IEnumerable<TimelineEventModel>> Results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
 			FollowActionOptions followActionOptions = actionOptions as FollowActionOptions; 
 			if(user == null)

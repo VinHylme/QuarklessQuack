@@ -686,6 +686,7 @@ namespace Quarkless.HeartBeater.ContentSearch
 						response.Message = $"Google search returned no results for object: {JsonConvert.SerializeObject(searchImage)}";
 						return response;
 					}
+
 					response.Result.Medias.AddRange(responseValues.MediasObject.Select(s => new MediaResponse
 					{
 						Topic = images.TopicGroup,
@@ -703,6 +704,10 @@ namespace Quarkless.HeartBeater.ContentSearch
 				response.StatusCode = ResponseCode.InternalServerError;
 				return response;
 			}
+		}
+		public SearchResponse<Media> SearchYandexSimilarSafeMode(List<GroupImagesAlike> imagesAlikes, int limit)
+		{
+			return _yandexImageSearch.SearchSafeButSlow(imagesAlikes,limit);
 		}
 		public SearchResponse<Media> SearchViaYandexBySimilarImages(List<GroupImagesAlike> imagesSimilarUrls, int limit)
 		{

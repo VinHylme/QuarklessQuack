@@ -70,13 +70,22 @@ namespace QuarklessLogic.Handlers.ClientProvider
 
 				if (client != null && client.ReturnClient != null)
 				{
-					var stateExtracted = JsonConvert.DeserializeObject<StateData>(await client.GetStateDataFromString());
-
-					if (stateExtracted != instaAcc.State)
+					StateData stateExtracted = JsonConvert.DeserializeObject<StateData>(await client.GetStateDataFromString());
+					
+					if (stateExtracted!=instaAcc.State)
 					{
 						await _instagramAccountLogic.PartialUpdateInstagramAccount(accountId, instagramAccountId, new InstagramAccountModel
 						{
-							State = stateExtracted
+							State = stateExtracted,
+							//AgentState = instaAcc.AgentState,
+							//FollowersCount = instaAcc.FollowersCount,
+							//FollowingCount = instaAcc.FollowingCount,
+							//TotalPostsCount = instaAcc.TotalPostsCount,
+							//AccountId = instaAcc.AccountId,
+							//_id = instaAcc._id,
+							//DateAdded = instaAcc.DateAdded,
+							//LastPurgeCycle = instaAcc.LastPurgeCycle,
+							//Username = instaAcc.Username
 						});
 					}
 					return new ContextContainer
