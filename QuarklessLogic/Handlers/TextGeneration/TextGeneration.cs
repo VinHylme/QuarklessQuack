@@ -6,23 +6,21 @@ using TDict = System.Collections.Generic.Dictionary<string, System.Collections.G
 using QuarklessContexts.Extensions;
 using System.Text;
 using System.Linq;
-using QuarklessRepositories.Repository.CorpusRepositories.Comments;
 using QuarklessRepositories.Repository.CorpusRepositories.Medias;
 using MongoDB.Driver;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Globalization;
+using QuarklessLogic.ServicesLogic.CorpusLogic;
 
 namespace QuarklessLogic.Handlers.TextGeneration
 {
 	public class TextGeneration : ITextGeneration
 	{
-		private readonly ICommentCorpusRepository _commentCorpusRepository;
-		private readonly IMediaCorpusRepository _mediaCorpusRepository;
-		public TextGeneration(ICommentCorpusRepository commentCorpusRepository, IMediaCorpusRepository mediaCorpusRepository)
+		private readonly ICommentCorpusLogic _commentCorpusLogic;
+		private readonly IMediaCorpusLogic _mediaCorpusLogic;
+		public TextGeneration(ICommentCorpusLogic commentCorpusLogic, IMediaCorpusLogic mediaCorpusLogic)
 		{
-			_commentCorpusRepository = commentCorpusRepository;
-			_mediaCorpusRepository = mediaCorpusRepository;
+			_commentCorpusLogic = commentCorpusLogic;
+			_mediaCorpusLogic = mediaCorpusLogic;
 		}
 		//TODO: ADD AI LATER, FOR NOW JUST USING MARKOV ALGO
 		public string MarkovTextGenerator(string filePath, int limit, int size, bool exact = false)
@@ -41,7 +39,7 @@ namespace QuarklessLogic.Handlers.TextGeneration
 			switch (type)
 			{
 				case 0:
-					var data = await _commentCorpusRepository.GetComments(topic,language.ToUpper(),language.MapLanguages(),5000);
+					var data = await _commentCorpusLogic.GetComments(topic, language.ToUpper(), language.MapLanguages(),5000);
 					if (data != null)
 					{
 						string choice = Regex.Replace(string.Join(',', data.Where(s=>!s.Comment.Contains('@') || !exlude.IsMatch(s.Comment)).Select(sa => sa.Comment)), @"\s+", " ").TrimEnd(' ');
@@ -50,7 +48,7 @@ namespace QuarklessLogic.Handlers.TextGeneration
 					}
 					return null;
 				case 1:
-					var mdata = await _mediaCorpusRepository.GetMedias(topic, language.ToUpper(),language.MapLanguages(),5000);
+					var mdata = await _mediaCorpusLogic.GetMedias(topic, language.ToUpper(),language.MapLanguages(),5000);
 					if (mdata != null)
 					{
 						string choice = Regex.Replace(string.Join(',', mdata.Where(sc=>!sc.Caption.Contains('@') || !exlude.IsMatch(sc.Caption)).Select(sa => sa.Caption)), @"\s+", " ").TrimEnd(' ');

@@ -1,5 +1,4 @@
-﻿using ContentSearcher;
-using InstagramApiSharp;
+﻿using InstagramApiSharp;
 using InstagramApiSharp.Classes.Models;
 using Newtonsoft.Json;
 using QuarklessContexts.Extensions;
@@ -7,6 +6,7 @@ using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.Proxies;
 using QuarklessContexts.Models.ResponseModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
+using QuarklessLogic.ContentSearch;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.RestSharpClient;
 using System;
@@ -111,7 +111,9 @@ namespace Quarkless.HeartBeater.ContentSearch
 					ProfilePicture = s.ProfilePicture + "||" + s.ProfilePictureId
 				}).ToList();
 			}
-			return null;
+			else { 
+				return null;
+			}
 		}
 		public async Task<List<UserResponse<InstaComment>>> SearchInstagramMediaCommenters(string mediaId, int limit)
 		{
@@ -202,23 +204,26 @@ namespace Quarkless.HeartBeater.ContentSearch
 						var totalurls = new List<string>();
 						if (s.MediaType == InstaMediaType.Image)
 						{
-							totalurls.Add(s.Images.FirstOrDefault().Uri);
+							var im = s.Images.FirstOrDefault()?.Uri;
+							if (im != null)
+								totalurls.Add(im);
 						}
 						else if (s.MediaType == InstaMediaType.Video)
 						{
-							totalurls.Add(s.Videos.FirstOrDefault().Uri);
+							var iv = s.Videos.FirstOrDefault()?.Uri;
+							if (iv != null)
+								totalurls.Add(iv);
 						}
 						else if (s.MediaType == InstaMediaType.Carousel)
 						{
-							s.Carousel.Select(x =>
+							s.Carousel.ForEach(x =>
 							{
-								var videos = x.Videos.FirstOrDefault().Uri;
+								var videos = x.Videos.FirstOrDefault()?.Uri;
 								if (videos != null)
 									totalurls.Add(videos);
-								var images = x.Images.FirstOrDefault().Uri;
+								var images = x.Images.FirstOrDefault()?.Uri;
 								if (images != null)
 									totalurls.Add(images);
-								return s;
 							});
 						}
 						mediaDetail.MediaUrl = totalurls;
@@ -273,23 +278,26 @@ namespace Quarkless.HeartBeater.ContentSearch
 						var totalurls = new List<string>();
 						if (s.MediaType == InstaMediaType.Image)
 						{
-							totalurls.Add(s.Images.FirstOrDefault().Uri);
+							var im = s.Images.FirstOrDefault()?.Uri;
+							if(im!=null)
+								totalurls.Add(im);
 						}
 						else if (s.MediaType == InstaMediaType.Video)
 						{
-							totalurls.Add(s.Videos.FirstOrDefault().Uri);
+							var iv = s.Videos.FirstOrDefault()?.Uri;
+							if(iv!=null)
+								totalurls.Add(iv);
 						}
 						else if (s.MediaType == InstaMediaType.Carousel)
 						{
-							s.Carousel.Select(x =>
+							s.Carousel.ForEach(x =>
 							{
-								var videos = x.Videos.FirstOrDefault().Uri;
+								var videos = x.Videos.FirstOrDefault()?.Uri;
 								if (videos != null)
 									totalurls.Add(videos);
-								var images = x.Images.FirstOrDefault().Uri;
+								var images = x.Images.FirstOrDefault()?.Uri;
 								if (images != null)
 									totalurls.Add(images);
-								return s;
 							});
 						}
 						mediaDetail.MediaUrl = totalurls;
@@ -348,23 +356,26 @@ namespace Quarkless.HeartBeater.ContentSearch
 							var totalurls = new List<string>();
 							if (s.MediaType == InstaMediaType.Image)
 							{
-								totalurls.Add(s.Images.FirstOrDefault().Uri);
+								var im = s.Images.FirstOrDefault()?.Uri;
+								if (im != null)
+									totalurls.Add(im);
 							}
 							else if (s.MediaType == InstaMediaType.Video)
 							{
-								totalurls.Add(s.Videos.FirstOrDefault().Uri);
+								var iv = s.Videos.FirstOrDefault()?.Uri;
+								if (iv != null)
+									totalurls.Add(iv);
 							}
 							else if (s.MediaType == InstaMediaType.Carousel)
 							{
-								s.Carousel.Select(x =>
+								s.Carousel.ForEach(x =>
 								{
-									var videos = x.Videos.FirstOrDefault().Uri;
+									var videos = x.Videos.FirstOrDefault()?.Uri;
 									if (videos != null)
 										totalurls.Add(videos);
-									var images = x.Images.FirstOrDefault().Uri;
+									var images = x.Images.FirstOrDefault()?.Uri;
 									if (images != null)
 										totalurls.Add(images);
-									return s;
 								});
 							}
 							mediaDetail.MediaUrl = totalurls;
@@ -424,23 +435,26 @@ namespace Quarkless.HeartBeater.ContentSearch
 							var totalurls = new List<string>();
 							if (s.MediaType == InstaMediaType.Image)
 							{
-								totalurls.Add(s.Images.FirstOrDefault().Uri);
+								var im = s.Images.FirstOrDefault()?.Uri;
+								if (im != null)
+									totalurls.Add(im);
 							}
 							else if (s.MediaType == InstaMediaType.Video)
 							{
-								totalurls.Add(s.Videos.FirstOrDefault().Uri);
+								var iv = s.Videos.FirstOrDefault()?.Uri;
+								if (iv != null)
+									totalurls.Add(iv);
 							}
 							else if (s.MediaType == InstaMediaType.Carousel)
 							{
-								s.Carousel.Select(x =>
+								s.Carousel.ForEach(x =>
 								{
-									var videos = x.Videos.FirstOrDefault().Uri;
+									var videos = x.Videos.FirstOrDefault()?.Uri;
 									if (videos != null)
 										totalurls.Add(videos);
-									var images = x.Images.FirstOrDefault().Uri;
+									var images = x.Images.FirstOrDefault()?.Uri;
 									if (images != null)
 										totalurls.Add(images);
-									return s;
 								});
 							}
 							mediaDetail.MediaUrl = totalurls;
@@ -495,23 +509,26 @@ namespace Quarkless.HeartBeater.ContentSearch
 					var totalurls = new List<string>();
 					if (s.MediaType == InstaMediaType.Image)
 					{
-						totalurls.Add(s.Images.FirstOrDefault().Uri);
+						var im = s.Images.FirstOrDefault()?.Uri;
+						if(im!=null)
+							totalurls.Add(im);
 					}
 					else if (s.MediaType == InstaMediaType.Video)
 					{
-						totalurls.Add(s.Videos.FirstOrDefault().Uri);
+						var iv = s.Videos.FirstOrDefault()?.Uri;
+						if(iv!=null)
+							totalurls.Add(iv);
 					}
 					else if (s.MediaType == InstaMediaType.Carousel)
 					{
-						s.Carousel.Select(x =>
+						s.Carousel.ForEach(x =>
 						{
-							var videos = x.Videos.FirstOrDefault().Uri;
+							var videos = x.Videos.FirstOrDefault()?.Uri;
 							if (videos != null)
 								totalurls.Add(videos);
-							var images = x.Images.FirstOrDefault().Uri;
+							var images = x.Images.FirstOrDefault()?.Uri;
 							if (images != null)
 								totalurls.Add(images);
-							return s;
 						});
 					}
 					mediaDetail.MediaUrl = totalurls;

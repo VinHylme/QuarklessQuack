@@ -1,6 +1,6 @@
 <template>
 <div class="accounts_container">
-      
+      <InstaCard/>
 </div>
 </template>
 
@@ -14,6 +14,7 @@ export default {
         },
         mounted() {
                 var res = this.$store.getters.GetInstagramAccounts("lemonkaces")
+                 // eslint-disable-next-line no-console
                 console.log(res);
                 return res;
         }

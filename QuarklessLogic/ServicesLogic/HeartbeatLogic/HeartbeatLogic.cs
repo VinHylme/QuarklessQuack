@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ContentSearcher;
 using InstagramApiSharp.Classes.Models;
 using Newtonsoft.Json;
 using QuarklessContexts.Extensions;
@@ -13,26 +12,25 @@ using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessLogic.Handlers.Util;
+using QuarklessLogic.Logic.HashtagLogic;
+using QuarklessLogic.ServicesLogic.CorpusLogic;
 using QuarklessRepositories.RedisRepository.HeartBeaterRedis;
-using QuarklessRepositories.Repository.CorpusRepositories.Comments;
-using QuarklessRepositories.Repository.CorpusRepositories.Medias;
-using QuarklessRepositories.Repository.ServicesRepositories.HashtagsRepository;
-
+using MoreLinq;
 namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 {
 	public class HeartbeatLogic : IHeartbeatLogic
 	{
 		private readonly IHeartbeatRepository _heartbeatRepository;
-		private readonly ICommentCorpusRepository _commentsRepository;
-		private readonly IMediaCorpusRepository _mediaRepository;
-		private readonly IHashtagsRepository _hashtagsRepository;
+		private readonly ICommentCorpusLogic _commentsLogic;
+		private readonly IMediaCorpusLogic _mediaCorpusLogic;
+		private readonly IHashtagLogic _hashtagLogic;
 		private readonly IUtilProviders _utilProviders;
 		public HeartbeatLogic(IHeartbeatRepository heartbeatRepository, IUtilProviders utilProviders,
-			ICommentCorpusRepository comment, IMediaCorpusRepository media, IHashtagsRepository hashtagsRepository)
+			ICommentCorpusLogic comment, IMediaCorpusLogic  media, IHashtagLogic hashtags)
 		{
-			_hashtagsRepository = hashtagsRepository;
-			_commentsRepository = comment;
-			_mediaRepository = media;
+			_hashtagLogic = hashtags;
+			_commentsLogic = comment;
+			_mediaCorpusLogic = media;
 			_heartbeatRepository = heartbeatRepository;
 			_utilProviders = utilProviders;
 		}
@@ -61,7 +59,7 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 		}
 		public async Task<IEnumerable<__Meta__<T>>> GetMetaData<T>(MetaDataType metaDataType, string topic, string userId = null)
 		{
-			return await _heartbeatRepository.GetMetaData<T>(metaDataType,topic, userId);
+			return (await _heartbeatRepository.GetMetaData<T>(metaDataType,topic, userId)).DistinctBy(_ => _.ObjectItem);
 		}
 		public async Task<__Meta__<List<UserResponse<string>>>> GetUserFromLikers(MetaDataType metaDataType, string topic)
 		{
@@ -74,7 +72,7 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 				if (datas == null || datas.Count() <= 0) return;
 				By by = new By { ActionType = 101, User = "Refreshed" };
 				List<__Meta__<object>> datass = new List<__Meta__<object>>();
-				foreach(var data in datas.TakeAny(10))
+				foreach(var data in datas.DistinctBy(_=>_.ObjectItem).TakeAny(20))
 				{
 					if(data.SeenBy is null)
 					{
@@ -92,7 +90,7 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 				if (metaDataType == MetaDataType.FetchMediaByTopic)
 				{
 					//first check limit
-					var mediasfe = await _mediaRepository.GetMediasCount(topic);
+					var mediasfe = await _mediaCorpusLogic.MediasCount(topic);
 					if (mediasfe <= 5000) { 
 						ConcurrentBag<MediaCorpus> mediaCorpus = new ConcurrentBag<MediaCorpus>();
 						ConcurrentBag<HashtagsModel> hashtags = new ConcurrentBag<HashtagsModel>();
@@ -140,17 +138,17 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 						});				
 						if (mediaCorpus.Count > 0)
 						{
-							_mediaRepository.AddMedias(mediaCorpus).GetAwaiter().GetResult();
+							await _mediaCorpusLogic.AddMedias(mediaCorpus);
 						}
 						if (hashtags.Count > 0)
 						{
-							_hashtagsRepository.AddHashtags(hashtags).GetAwaiter().GetResult();
+							await _hashtagLogic.AddHashtagsToRepositoryAndCache(hashtags);
 						}
 					}
 				}
 				else if(metaDataType == MetaDataType.FetchUsersViaPostCommented)
 				{
-					var commentsfe = await _commentsRepository.GetCommentsCount(topic);
+					var commentsfe = await _commentsLogic.CommentsCount(topic);
 					if (commentsfe <= 5000) { 
 						ConcurrentBag<CommentCorpus> commentCorpus = new ConcurrentBag<CommentCorpus>();
 						ConcurrentBag<HashtagsModel> hashtagsComments = new ConcurrentBag<HashtagsModel>();
@@ -192,12 +190,12 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 						});					
 						if (commentCorpus.Count > 0)
 						{
-							_commentsRepository.AddComments(commentCorpus);
+							await _commentsLogic.AddComments(commentCorpus);
 						}
 						if (hashtagsComments.Count > 0)
-					{
-						_hashtagsRepository.AddHashtags(hashtagsComments).GetAwaiter().GetResult();
-					}
+						{
+							await _hashtagLogic.AddHashtagsToRepositoryAndCache(hashtagsComments);
+						}
 					}
 				}
 				if(metaDataType == MetaDataType.FetchMediaByTopic || metaDataType == MetaDataType.FetchUsersViaPostCommented)

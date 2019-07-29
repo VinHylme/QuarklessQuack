@@ -2,10 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Common;
 using Quarkless.HeartBeater.__Init__;
-using Quarkless.HeartBeater.__MetadataBuilder__;
 using Quarkless.Services.ContentBuilder.TopicBuilder;
-using QuarklessLogic.ServicesLogic.HeartbeatLogic;
-using QuarklessRepositories.RedisRepository.HeartBeaterRedis;
 using System;
 using System.Collections.Generic;
 using System.IO;

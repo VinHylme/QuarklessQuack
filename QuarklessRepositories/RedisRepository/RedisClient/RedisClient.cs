@@ -25,6 +25,7 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 	public class RedisClient : IRedisClient
 	{
 		private ConnectionMultiplexer _redis;
+		private int _DbNumber { get; set; }
 		private readonly TimeSpan _defaultKeyExpiry;
 		public RedisClient(IOptions<RedisOptions> options)
 		{
@@ -38,6 +39,7 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 					_redis.ErrorMessage += _redis_ErrorMessage;
 					_redis.ConnectionRestored += _redis_ConnectionRestored;
 					_defaultKeyExpiry = options.Value.DefaultKeyExpiry;
+					_DbNumber = options.Value.DatabaseNumber;
 				}
 				catch(Exception ee)
 				{
@@ -74,7 +76,11 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 			Console.WriteLine($"Connection has failed, Connection type: {e.ConnectionType}, Endpoint: {e.EndPoint}, Message: {e.Exception}");
 		}
 		#endregion
-
+		public IRedisClient Database(int newdb)
+		{
+			_DbNumber = newdb; 
+			return this;
+		}
 		#region Getters / Setters
 		public IEnumerable<RedisKey> GetKeys(int limit)
 		{
@@ -95,7 +101,7 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 			bool exists = false;
 			await WithExceptionLogAsync(async () =>
 			{
-				exists = await _redis.GetDatabase().KeyExistsAsync(redisKey);
+				exists = await _redis.GetDatabase(_DbNumber).KeyExistsAsync(redisKey);
 			}, userId, redisKey.ToString());
 			return exists;
 		}
@@ -104,7 +110,7 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 			RedisKey redisKey = KeyFormater.FormatKey(userId, hashtagGrowKey);
 			await WithExceptionLogAsync(async () =>
 			{
-				await _redis.GetDatabase().KeyExpireAsync(redisKey, expires);
+				await _redis.GetDatabase(_DbNumber).KeyExpireAsync(redisKey, expires);
 			}, userId, redisKey.ToString());
 		}
 		public async Task SetAdd(string userId, HashtagGrowKeys hashtagGrowKey, string value, TimeSpan? expires = null)
@@ -114,8 +120,8 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 
 			await WithExceptionLogAsync(async () =>
 			{
-				await _redis.GetDatabase().SetAddAsync(redisKey, value);
-				await _redis.GetDatabase().KeyExpireAsync(redisKey, expires);
+				await _redis.GetDatabase(_DbNumber).SetAddAsync(redisKey, value);
+				await _redis.GetDatabase(_DbNumber).KeyExpireAsync(redisKey, expires);
 			}, userId, redisKey.ToString());
 		}
 		public async Task<bool> SetMemberExists(string userId, HashtagGrowKeys hashtagGrowKey, string value)
@@ -124,7 +130,7 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 			bool exists = false;
 			await WithExceptionLogAsync(async () =>
 			{
-				exists = await _redis.GetDatabase().SetContainsAsync(redisKey, value);
+				exists = await _redis.GetDatabase(_DbNumber).SetContainsAsync(redisKey, value);
 			}, userId, redisKey.ToString());
 
 			return exists;
@@ -135,7 +141,7 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 			RedisKey redisKey = hashtagGrowKeys.ToString();
 			await WithExceptionLogAsync(async () =>
 			{
-				var redisMembers = await _redis.GetDatabase().SetMembersAsync(redisKey);
+				var redisMembers = await _redis.GetDatabase(_DbNumber).SetMembersAsync(redisKey);
 				members.AddRange(redisMembers.Select(m=>JsonConvert.DeserializeObject<T>(((string)m))));
 			},"",redisKey.ToString());
 
@@ -148,7 +154,7 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 
 			await WithExceptionLogAsync(async () =>
 			{
-				var redisMembers = await _redis.GetDatabase().SetMembersAsync(redisKey);
+				var redisMembers = await _redis.GetDatabase(_DbNumber).SetMembersAsync(redisKey);
 				members.AddRange(redisMembers.Select(m => JsonConvert.DeserializeObject<T>(((string) m))));
 			}, userId, redisKey.ToString());
 
@@ -159,7 +165,7 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 			RedisKey redisKey = KeyFormater.FormatKey(userId, hashtagGrowKey);
 			await WithExceptionLogAsync(async () =>
 			{
-				await _redis.GetDatabase().SetRemoveAsync(redisKey, value);
+				await _redis.GetDatabase(_DbNumber).SetRemoveAsync(redisKey, value);
 			}, userId, redisKey.ToString());
 		}
 		public async Task<T> GetHashField<T>(string userId, HashtagGrowKeys hashtagGrowKey, string field)
@@ -169,7 +175,7 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 
 			await WithExceptionLogAsync(async () =>
 			{
-				RedisValue result = await _redis.GetDatabase().HashGetAsync(redisKey, field);
+				RedisValue result = await _redis.GetDatabase(_DbNumber).HashGetAsync(redisKey, field);
 				castResult = (T)Convert.ChangeType(result, typeof(T));
 			}, userId, redisKey.ToString());
 
@@ -181,7 +187,7 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 
 			await WithExceptionLogAsync(async () =>
 			{
-				await _redis.GetDatabase().HashSetAsync(redisKey, field, value);
+				await _redis.GetDatabase(_DbNumber).HashSetAsync(redisKey, field, value);
 
 			}, userId, redisKey.ToString());
 		}
@@ -191,7 +197,7 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 
 			await WithExceptionLogAsync(async () =>
 			{
-				await _redis.GetDatabase().HashDeleteAsync(redisKey, field);
+				await _redis.GetDatabase(_DbNumber).HashDeleteAsync(redisKey, field);
 
 			}, userId, redisKey.ToString());
 		}
@@ -201,7 +207,7 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 			bool exists = false;
 			await WithExceptionLogAsync(async () =>
 			{
-				exists = await _redis.GetDatabase().HashExistsAsync(redisKey, field);
+				exists = await _redis.GetDatabase(_DbNumber).HashExistsAsync(redisKey, field);
 
 			}, userId, redisKey.ToString());
 
@@ -213,7 +219,7 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 			string val = string.Empty;
 			await WithExceptionLogAsync(async () =>
 			{
-				val = await _redis.GetDatabase().StringGetAsync(redisKey);
+				val = await _redis.GetDatabase(_DbNumber).StringGetAsync(redisKey);
 			},userId,redisKey.ToString());
 			return val;
 		}
@@ -222,7 +228,7 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 			RedisKey redisKey = KeyFormater.FormatKey(userId, hashtagGrowKey);
 			await WithExceptionLogAsync(async () =>
 			{
-				await _redis.GetDatabase().StringSetAsync(redisKey,value,expiry,when);
+				await _redis.GetDatabase(_DbNumber).StringSetAsync(redisKey,value,expiry,when);
 			}, userId, redisKey.ToString());
 		}
 		public async Task DeleteKey(string userId, HashtagGrowKeys hashtagGrowKey)
@@ -230,7 +236,7 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 			RedisKey redisKey = KeyFormater.FormatKey(userId, hashtagGrowKey);
 			await WithExceptionLogAsync(async () =>
 			{
-				await _redis.GetDatabase().KeyDeleteAsync(redisKey);
+				await _redis.GetDatabase(_DbNumber).KeyDeleteAsync(redisKey);
 			}, userId, redisKey.ToString());
 		}
 

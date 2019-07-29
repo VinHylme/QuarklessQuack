@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Common;
-using Quarkless.Queue.Jobs.Filters;
+using QuarklessLogic.QueueLogic.Jobs.Filters;
 using Quartz;
 using StackExchange.Redis;
 
@@ -55,11 +55,13 @@ namespace Quarkless
 
 				options.UseRedisStorage(Redis, new Hangfire.Redis.RedisStorageOptions
 				{
+					Db = 1,
 					Prefix = "Timeline",
 					SucceededListSize = 1000,
 					DeletedListSize = 1000,
 					ExpiryCheckInterval = TimeSpan.FromHours(1),
 					InvisibilityTimeout = TimeSpan.FromMinutes(30),
+					FetchTimeout = TimeSpan.FromMinutes(30),
 					UseTransactions = true
 				});
 			});

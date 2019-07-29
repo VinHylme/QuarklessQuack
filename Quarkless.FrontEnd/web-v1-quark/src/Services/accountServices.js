@@ -4,7 +4,7 @@ export default {
   Login(params){
     // eslint-disable-next-line no-console
     console.log(params);   
-    return Api().post('/auth/loginaccount', params)
+    return Api().post('/auth/loginaccount',{Username: params.Username, Password: params.Password})
   },
   GetInstagramAccountsForUser(params){
     return Api().get('/insta/' + params.accountId)

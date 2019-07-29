@@ -119,44 +119,47 @@ namespace Quarkless.HeartBeater.__Init__
 			
 				//Build Around Topics
 			
-				var ins = Task.Run(async () => await metadataBuilder.BuildBase());
+				var ins = Task.Run(async () => await metadataBuilder.BuildBase(3));
 
 				//Google & Yandex search
-				var go =Task.Run(async () => await metadataBuilder.BuildGoogleImages(50));
+				var go = Task.Run(async () => await metadataBuilder.BuildGoogleImages(75));
 				var yanq = Task.Run(async () => await metadataBuilder.BuildYandexImagesQuery(1));
-				var yan =Task.Run(async () => await metadataBuilder.BuildYandexImages());
+				var yan = Task.Run(async () => await metadataBuilder.BuildYandexImages());
 
 				var profileRefresh = Task.Run(async () => await metadataBuilder.BuildUsersOwnMedias(_instagramAccountLogic));
 				//independed can run by themselves seperate tiem
-				var feedRefresh = Task.Run(async () => await metadataBuilder.BuildUsersFeed()).ContinueWith(async x=> 
+				var feedRefresh = await Task.Run(async () => await metadataBuilder.BuildUsersFeed()).ContinueWith(async x=> 
 				{
-					await metadataBuilder.BuildUsersFollowSuggestions();
+					await metadataBuilder.BuildUsersFollowSuggestions(2);
 					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchUsersFeed, MetaDataType.FetchCommentsViaUserFeed, true);
 				});
 
 				var followingList = Task.Run(async () => await metadataBuilder.BuildUserFollowList());
 				var userTargetList = Task.Run(async () => await metadataBuilder.BuildUsersTargetListMedia()).ContinueWith(async x=>
 				{
-					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserTargetList, MetaDataType.FetchCommentsViaUserTargetList, true);
+					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserTargetList, MetaDataType.FetchCommentsViaUserTargetList, true, 2, takeMediaAmount: 10, takeuserAmount: 200);
 				});
 				var locTargetList = Task.Run(async () => await metadataBuilder.BuildLocationTargetListMedia()).ContinueWith(async s =>
 				{
-					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserLocationTargetList, MetaDataType.FetchCommentsViaLocationTargetList, true);
+					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserLocationTargetList, MetaDataType.FetchCommentsViaLocationTargetList, true, 2, takeMediaAmount:10, takeuserAmount:200);
 				}); ;
 				Task.WaitAll(ins);
 
-				var likers = Task.Run(async () => await metadataBuilder.BuildUserFromLikers()).ContinueWith(async a =>
+				var likers = await Task.Run(async () => await metadataBuilder.BuildUserFromLikers()).ContinueWith(async a =>
 				{
-					await metadataBuilder.BuildMediaFromUsersLikers();
-					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByLikers, MetaDataType.FetchCommentsViaPostsLiked);
-				});
-				var commenters = Task.Run(async () => await metadataBuilder.BuildUsersFromCommenters()).ContinueWith(async c =>
-				{	
-					await metadataBuilder.BuildMediaFromUsersCommenters();
-					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByCommenters, MetaDataType.FetchCommentsViaPostCommented);
+					await metadataBuilder.BuildMediaFromUsersLikers().ContinueWith(async s => {
+						await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByLikers, MetaDataType.FetchCommentsViaPostsLiked, limit: 2, takeMediaAmount: 10, takeuserAmount: 200);
+					});
 				});
 
-				Task.WaitAll(go, yan, yanq, likers, commenters, profileRefresh, feedRefresh, userTargetList, locTargetList);
+				var commenters = await Task.Run(async () => await metadataBuilder.BuildUsersFromCommenters()).ContinueWith(async c =>
+				{	
+					await metadataBuilder.BuildMediaFromUsersCommenters().ContinueWith(async s =>{
+						await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByCommenters, MetaDataType.FetchCommentsViaPostCommented, limit: 2, takeMediaAmount: 10, takeuserAmount: 200);
+					});
+				});
+
+				Task.WaitAll(go, yan,yanq, likers, commenters, profileRefresh, feedRefresh, userTargetList, locTargetList);
 			}
 			catch(Exception ee)
 			{

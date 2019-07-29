@@ -16,7 +16,7 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Comments
 		{
 			_context = repositoryContext;
 		}
-		public async void AddComments(IEnumerable<CommentCorpus> comments)
+		public async Task AddComments(IEnumerable<CommentCorpus> comments)
 		{
 			await _context.CorpusComments.InsertManyAsync(comments);
 		}

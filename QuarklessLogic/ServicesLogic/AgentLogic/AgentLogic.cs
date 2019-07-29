@@ -25,6 +25,10 @@ namespace QuarklessLogic.ServicesLogic.AgentLogic
 		{
 			return await _instagramAccountLogic.GetActiveAgentInstagramAccounts();
 		}
+		public async Task<IEnumerable<ShortInstagramAccountModel>> GetAllAccounts(int type = 0)
+		{
+			return await _instagramAccountLogic.GetInstagramAccounts(type);
+		}
 		public async Task<AgentResponse> Start(string accountId, string instagramAccountId)
 		{
 			var _instaAccount = await _instagramAccountLogic.GetInstagramAccountShort(accountId, instagramAccountId);

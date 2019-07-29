@@ -2,14 +2,11 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Common;
-using Quarkless.Queue.Jobs.Filters;
 using Quarkless.Services.ContentBuilder.TopicBuilder;
 using Quarkless.Services.Interfaces;
 using StackExchange.Redis;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Quarkless.Services
@@ -60,35 +57,22 @@ namespace Quarkless.Services
 
 			GlobalConfiguration.Configuration.UseRedisStorage(Redis, new Hangfire.Redis.RedisStorageOptions
 			{
+				Db = 1,
 				Prefix = "Timeline",
 				SucceededListSize = 5000,
 				DeletedListSize = 1000,
 				ExpiryCheckInterval = TimeSpan.FromHours(1),
 				InvisibilityTimeout = TimeSpan.FromMinutes(30),
+				FetchTimeout = TimeSpan.FromMinutes(30),
 				UseTransactions = true
 			}).WithJobExpirationTimeout(TimeSpan.FromHours(12));
-
-
-			//services.AddHangfire(o =>
-			//{
-			//	o.UseRedisStorage(Redis, new Hangfire.Redis.RedisStorageOptions
-			//	{
-			//		Prefix = "Timeline",
-			//		SucceededListSize = 5000,
-			//		DeletedListSize = 1000,
-			//		ExpiryCheckInterval = TimeSpan.FromHours(1),
-			//		InvisibilityTimeout = TimeSpan.FromMinutes(30),
-			//		UseTransactions = true
-			//	}).WithJobExpirationTimeout(TimeSpan.FromHours(12));
-			//	//o.UseActivator(new WorkerActivator(services.BuildServiceProvider(false)));
-			//});
-
 
 			ServiceReacher serviceReacher = new ServiceReacher(services.BuildServiceProvider());
 
 			var results = WithExceptionLogAsync(async () =>
 			{
-				await serviceReacher.Get<IAgentManager>().Begin();
+				//lunch
+				serviceReacher.Get<IAgentManager>().Begin();
 			});
 			Task.WaitAll(results);
 		}

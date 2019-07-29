@@ -23,13 +23,13 @@ namespace QuarklessRepositories.RedisRepository.InstagramAccountRedis
 		/// <returns></returns>
 		public async Task<IEnumerable<ShortInstagramAccountModel>> GetInstagramAccountActiveDetail()
 		{
-			var res = _redisClient.GetKeys(1000).ToList();
+			var res = _redisClient.Database(0).GetKeys(1000).ToList();
 			return null;
 		}
 		public async Task<ShortInstagramAccountModel> GetInstagramAccountDetail(string userId, string instaId)
 		{
 			string userkeyid = $"{userId}:{instaId}";
-			var res = await _redisClient.StringGet(userkeyid, RedisKeys.HashtagGrowKeys.Usersessions);
+			var res = await _redisClient.Database(0).StringGet(userkeyid, RedisKeys.HashtagGrowKeys.Usersessions);
 			if (res != null && !string.IsNullOrEmpty(res))
 			{
 				return JsonConvert.DeserializeObject<ShortInstagramAccountModel>(res);
@@ -42,7 +42,7 @@ namespace QuarklessRepositories.RedisRepository.InstagramAccountRedis
 			var getcurrentinplace = await GetInstagramAccountDetail(userId,instaId);
 			if(getcurrentinplace==null) getcurrentinplace = new ShortInstagramAccountModel();
 			var newvalue = value.CreateNewObjectIgnoringNulls(getcurrentinplace);
-			await _redisClient.StringSet(userkeyid, RedisKeys.HashtagGrowKeys.Usersessions, JsonConvert.SerializeObject(newvalue));
+			await _redisClient.Database(0).StringSet(userkeyid, RedisKeys.HashtagGrowKeys.Usersessions, JsonConvert.SerializeObject(newvalue));
 		}
 	}
 }

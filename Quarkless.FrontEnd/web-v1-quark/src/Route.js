@@ -18,32 +18,50 @@ export default new Router({
         {
         name:"home",
         path:"/",
-        component:Home
+        component:Home,
+        meta:{
+            requiresAuth: true
+        }
        },
        {
            name:"view",
            path:"/view/:id",
-           component:Manage
+           component:Manage,
+           meta:{
+               requiresAuth: true
+           }
        },
        {
            name:"stats",
            path:"stats/",
-           component:Stats
+           component:Stats,
+           meta:{
+               requiresAuth: true
+           }
        },
        {
        name:"profiles",
        path:"/profiles",
-       component:Profiles
+       component:Profiles,
+       meta:{
+           requiresAuth: true
+       }
        },
        {
            name:"profile",
            path:"/profile/:id",
-           component:Profile
+           component:Profile,
+           meta:{
+               requiresAuth: true
+           }
        },
        {
            name:"settings",
            path:"/settings",
-           component:Settings
+           component:Settings,
+           meta:{
+               requiresAuth: true
+           }
        },
        {
            path:"/profile/",
@@ -54,12 +72,18 @@ export default new Router({
        {
            name:"linkAccount",
            path:"/linkAccount",
-           component:CreateAccount
+           component:CreateAccount,
+           meta:{
+               requiresAuth: true
+           }
        },
        {
            name:"createProfile",
            path:"/createProfile",
-           component:CreateProfile
+           component:CreateProfile,
+           meta:{
+               requiresAuth: true
+           }
        },
        {
            name:"Error404",

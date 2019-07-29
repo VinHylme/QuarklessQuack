@@ -136,10 +136,6 @@ namespace Quarkless.Controllers
 					{
 						await _instaUserLogic.AcceptConsent();
 					}
-					else if(results.Info.ResponseType == InstagramApiSharp.Classes.ResponseType.Spam)
-					{
-						
-					}
 				}
 				return NotFound(results.Info);
 			}

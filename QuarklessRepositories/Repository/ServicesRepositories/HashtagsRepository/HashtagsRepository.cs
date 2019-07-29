@@ -88,5 +88,33 @@ namespace QuarklessRepositories.Repository.ServicesRepositories.HashtagsReposito
 				Limit = limit
 			})).ToList();
 		}
+		public async Task<IEnumerable<HashtagsModel>> GetHashtags(string topic, string language = null, string mapedLang = null, int limit = -1)
+		{
+			try
+			{
+				List<FilterDefinition<HashtagsModel>> filterList = new List<FilterDefinition<HashtagsModel>>();
+				var builders = Builders<HashtagsModel>.Filter;
+				FilterDefinition<HashtagsModel> filters;
+				if (string.IsNullOrEmpty(language) && string.IsNullOrEmpty(mapedLang))
+				{
+					filters = builders.Eq(_ => _.Topic, topic);
+				}
+				else
+				{
+					filters = builders.Eq(_ => _.Topic, topic) & (builders.Eq(_ => _.Language, language) | builders.Eq(_ => _.Language, mapedLang));
+				}
+				var options = new FindOptions<HashtagsModel, HashtagsModel>();
+				if (limit != -1)
+					options.Limit = limit;
+
+				var res = await _context.Hashtags.FindAsync(filters, options);
+				return res.ToList();
+			}
+			catch (Exception e)
+			{
+
+				return null;
+			}
+		}
 	}
 }

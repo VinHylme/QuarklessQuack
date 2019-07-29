@@ -1,8 +1,8 @@
-﻿using ContentSearcher.SeleniumClient;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.Proxies;
+using QuarklessLogic.ContentSearch.SeleniumClient;
 using QuarklessLogic.Handlers.RestSharpClient;
 using System.Collections.Generic;
 using System.Linq;

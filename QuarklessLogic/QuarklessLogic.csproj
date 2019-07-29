@@ -12,13 +12,15 @@
 
   <ItemGroup>
     <PackageReference Include="Amazon.AspNetCore.Identity.Cognito" Version="1.0.1" />
+    <PackageReference Include="morelinq" Version="3.2.0" />
     <PackageReference Include="Nancy" Version="2.0.0" />
+    <PackageReference Include="Selenium.Chrome.WebDriver" Version="75.0.0" />
+    <PackageReference Include="Selenium.WebDriver" Version="3.141.0" />
+    <PackageReference Include="TextCopy" Version="1.6.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\InstagramApiSharp\InstagramApiSharp.csproj" />
-    <ProjectReference Include="..\Quarkless.ContentSearcher\Quarkless.ContentSearcher.csproj" />
-    <ProjectReference Include="..\Quarkless.Queue\Quarkless.Queue.csproj" />
     <ProjectReference Include="..\QuarklessRepositories\QuarklessRepositories.csproj" />
   </ItemGroup>
 

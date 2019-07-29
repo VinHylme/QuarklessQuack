@@ -5,6 +5,6 @@ namespace Quarkless.Services
 {
 	public interface IAgentManager
 	{
-		Task Begin();
+		void Begin();
 	}
 }

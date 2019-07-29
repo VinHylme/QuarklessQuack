@@ -42,7 +42,8 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 						Type = addInstagram.Type,
 						AgentState = (int) AgentState.NotStarted,
 						LastPurgeCycle = null,			
-						DateAdded = DateTime.UtcNow
+						DateAdded = DateTime.UtcNow,
+						SleepTimeRemaining = null
 					};
 					var result = await _instagramAccountRepository.AddInstagramAccount(instamodel);
 					if(result!=null)
@@ -112,7 +113,10 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 						Id = res._id,
 						TotalPostsCount = res.TotalPostsCount,
 						Username = res.Username,
-						DateAdded = res.DateAdded
+						DateAdded = res.DateAdded,
+						SleepTimeRemaining = res.SleepTimeRemaining,
+						Email = res.Email,
+						PhoneNumber = res.PhoneNumber
 					};
 					await _instagramAccountRedis.SetInstagramAccountDetail(accountId, instagramAccountId, shortInsta);
 					return shortInsta;
@@ -173,7 +177,10 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 				Id = instagramAccountModel._id,
 				TotalPostsCount = instagramAccountModel.TotalPostsCount,
 				Username = instagramAccountModel.Username,
-				DateAdded = instagramAccountModel.DateAdded
+				DateAdded = instagramAccountModel.DateAdded,
+				SleepTimeRemaining = instagramAccountModel.SleepTimeRemaining,
+				Email = instagramAccountModel.Email,
+				PhoneNumber = instagramAccountModel.PhoneNumber
 			};
 			await _instagramAccountRedis.SetInstagramAccountDetail(accountId,instagramAccountId,toshortmodel);
 			return await _instagramAccountRepository.PartialUpdateInstagramAccount(instagramAccountId, instagramAccountModel);
@@ -183,6 +190,25 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 			try
 			{
 				var account = await _instagramAccountRepository.GetActiveAgentInstagramAccounts();
+				if (account != null)
+				{
+					return account;
+				}
+
+				return null;
+			}
+			catch (Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+				return null;
+			}
+		}
+
+		public async Task<IEnumerable<ShortInstagramAccountModel>> GetInstagramAccounts(int type)
+		{
+			try
+			{
+				var account = await _instagramAccountRepository.GetInstagramAccounts(type);
 				if (account != null)
 				{
 					return account;

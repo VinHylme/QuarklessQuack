@@ -1,13 +1,14 @@
 ﻿using InstagramApiSharp;
-using InstagramApiSharp.API.Processors;
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Models;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.ReportHandler;
+using QuarklessRepositories.RedisRepository.CorpusCache.HashtagCorpusCache;
 using QuarklessRepositories.Repository.ServicesRepositories.HashtagsRepository;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -18,11 +19,14 @@ namespace QuarklessLogic.Logic.HashtagLogic
 		private IReportHandler _reportHandler { get; set; }
 		private readonly IAPIClientContainer Client;
 		private readonly IHashtagsRepository _hashtagsRepository;
-		public HashtagLogic(IReportHandler reportHandler, IAPIClientContainer clientContexter, IHashtagsRepository hashtagsRepository)
+		private readonly IHashtagCoprusCache _hashtagCoprusCache;
+		public HashtagLogic(IReportHandler reportHandler, IAPIClientContainer clientContexter, 
+			IHashtagsRepository hashtagsRepository, IHashtagCoprusCache hashtagCoprusCache)
 		{
 			Client = clientContexter;
 			_reportHandler = reportHandler;
 			_hashtagsRepository = hashtagsRepository;
+			_hashtagCoprusCache = hashtagCoprusCache;
 		}
 		public Task<IResult<bool>> FollowHashtagAsync(string tagname)
 		{
@@ -84,12 +88,22 @@ namespace QuarklessLogic.Logic.HashtagLogic
 		{
 			throw new NotImplementedException();
 		}
-
-		public Task<IEnumerable<HashtagsModel>> GetHashtagsByTopic(string topic,int limit = 1)
+		public async Task AddHashtagsToRepositoryAndCache(IEnumerable<HashtagsModel> hashtags)
+		{
+			await _hashtagsRepository.AddHashtags(hashtags);
+			await _hashtagCoprusCache.AddHashtags(hashtags);
+		}
+		public async Task<IEnumerable<HashtagsModel>> GetHashtagsByTopicAndLanguage(string topic, string lang, string langmapped, int limit = 1)
 		{
 			try
 			{
-				return _hashtagsRepository.GetHashtagsByTopic(topic,limit);			
+				var cacheRes = await _hashtagCoprusCache.GetHashtags(topic, lang, limit);
+				if(cacheRes!=null && cacheRes.Count()>0)
+					return cacheRes;
+				else
+				{
+					return await _hashtagsRepository.GetHashtags(topic, lang, langmapped, limit);
+				}
 			}
 			catch(Exception ee)
 			{

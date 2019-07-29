@@ -1,4 +1,5 @@
 ﻿using InstagramApiSharp;
+using MoreLinq;
 using Quarkless.Services.Extensions;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.Profiles;
@@ -192,34 +193,41 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 			}
 		}
 
-		public async Task<IEnumerable<string>> BuildHashtags(string topic,string subcategory, string language, int limit = 1, int pickRate = 20)
+		public async Task<IEnumerable<string>> BuildHashtags(string topic, string subcategory, string language, int limit = 1, int pickRate = 20)
 		{
-			var res = (await _hashtagLogic.GetHashtagsByTopic(topic, limit)).ToList();
+			var res = (await _hashtagLogic.GetHashtagsByTopicAndLanguage(topic, language.ToUpper(), language.MapLanguages(),limit)).Shuffle().ToList();
 			Regex clean = new Regex(@"[^\w\d]");
 			if(res!=null && res.Count > 0) { 
 				List<string> hashtags = new List<string>();
 				while (hashtags.Count < pickRate) { 
-					List<List<string>> chosenHashtags = new List<List<string>>();
+					List<string> chosenHashtags = new List<string>();
+
 					foreach(var hashtagres in res)
 					{
 						if(!string.IsNullOrEmpty(hashtagres.Language)){
 							var hlang = clean.Replace(hashtagres.Language.ToLower(),"");
 							var langpicked = clean.Replace(language.MapLanguages().ToLower(),"");
+
 							if(hlang == langpicked)
-								chosenHashtags.Add(hashtagres.Hashtags.Where(s=>!string.IsNullOrEmpty(s)).ToList());
+								chosenHashtags.AddRange(hashtagres.Hashtags);
 						}
 					}
+
 					if (chosenHashtags.Count > 0) { 
-						var chosenHashtags_filtered = chosenHashtags.SquashMe().Where(space => space.Count(oc => oc == ' ') <= 1);
+						var chosenHashtags_filtered = chosenHashtags.Where(space => space.Count(oc => oc == ' ') <= 1);
 						if (chosenHashtags_filtered.Count() <=0) return null;
-						hashtags.AddRange(chosenHashtags_filtered.Where(s => s.Length >= 3 && s.Length <= 20).Select(s=>s));
+						hashtags.AddRange(chosenHashtags_filtered.Where(s => s.Length >= 3 && s.Length <= 20));
 					}
 				}
 				if (subcategory != null) { 
 					subcategory = Regex.Replace(subcategory, @"\w*.?com", "");
-					var orderedBySimilarity = hashtags.Select(s => new { SimilarityScore = s.Similarity(subcategory), Text = s })
-						.OrderByDescending(s => s.SimilarityScore).Select(t=>t.Text);
-					return orderedBySimilarity;
+					hashtags.ForEach(s=>s.ToLower());
+					var orderedBySimilarity = hashtags.Distinct().Select(s => new { SimilarityScore = s.Similarity(subcategory), Text = s })
+						.OrderBy(s => s.SimilarityScore).Select(t=>t.Text);
+
+					var filt = orderedBySimilarity.Select(r => r.Replace("\t","").Replace("\n","").Replace("\r","").Replace(".","").Replace(" ",""))
+						.Where(x=>!string.IsNullOrEmpty(x)).Take(80).Shuffle();
+					return filt;
 				}
 				else
 				{

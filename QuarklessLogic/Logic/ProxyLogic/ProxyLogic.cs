@@ -174,7 +174,7 @@ namespace QuarklessLogic.Logic.ProxyLogic
 			try
 			{
 				var req = (HttpWebRequest)HttpWebRequest.Create("http://ip-api.com/json");
-				req.Timeout = 2000;
+				req.Timeout = 4000;
 				req.Proxy = new WebProxy($"http://{proxy.Proxy}/");
 
 				var resp = await req.GetResponseAsync();

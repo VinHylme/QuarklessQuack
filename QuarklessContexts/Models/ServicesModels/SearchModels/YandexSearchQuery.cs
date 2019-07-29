@@ -42,6 +42,8 @@ namespace QuarklessContexts.Models.ServicesModels.SearchModels
 		Orange,
 		[Description("cyan")]
 		Cyan,
+		[Description("teal")]
+		Teal,
 		[Description("green")]
 		Green,
 		[Description("blue")]
@@ -55,7 +57,9 @@ namespace QuarklessContexts.Models.ServicesModels.SearchModels
 		[Description("white")]
 		White,
 		[Description("black")]
-		Black
+		Black,
+		[Description("brown")]
+		Brown
 	}
 	public enum FormatType
 	{

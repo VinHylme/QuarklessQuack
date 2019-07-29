@@ -1,6 +1,6 @@
-﻿using Quarkless.Queue.Services;
-using QuarklessContexts.Models.Timeline;
+﻿using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.Handlers.RequestBuilder.RequestBuilder;
+using QuarklessLogic.QueueLogic.Services;
 using QuarklessRepositories.Repository.TimelineRepository;
 using System;
 using System.Collections.Generic;
@@ -81,16 +81,16 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 						endDate = date.AddDays(-1).AddTicks(1);
 					}
 					var eventsB = GetFinishedEventsForUser(username, instaId, limit: limit)
-						.Where(_ => _.SuccededAt <= date && _.SuccededAt >= endDate);
+						.Where(_ => _?.SuccededAt <= date && _?.SuccededAt >= endDate);
 					return eventsB;
 				case TimelineDateType.Forward:
 					if (endDate == null)
 					{
 						endDate = date.AddDays(1).AddTicks(-1);
 					}
-					var eventsF = GetFinishedEventsForUser(username, instaId, limit: limit)
-						.Where(_ => _.SuccededAt >= date && _.SuccededAt <= endDate);
-					return eventsF;
+					var eventsF = GetFinishedEventsForUser(username, instaId, limit: limit);
+						
+					return eventsF.Where(_ => _?.SuccededAt >= date && _?.SuccededAt <= endDate);
 			}
 			return null;
 		}

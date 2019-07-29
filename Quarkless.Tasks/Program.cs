@@ -4,7 +4,7 @@ using Hangfire;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Common;
-using Quarkless.Queue.Jobs.Filters;
+using QuarklessLogic.QueueLogic.Jobs.Filters;
 using StackExchange.Redis;
 
 namespace Quarkless.Tasks

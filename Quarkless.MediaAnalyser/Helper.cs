@@ -27,7 +27,7 @@ namespace Quarkless.MediaAnalyser
 		}
 		private static string GetFilePathByName(string name)
 		{
-			var settingPath = Path.GetFullPath(Path.Combine(@"..\Quarkless"));
+			var settingPath = @"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Quarkless";
 			IConfiguration configuration = new ConfigurationBuilder().
 				SetBasePath(settingPath).AddJsonFile("appsettings.json").Build();
 			return configuration["MediaPath:" + name];
@@ -532,6 +532,73 @@ namespace Quarkless.MediaAnalyser
 				Console.WriteLine(ee.Message);
 				return null;
 			}
+		}
+		public static string IsVideoSimilar(this Color profileColor, byte[] video, double threshHold, int frameSkip = 5)
+		{
+			string path = GetFilePathByName("videosTempPath");
+			string outp = GetFilePathByName("imagesTempPath");
+			string engine_path = GetFilePathByName("enginePath");
+			string videoPath = string.Format(path + "video_{0}_{1}.mp4", Guid.NewGuid(), DateTime.UtcNow.ToLongDateString());
+			Color dom_color = new Color();
+			File.WriteAllBytes(videoPath, video);
+			try
+			{
+				MediaFile mediaFile = new MediaFile(videoPath);
+				var engine = new Engine(engine_path);
+				var meta = engine.GetMetaDataAsync(mediaFile).GetAwaiter().GetResult();
+				var i = 0;
+				while (i < meta.Duration.Seconds)
+				{
+					var opt = new ConversionOptions { Seek = TimeSpan.FromSeconds(frameSkip) };
+					var outputFile = new MediaFile((string.Format(@"{0}image-{1}_{2}_{3}.jpeg", outp, i, Guid.NewGuid(), DateTime.UtcNow.ToLongDateString())));
+					engine.GetThumbnailAsync(mediaFile, outputFile, opt);
+					i++;
+				}
+				List<Bitmap> videoframes = ReadImagesFromDirectory(outp, "*.jpeg").ToList();
+				List<Color> video_colors_avg = new List<Color>();
+				if (videoframes != null)
+				{
+					videoframes.ForEach(im => video_colors_avg.Add(GetDominantColor(im)));
+					int r = 0, b = 0, g = 0;
+					video_colors_avg.ForEach(c => {
+						r += c.R;
+						b += c.B;
+						g += c.G;
+					});
+					int total = video_colors_avg.Count;
+					dom_color = Color.FromArgb(r / total, b / total, g / total);
+				}
+			}
+			catch (Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+				return null;
+			}
+
+			var colorDiffs = ColorDiff(dom_color, profileColor);
+			var maximus = profileColor.R + profileColor.G + profileColor.B;
+			var targetPerc = Math.Abs((maximus * threshHold) - maximus);
+
+			if (colorDiffs < targetPerc)
+			{
+				return videoPath;
+			}
+
+			return null;
+		}
+		public static void DisposeVideos()
+		{
+			try { 
+				string path = GetFilePathByName("videosTempPath");
+				string outp = GetFilePathByName("imagesTempPath");
+				Directory.EnumerateFiles(outp, "*.jpeg").ToList().ForEach(f => File.Delete(f));
+				Directory.EnumerateFiles(path, "*.mp4").ToList().ForEach(f => File.Delete(f));
+			}
+			catch(Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+			}
+
 		}
 		public static byte[] MostSimilarVideo(this Color profileColor, List<byte[]> videos, int frameSkip = 5)
 		{

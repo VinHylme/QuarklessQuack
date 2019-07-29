@@ -14,6 +14,16 @@ namespace QuarklessContexts.Extensions
 {
 	public static class HelperExtensions
 	{
+		public static IEnumerable<TObject> SquashMe<TObject>(this IEnumerable<IEnumerable<TObject>> @items)
+		{
+			foreach (var item in @items)
+			{
+				foreach (var ite in item)
+				{
+					yield return ite;
+				}
+			}
+		}
 		public static string GetDescription<T>(this T e) where T : IConvertible
 		{
 			if (e is Enum)
@@ -95,6 +105,7 @@ namespace QuarklessContexts.Extensions
 					yield return item;
 			}
 		}
+
 		public static object GetValue<TObject>(this TObject @object, string propName)
 		{
 			try { 

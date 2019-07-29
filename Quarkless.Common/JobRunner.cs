@@ -1,12 +1,7 @@
 ﻿using Hangfire;
-using Hangfire.Mongo.Dto;
 using Hangfire.Storage.Monitoring;
-using Quarkless.Queue.Jobs.Filters;
 using QuarklessContexts.JobClass;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Quarkless.Common
 {
@@ -23,7 +18,7 @@ namespace Quarkless.Common
 		{
 			var jobOptions = Activator.CreateInstance<TJobOptions>();
 			configureJob(jobOptions);
-			var jobId = _backgroundJobClient.Schedule<TJob>(job => job.Perform(jobOptions),jobOptions.ExecutionTime);
+			var jobId = _backgroundJobClient.Schedule<TJob>(job => job.Perform(jobOptions), jobOptions.ExecutionTime);
 			return jobId;
 		}
 		public JobDetailsDto GetJobDetails (string jobId)

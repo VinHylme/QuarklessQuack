@@ -55,32 +55,35 @@ namespace Quarkless.Services
 				var pos = topicSelect.SubTopics.FindIndex(n => n.TopicName.Similarity(topicSelected) == dist);
 				selectASubTopic = topicSelect.SubTopics.ElementAtOrDefault(pos);
 			}
-			else { 
+			else 
+			{ 
 				selectASubTopic = topicSelect.SubTopics.ElementAtOrDefault(SecureRandom.Next(topicSelect.SubTopics.Count-1));
 			}
 			if (selectASubTopic != null)
 			{
-				selections.Add(selectASubTopic.TopicName);
+				//selections.Add(selectASubTopic.TopicName);
 				selections.Add(topicSelect.TopicFriendlyName);
 				selections.AddRange(selectASubTopic.RelatedTopics);
 
-				var hashes = GetHashTags(topicSelect.TopicFriendlyName, topicSelected, language, 200, 15).GetAwaiter().GetResult();
+				var hashes = GetHashTags(topicSelect.TopicFriendlyName, topicSelected, language, 1000, 200).GetAwaiter().GetResult();
 				if(hashes!=null && hashes.Count() > 0)
 					selections.AddRange(hashes);
 			}
-
-			hashtagsToUse.AddRange(selections.Take(SecureRandom.Next(20,24)).Select(s=> $"#{s}"));
+			
+			hashtagsToUse.AddRange(selections.Take(SecureRandom.Next(20 , 26)).Select(s=> $"#{s}"));
 			var hashtags = hashtagsToUse.Select(j=>j.Replace(" ","")).JoinEvery(Environment.NewLine, 3);
-			var caption_ = GenerateText(topicSelect.TopicFriendlyName.ToLower(), language.ToUpper(), 1, SecureRandom.Next(4), SecureRandom.Next(2,6)).Split(',')[0];
+			var caption_ = GenerateText(topicSelect.TopicFriendlyName.ToLower(), language.ToUpper(), 1, SecureRandom.Next(2,4), SecureRandom.Next(14,25)).Split(',')[0];
 			string creditLine = string.Empty;
-			if (credit != null)
-				creditLine = $"credit: @{credit}";
 
-			return caption_ + Environment.NewLine + creditLine + Environment.NewLine + hashtags;
+			if (credit != null)
+				creditLine = $"@{credit}";
+			string seperate = "\n.\n.\n.\n";
+			string final_caption = caption_ + seperate + creditLine + Environment.NewLine + hashtags;
+			return final_caption;
 		}
 		public string GenerateComment(string topic, string language)
 		{
-			var comment = GenerateText(topic.ToLower(), language.ToUpper(), 0 , SecureRandom.Next(4) ,SecureRandom.Next(2,6)).Split(',')[0];
+			var comment = GenerateText(topic.ToLower(), language.ToUpper(), 0 , SecureRandom.Next(40) ,SecureRandom.Next(10,14)).Split(',')[0];
 			return comment;
 		}
 

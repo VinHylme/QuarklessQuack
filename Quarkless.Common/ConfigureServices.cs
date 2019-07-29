@@ -2,7 +2,6 @@
 using Amazon.CognitoIdentityProvider;
 using Amazon.Extensions.CognitoAuthentication;
 using Amazon.Extensions.NETCore.Setup;
-using ContentSearcher.SeleniumClient;
 using Hangfire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -13,12 +12,12 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using MongoDbGenericRepository;
-using Quarkless.Queue.Services;
 using QuarklessContexts.Contexts;
 using QuarklessContexts.Contexts.AccountContext;
 using QuarklessContexts.InstaClient;
 using QuarklessContexts.JobClass;
 using QuarklessContexts.Models.UserAuth.AuthTypes;
+using QuarklessLogic.ContentSearch.SeleniumClient;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.ReportHandler;
 using QuarklessLogic.Handlers.RequestBuilder.RequestBuilder;
@@ -38,14 +37,19 @@ using QuarklessLogic.Logic.InstaUserLogic;
 using QuarklessLogic.Logic.MediaLogic;
 using QuarklessLogic.Logic.ProfileLogic;
 using QuarklessLogic.Logic.ProxyLogic;
+using QuarklessLogic.QueueLogic.Services;
 using QuarklessLogic.ServicesLogic;
 using QuarklessLogic.ServicesLogic.AgentLogic;
+using QuarklessLogic.ServicesLogic.CorpusLogic;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic;
 using QuarklessRepositories.InstagramAccountRepository;
 using QuarklessRepositories.ProfileRepository;
 using QuarklessRepositories.ProxyRepository;
 using QuarklessRepositories.RedisRepository.AccountCache;
+using QuarklessRepositories.RedisRepository.CorpusCache.CommentCorpusCache;
+using QuarklessRepositories.RedisRepository.CorpusCache.HashtagCorpusCache;
+using QuarklessRepositories.RedisRepository.CorpusCache.MediaCorpusCache;
 using QuarklessRepositories.RedisRepository.HeartBeaterRedis;
 using QuarklessRepositories.RedisRepository.InstagramAccountRedis;
 using QuarklessRepositories.RedisRepository.RedisClient;
@@ -86,6 +90,8 @@ namespace Quarkless.Common
 			services.AddTransient<ITimelineLogic,TimelineLogic>();
 			services.AddTransient<IHeartbeatLogic, HeartbeatLogic>();
 			services.AddTransient<IAgentLogic,AgentLogic>();
+			services.AddTransient<ICommentCorpusLogic, CommentCorpusLogic>();
+			services.AddTransient<IMediaCorpusLogic, MediaCorpusLogic>();
 		}
 		public static void AddAuthHandlers(this IServiceCollection services, Accessors _accessors, AWSOptions aWSOptions)
 		{
@@ -170,7 +176,10 @@ namespace Quarkless.Common
 			services.AddTransient<IHeartbeatRepository, HeartbeatRepository>();
 			services.AddTransient<IInstagramAccountRedis,InstagramAccountRedis>();
 			services.AddTransient<ICommentCorpusRepository, CommentCorpusRepository>();
+			services.AddTransient<ICommentCorpusCache,CommentCorpusCache>();
 			services.AddTransient<IMediaCorpusRepository,MediaCorpusRepository>();
+			services.AddTransient<IHashtagCoprusCache, HashtagCoprusCache>();
+			services.AddTransient<IMediaCorpusCache, MediaCorpusCache>();
 			services.Configure<RedisOptions>(o =>
 			{
 				o.ConnectionString = _accessors.RedisConnectionString;
@@ -183,7 +192,6 @@ namespace Quarkless.Common
 			});
 			services.AddTransient<IRedisClient,RedisClient>();
 			services.AddTransient<IAccountCache, AccountCache>();
-
 		}
 		public static void AddHandlers(this IServiceCollection services)
 		{
@@ -205,5 +213,6 @@ namespace Quarkless.Common
 			services.AddTransient<IUserContext, UserContext>();
 			services.AddTransient<IRequestBuilder,RequestBuilder>();
 		}
+
 	}
 }

@@ -61,7 +61,10 @@ namespace QuarklessContexts.Models.InstagramAccounts
 		Running = 1,
 		Stopped = 2,
 		Sleeping = 3,
-		Blocked = 4
+		DeepSleep = 4,
+		Blocked = 5,
+		Challenge = 6,
+		AwaitingActionFromUser = 7
 	}
 	public class AgentSettings
 	{
@@ -77,12 +80,20 @@ namespace QuarklessContexts.Models.InstagramAccounts
 		public string Id { get; set; }
 		public string AccountId { get; set; }
 		public string Username { get; set; }
+		public string Email { get; set; }
+		public string PhoneNumber { get; set; }
 		public int? AgentState { get; set; }
-		[BsonRepresentation(BsonType.DateTime)]
-		public DateTime? LastPurgeCycle { get; set; }
 		public long? FollowersCount { get; set; }
 		public long? FollowingCount { get; set; }
 		public long? TotalPostsCount { get; set; }
+
+		[BsonRepresentation(BsonType.DateTime)]
+		public DateTime? LastPurgeCycle { get; set; }
+
+		[BsonRepresentation(BsonType.DateTime)]
+		public DateTime? SleepTimeRemaining { get; set; }
+
+		[BsonRepresentation(BsonType.DateTime)]
 		public DateTime? DateAdded { get; set; }
 	}
 }

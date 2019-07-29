@@ -18,6 +18,7 @@ using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessContexts.Models.MediaModels;
 using QuarklessContexts.Classes.Carriers;
+using MoreLinq;
 
 namespace Quarkless.Services.ActionBuilders.EngageActions
 {
@@ -44,6 +45,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		{
 			public __Meta__<Media> SelectedMedia;
 			public byte[] MediaBytes;
+			public string Url { get; set; }
 		}
 		public class TempSelect
 		{
@@ -52,7 +54,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
-			Console.WriteLine($"Create Photo Action Started: {user.OAccountId}, {user.OInstagramAccountUsername}, {user.OInstagramAccountUser}");
+			Console.WriteLine($"Create Media Action Started: {user.OAccountId}, {user.OInstagramAccountUsername}, {user.OInstagramAccountUser}");
 			PostActionOptions imageActionOptions = actionOptions as PostActionOptions;
 			ResultCarrier<IEnumerable<TimelineEventModel>> Results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
 			if (user == null)
@@ -68,7 +70,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			try
 			{
 				var location = _profile.LocationTargetList?.ElementAtOrDefault(SecureRandom.Next(_profile.LocationTargetList.Count-1));
-				var profileColor = _profile.Theme.Colors[(SecureRandom.Next(0, _profile.Theme.Colors.Count-1))];
+				//var profileColor = _profile.Theme.Colors[(SecureRandom.Next(0, _profile.Theme.Colors.Count-1))];
 				Topics topic_;
 				if(_profile.Topics.SubTopics==null || _profile.Topics.SubTopics.Count <= 0) { 
 					topic_ = _builder.GetTopic(user, _profile, 20).GetAwaiter().GetResult();
@@ -98,8 +100,14 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						{
 							int[] action = new int[] { 0, 1 };
 							int numpicked = action.ElementAt(SecureRandom.Next(action.Length-1));
-							MetaDataType selected = numpicked == 0 ? MetaDataType.FetchMediaByUserTargetList : MetaDataType.FetchMediaByTopic;
-							TotalResults = _heartbeatLogic.GetMetaData<Media>(selected, _profile.Topics.TopicFriendlyName).GetAwaiter().GetResult().ToList();
+							string userId = user.OInstagramAccountUser;
+							MetaDataType selected = MetaDataType.FetchMediaByUserTargetList;
+							if(numpicked == 1)
+							{
+								userId = null;
+								selected = MetaDataType.FetchMediaByTopic;
+							}
+							TotalResults = _heartbeatLogic.GetMetaData<Media>(selected, _profile.Topics.TopicFriendlyName, userId).GetAwaiter().GetResult().ToList();
 							selectedAction = selected;
 						}
 						else { 
@@ -133,14 +141,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					ActionType = (int)ActionType.CreatePost,
 					User = _profile.InstagramAccountId
 				};
-				var filteredResults = TotalResults.Select(p =>
-				{
-					return new __Meta__<Media>(new Media{
-						Medias = p.ObjectItem.Medias.Where(x => x.MediaType == InstaMediaType.Image || x.MediaType == InstaMediaType.Carousel).ToList(),
-						errors = p.ObjectItem.errors}){
-						SeenBy = p.SeenBy
-					};
-				}).Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User
+				var filteredResults = TotalResults.Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User
 				&& (e.ActionType == by.ActionType))).ToList();
 
 				TempSelect _selectedMedia = new TempSelect();
@@ -148,8 +149,9 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 
 				List<Chance<InstaMediaType>> typeOfPost = new List<Chance<InstaMediaType>>()
 				{
-					new Chance<InstaMediaType>{ Object = InstaMediaType.Image, Probability = 0.40 },
-					new Chance<InstaMediaType>{ Object = InstaMediaType.Carousel, Probability = 0.60}
+					new Chance<InstaMediaType> {Object = InstaMediaType.Video, Probability = 0.25 },
+					new Chance<InstaMediaType>{ Object = InstaMediaType.Image, Probability = 0.30 },
+					new Chance<InstaMediaType>{ Object = InstaMediaType.Carousel, Probability = 0.45 }
 				};
 
 				var typeSelected = SecureRandom.ProbabilityRoll(typeOfPost);
@@ -157,7 +159,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				int currAmount = 0;
 
 				lock (filteredResults) { 
-					foreach (var result in filteredResults)
+					foreach (var result in filteredResults.Shuffle())
 					{
 						result.SeenBy.Add(by);
 						if(selectedAction == MetaDataType.FetchMediaByTopic)
@@ -171,11 +173,34 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						if (media != null) {
 							if(media.MediaType == InstaMediaType.Carousel)
 							{
-								
+								foreach(var url in media.MediaUrl)
+								{
+
+								}
 							}
 							else if(media.MediaType == InstaMediaType.Video)
 							{
-
+								var url = media.MediaUrl.FirstOrDefault();
+								if (url != null)
+								{
+									var bytes_ = url.DownloadMedia();
+									if (bytes_ != null)
+									{
+										var profileColor = _profile.Theme.Colors.Select(s => System.Drawing.Color.FromArgb(s.Red, s.Green, s.Blue)).ElementAt(_profile.Theme.Colors.Count-1);
+										var simPath = profileColor.IsVideoSimilar(bytes_,_profile.Theme.Percentage/100,5);
+										if (!string.IsNullOrEmpty(simPath))
+										{
+											_selectedMedia.MediaData.Add(new MediaData
+											{
+												Url = simPath,
+												MediaBytes = bytes_,
+												SelectedMedia = result
+											});
+											_selectedMedia.MediaType = InstaMediaType.Video;
+											break;
+										}
+									}
+								}
 							}
 							else if(media.MediaType == InstaMediaType.Image)
 							{
@@ -183,9 +208,10 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 								if (url != null)
 								{
 									var imBytes = url.DownloadMedia();
-									if (imBytes.ImageSizeCheckFromByte(size))
+									if (imBytes != null) { 
+										if (imBytes.ImageSizeCheckFromByte(size))
 									{
-										var colorfreq = imBytes.ByteToBitmap().GetColorPercentage().OrderByDescending(_ => _.Value);
+										var colorfreq = imBytes.ByteToBitmap().GetColorPercentage().OrderBy(_ => _.Value);
 										var profileColors = _profile.Theme.Colors.Select(s => System.Drawing.Color.FromArgb(s.Red, s.Green, s.Blue));
 										if (colorfreq.Take(5).Select(x => x.Key).SimilarColors(profileColors, _profile.Theme.Percentage / 100))
 										{
@@ -201,14 +227,14 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 											}
 											else if (typeSelected == InstaMediaType.Carousel)
 											{
-												if (imBytes.GetAspectRatio() > 1.65)
+												if (imBytes.GetAspectRatio() > 1.6)
 												{
 													var toCarousel = imBytes.CreateCarousel();
 													_selectedMedia.MediaType = InstaMediaType.Carousel;
 													_selectedMedia.MediaData = toCarousel.Select(x => new MediaData { MediaBytes = x, SelectedMedia = result }).ToList();
 													break;
 												}
-												else if(imBytes.GetAspectRatio() < 1.65 && currAmount < carouselAmount )
+												else if(imBytes.GetAspectRatio() < 1.6 && currAmount < carouselAmount )
 												{
 													if (_selectedMedia.MediaData.Count > 0)
 													{
@@ -239,6 +265,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 												else { break; }
 											}
 										}
+									}
 									}
 								}
 							}
@@ -313,7 +340,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					var credit = selectedCarouselMedia.User?.Username;
 					UploadAlbumModel uploadAlbum = new UploadAlbumModel
 					{
-						Caption = _builder.GenerateMediaInfo(topic_,selectedCarouselMedia.Topic,_profile.Language,credit),
+						Caption = _builder.GenerateMediaInfo(topic_, selectedCarouselMedia.Topic, _profile.Language, credit),
 						Location = _profile.BusinessLocation != null ? new InstaLocationShort
 						{
 							Address = _profile.BusinessLocation.Address,
@@ -330,6 +357,35 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					restModel.BaseUrl = UrlConstants.UploadCarousel;
 					restModel.JsonBody = JsonConvert.SerializeObject(uploadAlbum);
 				}
+				else if(_selectedMedia.MediaType == InstaMediaType.Video)
+				{
+					var selectedVideoMedia = _selectedMedia.MediaData.FirstOrDefault().SelectedMedia.ObjectItem.Medias.FirstOrDefault();
+					var credit = selectedVideoMedia.User?.Username;
+					UploadVideoModel uploadVideo = new UploadVideoModel
+					{
+						Caption = _builder.GenerateMediaInfo(topic_,selectedVideoMedia.Topic,_profile.Language,credit),
+						Location = _profile.BusinessLocation != null ? new InstaLocationShort
+						{
+							Address = _profile.BusinessLocation.Address,
+							Lat = _profile.BusinessLocation.Coordinates.Latitude,
+							Lng = _profile.BusinessLocation.Coordinates.Longitude,
+							Name = _profile.BusinessLocation.City
+						} : null,
+						Video = new InstaVideoUpload
+						{
+							Video = new InstaVideo
+							{
+								Uri = _selectedMedia.MediaData.FirstOrDefault().Url,
+								VideoBytes = _selectedMedia.MediaData.FirstOrDefault().MediaBytes
+							},
+							VideoThumbnail = new InstaImage{  ImageBytes = _selectedMedia.MediaData.FirstOrDefault().MediaBytes.GenerateVideoThumbnail() }
+						}
+					};
+					restModel.BaseUrl = UrlConstants.UploadVideo;
+					restModel.JsonBody = JsonConvert.SerializeObject(uploadVideo);
+					Helper.DisposeVideos();
+				}
+
 				Results.IsSuccesful = true;
 				Results.Results = new List<TimelineEventModel>
 				{ 

@@ -7,6 +7,7 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 {
 	public interface IRedisClient
 	{
+		IRedisClient Database (int newdb);
 		IEnumerable<RedisKey> GetKeys(int limit);
 		void CloseConnection();
 		Task DeleteKey(string userId, RedisKeys.HashtagGrowKeys hashtagGrowKey);
