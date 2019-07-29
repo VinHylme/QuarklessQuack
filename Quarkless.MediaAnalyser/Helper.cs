@@ -15,6 +15,7 @@ using Shipwreck.Phash.Data;
 using System.Drawing.Drawing2D;
 using ImageProcessor.Imaging.Filters.EdgeDetection;
 using ImageProcessor.Imaging;
+using System.Threading;
 
 namespace Quarkless.MediaAnalyser
 {
@@ -586,19 +587,74 @@ namespace Quarkless.MediaAnalyser
 
 			return null;
 		}
-		public static void DisposeVideos()
+		public static void DisposeVideos(string loc = null, int retries = 8)
 		{
-			try { 
-				string path = GetFilePathByName("videosTempPath");
-				string outp = GetFilePathByName("imagesTempPath");
-				Directory.EnumerateFiles(outp, "*.jpeg").ToList().ForEach(f => File.Delete(f));
-				Directory.EnumerateFiles(path, "*.mp4").ToList().ForEach(f => File.Delete(f));
-			}
-			catch(Exception ee)
+			try
 			{
-				Console.WriteLine(ee.Message);
+				if (string.IsNullOrEmpty(loc)) { 
+					string path = GetFilePathByName("videosTempPath");
+					string outp = GetFilePathByName("imagesTempPath");
+
+					Directory.EnumerateFiles(outp, "*.jpeg").ToList()
+						.ForEach(f => {
+							FileInfo fileInfo = new FileInfo(f);
+							for (int tries = 0; IsFileLocked(fileInfo) && tries < 8; tries++)
+							{
+								Thread.Sleep(1000);
+							}
+							fileInfo.Delete();
+						});
+
+					Directory.EnumerateFiles(path, "*.mp4").ToList()
+					.ForEach(f => {
+					FileInfo fileInfo = new FileInfo(f);
+						for (int tries = 0; IsFileLocked(fileInfo) && tries < retries; tries++)
+						{
+							Thread.Sleep(1000);
+						}
+					fileInfo.Delete();
+					});	
+				}
+				else
+				{
+					FileInfo fileInfo = new FileInfo(loc);
+					for(int tries = 0; IsFileLocked(fileInfo) && tries < retries; tries++)
+					{
+						Thread.Sleep(1000);
+					}
+					fileInfo.Delete();
+				}
+			}
+			catch (IOException exception)
+			{
+				Console.WriteLine(string.Format("File locked: {0}", exception));
+			}
+		
+		}
+		static bool IsFileLocked(FileInfo file)
+		{
+			FileStream stream = null;
+
+			try
+			{
+				stream = file.Open(FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+			}
+			catch (IOException)
+			{
+				//the file is unavailable because it is:
+				//still being written to
+				//or being processed by another thread
+				//or does not exist (has already been processed)
+				return true;
+			}
+			finally
+			{
+				if (stream != null)
+					stream.Close();
 			}
 
+			//file is not locked
+			return false;
 		}
 		public static byte[] MostSimilarVideo(this Color profileColor, List<byte[]> videos, int frameSkip = 5)
 		{

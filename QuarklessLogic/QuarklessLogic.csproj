@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\InstagramApiSharp\InstagramApiSharp.csproj" />
+    <ProjectReference Include="..\Quarkless.MediaAnalyser\Quarkless.MediaAnalyser.csproj" />
     <ProjectReference Include="..\QuarklessRepositories\QuarklessRepositories.csproj" />
   </ItemGroup>
 

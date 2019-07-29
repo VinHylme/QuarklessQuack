@@ -155,12 +155,21 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				};
 
 				var typeSelected = SecureRandom.ProbabilityRoll(typeOfPost);
-				int carouselAmount = 3;
+				int carouselAmount = SecureRandom.Next(2,4);
 				int currAmount = 0;
-
+				InstaMediaType _enteredType = InstaMediaType.All;
 				lock (filteredResults) { 
 					foreach (var result in filteredResults.Shuffle())
 					{
+						var media = result.ObjectItem.Medias.FirstOrDefault();
+						if(_enteredType != InstaMediaType.All)
+						{
+							if(media.MediaType != _enteredType)
+							{
+								continue;
+							}
+						}
+
 						result.SeenBy.Add(by);
 						if(selectedAction == MetaDataType.FetchMediaByTopic)
 						{
@@ -169,17 +178,49 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						else { 
 							_heartbeatLogic.UpdateMetaData(selectedAction, _profile.Topics.TopicFriendlyName, result, _profile.InstagramAccountId).GetAwaiter().GetResult();
 						}
-						var media = result.ObjectItem.Medias.FirstOrDefault();
+
 						if (media != null) {
 							if(media.MediaType == InstaMediaType.Carousel)
 							{
+								_enteredType = InstaMediaType.Carousel;
 								foreach(var url in media.MediaUrl)
 								{
-
+									var imBytes = url.DownloadMedia();
+									var colorfreq = imBytes.ByteToBitmap().GetColorPercentage().OrderBy(_ => _.Value);
+									var profileColors = _profile.Theme.Colors.Select(s => System.Drawing.Color.FromArgb(s.Red, s.Green, s.Blue));
+									if (colorfreq.Take(5).Select(x => x.Key).SimilarColors(profileColors, _profile.Theme.Percentage / 100))
+									{ 
+										if (_selectedMedia.MediaData.Count > 0)
+										{
+											var oas = _selectedMedia.MediaData[0].MediaBytes.GetClosestAspectRatio();
+											var cas = imBytes.GetClosestAspectRatio();
+											if (cas == oas)
+											{
+												_selectedMedia.MediaType = InstaMediaType.Carousel;
+												_selectedMedia.MediaData.Add(new MediaData
+												{
+													MediaBytes = imBytes,
+													SelectedMedia = result
+												});
+												currAmount++;
+											}
+										}
+										else
+										{
+											_selectedMedia.MediaType = InstaMediaType.Carousel;
+											_selectedMedia.MediaData.Add(new MediaData
+											{
+												MediaBytes = imBytes,
+												SelectedMedia = result
+											});
+											currAmount++;
+										}
+									}
 								}
 							}
 							else if(media.MediaType == InstaMediaType.Video)
 							{
+								_enteredType = InstaMediaType.Video;
 								var url = media.MediaUrl.FirstOrDefault();
 								if (url != null)
 								{
@@ -199,48 +240,64 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 											_selectedMedia.MediaType = InstaMediaType.Video;
 											break;
 										}
+										else
+										{
+											Helper.DisposeVideos(simPath);
+										}
 									}
 								}
 							}
 							else if(media.MediaType == InstaMediaType.Image)
 							{
+								_enteredType = InstaMediaType.Image;
 								var url = media.MediaUrl.FirstOrDefault();
 								if (url != null)
 								{
 									var imBytes = url.DownloadMedia();
 									if (imBytes != null) { 
 										if (imBytes.ImageSizeCheckFromByte(size))
-									{
-										var colorfreq = imBytes.ByteToBitmap().GetColorPercentage().OrderBy(_ => _.Value);
-										var profileColors = _profile.Theme.Colors.Select(s => System.Drawing.Color.FromArgb(s.Red, s.Green, s.Blue));
-										if (colorfreq.Take(5).Select(x => x.Key).SimilarColors(profileColors, _profile.Theme.Percentage / 100))
 										{
-											if (typeSelected == InstaMediaType.Image)
+											var colorfreq = imBytes.ByteToBitmap().GetColorPercentage().OrderBy(_ => _.Value);
+											var profileColors = _profile.Theme.Colors.Select(s => System.Drawing.Color.FromArgb(s.Red, s.Green, s.Blue));
+											if (colorfreq.Take(5).Select(x => x.Key).SimilarColors(profileColors, _profile.Theme.Percentage / 100))
 											{
-												if (imBytes.GetAspectRatio() < 1.7)
+												if (typeSelected == InstaMediaType.Image)
 												{
-													_selectedMedia.MediaData.Add(new MediaData 
-													{ MediaBytes = imBytes, SelectedMedia = result});										
-													_selectedMedia.MediaType = InstaMediaType.Image;
-													break;
-												}
-											}
-											else if (typeSelected == InstaMediaType.Carousel)
-											{
-												if (imBytes.GetAspectRatio() > 1.6)
-												{
-													var toCarousel = imBytes.CreateCarousel();
-													_selectedMedia.MediaType = InstaMediaType.Carousel;
-													_selectedMedia.MediaData = toCarousel.Select(x => new MediaData { MediaBytes = x, SelectedMedia = result }).ToList();
-													break;
-												}
-												else if(imBytes.GetAspectRatio() < 1.6 && currAmount < carouselAmount )
-												{
-													if (_selectedMedia.MediaData.Count > 0)
+													if (imBytes.GetAspectRatio() < 1.7)
 													{
-														var oas = _selectedMedia.MediaData[0].MediaBytes.GetClosestAspectRatio();
-														var cas = imBytes.GetClosestAspectRatio();
-														if(cas == oas)
+														_selectedMedia.MediaData.Add(new MediaData 
+														{ MediaBytes = imBytes, SelectedMedia = result});										
+														_selectedMedia.MediaType = InstaMediaType.Image;
+														break;
+													}
+												}
+												else if (typeSelected == InstaMediaType.Carousel)
+												{
+													if (imBytes.GetAspectRatio() > 1.6)
+													{
+														var toCarousel = imBytes.CreateCarousel();
+														_selectedMedia.MediaType = InstaMediaType.Carousel;
+														_selectedMedia.MediaData = toCarousel.Select(x => new MediaData { MediaBytes = x, SelectedMedia = result }).ToList();
+														break;
+													}
+													else if(imBytes.GetAspectRatio() < 1.6 && currAmount < carouselAmount )
+													{
+														if (_selectedMedia.MediaData.Count > 0)
+														{
+															var oas = _selectedMedia.MediaData[0].MediaBytes.GetClosestAspectRatio();
+															var cas = imBytes.GetClosestAspectRatio();
+															if(cas == oas)
+															{
+																_selectedMedia.MediaType = InstaMediaType.Carousel;
+																_selectedMedia.MediaData.Add(new MediaData
+																{
+																	MediaBytes = imBytes,
+																	SelectedMedia = result
+																});
+																currAmount++;
+															}
+														}
+														else
 														{
 															_selectedMedia.MediaType = InstaMediaType.Carousel;
 															_selectedMedia.MediaData.Add(new MediaData
@@ -251,26 +308,16 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 															currAmount++;
 														}
 													}
-													else
-													{
-														_selectedMedia.MediaType = InstaMediaType.Carousel;
-														_selectedMedia.MediaData.Add(new MediaData
-														{
-															MediaBytes = imBytes,
-															SelectedMedia = result
-														});
-														currAmount++;
+													else { break; }
 													}
-												}
-												else { break; }
 											}
 										}
-									}
 									}
 								}
 							}
 						}
 					}
+
 					if(_selectedMedia.MediaData==null || _selectedMedia.MediaData.Count <=0)
 					{
 						Results.IsSuccesful = false;
@@ -378,12 +425,11 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 								Uri = _selectedMedia.MediaData.FirstOrDefault().Url,
 								VideoBytes = _selectedMedia.MediaData.FirstOrDefault().MediaBytes
 							},
-							VideoThumbnail = new InstaImage{  ImageBytes = _selectedMedia.MediaData.FirstOrDefault().MediaBytes.GenerateVideoThumbnail() }
+							VideoThumbnail = new InstaImage {  ImageBytes = _selectedMedia.MediaData.FirstOrDefault().MediaBytes.GenerateVideoThumbnail() }
 						}
 					};
 					restModel.BaseUrl = UrlConstants.UploadVideo;
 					restModel.JsonBody = JsonConvert.SerializeObject(uploadVideo);
-					Helper.DisposeVideos();
 				}
 
 				Results.IsSuccesful = true;

@@ -439,7 +439,7 @@ namespace Quarkless.Services
 			int numberOfWorkers = 0;
 			while (true) {
 				if (numberOfWorkers < 10) { 
-					_=Task.Run(async () => { 
+					_ = Task.Run(async () => { 
 						IEnumerable<ShortInstagramAccountModel> allActives = await _agentLogic.GetAllAccounts();
 						if (allActives != null) { 
 						var _instaAccount = allActives.Shuffle().ElementAtOrDefault(SecureRandom.Next(allActives.Count()-1));

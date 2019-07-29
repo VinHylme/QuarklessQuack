@@ -1,13 +1,11 @@
 ﻿using InstagramApiSharp;
-using InstagramApiSharp.API.Processors;
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Models;
 using QuarklessContexts.Models.MediaModels;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.ReportHandler;
+using Quarkless.MediaAnalyser;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace QuarklessLogic.Logic.MediaLogic
@@ -167,7 +165,12 @@ namespace QuarklessLogic.Logic.MediaLogic
 		{
 			try
 			{
-				return await _Client.Media.UploadVideoAsync(uploadVideo.Video, uploadVideo.Caption, uploadVideo.Location);
+				var res =  await  _Client.Media.UploadVideoAsync(uploadVideo.Video, uploadVideo.Caption, uploadVideo.Location);
+				if (res.Succeeded)
+				{
+					Helper.DisposeVideos(uploadVideo.Video.Video.Uri);
+				}
+				return res;
 			}
 			catch (Exception ee)
 			{
