@@ -21,14 +21,12 @@ namespace Quarkless.Services.ActionBuilders.MaintainActions
 	{
 		private readonly IContentManager _content;
 		private readonly IHeartbeatLogic _heartbeatLogic;
-		private readonly ProfileModel _profile;
-		private UserStoreDetails _user;
+		private UserStoreDetails user;
 		private AccountCheckerStrategySettings _accountCheckerStrategySettings;
-		public AccountCheckerAction(IContentManager content, IHeartbeatLogic heartbeatLogic, ProfileModel profile)
+		public AccountCheckerAction(IContentManager content, IHeartbeatLogic heartbeatLogic)
 		{
 			_content = content;
 			_heartbeatLogic = heartbeatLogic;
-			_profile = profile;
 		}
 		public IActionCommit IncludeStrategy(IStrategySettings strategy)
 		{
@@ -38,7 +36,7 @@ namespace Quarkless.Services.ActionBuilders.MaintainActions
 
 		public IActionCommit IncludeUser(UserStoreDetails userStoreDetails)
 		{
-			_user = userStoreDetails;
+			user = userStoreDetails;
 			return this;
 		}
 		struct ContainMedia
@@ -53,7 +51,7 @@ namespace Quarkless.Services.ActionBuilders.MaintainActions
 			if (actionOptions != null)
 			{
 				var accountCheckerActionOptions = actionOptions as AccountCheckerActionOptions;
-				var currentUsersMedia = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchUserOwnProfile, _profile.Topics.TopicFriendlyName, _profile.InstagramAccountId)
+				var currentUsersMedia = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchUserOwnProfile, user.Profile.Topics.TopicFriendlyName, user.Profile.InstagramAccountId)
 										.GetAwaiter().GetResult().ToList();
 
 				//remove duplicates from user's gallery
@@ -89,7 +87,7 @@ namespace Quarkless.Services.ActionBuilders.MaintainActions
 							RestModel restModel = new RestModel
 							{
 								BaseUrl = string.Format(UrlConstants.DeleteMedia,images.ElementAt(x).mediaId,images.ElementAt(x).mediaType),
-								User = _user,
+								User = user,
 								RequestType = QuarklessContexts.Enums.RequestType.POST,
 							};
 							tosend.Add(new TimelineEventModel
@@ -109,7 +107,7 @@ namespace Quarkless.Services.ActionBuilders.MaintainActions
 					Results.IsSuccesful = false;
 					Results.Info =  new ErrorResponse
 					{
-						Message = $"user's media is empty, user: {_user.OAccountId}, instaId: {_user.OInstagramAccountUsername}"
+						Message = $"user's media is empty, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}"
 					};
 					return Results;
 				}
@@ -117,7 +115,7 @@ namespace Quarkless.Services.ActionBuilders.MaintainActions
 			Results.IsSuccesful = false;
 			Results.Info = new ErrorResponse
 			{
-				Message = $"accountcheck option is empty, user: {_user.OAccountId}, instaId: {_user.OInstagramAccountUsername}"
+				Message = $"accountcheck option is empty, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}"
 			};
 			return Results;
 		}

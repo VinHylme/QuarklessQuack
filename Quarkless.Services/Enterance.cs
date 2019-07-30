@@ -72,7 +72,7 @@ namespace Quarkless.Services
 			var results = WithExceptionLogAsync(async () =>
 			{
 				//lunch
-				serviceReacher.Get<IAgentManager>().Begin();
+				await serviceReacher.Get<IAgentManager>().Begin();
 			});
 			Task.WaitAll(results);
 		}

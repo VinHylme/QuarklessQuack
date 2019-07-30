@@ -10,7 +10,7 @@ namespace Quarkless.Services.Factories.Actions
 {
 	public class LikeCommentActionBuilderFactory : ActionBuilderFactory
 	{
-		public override IActionCommit Commit(IContentManager builder, IHeartbeatLogic heartbeatLogic, ProfileModel profile)
-			=> new LikeCommentAction(builder,heartbeatLogic,profile);
+		public override IActionCommit Commit(IContentManager builder, IHeartbeatLogic heartbeatLogic)
+			=> new LikeCommentAction(builder,heartbeatLogic);
 	}
 }

@@ -4,23 +4,21 @@ import Buefy from 'buefy';
 import 'buefy/dist/buefy.css';
 import router from "./Route";
 import store from "./State";
+import VueResource from 'vue-resource';
+import Axios from 'axios'
+
 
 Vue.use(Buefy);
-Vue.config.productionTip = false
+Vue.use(VueResource);
 
-router.beforeEach((to, from, next) => {
-  if (to.matched.some(record => record.meta.requiresAuth)) {
-    // this route requires auth, check if logged in
-    // if not, redirect to login page.
-    if (!store.getters.isLoggedIn) {
-      next({ name: 'Login' })
-    } else {
-      next() // go to wherever I'm going
-    }
-  } else {
-    next() // does not require auth, make sure to always call next()!
-  }
-})
+//Vue.prototype.$http = Axios;
+
+const token = localStorage.getItem('token')
+if (token) {
+  Axios.defaults.headers.common['Authorization'] = token
+}
+
+Vue.config.productionTip = false
 
 new Vue({
   router:router,

@@ -2,17 +2,15 @@ import Api from './Api'
 
 export default {
   Login(params){
-    // eslint-disable-next-line no-console
-    console.log(params);   
-    return Api().post('/auth/loginaccount',{Username: params.Username, Password: params.Password})
+    return Api(undefined).post('/auth/loginaccount',params)
   },
-  GetInstagramAccountsForUser(params){
-    return Api().get('/insta/' + params.accountId)
+  GetInstagramAccountsForUser(params,token){
+    return Api(token).get('/insta/' + params.accountId)
   },
-  GetInstagramAccount(params){
-    return Api().get('insta/state/'+ params.accountId + '/' + params.instagramAccountId)
+  GetInstagramAccount(params,token){
+    return Api(token).get('insta/state/'+ params.accountId + '/' + params.instagramAccountId)
   },
-  LinkInstagramAccount(params){
-    return Api().post('insta/add',params)
+  LinkInstagramAccount(params,token){
+    return Api(token).post('insta/add',params)
   }
 }

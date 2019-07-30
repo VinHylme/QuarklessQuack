@@ -19,6 +19,7 @@ using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using MoreLinq;
 using QuarklessLogic.ServicesLogic.AgentLogic;
 using System.Collections.Async;
+using QuarklessContexts.Models.UserAuth.AuthTypes;
 
 namespace Quarkless.Services
 {
@@ -42,7 +43,7 @@ namespace Quarkless.Services
 		}
 	}
 	#endregion
-	public class AgentManager : IAgentManager
+	public sealed class AgentManager : IAgentManager
 	{
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
 		private readonly IProfileLogic _profileLogic;
@@ -63,9 +64,9 @@ namespace Quarkless.Services
 			_authHandler = authHandler;
 		}
 
-		private AddEventResponse AddToTimeline(TimelineEventModel events)
+		private AddEventResponse AddToTimeline(TimelineEventModel events, Limits limits)
 		{
-			if (events != null) {
+			if (events != null && limits!=null) {
 				try
 					{
 					var actionBase = events.ActionName.Split('_')[0].ToLower().GetValueFromDescription<ActionType>();
@@ -74,7 +75,17 @@ namespace Quarkless.Services
 					if(completedActionsDaily!=null && completedActionsHourly != null) { 
 						if (actionBase==(ActionType.CreatePost))
 						{
-							if (completedActionsDaily.Count >= PostActionOptions.CreatePostActionDailyLimit.Max)
+							if (completedActionsDaily.Count >= limits.DailyLimits.CreatePostLimit)
+							{
+								return new AddEventResponse
+								{
+									Event = events,
+									ContainsErrors = false,
+									HasCompleted = false,
+									DailyLimitReached = true
+								};
+							}
+							if(completedActionsHourly.Count >= limits.HourlyLimits.CreatePostLimit)
 							{
 								return new AddEventResponse
 								{
@@ -87,7 +98,7 @@ namespace Quarkless.Services
 						}
 						else if (actionBase==(ActionType.CreateCommentMedia))
 						{
-							if (completedActionsDaily.Count >= CommentingActionOptions.CommentingActionDailyLimit.Max)
+							if (completedActionsDaily.Count >= limits.DailyLimits.CreateCommentLimit)
 							{
 								return new AddEventResponse
 								{
@@ -97,7 +108,7 @@ namespace Quarkless.Services
 									DailyLimitReached = true
 								};
 							}
-							if (completedActionsHourly.Count >= CommentingActionOptions.CommentingActionHourlyLimit.Max)
+							if (completedActionsHourly.Count >= limits.HourlyLimits.CreateCommentLimit)
 							{
 								return new AddEventResponse
 								{
@@ -110,7 +121,7 @@ namespace Quarkless.Services
 						}
 						else if (actionBase==(ActionType.LikePost))
 						{
-							if (completedActionsDaily.Count >= LikeActionOptions.LikeActionDailyLimit.Max)
+							if (completedActionsDaily.Count >= limits.DailyLimits.LikePostLimit)
 							{
 								return new AddEventResponse
 								{
@@ -120,7 +131,7 @@ namespace Quarkless.Services
 									DailyLimitReached = true
 								};
 							}
-							if (completedActionsHourly.Count >= LikeActionOptions.LikeActionHourlyLimit.Max)
+							if (completedActionsHourly.Count >= limits.HourlyLimits.LikePostLimit)
 							{
 								new AddEventResponse
 								{
@@ -133,7 +144,7 @@ namespace Quarkless.Services
 						}
 						else if(actionBase == (ActionType.LikeComment))
 						{
-							if(completedActionsDaily.Count >= LikeCommentActionOptions.LikeActionDailyLimit.Max)
+							if(completedActionsDaily.Count >= limits.DailyLimits.LikeCommentLimit)
 							{
 								return new AddEventResponse
 								{
@@ -143,7 +154,7 @@ namespace Quarkless.Services
 									DailyLimitReached = true
 								};
 							}
-							if (completedActionsHourly.Count >= LikeCommentActionOptions.LikeActionHourlyLimit.Max)
+							if (completedActionsHourly.Count >= limits.HourlyLimits.LikeCommentLimit)
 							{
 								return new AddEventResponse
 								{
@@ -156,7 +167,7 @@ namespace Quarkless.Services
 						}
 						else if (actionBase==(ActionType.FollowUser))
 					{
-						if (completedActionsDaily.Count >= FollowActionOptions.FollowActionDailyLimit.Max)
+						if (completedActionsDaily.Count >= limits.DailyLimits.FollowPeopleLimit)
 						{
 							return new AddEventResponse
 							{
@@ -166,7 +177,7 @@ namespace Quarkless.Services
 								DailyLimitReached = true
 							};
 						}
-						if (completedActionsHourly.Count >= FollowActionOptions.FollowActionHourlyLimit.Max)
+						if (completedActionsHourly.Count >= limits.HourlyLimits.FollowPeopleLimit)
 						{
 							return new AddEventResponse
 							{
@@ -433,7 +444,7 @@ namespace Quarkless.Services
 					return DateTime.UtcNow;
 				}
 			}
-		public void Begin()
+		public async Task Begin()
 		{
 			//TODO : MAKE SURE ALL USERS ARE BUSINESS ACCOUNTS AND USERS OVER 100 FOLLOWERS BASE THEIR POSTING ON WHICH HOUR WAS MOST POPULAR
 			int numberOfWorkers = 0;
@@ -454,7 +465,10 @@ namespace Quarkless.Services
 								var accessToken = acc.Tokens.Where(_ => _.Name == "access_token").SingleOrDefault()?.Value;
 								var refreshToken = acc.Tokens.Where(_ => _.Name == "refresh_token").SingleOrDefault()?.Value;
 								var idToken = acc.Tokens.Where(_ => _.Name == "id_token").SingleOrDefault()?.Value;
-
+								if (_instaAccount.UserLimits == null)
+								{
+									_instaAccount.UserLimits = SetLimits(acc.Roles.FirstOrDefault().GetValueFromDescription<AuthTypes>());
+								}
 								_userStoreDetails.ORefreshToken = refreshToken;
 								if (expTime != null)
 								{
@@ -463,7 +477,8 @@ namespace Quarkless.Services
 									if(DateTime.UtcNow > toda.AddMinutes(-20))
 									{
 										var res = await _authHandler.RefreshLogin(refreshToken, acc.UserName);
-
+										_instaAccount.UserLimits = SetLimits(acc.Roles.FirstOrDefault().GetValueFromDescription<AuthTypes>());
+										await _instagramAccountLogic.PartialUpdateInstagramAccount(_instaAccount.AccountId,_instaAccount.Id, new InstagramAccountModel{UserLimits = _instaAccount.UserLimits});
 										accessToken = res.Results.AuthenticationResult.AccessToken;
 										idToken = res.Results.AuthenticationResult.IdToken;
 									
@@ -488,6 +503,8 @@ namespace Quarkless.Services
 								#endregion
 								var profile = await _profileLogic.GetProfile(_userStoreDetails.OAccountId, _userStoreDetails.OInstagramAccountUser);
 								if (profile == null) return;
+								_userStoreDetails.shortInstagram = _instaAccount;
+								_userStoreDetails.Profile = profile;
 								DateTime nextAvaliableDate = PickAGoodTime(_userStoreDetails.OAccountId, _userStoreDetails.OInstagramAccountUser);
 								#region Unfollow Section
 								if (_instaAccount.LastPurgeCycle == null)
@@ -502,7 +519,7 @@ namespace Quarkless.Services
 								{
 									if(DateTime.UtcNow > _instaAccount.LastPurgeCycle)
 									{
-										var res = ActionsManager.Begin.Commit(ActionType.UnFollowUser, _contentManager, _heartbeatLogic, profile)
+										var res = ActionsManager.Begin.Commit(ActionType.UnFollowUser, _contentManager, _heartbeatLogic)
 											.IncludeStrategy(new UnFollowStrategySettings
 												{
 													UnFollowStrategy = UnFollowStrategyType.LeastEngagingN,
@@ -534,31 +551,31 @@ namespace Quarkless.Services
 								#region Action Initialise
 								ActionsContainerManager actionsContainerManager = new ActionsContainerManager();
 
-								var likeAction = ActionsManager.Begin.Commit(ActionType.LikePost, _contentManager, _heartbeatLogic, profile)
+								var likeAction = ActionsManager.Begin.Commit(ActionType.LikePost, _contentManager, _heartbeatLogic)
 									.IncludeStrategy(new LikeStrategySettings()
 									{
 										LikeStrategy = LikeStrategyType.Default,
 									})
 									.IncludeUser(_userStoreDetails);
-								var postAction = ActionsManager.Begin.Commit(ActionType.CreatePost, _contentManager, _heartbeatLogic, profile)
+								var postAction = ActionsManager.Begin.Commit(ActionType.CreatePost, _contentManager, _heartbeatLogic)
 									.IncludeStrategy(new ImageStrategySettings
 									{
 										ImageStrategyType = ImageStrategyType.Default
 									})
 									.IncludeUser(_userStoreDetails);
-								var followAction = ActionsManager.Begin.Commit(ActionType.FollowUser, _contentManager, _heartbeatLogic, profile)
+								var followAction = ActionsManager.Begin.Commit(ActionType.FollowUser, _contentManager, _heartbeatLogic)
 									.IncludeStrategy(new FollowStrategySettings
 									{
 										FollowStrategy = FollowStrategyType.Default,
 									})
 									.IncludeUser(_userStoreDetails);
-								var commentAction = ActionsManager.Begin.Commit(ActionType.CreateCommentMedia, _contentManager, _heartbeatLogic, profile)
+								var commentAction = ActionsManager.Begin.Commit(ActionType.CreateCommentMedia, _contentManager, _heartbeatLogic)
 									.IncludeStrategy(new CommentingStrategySettings
 									{
 										CommentingStrategy = CommentingStrategy.Default,
 									})
 									.IncludeUser(_userStoreDetails);
-								var likeCommentAction = ActionsManager.Begin.Commit(ActionType.LikeComment, _contentManager, _heartbeatLogic, profile)
+								var likeCommentAction = ActionsManager.Begin.Commit(ActionType.LikeComment, _contentManager, _heartbeatLogic)
 									.IncludeStrategy(new LikeStrategySettings())
 									.IncludeUser(_userStoreDetails);
 
@@ -606,7 +623,7 @@ namespace Quarkless.Services
 											if (nextAvaliableDate != null)
 											{
 												_.ExecutionTime = nextAvaliableDate.AddSeconds(timeSett.Value.Max);
-												var res_ = AddToTimeline(_);
+												var res_ = AddToTimeline(_,_instaAccount.UserLimits);
 												if (res_.HasCompleted)
 												{
 
@@ -687,9 +704,170 @@ namespace Quarkless.Services
 					}).ContinueWith(x=>numberOfWorkers--);
 					numberOfWorkers++;
 				}
+				await Task.Delay(TimeSpan.FromSeconds(1));
 			}
 		}
-		
+		private Limits SetLimits(AuthTypes authType) 
+		{
+			// hardcoded values for now, probably will take from app variable
+			switch (authType)
+			{
+				case AuthTypes.Admin:
+					return new Limits
+					{
+						DailyLimits = new DailyActions
+						{
+							CreateCommentLimit = 500,
+							CreatePostLimit = 24,
+							FollowPeopleLimit = 225,
+							FollowTopicLimit = 225,
+							LikeCommentLimit = 900,
+							LikePostLimit = 900
+						},
+						HourlyLimits = new HourlyActions
+						{
+							CreatePostLimit = 5,
+							CreateCommentLimit = 55,
+							FollowPeopleLimit = 55,
+							FollowTopicLimit = 55,
+							LikeCommentLimit = 55,
+							LikePostLimit = 55
+						}
+					};
+				case AuthTypes.BasicUsers:
+					return new Limits
+					{
+						DailyLimits = new DailyActions
+						{
+							CreateCommentLimit = 100,
+							CreatePostLimit = 8,
+							FollowPeopleLimit = 80,
+							FollowTopicLimit = 80,
+							LikeCommentLimit = 200,
+							LikePostLimit = 200
+						},
+						HourlyLimits = new HourlyActions
+						{
+							CreatePostLimit = 2,
+							CreateCommentLimit = 30,
+							FollowPeopleLimit = 30,
+							FollowTopicLimit = 30,
+							LikeCommentLimit = 30,
+							LikePostLimit = 30
+						}
+					};
+				case AuthTypes.EnterpriseUsers:
+					return new Limits
+					{
+						DailyLimits = new DailyActions
+						{
+							CreateCommentLimit = 499,
+							CreatePostLimit = 23,
+							FollowPeopleLimit = 220,
+							FollowTopicLimit = 220,
+							LikeCommentLimit = 899,
+							LikePostLimit = 899
+						},
+						HourlyLimits = new HourlyActions
+						{
+							CreatePostLimit = 4,
+							CreateCommentLimit = 53,
+							FollowPeopleLimit = 53,
+							FollowTopicLimit = 53,
+							LikeCommentLimit = 53,
+							LikePostLimit = 53
+						}
+					};
+				case AuthTypes.Expired:
+					return new Limits
+					{
+						DailyLimits = new DailyActions
+						{
+							CreateCommentLimit = 0,
+							CreatePostLimit = 0,
+							FollowPeopleLimit = 0,
+							FollowTopicLimit = 0,
+							LikeCommentLimit = 0,
+							LikePostLimit = 0
+						},
+						HourlyLimits = new HourlyActions
+						{
+							CreatePostLimit = 0,
+							CreateCommentLimit = 0,
+							FollowPeopleLimit = 0,
+							FollowTopicLimit = 0,
+							LikeCommentLimit = 0,
+							LikePostLimit = 0
+						}
+					};
+				case AuthTypes.PremiumUsers:
+					return new Limits
+					{
+						DailyLimits = new DailyActions
+						{
+							CreateCommentLimit = 280,
+							CreatePostLimit = 15,
+							FollowPeopleLimit = 125,
+							FollowTopicLimit = 125,
+							LikeCommentLimit = 600,
+							LikePostLimit = 600
+						},
+						HourlyLimits = new HourlyActions
+						{
+							CreatePostLimit = 3,
+							CreateCommentLimit = 42,
+							FollowPeopleLimit = 42,
+							FollowTopicLimit = 42,
+							LikeCommentLimit = 42,
+							LikePostLimit = 42
+						}
+					};
+				case AuthTypes.TrialUsers:
+					return new Limits
+					{
+						DailyLimits = new DailyActions
+						{
+							CreateCommentLimit = 60,
+							CreatePostLimit = 4,
+							FollowPeopleLimit = 40,
+							FollowTopicLimit = 40,
+							LikeCommentLimit = 100,
+							LikePostLimit = 100
+						},
+						HourlyLimits = new HourlyActions
+						{
+							CreatePostLimit = 1,
+							CreateCommentLimit = 15,
+							FollowPeopleLimit = 15,
+							FollowTopicLimit = 15,
+							LikeCommentLimit = 15,
+							LikePostLimit = 15
+						}
+					};
+				default:
+					return new Limits
+					{
+						DailyLimits = new DailyActions
+						{
+							CreateCommentLimit = 0,
+							CreatePostLimit = 0,
+							FollowPeopleLimit = 0,
+							FollowTopicLimit = 0,
+							LikeCommentLimit = 0,
+							LikePostLimit = 0
+						},
+						HourlyLimits = new HourlyActions
+						{
+							CreatePostLimit = 0,
+							CreateCommentLimit = 0,
+							FollowPeopleLimit = 0,
+							FollowTopicLimit = 0,
+							LikeCommentLimit = 0,
+							LikePostLimit = 0
+						}
+					};
+			}
+		}
 		private void SetLimits(DateTime date)
 		{
 			if (DateTime.UtcNow.Subtract(date).TotalDays < 7)

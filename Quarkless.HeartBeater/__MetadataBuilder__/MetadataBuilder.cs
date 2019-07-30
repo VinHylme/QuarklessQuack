@@ -709,6 +709,25 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 								FollowingCount = details.UserDetail.FollowingCount,
 								TotalPostsCount = details.UserDetail.MediaCount,
 								Email = details.UserDetail.PublicEmail,
+								ProfilePicture = details.UserDetail.ProfilePicture ?? details.UserDetail.ProfilePicUrl,
+								FullName = details.UserDetail.FullName,
+								UserBiography = new QuarklessContexts.Models.InstagramAccounts.Biography
+								{
+									Text = details.UserDetail.BiographyWithEntities.Text,
+									Hashtags = details.UserDetail.BiographyWithEntities.Entities.Select(_=>_.Hashtag.Name).ToList()
+								},
+								IsBusiness =  details.UserDetail.IsBusiness,
+								Location = new QuarklessContexts.Models.Profiles.Location
+								{
+									Address = details.UserDetail.AddressStreet,
+									City = details.UserDetail.CityName,
+									Coordinates = new QuarklessContexts.Models.Profiles.Coordinates
+									{
+										Latitude = details.UserDetail.Latitude,
+										Longitude = details.UserDetail.Longitude
+									},
+									PostCode = details.UserDetail.ZipCode
+								},
 								PhoneNumber = details.UserDetail.PublicPhoneCountryCode + (!string.IsNullOrEmpty(details.UserDetail.PublicPhoneNumber) ? details.UserDetail.PublicPhoneNumber : details.UserDetail.ContactPhoneNumber)
 							});
 						}

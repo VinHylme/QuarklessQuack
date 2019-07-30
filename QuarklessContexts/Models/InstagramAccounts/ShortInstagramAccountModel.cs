@@ -1,54 +1,51 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using QuarklessContexts.Models.Profiles;
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Text;
 
 namespace QuarklessContexts.Models.InstagramAccounts
 {
 	public class DailyActions
 	{
-		public DateTime? Date { get; set; }
+		[BsonRepresentation(BsonType.Int32)]
+		public long CreatePostLimit { get; set; }
 
-		[BsonRepresentation(BsonType.Int64)]
-		public long NumberOfPostsPosted { get; set; }
+		[BsonRepresentation(BsonType.Int32)]
+		public long CreateCommentLimit { get; set; }
 
-		[BsonRepresentation(BsonType.Int64)]
-		public long NumberOfCommentsMade { get; set; }
+		[BsonRepresentation(BsonType.Int32)]
+		public long LikeCommentLimit { get; set; }
 
-		[BsonRepresentation(BsonType.Int64)]
-		public long NumberOfCommentsLiked { get; set; }
+		[BsonRepresentation(BsonType.Int32)]
+		public long LikePostLimit { get; set; }
 
-		[BsonRepresentation(BsonType.Int64)]
-		public long NumberOfPostsLiked { get; set; }
+		[BsonRepresentation(BsonType.Int32)]
+		public long FollowPeopleLimit { get; set; }
 
-		[BsonRepresentation(BsonType.Int64)]
-		public long NumberOfPeopleFollowed { get; set; }
-
-		[BsonRepresentation(BsonType.Int64)]
-		public long NumberOfTopicsFollowed { get; set; }
+		[BsonRepresentation(BsonType.Int32)]
+		public long FollowTopicLimit { get; set; }
 	}
 	public class HourlyActions
 	{
-		public DateTime? Date { get; set; }
+		[BsonRepresentation(BsonType.Int32)]
+		public long CreatePostLimit { get; set; }
 
-		[BsonRepresentation(BsonType.Int64)]
-		public long NumberOfPostsPostedHourly { get; set; }
+		[BsonRepresentation(BsonType.Int32)]
+		public long CreateCommentLimit { get; set; }
 
-		[BsonRepresentation(BsonType.Int64)]
-		public long NumberOfCommentsMadeHourly { get; set; }
+		[BsonRepresentation(BsonType.Int32)]
+		public long LikeCommentLimit { get; set; }
 
-		[BsonRepresentation(BsonType.Int64)]
-		public long NumberOfCommentsLikedHourly { get; set; }
+		[BsonRepresentation(BsonType.Int32)]
+		public long LikePostLimit { get; set; }
 
-		[BsonRepresentation(BsonType.Int64)]
-		public long NumberOfPostsLikedHourly { get; set; }
+		[BsonRepresentation(BsonType.Int32)]
+		public long FollowPeopleLimit { get; set; }
 
-		[BsonRepresentation(BsonType.Int64)]
-		public long NumberOfPeopleFollowedHourly { get; set; }
-
-		[BsonRepresentation(BsonType.Int64)]
-		public long NumberOfTopicsFollowedHourly { get; set; }
+		[BsonRepresentation(BsonType.Int32)]
+		public long FollowTopicLimit { get; set; }
 	}
 	public class ActionStates
 	{
@@ -66,20 +63,25 @@ namespace QuarklessContexts.Models.InstagramAccounts
 		Challenge = 6,
 		AwaitingActionFromUser = 7
 	}
-	public class AgentSettings
+	public class Biography
 	{
-		public int AgentState { get; set; }
-
-		[BsonRepresentation(BsonType.DateTime)]
-		public DateTime? LastPurgeCycle { get; set; }
-		//public ActionStates ActionStates { get; set; }
+		public string Text { get; set; }
+		public IList<string> Hashtags { get; set; }
 	}
-
+	public class Limits
+	{
+		public DailyActions DailyLimits { get; set; }
+		public HourlyActions HourlyLimits { get; set; }
+	}
 	public class ShortInstagramAccountModel
 	{
 		public string Id { get; set; }
 		public string AccountId { get; set; }
 		public string Username { get; set; }
+		public string FullName { get; set; }
+		public string ProfilePicture { get; set; }
+		public Biography UserBiography { get; set; }
+		public Location Location { get; set; }
 		public string Email { get; set; }
 		public string PhoneNumber { get; set; }
 		public int? AgentState { get; set; }
@@ -95,5 +97,7 @@ namespace QuarklessContexts.Models.InstagramAccounts
 
 		[BsonRepresentation(BsonType.DateTime)]
 		public DateTime? DateAdded { get; set; }
+		public Limits UserLimits { get; set; }
+		public bool IsBusiness { get; set ;}
 	}
 }

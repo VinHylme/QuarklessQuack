@@ -1,6 +1,7 @@
 ﻿using InstagramApiSharp.Classes;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using QuarklessContexts.Models.Profiles;
 using System;
 
 namespace QuarklessContexts.Models.InstagramAccounts
@@ -13,6 +14,10 @@ namespace QuarklessContexts.Models.InstagramAccounts
 		public string AccountId { get; set; }
 		public StateData State { get; set; }
 		public string Username { get; set; }
+		public string FullName { get; set; }
+		public string ProfilePicture { get; set; }
+		public Biography UserBiography { get; set; }
+		public Location Location { get; set; }
 		public string Password { get; set; }
 		public string Email { get; set; }
 		public string PhoneNumber { get; set; }
@@ -30,5 +35,8 @@ namespace QuarklessContexts.Models.InstagramAccounts
 
 		[BsonRepresentation(BsonType.DateTime)]
 		public DateTime? DateAdded { get; set; }
+		public Limits UserLimits { get; set; }
+		public bool IsBusiness { get ;set; }
+
 	}
 }

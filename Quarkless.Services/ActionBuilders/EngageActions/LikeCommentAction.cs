@@ -33,23 +33,21 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	{
 		private readonly IContentManager _builder;
 		private readonly IHeartbeatLogic _heartbeatLogic;
-		private readonly ProfileModel _profile;
 		private UserStoreDetails user;
 		private LikeStrategySettings likeStrategySettings;
-		public LikeCommentAction(IContentManager contentManager, IHeartbeatLogic heartbeatLogic, ProfileModel profileModel)
+		public LikeCommentAction(IContentManager contentManager, IHeartbeatLogic heartbeatLogic)
 		{
 			_builder = contentManager;
 			_heartbeatLogic = heartbeatLogic;
-			_profile = profileModel;
 		}
 		private long? CommentingByTopic()
 		{
 			By by = new By
 			{
 				ActionType = (int)ActionType.LikeComment,
-				User = _profile.InstagramAccountId
+				User = user.Profile.InstagramAccountId
 			};
-			var fetchComments = _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchUsersViaPostCommented, _profile.Topics.TopicFriendlyName)
+			var fetchComments = _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchUsersViaPostCommented, user.Profile.Topics.TopicFriendlyName)
 				.GetAwaiter().GetResult().Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Count > 0);
 
@@ -59,7 +57,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				if (select != null)
 				{
 					select.SeenBy.Add(by);
-					_heartbeatLogic.UpdateMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchUsersViaPostCommented, _profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
+					_heartbeatLogic.UpdateMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchUsersViaPostCommented, user.Profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
 					var comment = select.ObjectItem.FirstOrDefault();
 					if (comment != null)
 					{
@@ -74,9 +72,9 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			By by = new By
 			{
 				ActionType = (int)ActionType.LikeComment,
-				User = _profile.InstagramAccountId
+				User = user.Profile.InstagramAccountId
 			};
-			var fetchComments = _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaPostCommented, _profile.Topics.TopicFriendlyName)
+			var fetchComments = _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaPostCommented, user.Profile.Topics.TopicFriendlyName)
 				.GetAwaiter().GetResult().Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Count > 0);
 
@@ -86,7 +84,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				if (select != null)
 				{
 					select.SeenBy.Add(by);
-					_heartbeatLogic.UpdateMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaPostCommented, _profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
+					_heartbeatLogic.UpdateMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaPostCommented, user.Profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
 					var comment = select.ObjectItem.FirstOrDefault();
 					if (comment != null)
 					{
@@ -101,9 +99,9 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			By by = new By
 			{
 				ActionType = (int)ActionType.LikeComment,
-				User = _profile.InstagramAccountId
+				User = user.Profile.InstagramAccountId
 			};
-			var fetchComments = _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaPostsLiked, _profile.Topics.TopicFriendlyName)
+			var fetchComments = _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaPostsLiked, user.Profile.Topics.TopicFriendlyName)
 				.GetAwaiter().GetResult().Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Count > 0);
 
@@ -113,7 +111,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				if (select != null)
 				{
 					select.SeenBy.Add(by);
-					_heartbeatLogic.UpdateMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaPostsLiked, _profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
+					_heartbeatLogic.UpdateMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaPostsLiked, user.Profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
 					var comment = select.ObjectItem.FirstOrDefault();
 					if (comment != null)
 					{
@@ -128,9 +126,9 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			By by = new By
 			{
 				ActionType = (int)ActionType.LikeComment,
-				User = _profile.InstagramAccountId
+				User = user.Profile.InstagramAccountId
 			};
-			var fetchComments = _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaUserTargetList, _profile.Topics.TopicFriendlyName)
+			var fetchComments = _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaUserTargetList, user.Profile.Topics.TopicFriendlyName)
 				.GetAwaiter().GetResult().Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Count > 0);
 
@@ -140,7 +138,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				if (select != null)
 				{
 					select.SeenBy.Add(by);
-					_heartbeatLogic.UpdateMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaUserTargetList, _profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
+					_heartbeatLogic.UpdateMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaUserTargetList, user.Profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
 					var comment = select.ObjectItem.FirstOrDefault();
 					if (comment != null)
 					{
@@ -155,9 +153,9 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			By by = new By
 			{
 				ActionType = (int)ActionType.LikeComment,
-				User = _profile.InstagramAccountId
+				User = user.Profile.InstagramAccountId
 			};
-			var fetchComments = _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaLocationTargetList, _profile.Topics.TopicFriendlyName)
+			var fetchComments = _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaLocationTargetList, user.Profile.Topics.TopicFriendlyName)
 				.GetAwaiter().GetResult().Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Count > 0);
 
@@ -167,7 +165,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				if (select != null)
 				{
 					select.SeenBy.Add(by);
-					_heartbeatLogic.UpdateMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaLocationTargetList, _profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
+					_heartbeatLogic.UpdateMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaLocationTargetList, user.Profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
 					var comment = select.ObjectItem.FirstOrDefault();
 					if (comment != null)
 					{
@@ -182,9 +180,9 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			By by = new By
 			{
 				ActionType = (int)ActionType.LikeComment,
-				User = _profile.InstagramAccountId
+				User = user.Profile.InstagramAccountId
 			};
-			var fetchComments = _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaUserFeed, _profile.Topics.TopicFriendlyName)
+			var fetchComments = _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaUserFeed, user.Profile.Topics.TopicFriendlyName)
 				.GetAwaiter().GetResult().Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Count > 0);
 
@@ -194,7 +192,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				if (select != null)
 				{
 					select.SeenBy.Add(by);
-					_heartbeatLogic.UpdateMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaUserFeed, _profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
+					_heartbeatLogic.UpdateMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaUserFeed, user.Profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
 					var comment = select.ObjectItem.FirstOrDefault();
 					if (comment != null)
 					{
@@ -250,12 +248,12 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 							new Chance<LikeCommentActionType>{Object = LikeCommentActionType.ByLikers, Probability = 0.20},
 							new Chance<LikeCommentActionType>{Object = LikeCommentActionType.ByCommenters, Probability = 0.20},
 						};
-						if (_profile.UserTargetList != null) 
-							if(_profile.UserTargetList.Count > 0)
+						if (user.Profile.UserTargetList != null) 
+							if(user.Profile.UserTargetList.Count > 0)
 								likeActionsChances.Add(new Chance<LikeCommentActionType> { Object = LikeCommentActionType.ByUserTarget, Probability = 0.10 });
 							
-						if(_profile.LocationTargetList != null)
-							if(_profile.LocationTargetList.Count > 0)
+						if(user.Profile.LocationTargetList != null)
+							if(user.Profile.LocationTargetList.Count > 0)
 								likeActionsChances.Add(new Chance<LikeCommentActionType> { Object = LikeCommentActionType.ByLocation, Probability = 0.10 });
 					}
 					else

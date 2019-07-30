@@ -34,6 +34,13 @@ namespace Quarkless.Common
 		{
 			return File.ReadAllText(path);
 		}
+		public string FrontEnd
+		{
+			get
+			{
+				return _configuration["Endpoints:FrontEnd"];
+			}
+		}
 		public string YandexAPIKey
 		{
 			get

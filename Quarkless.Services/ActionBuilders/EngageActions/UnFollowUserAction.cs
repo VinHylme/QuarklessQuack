@@ -24,12 +24,10 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		private readonly IContentManager _content;
 		private readonly IHeartbeatLogic _heartbeatLogic;
 		private UnFollowStrategySettings unFollowStrategySettings;
-		private readonly ProfileModel _profile;
 		private UserStoreDetails user;
-		public UnFollowUserAction(IContentManager content,IHeartbeatLogic heartbeatLogic, ProfileModel profile)
+		public UnFollowUserAction(IContentManager content,IHeartbeatLogic heartbeatLogic)
 		{
 			this._content = content;
-			this._profile = profile;
 			this._heartbeatLogic = heartbeatLogic;
 		}
 
@@ -57,9 +55,9 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			By by = new By
 			{
 				ActionType = (int)ActionType.UnFollowUser,
-				User = _profile.InstagramAccountId
+				User = user.Profile.InstagramAccountId
 			};
-			var fetchedUsers = _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersFollowingList, _profile.Topics.TopicFriendlyName, _profile.InstagramAccountId)
+			var fetchedUsers = _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersFollowingList, user.Profile.Topics.TopicFriendlyName, user.Profile.InstagramAccountId)
 				.GetAwaiter().GetResult().Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType));
 			if (fetchedUsers != null) { 
 				if (unFollowStrategySettings.UnFollowStrategy == UnFollowStrategyType.Default)
@@ -69,7 +67,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					if (nominatedUser!=null)
 					{
 						nominatedUser.SeenBy.Add(by);
-						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFollowingList, _profile.Topics.TopicFriendlyName, nominatedUser).GetAwaiter().GetResult();
+						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFollowingList, user.Profile.Topics.TopicFriendlyName, nominatedUser).GetAwaiter().GetResult();
 						RestModel restModel = new RestModel
 						{
 							BaseUrl = string.Format(UrlConstants.UnfollowUser, nominatedUser.ObjectItem.FirstOrDefault().UserId),
@@ -99,7 +97,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						if (nominate != null)
 						{
 							nominate.SeenBy.Add(by);
-							_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFollowingList, _profile.Topics.TopicFriendlyName, nominate).GetAwaiter().GetResult();
+							_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFollowingList, user.Profile.Topics.TopicFriendlyName, nominate).GetAwaiter().GetResult();
 							RestModel restModel = new RestModel
 							{
 								BaseUrl = string.Format(UrlConstants.UnfollowUser, nominate.ObjectItem.FirstOrDefault().UserId),

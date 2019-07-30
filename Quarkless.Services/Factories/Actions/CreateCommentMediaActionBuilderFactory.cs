@@ -7,7 +7,7 @@ namespace Quarkless.Services.Factories.Actions
 {
 	public class CreateCommentMediaActionBuilderFactory : ActionBuilderFactory
 	{
-		public override IActionCommit Commit(IContentManager builder, IHeartbeatLogic heartbeatLogic, ProfileModel profile)
-			=> new CreateCommentAction(builder,heartbeatLogic,profile);
+		public override IActionCommit Commit(IContentManager builder, IHeartbeatLogic heartbeatLogic)
+			=> new CreateCommentAction(builder,heartbeatLogic);
 	}
 }

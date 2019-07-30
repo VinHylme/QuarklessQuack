@@ -7,8 +7,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Common;
 using QuarklessLogic.QueueLogic.Jobs.Filters;
-using Quartz;
 using StackExchange.Redis;
+using Microsoft.AspNetCore.Cors.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Cors.Internal;
 
 namespace Quarkless
 {
@@ -16,6 +17,7 @@ namespace Quarkless
     {
         //public const string AppS3BucketKey = "AppS3Bucket";	
 		private readonly Accessors _accessors;
+		private const string CorsPolicy = "HashtagGrowCORSPolicy";
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -35,7 +37,19 @@ namespace Quarkless
 			services.AddContexts();
 			services.AddHandlers();
 			services.AddRepositories(_accessors);
-	
+			services.AddCors(options=>{
+				options.AddPolicy(CorsPolicy,
+					builder=>
+					{
+						builder.WithOrigins(_accessors.FrontEnd);
+						builder.AllowAnyHeader();
+						builder.AllowAnyMethod();
+					});//.WithOrigins(_accessors.FrontEnd));
+			});
+			services.Configure<MvcOptions>(options =>
+			{
+				options.Filters.Add(new CorsAuthorizationFilterFactory(CorsPolicy));
+			});
 			services.AddHangfire(options =>
 			{
 			//	options.UseFilter(new ProlongExpirationTimeAttribute());
@@ -91,6 +105,7 @@ namespace Quarkless
 				ServerName = string.Format("ISE_{0}.{1}", Environment.MachineName, Guid.NewGuid().ToString()),
 				//Activator = new WorkerActivator(services.BuildServiceProvider(false)),
 			};
+			app.UseCors(CorsPolicy);
 			app.UseHangfireServer(jobServerOptions);
 			app.UseHangfireDashboard();
 			app.UseHttpsRedirection();

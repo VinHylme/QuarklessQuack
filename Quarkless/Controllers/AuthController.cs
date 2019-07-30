@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Amazon.CognitoIdentityProvider;
 using AspNetCore.Identity.MongoDbCore.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using QuarklessContexts.Contexts.AccountContext;
 using QuarklessContexts.Models.UserAuth.Auth;
@@ -22,6 +23,7 @@ namespace Quarkless.Controllers
 		{
 			_authHandler = authHandler;
 		}
+		[EnableCors("HashtagGrowCORSPolicy")]
 		[AllowAnonymous]
 		[HttpPost]
 		[Route("api/auth/loginaccount")]
@@ -88,6 +90,7 @@ namespace Quarkless.Controllers
 									Value = responseConcatenate.IdToken
 								}
 							};
+							userdb.Roles =  tokenClaims.Claims.Where(_=>_.Type.Contains("groups")).Select(s=>s.Value).ToList();
 							var aresu = await _authHandler.UpdateUser(userdb);
 							if (!aresu)
 							{

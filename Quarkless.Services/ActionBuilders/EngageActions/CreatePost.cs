@@ -24,16 +24,14 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 {
 	class CreatePost : IActionCommit
 	{
-		private readonly ProfileModel _profile;
 		private UserStoreDetails user;
 		private readonly IContentManager _builder;
 		private readonly IHeartbeatLogic _heartbeatLogic;
 		private ImageStrategySettings imageStrategySettings;
-		public CreatePost(IContentManager builder, IHeartbeatLogic heartbeatLogic, ProfileModel profile)
+		public CreatePost(IContentManager builder, IHeartbeatLogic heartbeatLogic)
 		{
 			_heartbeatLogic = heartbeatLogic;
 			_builder = builder;
-			_profile = profile;
 		}
 
 		public IActionCommit IncludeStrategy(IStrategySettings strategy)
@@ -52,6 +50,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			public InstaMediaType MediaType;
 			public List<MediaData> MediaData = new List<MediaData>();
 		}
+		
 		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
 			Console.WriteLine($"Create Media Action Started: {user.OAccountId}, {user.OInstagramAccountUsername}, {user.OInstagramAccountUser}");
@@ -69,20 +68,20 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			}
 			try
 			{
-				var location = _profile.LocationTargetList?.ElementAtOrDefault(SecureRandom.Next(_profile.LocationTargetList.Count-1));
-				//var profileColor = _profile.Theme.Colors[(SecureRandom.Next(0, _profile.Theme.Colors.Count-1))];
+				var location = user.Profile.LocationTargetList?.ElementAtOrDefault(SecureRandom.Next(user.Profile.LocationTargetList.Count-1));
+				//var profileColor = user.Profile.Theme.Colors[(SecureRandom.Next(0, user.Profile.Theme.Colors.Count-1))];
 				Topics topic_;
-				if(_profile.Topics.SubTopics==null || _profile.Topics.SubTopics.Count <= 0) { 
-					topic_ = _builder.GetTopic(user, _profile, 20).GetAwaiter().GetResult();
+				if(user.Profile.Topics.SubTopics==null || user.Profile.Topics.SubTopics.Count <= 0) { 
+					topic_ = _builder.GetTopic(user, user.Profile, 20).GetAwaiter().GetResult();
 				}
 				else
 				{
-					topic_ = _profile.Topics;
+					topic_ = user.Profile.Topics;
 				}
 
 				List<__Meta__<Media>> TotalResults = new List<__Meta__<Media>>();
 				MetaDataType selectedAction = MetaDataType.None;
-				int searchTypeSelected = _profile.AdditionalConfigurations.SearchTypes[SecureRandom.Next(_profile.AdditionalConfigurations.SearchTypes.Count)];
+				int searchTypeSelected = user.Profile.AdditionalConfigurations.SearchTypes[SecureRandom.Next(user.Profile.AdditionalConfigurations.SearchTypes.Count)];
 
 				switch (searchTypeSelected)
 				{
@@ -90,13 +89,13 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						int[] ran = new int[] { 0, 1};
 						int num = ran.ElementAt(SecureRandom.Next(ran.Length-1));
 						MetaDataType selectedQuery = num == 0 ? MetaDataType.FetchMediaForSpecificUserGoogle : MetaDataType.FetchMediaForSepcificUserYandexQuery;
-						var gores = _heartbeatLogic.GetMetaData<Media>(selectedQuery,_profile.Topics.TopicFriendlyName, _profile.InstagramAccountId).GetAwaiter().GetResult();
+						var gores = _heartbeatLogic.GetMetaData<Media>(selectedQuery,user.Profile.Topics.TopicFriendlyName, user.Profile.InstagramAccountId).GetAwaiter().GetResult();
 						selectedAction = selectedQuery;
 						if (gores != null)
 							TotalResults = gores.ToList();
 						break;
 					case (int)SearchType.Instagram:
-						if (_profile.UserTargetList != null && _profile.UserTargetList.Count() > 0)
+						if (user.Profile.UserTargetList != null && user.Profile.UserTargetList.Count() > 0)
 						{
 							int[] action = new int[] { 0, 1 };
 							int numpicked = action.ElementAt(SecureRandom.Next(action.Length-1));
@@ -107,18 +106,18 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 								userId = null;
 								selected = MetaDataType.FetchMediaByTopic;
 							}
-							TotalResults = _heartbeatLogic.GetMetaData<Media>(selected, _profile.Topics.TopicFriendlyName, userId).GetAwaiter().GetResult().ToList();
+							TotalResults = _heartbeatLogic.GetMetaData<Media>(selected, user.Profile.Topics.TopicFriendlyName, userId).GetAwaiter().GetResult().ToList();
 							selectedAction = selected;
 						}
 						else { 
-							TotalResults = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic,_profile.Topics.TopicFriendlyName).GetAwaiter().GetResult().ToList();
+							TotalResults = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic,user.Profile.Topics.TopicFriendlyName).GetAwaiter().GetResult().ToList();
 							selectedAction = MetaDataType.FetchMediaByTopic;
 						}
 						break;
 					case (int)SearchType.Yandex:
-						if (_profile.Theme.ImagesLike != null && _profile.Theme.ImagesLike.Count > 0)
+						if (user.Profile.Theme.ImagesLike != null && user.Profile.Theme.ImagesLike.Count > 0)
 						{
-							var yanres = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaForSpecificUserYandex,_profile.Topics.TopicFriendlyName, _profile.InstagramAccountId).GetAwaiter().GetResult();
+							var yanres = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaForSpecificUserYandex,user.Profile.Topics.TopicFriendlyName, user.Profile.InstagramAccountId).GetAwaiter().GetResult();
 							selectedAction = MetaDataType.FetchMediaForSpecificUserYandex;
 							if (yanres != null)
 								TotalResults = yanres.ToList();
@@ -139,7 +138,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				By by = new By
 				{
 					ActionType = (int)ActionType.CreatePost,
-					User = _profile.InstagramAccountId
+					User = user.Profile.InstagramAccountId
 				};
 				var filteredResults = TotalResults.Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User
 				&& (e.ActionType == by.ActionType))).ToList();
@@ -173,10 +172,10 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						result.SeenBy.Add(by);
 						if(selectedAction == MetaDataType.FetchMediaByTopic)
 						{
-							_heartbeatLogic.UpdateMetaData(selectedAction, _profile.Topics.TopicFriendlyName, result).GetAwaiter().GetResult();
+							_heartbeatLogic.UpdateMetaData(selectedAction, user.Profile.Topics.TopicFriendlyName, result).GetAwaiter().GetResult();
 						}
 						else { 
-							_heartbeatLogic.UpdateMetaData(selectedAction, _profile.Topics.TopicFriendlyName, result, _profile.InstagramAccountId).GetAwaiter().GetResult();
+							_heartbeatLogic.UpdateMetaData(selectedAction, user.Profile.Topics.TopicFriendlyName, result, user.Profile.InstagramAccountId).GetAwaiter().GetResult();
 						}
 
 						if (media != null) {
@@ -187,8 +186,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 								{
 									var imBytes = url.DownloadMedia();
 									var colorfreq = imBytes.ByteToBitmap().GetColorPercentage().OrderBy(_ => _.Value);
-									var profileColors = _profile.Theme.Colors.Select(s => System.Drawing.Color.FromArgb(s.Red, s.Green, s.Blue));
-									if (colorfreq.Take(5).Select(x => x.Key).SimilarColors(profileColors, _profile.Theme.Percentage / 100))
+									var profileColors = user.Profile.Theme.Colors.Select(s => System.Drawing.Color.FromArgb(s.Red, s.Green, s.Blue));
+									if (colorfreq.Take(5).Select(x => x.Key).SimilarColors(profileColors, user.Profile.Theme.Percentage / 100))
 									{ 
 										if (_selectedMedia.MediaData.Count > 0)
 										{
@@ -227,8 +226,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 									var bytes_ = url.DownloadMedia();
 									if (bytes_ != null)
 									{
-										var profileColor = _profile.Theme.Colors.Select(s => System.Drawing.Color.FromArgb(s.Red, s.Green, s.Blue)).ElementAt(_profile.Theme.Colors.Count-1);
-										var simPath = profileColor.IsVideoSimilar(bytes_,_profile.Theme.Percentage/100,5);
+										var profileColor = user.Profile.Theme.Colors.Select(s => System.Drawing.Color.FromArgb(s.Red, s.Green, s.Blue)).ElementAt(user.Profile.Theme.Colors.Count-1);
+										var simPath = profileColor.IsVideoSimilar(bytes_,user.Profile.Theme.Percentage/100,5);
 										if (!string.IsNullOrEmpty(simPath))
 										{
 											_selectedMedia.MediaData.Add(new MediaData
@@ -258,8 +257,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 										if (imBytes.ImageSizeCheckFromByte(size))
 										{
 											var colorfreq = imBytes.ByteToBitmap().GetColorPercentage().OrderBy(_ => _.Value);
-											var profileColors = _profile.Theme.Colors.Select(s => System.Drawing.Color.FromArgb(s.Red, s.Green, s.Blue));
-											if (colorfreq.Take(5).Select(x => x.Key).SimilarColors(profileColors, _profile.Theme.Percentage / 100))
+											var profileColors = user.Profile.Theme.Colors.Select(s => System.Drawing.Color.FromArgb(s.Red, s.Green, s.Blue));
+											if (colorfreq.Take(5).Select(x => x.Key).SimilarColors(profileColors, user.Profile.Theme.Percentage / 100))
 											{
 												if (typeSelected == InstaMediaType.Image)
 												{
@@ -328,31 +327,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						};
 						return Results;
 					}
-						#region old
-					//List<byte[]> imagesBytes = new List<byte[]>();
-					//if(filterResults.Count <= 0) return null;
-
-					//Parallel.ForEach(filterResults,s=>
-					//{
-					//	foreach(var media in s.ObjectItem.Medias)
-					//	{
-					//		foreach(var url in media.MediaUrl)
-					//		{
-					//			imagesBytes.Add(url.DownloadMedia());
-					//		}
-					//	}
-					//});
-					//imagesBytes = imagesBytes.SelectImageOnSize(new System.Drawing.Size(800,800)).ToList();
-					//if(imagesBytes.Count <= 0) return null;
-
-					//System.Drawing.Color profileColorRGB = System.Drawing.Color.FromArgb(profileColor.Alpha, profileColor.Red, profileColor.Green, profileColor.Blue);
-
-					//var selectedImage = profileColorRGB.MostSimilarImage(imagesBytes.Where(_ => _ != null).ToList()).SharpenImage(4);
-
-					//if (selectedImage == null) return null;
-					#endregion
 				}
-				//TO DO : ADD LOCATION IMPLEMENTATION
+
 				RestModel restModel = new RestModel
 				{
 					RequestType = RequestType.POST,
@@ -368,14 +344,14 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					var credit = selectedImageMedia.User?.Username;
 					UploadPhotoModel uploadPhoto = new UploadPhotoModel
 					{
-						Caption = _builder.GenerateMediaInfo(topic_, selectedImageMedia.Topic, _profile.Language, credit),
+						Caption = _builder.GenerateMediaInfo(topic_, selectedImageMedia.Topic, user.Profile.Language, credit),
 						Image = instaimage,
-						Location = _profile.BusinessLocation !=null ? new InstaLocationShort
+						Location = user.shortInstagram.Location !=null ? new InstaLocationShort
 						{
-							Address = _profile.BusinessLocation.Address,
-							Lat = _profile.BusinessLocation.Coordinates.Latitude,
-							Lng = _profile.BusinessLocation.Coordinates.Longitude,
-							Name = _profile.BusinessLocation.City
+							Address = user.shortInstagram.Location.Address,
+							Lat = user.shortInstagram.Location.Coordinates.Latitude,
+							Lng = user.shortInstagram.Location.Coordinates.Longitude,
+							Name = user.shortInstagram.Location.City
 						} : null
 					};
 					restModel.BaseUrl = UrlConstants.UploadPhoto;
@@ -387,13 +363,13 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					var credit = selectedCarouselMedia.User?.Username;
 					UploadAlbumModel uploadAlbum = new UploadAlbumModel
 					{
-						Caption = _builder.GenerateMediaInfo(topic_, selectedCarouselMedia.Topic, _profile.Language, credit),
-						Location = _profile.BusinessLocation != null ? new InstaLocationShort
+						Caption = _builder.GenerateMediaInfo(topic_, selectedCarouselMedia.Topic, user.Profile.Language, credit),
+						Location = user.shortInstagram.Location != null ? new InstaLocationShort
 						{
-							Address = _profile.BusinessLocation.Address,
-							Lat = _profile.BusinessLocation.Coordinates.Latitude,
-							Lng = _profile.BusinessLocation.Coordinates.Longitude,
-							Name = _profile.BusinessLocation.City
+							Address = user.shortInstagram.Location.Address,
+							Lat = user.shortInstagram.Location.Coordinates.Latitude,
+							Lng = user.shortInstagram.Location.Coordinates.Longitude,
+							Name = user.shortInstagram.Location.City
 						} : null,
 						Album = _selectedMedia.MediaData.Select(f=> new InstaAlbumUpload 
 							{ 
@@ -410,13 +386,13 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					var credit = selectedVideoMedia.User?.Username;
 					UploadVideoModel uploadVideo = new UploadVideoModel
 					{
-						Caption = _builder.GenerateMediaInfo(topic_,selectedVideoMedia.Topic,_profile.Language,credit),
-						Location = _profile.BusinessLocation != null ? new InstaLocationShort
+						Caption = _builder.GenerateMediaInfo(topic_,selectedVideoMedia.Topic,user.Profile.Language,credit),
+						Location = user.shortInstagram.Location != null ? new InstaLocationShort
 						{
-							Address = _profile.BusinessLocation.Address,
-							Lat = _profile.BusinessLocation.Coordinates.Latitude,
-							Lng = _profile.BusinessLocation.Coordinates.Longitude,
-							Name = _profile.BusinessLocation.City
+							Address = user.shortInstagram.Location.Address,
+							Lat = user.shortInstagram.Location.Coordinates.Latitude,
+							Lng = user.shortInstagram.Location.Coordinates.Longitude,
+							Name = user.shortInstagram.Location.City
 						} : null,
 						Video = new InstaVideoUpload
 						{

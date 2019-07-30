@@ -1,15 +1,28 @@
 import Vue from "vue";
 import Router from "vue-router";
-import Home from "./components/Pages/Home.vue";
+import Home from './components/Pages/Home.vue';
 import Manage from "./components/Pages/Manage.vue";
 import Profiles from "./components/Pages/Profiles.vue";
 import Profile from "./components/Pages/Profile.vue";
 import Stats from "./components/Pages/Stats.vue";
-import Settings from "./components/Pages/Settings.vue";
+import Settings from './components/Pages/Settings.vue';
 import CreateAccount from "./components/Pages/CreateAccount.vue";
 import CreateProfile from "./components/Pages/CreateProfile.vue";
+import ViewAccount from "./components/Pages/ViewAccount.vue";
 import NotFound from "./components/Pages/HandlerPages/NotFound.vue";
 Vue.use(Router);
+var router = new Router({});
+router.beforeEach((to, from, next) => {
+    if(to.matched.some(record => record.meta.requiresAuth)) {
+      if (this.$store.getters.isLoggedIn) {
+        next()
+        return
+      }
+      next('/login') 
+    } else {
+      next() 
+    }
+  })
 
 export default new Router({
     mode:"history",
@@ -26,10 +39,18 @@ export default new Router({
        {
            name:"view",
            path:"/view/:id",
-           component:Manage,
+           component:ViewAccount,
            meta:{
                requiresAuth: true
            }
+       },
+       {
+            name:"manage",
+            path:"/manage",
+            component:Manage,
+            meta:{
+                requiresAuth:true
+            }
        },
        {
            name:"stats",

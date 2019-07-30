@@ -67,7 +67,7 @@ namespace Quarkless.HeartBeater.__Init__
 					{
 						if (x < requesters.Count) { 
 							var wo_ = workers.ElementAtOrDefault(x);
-							_topicBuilder.Init(new UserStoreDetails { OAccountId = wo_.AccountId, OInstagramAccountUser = wo_._id, OInstagramAccountUsername = wo_.Username });
+							_topicBuilder.Init(new UserStoreDetails { OAccountId = wo_.AccountId, OInstagramAccountUser = wo_.Id, OInstagramAccountUsername = wo_.Username });
 							var currAcc = requesters.ElementAtOrDefault(x);
 							var profileTopic = currAcc.Profile.Topics;
 							if (profileTopic.SubTopics == null || profileTopic.SubTopics.Count <= 1 || profileTopic.SubTopics.Any(s=> s.RelatedTopics==null || s.RelatedTopics.Count<3))
@@ -79,7 +79,7 @@ namespace Quarkless.HeartBeater.__Init__
 							{
 								InstagramRequests = requesters.ElementAt(x),
 								Topic = profileTopic,
-								Worker = new APIClientContainer(_context, wo_.AccountId, wo_._id)
+								Worker = new APIClientContainer(_context, wo_.AccountId, wo_.Id)
 							});
 						}
 					}
@@ -91,7 +91,7 @@ namespace Quarkless.HeartBeater.__Init__
 					{
 						var worker_ = workers.ElementAtOrDefault(wpos);
 						if (worker_ != null) { 
-							_topicBuilder.Init(new UserStoreDetails { OAccountId = worker_.AccountId, OInstagramAccountUser = worker_._id, OInstagramAccountUsername = worker_.Username });
+							_topicBuilder.Init(new UserStoreDetails { OAccountId = worker_.AccountId, OInstagramAccountUser = worker_.Id, OInstagramAccountUsername = worker_.Username });
 							var currAcc = requesters.ElementAtOrDefault(y);
 							var profileTopic = currAcc.Profile.Topics;
 
@@ -104,7 +104,7 @@ namespace Quarkless.HeartBeater.__Init__
 							{
 								InstagramRequests = requesters.ElementAtOrDefault(y),
 								Topic = profileTopic,
-								Worker = new APIClientContainer(_context,worker_.AccountId,worker_._id)
+								Worker = new APIClientContainer(_context,worker_.AccountId,worker_.Id)
 							});
 						}
 						else
@@ -188,9 +188,9 @@ namespace Quarkless.HeartBeater.__Init__
 				return null;
 			}
 		}
-		private async Task<IEnumerable<InstagramAccountModel>> GetAccounts(params string[] accounts)
+		private async Task<IEnumerable<ShortInstagramAccountModel>> GetAccounts(params string[] accounts)
 		{
-			List<InstagramAccountModel> accs = new List<InstagramAccountModel>();
+			List<ShortInstagramAccountModel> accs = new List<ShortInstagramAccountModel>();
 			foreach (var account in accounts)
 			{
 				var resp = await _instagramAccountLogic.GetInstagramAccountsOfUser(account, 1);

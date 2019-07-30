@@ -335,9 +335,17 @@ namespace Quarkless.MediaAnalyser
 		public static Bitmap ByteToBitmap(this byte[] imagesByte)
 		{
 			if(imagesByte==null) return null;
-			using (var ms = new MemoryStream(imagesByte))
+			try { 
+				using (var ms = new MemoryStream(imagesByte))
+				{
+					ms.Seek(0, SeekOrigin.Begin);
+					return new Bitmap(ms);
+				}
+			}
+			catch(Exception io)
 			{
-				return new Bitmap(ms);
+				Console.WriteLine(io.Message);
+				return null;
 			}
 		}
 		public static byte[] BitmapToByte(this Bitmap bitmap)
@@ -539,7 +547,7 @@ namespace Quarkless.MediaAnalyser
 			string path = GetFilePathByName("videosTempPath");
 			string outp = GetFilePathByName("imagesTempPath");
 			string engine_path = GetFilePathByName("enginePath");
-			string videoPath = string.Format(path + "video_{0}_{1}.mp4", Guid.NewGuid(), DateTime.UtcNow.ToLongDateString());
+			string videoPath = string.Format(path + "video_{0}.mp4", Guid.NewGuid());
 			Color dom_color = new Color();
 			File.WriteAllBytes(videoPath, video);
 			try
@@ -551,7 +559,7 @@ namespace Quarkless.MediaAnalyser
 				while (i < meta.Duration.Seconds)
 				{
 					var opt = new ConversionOptions { Seek = TimeSpan.FromSeconds(frameSkip) };
-					var outputFile = new MediaFile((string.Format(@"{0}image-{1}_{2}_{3}.jpeg", outp, i, Guid.NewGuid(), DateTime.UtcNow.ToLongDateString())));
+					var outputFile = new MediaFile((string.Format(@"{0}image-{1}_{2}.jpeg", outp, i, Guid.NewGuid())));
 					engine.GetThumbnailAsync(mediaFile, outputFile, opt);
 					i++;
 				}

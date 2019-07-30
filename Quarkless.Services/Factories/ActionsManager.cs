@@ -28,7 +28,7 @@ namespace Quarkless.Services.Factories
 
 		public static ActionsManager Begin => new ActionsManager();
 
-		public IActionCommit Commit(ActionType actionType,IContentManager actionBuilderManager, IHeartbeatLogic heartbeatLogic,
-			ProfileModel profile) =>_factories[actionType].Commit(actionBuilderManager,heartbeatLogic,profile);
+		public IActionCommit Commit(ActionType actionType,IContentManager actionBuilderManager, IHeartbeatLogic heartbeatLogic) 
+			=>_factories[actionType].Commit(actionBuilderManager,heartbeatLogic);
 	}
 }

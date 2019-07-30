@@ -1,0 +1,20 @@
+// let InstagramAccountModel = {
+// 		Id: String,
+// 		AccountId: String,
+// 	  Username: String,
+// 	  FullName: String,
+// 		ProfilePicture: String,
+// 		UserBiography: Object,
+// 		Location: Object,
+// 		Email: String,
+// 		PhoneNumber: String,
+// 		AgentState: Number,
+// 		FollowersCount: Number,
+// 		FollowingCount: Number,
+// 	  TotalPostsCount: Number,
+// 		LastPurgeCycle: Date,
+// 		SleepTimeRemaining: Date,
+// 		DateAdded: Date,
+// 		UserLimits: Object,
+// 		IsBusiness: Boolean
+// }

@@ -12,15 +12,26 @@
 <script>
 import Layout from "./components/Layout.vue";
 import MainPage from "./components/MainPage";
+import Axios from 'axios';
 export default {
   name: 'app',
   components: {
     Layout,
     MainPage
   },
+ created: function () {
+    Axios.interceptors.response.use(undefined, function (err) {
+      return new Promise(function () {
+        if (err.status === 401 && err.config && !err.config.__isRetryRequest) {
+          this.$store.dispatch('logout')
+        }
+        throw err;
+      });
+    });
+  },
   data(){
     return {
-      Authorized:false
+      Authorized:this.$store.getters.IsLoggedIn
     }
   }
 }

@@ -1,5 +1,4 @@
 import axios from 'axios'
-
 export default(withAuth) => {
   if(withAuth!==undefined){
     return axios.create({
@@ -8,9 +7,7 @@ export default(withAuth) => {
       headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
-          'Authorization': withAuth.token,
-          'Access-Control-Allow-Origin' : '*',
-          'Access-Control-Allow-Credentials':'true'
+          'Authorization': 'Bearer '+withAuth
       }
     })
   }
@@ -21,8 +18,6 @@ export default(withAuth) => {
         headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin' : '*',
-            'Access-Control-Allow-Credentials':'true'
         }
     })
   }

@@ -88,7 +88,6 @@ namespace QuarklessContexts.Models.Profiles
 		public Location UserLocation { get; set; }
 		public List<string> UserTargetList { get; set; }
 		public List<Location> LocationTargetList { get; set; }
-		public Location BusinessLocation { get; set; }
 		public AdditionalConfigurations AdditionalConfigurations { get; set; }
 		public Themes Theme { get; set; }
 	}

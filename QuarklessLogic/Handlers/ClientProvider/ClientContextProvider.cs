@@ -72,20 +72,15 @@ namespace QuarklessLogic.Handlers.ClientProvider
 				{
 					StateData stateExtracted = JsonConvert.DeserializeObject<StateData>(await client.GetStateDataFromString());
 					
-					if (stateExtracted!=instaAcc.State)
+					if (stateExtracted!=instaAcc.State && stateExtracted!=null)
 					{
+						instaAcc.FullName = stateExtracted.UserSession.LoggedInUser.FullName;
+						instaAcc.ProfilePicture = stateExtracted.UserSession.LoggedInUser.ProfilePicture ?? stateExtracted.UserSession.LoggedInUser.ProfilePicUrl;
 						await _instagramAccountLogic.PartialUpdateInstagramAccount(accountId, instagramAccountId, new InstagramAccountModel
 						{
 							State = stateExtracted,
-							//AgentState = instaAcc.AgentState,
-							//FollowersCount = instaAcc.FollowersCount,
-							//FollowingCount = instaAcc.FollowingCount,
-							//TotalPostsCount = instaAcc.TotalPostsCount,
-							//AccountId = instaAcc.AccountId,
-							//_id = instaAcc._id,
-							//DateAdded = instaAcc.DateAdded,
-							//LastPurgeCycle = instaAcc.LastPurgeCycle,
-							//Username = instaAcc.Username
+							FullName = instaAcc.FullName,
+							ProfilePicture = instaAcc.ProfilePicture
 						});
 					}
 					return new ContextContainer
@@ -101,7 +96,16 @@ namespace QuarklessLogic.Handlers.ClientProvider
 							FollowingCount = instaAcc.FollowingCount,
 							Id = instaAcc._id,
 							TotalPostsCount = instaAcc.TotalPostsCount,
-							Username = instaAcc.Username
+							Username = instaAcc.Username,
+							Email = instaAcc.Email,
+							SleepTimeRemaining = instaAcc.SleepTimeRemaining,
+							FullName = instaAcc.FullName,
+							PhoneNumber = instaAcc.PhoneNumber,
+							ProfilePicture = instaAcc.ProfilePicture,
+							UserBiography = instaAcc.UserBiography,
+							UserLimits = instaAcc.UserLimits,
+							Location = instaAcc.Location,
+							IsBusiness = instaAcc.IsBusiness
 						},
 						Profile = profileOfInstaAcc,
 						Proxy = proxyOfInstaAcc

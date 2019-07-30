@@ -37,23 +37,21 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	{
 		private readonly IContentManager _builder;
 		private readonly IHeartbeatLogic _heartbeatLogic;
-		private readonly ProfileModel _profile;
 		private UserStoreDetails user;
 		private CommentingStrategySettings commentingStrategySettings;
-		public CreateCommentAction(IContentManager contentManager, IHeartbeatLogic heartbeatLogic, ProfileModel profile)
+		public CreateCommentAction(IContentManager contentManager, IHeartbeatLogic heartbeatLogic)
 		{
 			_heartbeatLogic = heartbeatLogic;
 			_builder = contentManager;
-			_profile = profile;
 		}
 		private HolderComment CommentingByLocation()
 		{
 			By by = new By
 			{
 				ActionType = (int)ActionType.CreateCommentMedia,
-				User = _profile.InstagramAccountId
+				User = user.Profile.InstagramAccountId
 			};
-			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByUserLocationTargetList, _profile.Topics.TopicFriendlyName,_profile.InstagramAccountId)
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByUserLocationTargetList, user.Profile.Topics.TopicFriendlyName,user.Profile.InstagramAccountId)
 				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Medias.Count > 0);
 			if (fetchMedias != null)
@@ -62,8 +60,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				if (select != null)
 				{
 						select.SeenBy.Add(by);
-						_heartbeatLogic.UpdateMetaData<Media>(MetaDataType.FetchMediaByUserLocationTargetList, _profile.Topics.TopicFriendlyName, select,_profile.InstagramAccountId).GetAwaiter().GetResult();
-						return new HolderComment { Topic = _profile.Topics.TopicFriendlyName, MediaId = select.ObjectItem.Medias.FirstOrDefault().MediaId };
+						_heartbeatLogic.UpdateMetaData<Media>(MetaDataType.FetchMediaByUserLocationTargetList, user.Profile.Topics.TopicFriendlyName, select,user.Profile.InstagramAccountId).GetAwaiter().GetResult();
+						return new HolderComment { Topic = user.Profile.Topics.TopicFriendlyName, MediaId = select.ObjectItem.Medias.FirstOrDefault().MediaId };
 				}
 			}
 			return null;
@@ -73,17 +71,17 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			By by = new By
 			{
 				ActionType = (int)ActionType.CreateCommentMedia,
-				User = _profile.InstagramAccountId
+				User = user.Profile.InstagramAccountId
 			};
-			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByCommenters,_profile.Topics.TopicFriendlyName)
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByCommenters,user.Profile.Topics.TopicFriendlyName)
 				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Medias.Count > 0);
 			if (fetchMedias!=null) { 
 				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
 				if (select != null) {
 					select.SeenBy.Add(by);
-					_heartbeatLogic.UpdateMetaData<Media>(MetaDataType.FetchMediaByCommenters,_profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
-					return new HolderComment { Topic = _profile.Topics.TopicFriendlyName, MediaId = select.ObjectItem.Medias.FirstOrDefault().MediaId};
+					_heartbeatLogic.UpdateMetaData<Media>(MetaDataType.FetchMediaByCommenters,user.Profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
+					return new HolderComment { Topic = user.Profile.Topics.TopicFriendlyName, MediaId = select.ObjectItem.Medias.FirstOrDefault().MediaId};
 				}
 			}
 			return null;
@@ -93,9 +91,9 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			By by = new By
 			{
 				ActionType = (int)ActionType.CreateCommentMedia,
-				User = _profile.InstagramAccountId
+				User = user.Profile.InstagramAccountId
 			};
-			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByLikers, _profile.Topics.TopicFriendlyName)
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByLikers, user.Profile.Topics.TopicFriendlyName)
 				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Medias.Count > 0);
 			if (fetchMedias != null)
@@ -104,8 +102,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				if (select != null)
 				{				
 					select.SeenBy.Add(by);
-					_heartbeatLogic.UpdateMetaData<Media>(MetaDataType.FetchMediaByCommenters, _profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
-					return new HolderComment { Topic = _profile.Topics.TopicFriendlyName, MediaId = select.ObjectItem.Medias.FirstOrDefault().MediaId };
+					_heartbeatLogic.UpdateMetaData<Media>(MetaDataType.FetchMediaByCommenters, user.Profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
+					return new HolderComment { Topic = user.Profile.Topics.TopicFriendlyName, MediaId = select.ObjectItem.Medias.FirstOrDefault().MediaId };
 					
 				}
 			}
@@ -149,8 +147,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 							new Chance<CommentingActionType>{Object = CommentingActionType.CommentingViaTopic, Probability = 0.25},
 							new Chance<CommentingActionType>{Object = CommentingActionType.CommentingViaLikersPosts, Probability = 0.40},
 						};
-						if (_profile.LocationTargetList != null)
-							if (_profile.LocationTargetList.Count > 0)
+						if (user.Profile.LocationTargetList != null)
+							if (user.Profile.LocationTargetList.Count > 0)
 								commentingActionChances.Add(new Chance<CommentingActionType> { Object = CommentingActionType.CommentingViaLocation, Probability = 0.35 });
 
 						commentingActionSelected = SecureRandom.ProbabilityRoll(commentingActionChances);
@@ -184,7 +182,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					}
 					CreateCommentRequest createComment = new CreateCommentRequest
 					{
-						Text = _builder.GenerateComment(nominatedMedia.Topic, _profile.Language)
+						Text = _builder.GenerateComment(nominatedMedia.Topic, user.Profile.Language)
 					};
 					RestModel restModel = new RestModel
 					{

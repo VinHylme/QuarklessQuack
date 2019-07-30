@@ -154,7 +154,13 @@ namespace QuarklessRepositories.InstagramAccountRepository
 				DateAdded = r.DateAdded,
 				SleepTimeRemaining = r.SleepTimeRemaining,
 				Email = r.Email,
-				PhoneNumber = r.PhoneNumber
+				PhoneNumber = r.PhoneNumber,
+				FullName = r.FullName,
+				ProfilePicture = r.ProfilePicture,
+				UserBiography = r.UserBiography,
+				UserLimits = r.UserLimits,
+				IsBusiness = r.IsBusiness,
+				Location = r.Location
 			});
 		}
 
@@ -176,7 +182,13 @@ namespace QuarklessRepositories.InstagramAccountRepository
 				DateAdded = r.DateAdded,
 				SleepTimeRemaining = r.SleepTimeRemaining,
 				Email = r.Email,
-				PhoneNumber = r.PhoneNumber
+				PhoneNumber = r.PhoneNumber,
+				FullName = r.FullName,
+				ProfilePicture = r.ProfilePicture,
+				UserBiography = r.UserBiography,
+				UserLimits = r.UserLimits,
+				IsBusiness = r.IsBusiness,
+				Location = r.Location
 			});
 		}
 
