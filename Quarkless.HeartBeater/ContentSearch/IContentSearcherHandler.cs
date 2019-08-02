@@ -16,7 +16,7 @@ namespace Quarkless.HeartBeater.ContentSearch
 		Task<List<UserResponse<string>>> SearchInstagramMediaLikers(string mediaId);
 		Task<Media> SearchRecentLocationMediaDetailInstagram(Location location, int limit);
 		Task<Media> SearchTopLocationMediaDetailInstagram(Location location, int limit);
-		Task<Media> SearchMediaDetailInstagram(List<string> topics, int limit);
+		Task<Media> SearchMediaDetailInstagram(List<string> topics, int limit, bool isRecent = false);
 		Task<Media> SearchMediaInstagram(List<string> topics, InstaMediaType mediaType, int limit);
 		Task<Media> SearchMediaUser(string username = null, int limit = 1);
 		Task<Media> SearchUserFeedMediaDetailInstagram(string[] seenMedias = null, bool requestRefresh = false, int limit = 1);

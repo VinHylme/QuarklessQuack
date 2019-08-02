@@ -601,7 +601,7 @@ namespace Quarkless.Services
 								if (_instaAccount.AgentState == (int) AgentState.Running)
 								{
 									if (totalforuser != null) { 
-										if (totalforuser.Count > 500)
+										if (totalforuser.Count > 100)
 										{
 											_instaAccount.AgentState = (int) AgentState.Sleeping;
 										} 

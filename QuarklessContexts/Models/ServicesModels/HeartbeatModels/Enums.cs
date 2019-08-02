@@ -17,7 +17,8 @@ namespace QuarklessContexts.Models.ServicesModels.HeartbeatModels
 
 		FetchUsersFeed,
 		FetchMediaByTopic,
-		
+		FetchMediaByTopicRecent,
+
 		FetchMediaByUserTargetList,
 		FetchMediaByUserLocationTargetList,
 		

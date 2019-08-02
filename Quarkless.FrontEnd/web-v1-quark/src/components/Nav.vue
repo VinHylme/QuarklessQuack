@@ -69,7 +69,7 @@
 <aside class="menu">
   <router-link to="/">
   <a class="logo" href="#">
-     <img src="../assets/Hashtag.png" width="65" height="65">
+     <img src="../assets/hashtag3.png" width="65" height="65">
   </a>
   </router-link>
   <ul class="menu-list">
@@ -124,6 +124,19 @@
 .menu
    font-size:1.55em
    height:100%
-   background-color:#fafafa
+   background-color:#141414
+.navbar-item
+  color:#ddd
+  &:hover
+    background-color:#141414
+    color:#3ea6ff
+  &:active
+      background-color:#141414
+      color:#3ea6ff
+  &:focus
+      background-color:#141414
+      color:#3ea6ff
+
+  
 
 </style>

@@ -98,6 +98,8 @@ namespace QuarklessContexts.Models.InstagramAccounts
 		[BsonRepresentation(BsonType.DateTime)]
 		public DateTime? DateAdded { get; set; }
 		public Limits UserLimits { get; set; }
-		public bool IsBusiness { get; set ;}
+		public bool? IsBusiness { get; set ;}
+		public int? Type { get; set; } 
+
 	}
 }

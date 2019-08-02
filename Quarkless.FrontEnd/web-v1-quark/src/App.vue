@@ -20,26 +20,35 @@ export default {
     MainPage
   },
  created: function () {
-    Axios.interceptors.response.use(undefined, function (err) {
-      return new Promise(function () {
-        if (err.status === 401 && err.config && !err.config.__isRetryRequest) {
-          this.$store.dispatch('logout')
-        }
-        throw err;
-      });
-    });
+   this.MockResponseTest();
+   this.timer = setInterval(this.MockResponseTest, 120000)
   },
   data(){
     return {
-      Authorized:this.$store.getters.IsLoggedIn
+      Authorized:this.$store.getters.IsLoggedIn,
+      timer:''
+    }
+  },
+  methods:{
+    MockResponseTest(){
+      Axios.interceptors.response.use(undefined, function (err) {
+        return new Promise(function () {
+          if (err.status === 401 && err.config && !err.config.__isRetryRequest) {
+            this.$store.dispatch('logout')
+            this.Authorized = false;
+          }
+          throw err;
+        });
+      });
     }
   }
 }
 </script>
 
 <style lang="scss">
+$card-background-color:black;
 @import "~bulma/sass/utilities/_all";
-$primary: #065b9c;
+$primary: #3ea6ff;
 $primary-invert: findColorInvert($primary);
 $twitter: rgb(16, 51, 90);
 $twitter-invert: findColorInvert($twitter);
@@ -62,8 +71,7 @@ $link-focus-border: $primary;
 @import "~buefy/src/scss/buefy";
 html,
 body{
-  overflow:hidden;
-  background: #fafafa;
+  background: #141414;
   height:100%;
 }
 </style>

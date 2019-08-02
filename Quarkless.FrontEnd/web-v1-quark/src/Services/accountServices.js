@@ -2,15 +2,21 @@ import Api from './Api'
 
 export default {
   Login(params){
-    return Api(undefined).post('/auth/loginaccount',params)
+    return Api(false).post('/auth/loginaccount',params)
   },
-  GetInstagramAccountsForUser(params,token){
-    return Api(token).get('/insta/' + params.accountId)
+  GetInstagramAccountsForUser(params){
+    return Api(true).get('/insta/' + params.accountId)
   },
-  GetInstagramAccount(params,token){
-    return Api(token).get('insta/state/'+ params.accountId + '/' + params.instagramAccountId)
+  GetInstagramAccount(params){
+    return Api(true).get('insta/state/'+ params.accountId + '/' + params.instagramAccountId)
   },
-  LinkInstagramAccount(params,token){
-    return Api(token).post('insta/add',params)
+  UpdateAgentState(params){
+    return Api(true).put('insta/agent/' + params.instagramAccountId + '/' + params.newState)
+  },
+  LinkInstagramAccount(params){
+    return Api(true).post('insta/add',params)
+  },
+  RefreshState(id){
+    return Api(true).get('insta/refreshLogin/'+id)
   }
 }

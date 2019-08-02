@@ -156,12 +156,14 @@ namespace Quarkless.HeartBeater.ContentSearch
 			}
 			return null;
 		}
-		public async Task<Media> SearchMediaDetailInstagram(List<string> topics, int limit)
+
+		public async Task<Media> SearchMediaDetailInstagram(List<string> topics, int limit, bool isRecent = false)
 		{
 			Media medias = new Media();
 			foreach (var topic in topics)
 			{
-				var mediasResults = await _container.Hashtag.GetTopHashtagMediaListAsync(topic, PaginationParameters.MaxPagesToLoad(limit));
+				var mediasResults = !isRecent ? await _container.Hashtag.GetTopHashtagMediaListAsync(topic, PaginationParameters.MaxPagesToLoad(limit))
+											: await _container.Hashtag.GetRecentHashtagMediaListAsync(topic,PaginationParameters.MaxPagesToLoad(limit));
 				if (mediasResults.Succeeded)
 				{
 					medias.Medias.AddRange(mediasResults.Value.Medias.Select(s =>

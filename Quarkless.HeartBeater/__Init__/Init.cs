@@ -95,7 +95,7 @@ namespace Quarkless.HeartBeater.__Init__
 							var currAcc = requesters.ElementAtOrDefault(y);
 							var profileTopic = currAcc.Profile.Topics;
 
-							if (profileTopic.SubTopics == null || profileTopic.SubTopics.Count <= 1 || profileTopic.SubTopics.Any(s => s.RelatedTopics == null || s.RelatedTopics.Count < 3))
+							if (profileTopic.SubTopics == null || profileTopic.SubTopics.Count <= 0 || profileTopic.SubTopics.Any(s => s.RelatedTopics == null || s.RelatedTopics.Count < 3))
 							{
 								profileTopic = _topicBuilder.BuildTopics(currAcc.Profile).GetAwaiter().GetResult();
 							}
@@ -119,7 +119,26 @@ namespace Quarkless.HeartBeater.__Init__
 			
 				//Build Around Topics
 			
-				var ins = Task.Run(async () => await metadataBuilder.BuildBase(3));
+				var ins = Task.Run(async () => await metadataBuilder.BuildBase(1)).ContinueWith(async tasker=>{
+					Console.WriteLine("Finished building Base");
+					await Task.Run(() =>
+					{
+						var likers = Task.Run(async () => await metadataBuilder.BuildUserFromLikers()).ContinueWith(async a =>
+						{
+							await metadataBuilder.BuildMediaFromUsersLikers().ContinueWith(async s => {
+								await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByLikers, MetaDataType.FetchCommentsViaPostsLiked, limit: 2, takeMediaAmount: 10, takeuserAmount: 200);
+							});
+						});
+
+						var commenters = Task.Run(async () => await metadataBuilder.BuildUsersFromCommenters()).ContinueWith(async c =>
+						{
+							await metadataBuilder.BuildMediaFromUsersCommenters().ContinueWith(async s => {
+								await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByCommenters, MetaDataType.FetchCommentsViaPostCommented, limit: 2, takeMediaAmount: 10, takeuserAmount: 200);
+							});
+						});
+						Task.WaitAll(likers,commenters);
+					});
+				});
 
 				//Google & Yandex search
 				var go = Task.Run(async () => await metadataBuilder.BuildGoogleImages(75));
@@ -142,24 +161,9 @@ namespace Quarkless.HeartBeater.__Init__
 				var locTargetList = Task.Run(async () => await metadataBuilder.BuildLocationTargetListMedia()).ContinueWith(async s =>
 				{
 					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserLocationTargetList, MetaDataType.FetchCommentsViaLocationTargetList, true, 2, takeMediaAmount:10, takeuserAmount:200);
-				}); ;
-				Task.WaitAll(ins);
+				}); 
 
-				var likers = await Task.Run(async () => await metadataBuilder.BuildUserFromLikers()).ContinueWith(async a =>
-				{
-					await metadataBuilder.BuildMediaFromUsersLikers().ContinueWith(async s => {
-						await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByLikers, MetaDataType.FetchCommentsViaPostsLiked, limit: 2, takeMediaAmount: 10, takeuserAmount: 200);
-					});
-				});
-
-				var commenters = await Task.Run(async () => await metadataBuilder.BuildUsersFromCommenters()).ContinueWith(async c =>
-				{	
-					await metadataBuilder.BuildMediaFromUsersCommenters().ContinueWith(async s =>{
-						await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByCommenters, MetaDataType.FetchCommentsViaPostCommented, limit: 2, takeMediaAmount: 10, takeuserAmount: 200);
-					});
-				});
-
-				Task.WaitAll(go, yan,yanq, likers, commenters, profileRefresh, feedRefresh, userTargetList, locTargetList);
+				Task.WaitAll(ins, go, yan, yanq, profileRefresh, feedRefresh, userTargetList, locTargetList);
 			}
 			catch(Exception ee)
 			{

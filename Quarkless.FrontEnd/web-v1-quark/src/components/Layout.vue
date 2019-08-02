@@ -24,10 +24,13 @@ export default {
 </script>
 
 <style lang="sass">
+.column
+  background:#141414
+
 .main_area
   width:100%
   height:100%
-  background-color:#f2f2f2
+  background-color:#141414
   border-radius:10px
 .home_layout
    padding:0.7em

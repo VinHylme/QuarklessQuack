@@ -20,7 +20,10 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 			string formatTemplate = $"HashtagGrow:{hashtagGrowKey.ToString()}:({userId}:{hashtagGrowKey.ToString()})";
 			return formatTemplate;
 		}
-
+		public static string FormatKeyVal(string value, HashtagGrowKeys hashtagGrowKey)
+		{
+			return $"HashtagGrow:{hashtagGrowKey.ToString()}:{value}";
+		}
 	}
 	public class RedisClient : IRedisClient
 	{
@@ -117,7 +120,6 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 		{
 			expires = expires != null && expires <= _defaultKeyExpiry ? expires : _defaultKeyExpiry;
 			RedisKey redisKey = KeyFormater.FormatKey(userId, hashtagGrowKey);
-
 			await WithExceptionLogAsync(async () =>
 			{
 				await _redis.GetDatabase(_DbNumber).SetAddAsync(redisKey, value);
@@ -135,15 +137,15 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 
 			return exists;
 		}
-		public async Task<IEnumerable<T>> GetMembers<T>(HashtagGrowKeys hashtagGrowKeys)
+		public async Task<IEnumerable<T>> GetMembersFromKey<T>(string key, HashtagGrowKeys hashtagGrowKey)
 		{
 			var members = new List<T>();
-			RedisKey redisKey = hashtagGrowKeys.ToString();
 			await WithExceptionLogAsync(async () =>
 			{
-				var redisMembers = await _redis.GetDatabase(_DbNumber).SetMembersAsync(redisKey);
+
+				var redisMembers = await _redis.GetDatabase(_DbNumber).SetMembersAsync(KeyFormater.FormatKeyVal(key,hashtagGrowKey));
 				members.AddRange(redisMembers.Select(m=>JsonConvert.DeserializeObject<T>(((string)m))));
-			},"",redisKey.ToString());
+			},"",key.ToString());
 
 			return members;
 		}
@@ -213,7 +215,8 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 
 			return exists;
 		}
-		public async Task<string> StringGet(string userId,HashtagGrowKeys hashtagGrowKey)
+		
+		public async Task<string> StringGet(string userId, HashtagGrowKeys hashtagGrowKey)
 		{
 			RedisKey redisKey = KeyFormater.FormatKey(userId, hashtagGrowKey);
 			string val = string.Empty;
@@ -221,6 +224,16 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 			{
 				val = await _redis.GetDatabase(_DbNumber).StringGetAsync(redisKey);
 			},userId,redisKey.ToString());
+			return val;
+		}
+		public async Task<string> StringGet(HashtagGrowKeys hashtagGrowKey)
+		{
+			RedisKey redisKey = hashtagGrowKey.ToString();
+			string val = string.Empty;
+			await WithExceptionLogAsync(async () =>
+			{
+				val = await _redis.GetDatabase(_DbNumber).StringGetAsync(redisKey);
+			},"ALL", redisKey.ToString());
 			return val;
 		}
 		public async Task StringSet(string userId, HashtagGrowKeys hashtagGrowKey, string value,TimeSpan? expiry = null, When when = When.Always)

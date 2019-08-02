@@ -26,7 +26,7 @@ namespace QuarklessRepositories.RedisRepository.AccountCache
 		{
 			string userkeyid = $"{value.UserName}";
 
-			await _redisClient.Database(0).StringSet(userkeyid, RedisKeys.HashtagGrowKeys.Usersessions, JsonConvert.SerializeObject(value));
+			await _redisClient.Database(0).StringSet(userkeyid, RedisKeys.HashtagGrowKeys.Usersessions, JsonConvert.SerializeObject(value), expiry: System.TimeSpan.FromHours(1));
 		}
 	}
 }

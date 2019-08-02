@@ -47,7 +47,7 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 						SleepTimeRemaining = null,
 						Email = null,
 						FullName = state.UserSession.LoggedInUser.FullName,
-						IsBusiness = false,
+						IsBusiness = null,
 						PhoneNumber = null,
 						ProfilePicture = state.UserSession.LoggedInUser.ProfilePicture ?? state.UserSession.LoggedInUser.ProfilePicUrl,
 						UserBiography = null,
@@ -131,7 +131,8 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 						UserBiography = res.UserBiography,
 						UserLimits = res.UserLimits,
 						IsBusiness = res.IsBusiness,
-						Location = res.Location
+						Location = res.Location,
+						Type = res.Type
 					};
 					await _instagramAccountRedis.SetInstagramAccountDetail(accountId, instagramAccountId, shortInsta);
 					return shortInsta;
@@ -165,6 +166,11 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 		{
 			try
 			{
+				var redisGet = await _instagramAccountRedis.GetWorkerAccounts();
+				if (redisGet.Count() > 0)
+				{
+					return redisGet;
+				}
 				var account = await _instagramAccountRepository.GetInstagramAccountsOfUser(accountId, type);
 				if(account.Results!= null)
 				{
@@ -221,8 +227,34 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 				UserBiography = instagramAccountModel.UserBiography,
 				UserLimits = instagramAccountModel.UserLimits,
 				IsBusiness = instagramAccountModel.IsBusiness,
-				Location = instagramAccountModel.Location
+				Location = instagramAccountModel.Location,
+				Type = instagramAccountModel.Type
 			};
+			if(!(await _instagramAccountRedis.AccountExists(accountId, instagramAccountId)))
+			{
+				var lastUpdatedDetails = (await _instagramAccountRepository.GetInstagramAccount(accountId, instagramAccountId)).Results;
+				toshortmodel = toshortmodel.CreateNewObjectIgnoringNulls(new ShortInstagramAccountModel
+				{
+					AccountId = lastUpdatedDetails.AccountId,
+					SleepTimeRemaining = lastUpdatedDetails.SleepTimeRemaining,
+					AgentState = lastUpdatedDetails.AgentState,
+					DateAdded = lastUpdatedDetails.DateAdded,
+					Email = lastUpdatedDetails.Email,
+					FollowersCount = lastUpdatedDetails.FollowersCount,
+					FollowingCount = lastUpdatedDetails.FollowingCount,
+					FullName = lastUpdatedDetails.FullName,
+					Id = lastUpdatedDetails._id,
+					IsBusiness = lastUpdatedDetails.IsBusiness,
+					LastPurgeCycle = lastUpdatedDetails.LastPurgeCycle,
+					Location = lastUpdatedDetails.Location,
+					PhoneNumber = lastUpdatedDetails.PhoneNumber,
+					ProfilePicture = lastUpdatedDetails.ProfilePicture,
+					TotalPostsCount = lastUpdatedDetails.TotalPostsCount,
+					UserBiography = lastUpdatedDetails.UserBiography,
+					UserLimits = lastUpdatedDetails.UserLimits,
+					Username = lastUpdatedDetails.Username
+				});
+			}
 			await _instagramAccountRedis.SetInstagramAccountDetail(accountId,instagramAccountId,toshortmodel);
 			return await _instagramAccountRepository.PartialUpdateInstagramAccount(instagramAccountId, instagramAccountModel);
 		}
@@ -230,12 +262,16 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 		{
 			try
 			{
+				var redisfirst = await _instagramAccountRedis.GetInstagramAccountActiveDetail();
+				if (redisfirst.Count() > 0)
+				{
+					return redisfirst;
+				}
 				var account = await _instagramAccountRepository.GetActiveAgentInstagramAccounts();
 				if (account != null)
 				{
 					return account;
 				}
-
 				return null;
 			}
 			catch (Exception ee)

@@ -46,7 +46,7 @@ export default new Router({
        },
        {
             name:"manage",
-            path:"/manage",
+            path:"/manage/",
             component:Manage,
             meta:{
                 requiresAuth:true

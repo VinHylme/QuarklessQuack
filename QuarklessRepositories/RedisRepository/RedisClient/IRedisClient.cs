@@ -15,7 +15,7 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 		Task<bool> ExistsHashField(string userId, RedisKeys.HashtagGrowKeys hashtagGrowKey, string field);
 		Task<T> GetHashField<T>(string userId, RedisKeys.HashtagGrowKeys hashtagGrowKey, string field);
 		Task<IEnumerable<T>> GetMembers<T>(string userId, RedisKeys.HashtagGrowKeys hashtagGrowKey);
-		Task<IEnumerable<T>> GetMembers<T>(RedisKeys.HashtagGrowKeys hashtagGrowKeys);
+		Task<IEnumerable<T>> GetMembersFromKey<T>(string key, RedisKeys.HashtagGrowKeys hashtagGrowKey);
 		Task<bool> KeyExists(string userId, RedisKeys.HashtagGrowKeys hashtagGrowKey);
 		Task RemoveHashField(string userId, RedisKeys.HashtagGrowKeys hashtagGrowKey, string field);
 		Task SetAdd(string userId, RedisKeys.HashtagGrowKeys hashtagGrowKey, string value, TimeSpan? expires = null);

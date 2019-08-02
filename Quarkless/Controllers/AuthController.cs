@@ -100,11 +100,11 @@ namespace Quarkless.Controllers
 						return Ok(responseConcatenate);
 					}
 					else { 
-						return BadRequest(results.Results.AuthenticationResult);
+						return Ok(results.Results.AuthenticationResult);
 					}
 				} 
 			}
-			return NotFound(results.Info.Message);
+			return NotFound(results);
 		}
 
 		[AllowAnonymous]

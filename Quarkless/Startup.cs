@@ -36,6 +36,7 @@ namespace Quarkless
 			services.AddLogics();
 			services.AddContexts();
 			services.AddHandlers();
+			services.AddHangFrameworkServices(_accessors);
 			services.AddRepositories(_accessors);
 			services.AddCors(options=>{
 				options.AddPolicy(CorsPolicy,

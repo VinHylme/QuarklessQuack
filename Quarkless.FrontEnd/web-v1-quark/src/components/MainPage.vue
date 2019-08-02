@@ -1,29 +1,32 @@
 <template>
-<div class="modal-card">
+<div class="container">
+  <div class="modal-card">
         <section class="modal-card-body">
-            <h3 class="title has-text-centered has-text-dark">VIP LOGIN</h3>
+            <h3 class="title has-text-centered">VIP LOGIN</h3>
             <div class="box">
-                    <b-field label="Username">
+                    <b-field label=""  type="is-light">
                         <b-input v-model="username" type="text" placeholder="username">
                         </b-input>
                     </b-field>
 
-                    <b-field label="Password">
+                    <b-field label="">
                         <b-input v-model="password" type="password" placeholder="Password" minlength="6" password-reveal>
                         </b-input>
                     </b-field>
-                    <b-field>
-                        <a class="password-remind-link has-text-dark is-pulled-right" @click="passwordReminder()">I forgot my password</a>
-                    </b-field>
-                    <button class="button is-dark is-large is-fullwidth" @click="doLogin()">
+                    <button class="button is-large is-fullwidth" @click="doLogin()" :disabled="isActive">
                         Login
                     </button>
                 </div>
-                <div class="has-text-centered">
-                    <router-link v-on:click.native="closeModal()" to="/register">Signup!</router-link>
-                </div>
         </section>
     </div>
+    <br>
+    <b-notification v-if="showNotification"
+      v-bind:type="isSucesss?'is-success':'is-danger'"
+      aria-close-label="Close notification"
+      role="alert">
+      {{alert_text}}
+    </b-notification>
+</div>
 </template>
 
 <script>
@@ -33,11 +36,26 @@ export default {
     return {
       username:'',
       password:'',
+      alert_text:'',
+      showNotification:false,
+      isSucesss:false,
+      isActive :false
     }
   },
   methods:{
     doLogin(){
-      this.$store.dispatch('login',{Username:this.username, Password:this.password})
+      this.isActive = true;
+      this.$store.dispatch('login',{Username:this.username, Password:this.password}).then(res=>{
+        this.isSucesss = true;
+        this.showNotification = true;
+        this.alert_text = "Welcome back " + this.username;
+        this.isActive = false;
+        window.location.reload();
+      }).catch(err=>{
+        this.showNotification = true;
+        this.alert_text =  "Failed to login, please try again.";
+        this.isActive = false;
+      })
     }
   }
 }
@@ -45,6 +63,26 @@ export default {
 
 <style lang="scss" scoped>
 body{
-  background-color:#fff;
+  background-color:#242424;
+}
+
+.modal-card{
+  background-color:#242424;
+  padding:4em;
+  .modal-card-body{
+    .box{
+      padding:1em;
+      background-color:#242424;
+      border: none !important;
+
+    }
+    background-color: #242424;
+    .title{
+      color:white;
+    }
+    h3{
+      color:white;
+    }
+  }
 }
 </style>

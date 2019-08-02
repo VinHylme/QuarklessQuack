@@ -18,7 +18,7 @@ namespace Quarkless.Controllers
 	[HashtagAuthorize(AuthTypes.PremiumUsers)]
 	[HashtagAuthorize(AuthTypes.Admin)]
 
-	public class InstagramAccountController : ControllerBase
+	public class InstagramAccountController : BaseController
     {
 		private readonly IUserContext _userContext;
 		private readonly IInstaUserLogic _instaUserLogic;
@@ -56,6 +56,38 @@ namespace Quarkless.Controllers
 				return BadRequest(ee.Message);
 			}		
 		}
+		[HttpGet]
+		[Route("api/insta/refreshLogin/{instagramAccountId}")]
+		public async Task<IActionResult> RefreshLogin(string instagramAccountId)
+		{
+			try
+			{
+				if (!string.IsNullOrEmpty(_userContext.CurrentUser))
+				{
+					var instaDetails = await _instagramAccountLogic.GetInstagramAccount(_userContext.CurrentUser,instagramAccountId);
+					if(instaDetails!=null && !string.IsNullOrEmpty(instaDetails.Username)) { 
+						if(await _instaUserLogic.TryLogin(instaDetails.Username, instaDetails.Password))
+						{
+							var newState = JsonConvert.DeserializeObject<StateData>(await _instaUserLogic.GetStateDataFromString());
+							await _instagramAccountLogic.PartialUpdateInstagramAccount(_userContext.CurrentUser,instagramAccountId,
+								new InstagramAccountModel
+								{
+									State = newState
+								});
+							return Ok(true);
+						}
+						return Ok(false);
+					}
+					return NotFound("Could not find account");
+				}
+				return Forbid("User does not exist");
+			}
+			catch(Exception ee)
+			{
+				return BadRequest(ee.Message);
+			}
+		}
+
 		[HttpGet]
 		[Route("api/insta/{accountId}/{instagramAccountId}")]
 		public async Task<IActionResult> GetInstagramAccount(string accountId, string instagramAccountId)
@@ -98,6 +130,24 @@ namespace Quarkless.Controllers
 				return Ok(results);
 			}
 			return BadRequest("Please populate the id");
+		}
+		
+		[HttpPut]
+		[Route("api/insta/agent/{instagramAccountId}/{newstate}")]
+		public async Task<IActionResult> UpdateAgentState(string instagramAccountId, int newState)
+		{
+			if (_userContext.CurrentUser!=null)
+			{
+				var res = await _instagramAccountLogic.PartialUpdateInstagramAccount(_userContext.CurrentUser, instagramAccountId, new InstagramAccountModel
+				{
+					AgentState = newState
+				});
+				if (res.HasValue)
+				{
+					return Ok("updated");
+				}
+			}
+			return BadRequest("failed to update");
 		}
 
 		[HttpPut]

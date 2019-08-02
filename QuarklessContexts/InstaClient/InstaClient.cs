@@ -201,6 +201,8 @@ namespace QuarklessContexts.InstaClient
 				Password = password
 			};
 			_client.SetUser(userSessionData);
+			_client.SetApiVersion(InstagramApiSharp.Enums.InstaApiVersionType.Version100);
+
 			var res =  await _client.LoginAsync();
 			if (res.Succeeded)
 			{

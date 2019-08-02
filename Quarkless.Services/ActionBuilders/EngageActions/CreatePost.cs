@@ -227,7 +227,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 									if (bytes_ != null)
 									{
 										var profileColor = user.Profile.Theme.Colors.Select(s => System.Drawing.Color.FromArgb(s.Red, s.Green, s.Blue)).ElementAt(user.Profile.Theme.Colors.Count-1);
-										var simPath = profileColor.IsVideoSimilar(bytes_,user.Profile.Theme.Percentage/100,5);
+										var simPath = profileColor.IsVideoSimilar(bytes_,user.Profile.Theme.Percentage/100,10);
 										if (!string.IsNullOrEmpty(simPath))
 										{
 											_selectedMedia.MediaData.Add(new MediaData
@@ -238,10 +238,6 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 											});
 											_selectedMedia.MediaType = InstaMediaType.Video;
 											break;
-										}
-										else
-										{
-											Helper.DisposeVideos(simPath);
 										}
 									}
 								}
@@ -413,7 +409,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				{ 
 					new TimelineEventModel
 					{ 
-						ActionName = $"CreatePost_{imageStrategySettings.ImageStrategyType.ToString()}", 
+						ActionName = $"CreatePost_{_selectedMedia.MediaType.ToString()}_{imageStrategySettings.ImageStrategyType.ToString()}", 
 						Data = restModel,
 						ExecutionTime = imageActionOptions.ExecutionTime
 					} 

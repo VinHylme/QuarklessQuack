@@ -1,8 +1,23 @@
 <template>
-<div class="accounts_container">
-     <div v-for="(acc,index) in InstagramAccounts" v-bind:key="index">
-             <InstaCard v-bind:id="acc.id" v-bind:username="acc.username" v-bind:agentState="acc.agentState" v-bind:name="acc.fullName" v-bind:profilePicture="acc.profilePicture" v-bind:biography="acc.userBiography"/>
-     </div>
+<div class="container-fluid">
+        <b-notification v-if="refreshShowNotification"
+                v-bind:type="isSuccess?'is-success':'is-danger'"
+                aria-close-label="Close notification"
+                role="alert">
+                {{alert_text}}
+        </b-notification>
+        <div class="accounts_container">
+                <div v-for="(acc,index) in InstagramAccounts" v-bind:key="index">
+                        <InstaCard @RefreshState="NotifyRefresh" v-bind:id="acc.id" v-bind:username="acc.username" v-bind:agentState="acc.agentState" 
+                        v-bind:name="acc.fullName" v-bind:profilePicture="acc.profilePicture" v-bind:biography="acc.userBiography"
+                        v-bind:userFollowers="acc.followersCount" v-bind:userFollowing="acc.followingCount" v-bind:totalPost="acc.totalPostsCount"/>
+                </div>
+                <div class="card">
+                        <div class="card-content">
+                                <a href="#"><h3 class="title is-1">+</h3></a>
+                        </div>
+                </div>
+        </div>
 </div>
 </template>
 
@@ -11,20 +26,37 @@ import InstaCard from "../Objects/InstaAccountCard";
 export default {
         name:"manage",
         components:{
-                 InstaCard
+                        InstaCard
         },
         data(){
         return{
-                InstagramAccounts:[]
+                InstagramAccounts:[],
+                isSuccess:false,
+                refreshShowNotification:false,
+                alert_text:''
         }
         },
         mounted() {
-                this.$store.dispatch('AccountDetails',{"userId":"lemonkaces", "token":this.$store.state.token}).then(res=>{
+                this.$store.dispatch('AccountDetails', {"userId":this.$store.state.user}).then(res=>{
                         if(res!==undefined){
                                 this.InstagramAccounts = this.$store.getters.GetInstagramAccounts;
                         }
                 });
-         }
+        },
+        methods:{
+                NotifyRefresh(isSuccess){
+                        if(isSuccess){
+                                this.isSuccess = true;
+                                this.refreshShowNotification = true;
+                                this.alert_text = "Account state has been refreshed";
+                        }
+                        else{
+                                this.isSuccess = false;
+                                this.refreshShowNotification = true;
+                                this.alert_text = "Could not log into the account";
+                        }
+                }
+        }
 }
 </script>
 
@@ -35,6 +67,16 @@ export default {
         flex-flow: row wrap;
         align-items: center;
 
+}
+.card {
+  .card-content{
+    h3{
+            color:#fefefe;
+            padding:0em;
+            font-size:250px;
+            text-align: center;
+    }
+   }
 }
 body {
         width: 100%;

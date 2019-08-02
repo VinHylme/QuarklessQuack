@@ -87,7 +87,7 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 					}
 				
 				}
-				if (metaDataType == MetaDataType.FetchMediaByTopic)
+				if (metaDataType == MetaDataType.FetchMediaByTopic || metaDataType == MetaDataType.FetchMediaByTopicRecent)
 				{
 					//first check limit
 					var mediasfe = await _mediaCorpusLogic.MediasCount(topic);

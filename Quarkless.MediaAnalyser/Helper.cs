@@ -592,7 +592,7 @@ namespace Quarkless.MediaAnalyser
 			{
 				return videoPath;
 			}
-
+			DisposeVideos(videoPath);
 			return null;
 		}
 		public static void DisposeVideos(string loc = null, int retries = 8)

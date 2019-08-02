@@ -5,6 +5,7 @@ using QuarklessRepositories.Repository.TimelineRepository;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 {
@@ -190,8 +191,29 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 			}
 			return null;
 		}
+		public IEnumerable<ResultBase<TimelineItemShort>> ShortGetAllEventsForUser(string userName, DateTime startDate, DateTime? endDate = null,
+		string instaId = null, int limit = 1000, TimelineDateType timelineDateType = TimelineDateType.Backwards)
+		{
+			List<ResultBase<TimelineItemShort>> totalEvents = new List<ResultBase<TimelineItemShort>>();
+			totalEvents.AddRange(GetScheduledEventsForUserByDate(userName, startDate, endDate, instaId, limit, timelineDateType).Select(_ => new ResultBase<TimelineItemShort>
+			{
+				Response = new TimelineItemShort
+				{
+					ActionName = _.ActionName,
+					EnqueueTime = _.EnqueueTime,
+					ItemId = _.ItemId,
+					StartTime = _.StartTime,
+					State = _.State,
+					Body = _.Rest.JsonBody,
+					TargetId = Regex.Match(_.Url.Split('/').Last(),@"\d+").Value
+				},
+				TimelineType = typeof(TimelineItemShort)
+			}));
+			return totalEvents.Where(_=>_.Response.ActionName.ToLower().Split('_')[0].Contains("CreatePost"));
+		}
+
 		public IEnumerable<ResultBase<TimelineItem>> GetAllEventsForUser(string userName, DateTime startDate, DateTime? endDate = null,
-			string instaId = null, int limit = 1000, TimelineDateType timelineDateType = TimelineDateType.Backwards)
+		string instaId = null, int limit = 1000, TimelineDateType timelineDateType = TimelineDateType.Backwards)
 		{
 			List<ResultBase<TimelineItem>> totalEvents = new List<ResultBase<TimelineItem>>();
 			totalEvents.AddRange(GetScheduledEventsForUserByDate(userName, startDate, endDate, instaId, limit, timelineDateType).Select(_ => new ResultBase<TimelineItem>
@@ -204,7 +226,8 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 					StartTime = _.StartTime,
 					State = _.State,
 					Url = _.Url,
-					User = _.User
+					User = _.User,
+					Rest = _.Rest
 				},
 				TimelineType = typeof(TimelineItem)
 			}));

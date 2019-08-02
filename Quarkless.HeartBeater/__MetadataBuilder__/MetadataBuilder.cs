@@ -166,14 +166,14 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			{
 				await _assignments.ParallelForEachAsync(async worker =>
 				{
-					if(worker.Worker.GetContext.Proxy == null)
-					{				
-						var proxy = await _proxyLogic.RetrieveRandomProxy(connectionType: ConnectionType.Mobile, get:true, cookies:true);
-						if (proxy != null)
-						{
-							worker.Worker.GetContext.Proxy = proxy;
-						}
-					}
+					//if(worker.Worker.GetContext.Proxy == null)
+					//{				
+					//	var proxy = await _proxyLogic.RetrieveRandomProxy(connectionType: ConnectionType.Mobile, get:true, cookies:true);
+					//	if (proxy != null)
+					//	{
+					//		worker.Worker.GetContext.Proxy = proxy;
+					//	}
+					//}
 					ContentSearcherHandler searcher = new ContentSearcherHandler(worker.Worker, worker.Worker.GetContext.Proxy);
 					List<string> topicTotal = new List<string>();
 
@@ -243,14 +243,14 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			{
 				await _assignments.ParallelForEachAsync(async worker =>
 				{
-					if (worker.Worker.GetContext.Proxy == null)
-					{
-						var proxy = await _proxyLogic.RetrieveRandomProxy(connectionType: ConnectionType.Mobile, get:true, cookies: true);
-						if (proxy != null)
-						{
-							worker.Worker.GetContext.Proxy = proxy;
-						}
-					}
+					//if (worker.Worker.GetContext.Proxy == null)
+					//{
+					//	var proxy = await _proxyLogic.RetrieveRandomProxy(connectionType: ConnectionType.Mobile, get:true, cookies: true);
+					//	if (proxy != null)
+					//	{
+					//		worker.Worker.GetContext.Proxy = proxy;
+					//	}
+					//}
 					ContentSearcherHandler searcher = new ContentSearcherHandler(worker.Worker, worker.Worker.GetContext.Proxy);
 					var imalike = worker.InstagramRequests.Profile.Theme.ImagesLike;
 					var res = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaForSpecificUserYandex, worker.Topic.TopicFriendlyName, worker.InstagramRequests.InstagramAccount.Id);
@@ -310,13 +310,22 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			}
 			Console.WriteLine($"Ended - BuildYandexImages : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
 		}
-		public async Task BuildBase(int limit =2, int cutBy = 1, int takeTopicAmount = 1)
+		public async Task BuildBase(int limit = 2, int cutBy = 1, int takeTopicAmount = 1)
 		{
 			Console.WriteLine("Began - BuildBase");
 			var watch = System.Diagnostics.Stopwatch.StartNew();
 			try {
 				await _assignments.ParallelForEachAsync(async worker =>
 				{
+					//if (worker.Worker.GetContext.Proxy == null)
+					//{
+					//	var proxy = await _proxyLogic.RetrieveRandomProxy(connectionType: ConnectionType.Mobile, get: true, cookies: true);
+					//	if (proxy != null)
+					//	{
+					//		worker.Worker.GetContext.Proxy = proxy;
+					//	}
+					//}
+
 					ContentSearcherHandler searcher = new ContentSearcherHandler(worker.Worker, worker.Worker.GetContext.Proxy);
 					List<string> topicTotal = new List<string>();
 
@@ -329,14 +338,27 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					var topicSelect = topicTotal.Distinct().TakeAny(takeTopicAmount).ToList();
 
 					var mediaByTopics = await searcher.SearchMediaDetailInstagram(topicSelect, limit);
+					var recentyMedias = await searcher.SearchMediaDetailInstagram(topicSelect, limit, true);
 
 					if (mediaByTopics != null) { 
-						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByTopic,worker.Topic.TopicFriendlyName, proxy:worker.Worker.GetContext.Proxy);
+						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByTopic, worker.Topic.TopicFriendlyName, proxy:worker.Worker.GetContext.Proxy);
 						var lmeta = mediaByTopics.CutObjects(cutBy).ToList();
 
 						lmeta.ToList().ForEach(async z => {
 							z.Medias = z.Medias.Where(t => !t.HasLikedBefore && !t.IsCommentsDisabled && t.User.Username != worker.InstagramRequests.InstagramAccount.Username).ToList();
 							await _heartbeatLogic.AddMetaData(MetaDataType.FetchMediaByTopic, worker.Topic.TopicFriendlyName, 
+								new __Meta__<Media>(z));
+						});
+					}
+
+					if(recentyMedias != null)
+					{
+						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByTopicRecent, worker.Topic.TopicFriendlyName, proxy: worker.Worker.GetContext.Proxy);
+						var lmeta = recentyMedias.CutObjects(cutBy).ToList();
+
+						lmeta.ToList().ForEach(async z => {
+							z.Medias = z.Medias.Where(t => !t.HasLikedBefore && !t.IsCommentsDisabled && t.User.Username != worker.InstagramRequests.InstagramAccount.Username).ToList();
+							await _heartbeatLogic.AddMetaData(MetaDataType.FetchMediaByTopicRecent, worker.Topic.TopicFriendlyName,
 								new __Meta__<Media>(z));
 						});
 					}
