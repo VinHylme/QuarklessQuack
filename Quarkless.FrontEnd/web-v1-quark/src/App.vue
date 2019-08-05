@@ -21,7 +21,7 @@ export default {
   },
  created: function () {
    this.MockResponseTest();
-   this.timer = setInterval(this.MockResponseTest, 120000)
+   this.timer = setInterval(this.MockResponseTest, 6000)
   },
   data(){
     return {
@@ -31,14 +31,15 @@ export default {
   },
   methods:{
     MockResponseTest(){
-      Axios.interceptors.response.use(undefined, function (err) {
-        return new Promise(function () {
-          if (err.status === 401 && err.config && !err.config.__isRetryRequest) {
-            this.$store.dispatch('logout')
-            this.Authorized = false;
-          }
-          throw err;
-        });
+     Axios.interceptors.response.use(undefined, function (err) {
+          return new Promise(function (resolve, reject) {
+            if (err.status === 401 && err.config && !err.config.__isRetryRequest) {
+            // if you ever get an unauthorized, logout the user
+              this.$store.dispatch('logout')
+            // you can also redirect to /login if needed !
+            }
+            throw err;
+          });
       });
     }
   }

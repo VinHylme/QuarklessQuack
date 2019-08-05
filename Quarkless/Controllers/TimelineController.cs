@@ -59,12 +59,62 @@ namespace Quarkless.Controllers
 		{
 			if (!string.IsNullOrEmpty(_userContext.CurrentUser))
 			{
-				List<ResultBase<TimelineItemShort>> res = _timelineLogic.ShortGetAllEventsForUser(_userContext.CurrentUser,DateTime.UtcNow,instaId:instagramId,timelineDateType:TimelineDateType.Forward).ToList();
-				var resBackwards = _timelineLogic.ShortGetAllEventsForUser(_userContext.CurrentUser, DateTime.UtcNow, instaId: instagramId, timelineDateType: TimelineDateType.Backwards);
-				if (resBackwards!=null && resBackwards.Count() > 0) { res.AddRange(resBackwards);}
-				return Ok(res);
+				//List<ResultBase<TimelineItemShort>> res = _timelineLogic.ShortGetAllEventsForUser(_userContext.CurrentUser,DateTime.UtcNow,instaId:instagramId,timelineDateType:TimelineDateType.Forward).ToList();			
+				return Ok(_timelineLogic.GetScheduledPosts(_userContext.CurrentUser,instagramId));
 			}
 			return BadRequest();
+		}
+		[HttpDelete]
+		[Route("api/timeline/delete/{eventId}")]
+		public IActionResult DeleteEvent(string eventId)
+		{
+			if (!string.IsNullOrEmpty(_userContext.CurrentUser))
+			{
+				var res = _timelineLogic.DeleteEvent(eventId);
+				if(res)
+					return Ok("Deleted");
+
+				return NotFound("this event no longer exists or has already been deleted");
+			}
+			return BadRequest("Invalid user");
+		}
+		[HttpPut]
+		[Route("api/timeline/update")]
+		public IActionResult UpdateEvent(UpdateTimelineItemRequest updateTimelineItemRequest)
+		{
+			if (!string.IsNullOrEmpty(_userContext.CurrentUser))
+			{
+				try
+				{
+					var newId = _timelineLogic.UpdateEvent(updateTimelineItemRequest);
+					if(!string.IsNullOrEmpty(newId))
+						return Ok(newId);
+
+					return BadRequest("Could not Update event");
+				}
+				catch(Exception ee)
+				{
+					return BadRequest(ee.Message);
+				}
+			}
+			return BadRequest("Cannot access this");
+		}
+		[HttpPut]
+		[Route("api/timeline/enqueue/{eventId}")]
+		public IActionResult EnqueueNow(string eventId)
+		{
+			if (!string.IsNullOrEmpty(_userContext.CurrentUser))
+			{
+				try { 
+					_timelineLogic.ExecuteNow(eventId);
+					return Ok("Added");
+				}
+				catch(Exception e)
+				{
+					return BadRequest(e.Message);
+				}
+			}
+			return BadRequest("Invalid user");
 		}
 		[HttpPost]
 		[Route("api/timeline/{instagramId}")]

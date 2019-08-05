@@ -4,6 +4,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Common;
 using Quarkless.Services.ContentBuilder.TopicBuilder;
 using Quarkless.Services.Interfaces;
+using QuarklessRepositories.RedisRepository.CorpusCache.CommentCorpusCache;
+using QuarklessRepositories.RedisRepository.CorpusCache.HashtagCorpusCache;
+using QuarklessRepositories.RedisRepository.CorpusCache.MediaCorpusCache;
+using QuarklessRepositories.Repository.CorpusRepositories.Comments;
+using QuarklessRepositories.Repository.CorpusRepositories.Medias;
+using QuarklessRepositories.Repository.ServicesRepositories.CaptionsRepository;
+using QuarklessRepositories.Repository.ServicesRepositories.CommentsRepository;
+using QuarklessRepositories.Repository.ServicesRepositories.HashtagsRepository;
 using StackExchange.Redis;
 using System;
 using System.IO;
@@ -72,6 +80,22 @@ namespace Quarkless.Services
 			var results = WithExceptionLogAsync(async () =>
 			{
 				//lunch
+				//do this when needing to populate table in cache
+
+				//var cT = Task.Run(async () => { 
+				//	var c = await serviceReacher.Get<ICommentCorpusRepository>().GetComments();
+				//	await serviceReacher.Get<ICommentCorpusCache>().AddComments(c);
+				//});
+				//var ccT = Task.Run(async () => { 
+				//	var cc = await serviceReacher.Get<IMediaCorpusRepository>().GetMedias();
+				//	await serviceReacher.Get<IMediaCorpusCache>().AddMedias(cc);
+				//});
+				//var hT = Task.Run(async () => { 
+				//	var h = await serviceReacher.Get<IHashtagsRepository>().GetHashtags();
+				//	await serviceReacher.Get<IHashtagCoprusCache>().AddHashtags(h);
+				//});
+				//Task.WaitAll(cT, ccT, hT);
+
 				await serviceReacher.Get<IAgentManager>().Begin();
 			});
 			Task.WaitAll(results);

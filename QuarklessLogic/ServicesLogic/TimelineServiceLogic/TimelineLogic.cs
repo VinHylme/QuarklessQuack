@@ -1,6 +1,12 @@
-﻿using QuarklessContexts.Models.Timeline;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using QuarklessContexts.Enums;
+using QuarklessContexts.Extensions;
+using QuarklessContexts.Models.MediaModels;
+using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.Handlers.RequestBuilder.RequestBuilder;
 using QuarklessLogic.QueueLogic.Services;
+using QuarklessRepositories.RedisRepository.TimelineJobRedis;
 using QuarklessRepositories.Repository.TimelineRepository;
 using System;
 using System.Collections.Generic;
@@ -18,20 +24,62 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 	{
 		private readonly ITaskService _taskService;
 		private readonly IRequestBuilder _requestBuilder;
-		private readonly ITimelineRepository _timelineRepository;
-		public TimelineLogic(ITaskService taskService, IRequestBuilder requestBuilder, ITimelineRepository timelineRepository)
+		public TimelineLogic(ITaskService taskService, IRequestBuilder requestBuilder)
 		{
 			_taskService = taskService;
 			_requestBuilder = requestBuilder;
-			_timelineRepository = timelineRepository;
 		}
 		#region Add Event To Queue
-		public bool AddEventToTimeline(string actionName, RestModel restBody, DateTimeOffset executeTime)
+		public string AddEventToTimeline(string actionName, RestModel restBody, DateTimeOffset executeTime)
 		{
 			restBody.RequestHeaders = _requestBuilder.DefaultHeaders(restBody.User.OInstagramAccountUser).ToList();
 
 			var eventId = _taskService.ScheduleEvent(actionName, restBody, executeTime);
-			return eventId != null;
+			return eventId;
+		}
+		public T ParseJsonObject<T>(string json) where T : class, new()
+		{
+			JObject jobject = JObject.Parse(json);
+			return JsonConvert.DeserializeObject<T>(jobject.ToString());
+		}
+		public string UpdateEvent(UpdateTimelineItemRequest updateTimelineItemRequest)
+		{
+			try { 
+				var job = _taskService.GetEvent(updateTimelineItemRequest.EventId);
+				job.ExecuteTime = updateTimelineItemRequest.Time;
+			
+				var object_ = JsonConvert.DeserializeObject(job.Rest.JsonBody, 
+					updateTimelineItemRequest.MediaType == 0 ? typeof(UploadPhotoModel) 
+					: updateTimelineItemRequest.MediaType == 1 ? typeof(UploadVideoModel) 
+					: updateTimelineItemRequest.MediaType == 2 ? typeof(UploadAlbumModel) : typeof(object)
+					);
+
+				object_.GetProp("MediaInfo").SetValue(object_, new MediaInfo
+				{
+					Caption = updateTimelineItemRequest.Caption,
+					Credit = updateTimelineItemRequest.Credit,
+					Hashtags = updateTimelineItemRequest.Hashtags
+				});
+				object_.GetProp("Location").SetValue(object_, updateTimelineItemRequest.Location);
+
+				job.Rest.JsonBody = JsonConvert.SerializeObject(object_);
+
+				if (DeleteEvent(updateTimelineItemRequest.EventId)) { 
+					var res = AddEventToTimeline(job.ActionName, job.Rest, job.ExecuteTime);
+					if(!string.IsNullOrEmpty(res))
+						return res;
+				}
+				return null;
+			}
+			catch(Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+				return null;
+			}
+		}
+		public void ExecuteNow(string eventId)
+		{
+			_taskService.ExecuteNow(eventId);
 		}
 		#endregion
 
@@ -209,9 +257,23 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 				},
 				TimelineType = typeof(TimelineItemShort)
 			}));
-			return totalEvents.Where(_=>_.Response.ActionName.ToLower().Split('_')[0].Contains("CreatePost"));
+			return totalEvents;
 		}
+		public IEnumerable<TimelineItemShort> GetScheduledPosts(string username, string instagramId, int limit = 1000)
+		{
+			var res = GetScheduledEventsForUserForAction(ActionType.CreatePost.GetDescription(), username, instagramId, limit).ToList();
 
+			return res.Select(s => new TimelineItemShort
+			{
+				ActionName = s.ActionName,
+				StartTime = s.StartTime,
+				State = s.State,
+				Body = s.Rest.JsonBody,
+				EnqueueTime = s.EnqueueTime,
+				ItemId = s.ItemId,
+				TargetId = Regex.Match(s.Url.Split('/').Last(), @"\d+").Value
+			});
+		}
 		public IEnumerable<ResultBase<TimelineItem>> GetAllEventsForUser(string userName, DateTime startDate, DateTime? endDate = null,
 		string instaId = null, int limit = 1000, TimelineDateType timelineDateType = TimelineDateType.Backwards)
 		{

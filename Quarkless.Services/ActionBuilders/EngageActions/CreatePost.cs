@@ -144,7 +144,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				&& (e.ActionType == by.ActionType))).ToList();
 
 				TempSelect _selectedMedia = new TempSelect();
-				System.Drawing.Size size = new System.Drawing.Size(900,900);
+				System.Drawing.Size size = new System.Drawing.Size(750,750);
 
 				List<Chance<InstaMediaType>> typeOfPost = new List<Chance<InstaMediaType>>()
 				{
@@ -156,30 +156,33 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				var typeSelected = SecureRandom.ProbabilityRoll(typeOfPost);
 				int carouselAmount = SecureRandom.Next(2,4);
 				int currAmount = 0;
+
 				InstaMediaType _enteredType = InstaMediaType.All;
 				lock (filteredResults) { 
 					foreach (var result in filteredResults.Shuffle())
 					{
 						var media = result.ObjectItem.Medias.FirstOrDefault();
-						if(_enteredType != InstaMediaType.All)
-						{
-							if(media.MediaType != _enteredType)
-							{
-								continue;
-							}
-						}
-
-						result.SeenBy.Add(by);
-						if(selectedAction == MetaDataType.FetchMediaByTopic)
-						{
-							_heartbeatLogic.UpdateMetaData(selectedAction, user.Profile.Topics.TopicFriendlyName, result).GetAwaiter().GetResult();
-						}
-						else { 
-							_heartbeatLogic.UpdateMetaData(selectedAction, user.Profile.Topics.TopicFriendlyName, result, user.Profile.InstagramAccountId).GetAwaiter().GetResult();
-						}
 
 						if (media != null) {
-							if(media.MediaType == InstaMediaType.Carousel)
+							if (_enteredType != InstaMediaType.All)
+							{
+								if (media.MediaType != _enteredType)
+								{
+									continue;
+								}
+							}
+
+							result.SeenBy.Add(by);
+							if (selectedAction == MetaDataType.FetchMediaByTopic)
+							{
+								_heartbeatLogic.UpdateMetaData(selectedAction, user.Profile.Topics.TopicFriendlyName, result).GetAwaiter().GetResult();
+							}
+							else
+							{
+								_heartbeatLogic.UpdateMetaData(selectedAction, user.Profile.Topics.TopicFriendlyName, result, user.Profile.InstagramAccountId).GetAwaiter().GetResult();
+							}
+
+							if (media.MediaType == InstaMediaType.Carousel && currAmount < carouselAmount)
 							{
 								_enteredType = InstaMediaType.Carousel;
 								foreach(var url in media.MediaUrl)
@@ -340,7 +343,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					var credit = selectedImageMedia.User?.Username;
 					UploadPhotoModel uploadPhoto = new UploadPhotoModel
 					{
-						Caption = _builder.GenerateMediaInfo(topic_, selectedImageMedia.Topic, user.Profile.Language, credit),
+						MediaInfo = _builder.GenerateMediaInfo(topic_, selectedImageMedia.Topic, user.Profile.Language, credit),
 						Image = instaimage,
 						Location = user.shortInstagram.Location !=null ? new InstaLocationShort
 						{
@@ -359,7 +362,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					var credit = selectedCarouselMedia.User?.Username;
 					UploadAlbumModel uploadAlbum = new UploadAlbumModel
 					{
-						Caption = _builder.GenerateMediaInfo(topic_, selectedCarouselMedia.Topic, user.Profile.Language, credit),
+						MediaInfo = _builder.GenerateMediaInfo(topic_, selectedCarouselMedia.Topic, user.Profile.Language, credit),
 						Location = user.shortInstagram.Location != null ? new InstaLocationShort
 						{
 							Address = user.shortInstagram.Location.Address,
@@ -382,7 +385,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					var credit = selectedVideoMedia.User?.Username;
 					UploadVideoModel uploadVideo = new UploadVideoModel
 					{
-						Caption = _builder.GenerateMediaInfo(topic_,selectedVideoMedia.Topic,user.Profile.Language,credit),
+						MediaInfo = _builder.GenerateMediaInfo(topic_,selectedVideoMedia.Topic,user.Profile.Language,credit),
 						Location = user.shortInstagram.Location != null ? new InstaLocationShort
 						{
 							Address = user.shortInstagram.Location.Address,

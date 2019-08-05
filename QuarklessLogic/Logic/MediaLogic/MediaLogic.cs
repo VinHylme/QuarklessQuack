@@ -7,6 +7,8 @@ using QuarklessLogic.Handlers.ReportHandler;
 using Quarkless.MediaAnalyser;
 using System;
 using System.Threading.Tasks;
+using System.Linq;
+using QuarklessContexts.Extensions;
 
 namespace QuarklessLogic.Logic.MediaLogic
 {
@@ -137,12 +139,21 @@ namespace QuarklessLogic.Logic.MediaLogic
 		{
 			throw new NotImplementedException();
 		}
+		private string MakeCaption(MediaInfo mediaInfo)
+		{
+			var hashtags = mediaInfo.Hashtags.Select(j => j.Replace(" ", "")).JoinEvery(Environment.NewLine, 3);
+			string creditLine = string.Empty;
 
+			if (mediaInfo.Credit != null)
+				creditLine = $"@{mediaInfo.Credit}";
+			string seperate = "\n.\n.\n.\n";
+			return  mediaInfo.Caption + seperate + creditLine + Environment.NewLine + hashtags;
+		}
 		public async Task<IResult<InstaMedia>> UploadAlbumAsync(UploadAlbumModel uploadAlbum)
 		{
 			try
 			{
-				return await _Client.Media.UploadAlbumAsync(uploadAlbum.Album,uploadAlbum.Caption,uploadAlbum.Location);
+				return await _Client.Media.UploadAlbumAsync(uploadAlbum.Album, MakeCaption(uploadAlbum.MediaInfo),uploadAlbum.Location);
 			}
 			catch (Exception ee)
 			{
@@ -153,7 +164,7 @@ namespace QuarklessLogic.Logic.MediaLogic
 		public async Task<IResult<InstaMedia>> UploadPhotoAsync(UploadPhotoModel uploadPhoto)
 		{
 			try { 
-				return await _Client.Media.UploadPhotoAsync(uploadPhoto.Image, uploadPhoto.Caption, uploadPhoto.Location);
+				return await _Client.Media.UploadPhotoAsync(uploadPhoto.Image, MakeCaption(uploadPhoto.MediaInfo), uploadPhoto.Location);
 			}
 			catch(Exception ee)
 			{
@@ -165,7 +176,7 @@ namespace QuarklessLogic.Logic.MediaLogic
 		{
 			try
 			{
-				var res =  await  _Client.Media.UploadVideoAsync(uploadVideo.Video, uploadVideo.Caption, uploadVideo.Location);
+				var res =  await  _Client.Media.UploadVideoAsync(uploadVideo.Video, MakeCaption(uploadVideo.MediaInfo), uploadVideo.Location);
 				if (res.Succeeded)
 				{
 					Helper.DisposeVideos(uploadVideo.Video.Video.Uri);

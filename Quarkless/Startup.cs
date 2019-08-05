@@ -10,6 +10,7 @@ using QuarklessLogic.QueueLogic.Jobs.Filters;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Cors.Internal;
+using Quarkless.Filters;
 
 namespace Quarkless
 {
@@ -42,7 +43,8 @@ namespace Quarkless
 				options.AddPolicy(CorsPolicy,
 					builder=>
 					{
-						builder.WithOrigins(_accessors.FrontEnd);
+					//	builder.WithOrigins(_accessors.FrontEnd);
+						builder.AllowAnyOrigin();
 						builder.AllowAnyHeader();
 						builder.AllowAnyMethod();
 					});//.WithOrigins(_accessors.FrontEnd));
@@ -114,6 +116,7 @@ namespace Quarkless
 			app.UseDefaultFiles();
 			app.UseCookiePolicy();
 			app.UseAuthentication();
+			//app.UseMiddleware<RequestResponseLoggingMiddleware>();
 			app.UseMvc();
 		}
     }

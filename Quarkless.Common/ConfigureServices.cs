@@ -53,6 +53,7 @@ using QuarklessRepositories.RedisRepository.CorpusCache.MediaCorpusCache;
 using QuarklessRepositories.RedisRepository.HeartBeaterRedis;
 using QuarklessRepositories.RedisRepository.InstagramAccountRedis;
 using QuarklessRepositories.RedisRepository.RedisClient;
+using QuarklessRepositories.RedisRepository.TimelineJobRedis;
 using QuarklessRepositories.Repository.CorpusRepositories.Comments;
 using QuarklessRepositories.Repository.CorpusRepositories.Medias;
 using QuarklessRepositories.Repository.ServicesRepositories;
@@ -180,6 +181,7 @@ namespace Quarkless.Common
 			services.AddTransient<IMediaCorpusRepository,MediaCorpusRepository>();
 			services.AddTransient<IHashtagCoprusCache, HashtagCoprusCache>();
 			services.AddTransient<IMediaCorpusCache, MediaCorpusCache>();
+			services.AddTransient<ITimelineJobRepository,TimelineJobRepository>();
 			services.Configure<RedisOptions>(o =>
 			{
 				o.ConnectionString = _accessors.RedisConnectionString;

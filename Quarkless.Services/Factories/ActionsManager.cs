@@ -1,5 +1,6 @@
 ﻿using Quarkless.Services.Factories.Actions;
 using Quarkless.Services.Interfaces;
+using QuarklessContexts.Enums;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;

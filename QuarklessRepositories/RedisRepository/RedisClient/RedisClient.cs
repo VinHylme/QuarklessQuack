@@ -89,7 +89,7 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 		{
 			try
 			{
-				var res = _redis.GetServer(_redis.GetEndPoints().First()).Keys(pageSize:limit);
+				var res = _redis.GetServer(_redis.GetEndPoints().First()).Keys(_DbNumber,pageSize:limit);
 				return res;
 			}
 			catch(Exception ee)
@@ -162,6 +162,18 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 
 			return members;
 		}
+		public async Task<IEnumerable<T>> GetMembers<T>(RedisKey redisKey)
+		{
+			var members = new List<T>();
+
+			await WithExceptionLogAsync(async () =>
+			{
+				var redisMembers = await _redis.GetDatabase(_DbNumber).SetMembersAsync(redisKey);
+				members.AddRange(redisMembers.Select(m => JsonConvert.DeserializeObject<T>(((string)m))));
+			},"", redisKey.ToString());
+
+			return members;
+		}
 		public async Task SetRemove(string userId, HashtagGrowKeys hashtagGrowKey, string value)
 		{
 			RedisKey redisKey = KeyFormater.FormatKey(userId, hashtagGrowKey);
@@ -183,6 +195,11 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 
 			return castResult;
 		}
+		public HashEntry[] GetHash(RedisKey key)
+		{
+			return _redis.GetDatabase(_DbNumber).HashGetAll(key);
+		}
+
 		public async Task SetHashField(string userId, HashtagGrowKeys hashtagGrowKey, string field, string value)
 		{
 			RedisKey redisKey = KeyFormater.FormatKey(userId, hashtagGrowKey);

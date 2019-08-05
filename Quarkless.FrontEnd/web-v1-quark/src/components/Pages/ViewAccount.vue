@@ -7,10 +7,13 @@
     </div>
     <div class="column is-9">
       <div class="timeline_container">
-        <vue-scheduler :events="TimelineData" :event-display="eventDisplay"/>
+        <vue-scheduler :events="this.$store.getters.UserTimeline" :event-display="eventDisplay"/>
       </div>
     </div>
   </div>
+  <b-notification style="background-color:#141414;" :closable="false">
+      <b-loading :is-full-page="isFullPage" :active.sync="isLoading" :can-cancel="false"></b-loading>
+  </b-notification>
 </div>  
 </template>
 
@@ -21,37 +24,27 @@ export default {
       return {
         IsAdmin:false,
         TimelineData:[],
-        timer:''
+        timer:'',
+        isLoading: false,
+        isFullPage: true
       }
   },
   created(){
-     this.timer = setInterval(this.loadData, 60000)
-     this.loadData();
+      this.isLoading = true
+      this.$store.dispatch('GetUsersTimeline',this.$route.params.id).then(res=> { this.isLoading = false });
+      this.TimelineData = this.$store.getters.UserTimeline;
+      this.timer = setInterval(this.loadData, 15000)
   },
   mounted(){
       this.IsAdmin = this.$store.getters.UserRole == 'Admin';
   },
   methods: {
     loadData(){
-      this.TimelineData = [];
-      this.$store.dispatch('GetUsersTimeline',this.$route.params.id).then(res=>{
-       if(res.data!==undefined || res.data !==null){
-          for(var i = 0; i < res.data.length; i++){
-            var item = res.data[i];
-            var moment_enqueued = moment(item.response.enqueueTime);
-            var enqueueTime = new Date(moment_enqueued.format('YYYY-MM-DD HH:mm:ss'));
-            this.TimelineData.push({
-              id: item.response.itemId,
-              startTime: enqueueTime.getHours()+":"+ enqueueTime.getMinutes(),
-              endTime: enqueueTime.getHours() + ":" + enqueueTime.getMinutes(),
-              actionObject:{
-                actionName:item.response.actionName.split('_')[0],
-                body:item.response.body,
-                targetId:item.response.targetId
-              }
-            })
-          }
-       }
+      this.$store.dispatch('GetUsersTimeline',this.$route.params.id).then(res=> 
+      { 
+        if(res){
+          this.TimelineData = this.$store.getters.UserTimeline;
+        }
       });
     },
     eventDisplay(event) {
@@ -110,18 +103,7 @@ $v-cal-button-hover-color	:#3B86FF;
 $v-cal-button-disabled-bg	:#f0f0f0;
 $v-cal-button-disabled-color	:#d0d0d0;
 $v-cal-button-disabled-cursor	:not-allowed;
-// .v-cal-hour, .v-cal-day__hour-block{
-//   padding:50px !important;
-// }
 
-// .v-cal-content .v-cal-event-item{
-//   text-align: center !important;
-//   margin-left:10px !important;
-//   width:100px!important;
-//   padding:0.4em !important;
-//   flex-grow: 0 !important;
-// }
-//  Import the rest
 @import "../../../references/v-calendar-scheduler/scss/main";
 .media_container{
   padding:0.4em;
@@ -134,10 +116,16 @@ $v-cal-button-disabled-cursor	:not-allowed;
   overflow: auto;
   color: white;
   width:100%;
-  height:915px;
+  height:100%;
   background-color: #222;
+  ::-webkit-scrollbar {
+      display: none;
+  }
 }
 html,body{
- overflow: hidden;
+ overflow: auto;
+  ::-webkit-scrollbar {
+      display: none;
+  }
 }
 </style>

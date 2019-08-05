@@ -1,7 +1,11 @@
 ﻿using Hangfire;
+using Hangfire.States;
 using Hangfire.Storage.Monitoring;
 using QuarklessContexts.JobClass;
+using QuarklessLogic.QueueLogic.Jobs.JobOptions;
+using QuarklessLogic.QueueLogic.Jobs.JobTypes;
 using System;
+using System.Linq;
 
 namespace Quarkless.Common
 {
@@ -20,6 +24,14 @@ namespace Quarkless.Common
 			configureJob(jobOptions);
 			var jobId = _backgroundJobClient.Schedule<TJob>(job => job.Perform(jobOptions), jobOptions.ExecutionTime);
 			return jobId;
+		}
+		public void ExecuteNow(string jobId)
+		{
+			var jobdetails = JobStorage.Current.GetMonitoringApi().JobDetails(jobId);
+			var actionDetails = ((LongRunningJobOptions)jobdetails.Job?.Args?.FirstOrDefault());
+			actionDetails.ExecutionTime = DateTime.UtcNow.AddSeconds(10);
+			_backgroundJobClient.Enqueue<LongRunningJob>(job=>job.Perform(actionDetails));
+			DeleteJob(jobId);
 		}
 		public JobDetailsDto GetJobDetails (string jobId)
 		{

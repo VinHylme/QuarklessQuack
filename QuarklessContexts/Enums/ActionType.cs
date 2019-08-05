@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Text;
+﻿using System.ComponentModel;
 
-namespace Quarkless.Services
+namespace QuarklessContexts.Enums
 {
 	public enum ContentType
 	{

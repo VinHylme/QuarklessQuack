@@ -4,6 +4,8 @@ import AccountServices from './Services/accountServices';
 import TimelineServices from './Services/timelineService';
 import Axios from 'axios';
 import decoder from 'jwt-decode';
+import moment from 'moment';
+
 Vue.use(Vuex);
 export default new Vuex.Store({
   state:{
@@ -59,11 +61,61 @@ export default new Vuex.Store({
 
     },
     refreshed_state(){},
-    retrieved_timeline_data_for_user(state, data){
-      state.TimelineData = data
+    retrieved_timeline_data_for_user(state, data){      
+      for(var i = 0; i < data.length; i++){
+        var item = data[i];
+        var moment_enqueued = moment(item.enqueueTime);
+        var enqueueTime = new Date(moment_enqueued.format('YYYY-MM-DD HH:mm:ss'));
+        if(enqueueTime===undefined){continue;}
+        state.AccountData.TimelineData.push({
+          id: item.itemId,
+          startTime: enqueueTime.getHours()+":"+ enqueueTime.getMinutes(),
+          endTime: enqueueTime.getHours() + ":" + enqueueTime.getMinutes(),
+          actionObject:{
+            actionName:item.actionName.split('_')[0],
+            actionType:item.actionName.split('_')[1],
+            body:item.body,
+            targetId:item.targetId
+          }
+        })
+      }
     },
     failed_to_retrieve_timeline_data_for_user(){
-    }
+    },
+    failed_to_delete_event(){},
+    event_deleted(state, eventId){
+      state.AccountData.TimelineData = state.AccountData.TimelineData.filter((obj)=> obj.id !== eventId);
+    },
+    event_enqueued(state, eventId){
+      state.AccountData.TimelineData = state.AccountData.TimelineData.filter((obj)=> obj.id !== eventId);
+    },
+    failed_to_enqueue_event(){},
+    updated_event(state, {event, newid}){
+      /*
+        caption: this.caption,
+        time: this.time,
+        hashtags: this.hashtags,
+        location: this.location,
+        credit: this.credit,
+        type: this.type 
+
+        const caption = bodyResp.MediaInfo.Caption;
+        const hashtags = bodyResp.MediaInfo.Hashtags;
+        const credit = bodyResp.MediaInfo.Credit;
+        const location = bodyResp.Location;
+
+      */
+      const index = state.AccountData.TimelineData.findIndex((obj=>obj.id == event.id));
+      var tojsonObject = JSON.parse(state.AccountData.TimelineData[index].actionObject.body);
+      state.AccountData.TimelineData[index].id = newid;
+      tojsonObject.MediaInfo.Caption = event.caption;
+      tojsonObject.MediaInfo.Hashtags = event.hashtags;
+      tojsonObject.Location = event.location;
+      tojsonObject.MediaInfo.Credit = event.credit;
+      state.AccountData.TimelineData[index].actionObject.body = JSON.stringify(tojsonObject);
+    },
+    failed_to_update_event(){}
+    
   },
   getters: {
     IsLoggedIn: state => !!state.token,
@@ -72,12 +124,47 @@ export default new Vuex.Store({
        return state.AccountData;
     },
     UserRole:state=>{return state.role},
-    UserTimeline:state=> { return state.TimelineData}
+    UserTimeline:state=> { return state.AccountData.TimelineData}
   },
   actions: {
+    UpdateEvent({commit}, event){
+      return new Promise((resolve, reject)=>{
+        TimelineServices.UpdateEvent(event).then(resp=>{
+          commit('updated_event', {event, newid: resp.data });
+          resolve(resp);
+        }).catch(err=>{
+          commit('failed_to_update_event')
+          reject(err);
+        })
+      })
+    },
+    EnqueueEventNow({commit}, eventId){
+      return new Promise((resolve,reject)=>{
+        TimelineServices.EnqueueNow(eventId).then(resp=>{
+          commit('event_enqueued',eventId);
+          resolve(resp);
+        }).catch(err=>{
+          commit('failed_to_enqueue_event');
+          reject(err);
+        })
+      })
+    },
+    DeleteEvent({commit}, eventId){
+      return new Promise((resolve,reject)=>{
+        TimelineServices.DeleteEventFromTimeline(eventId).then(resp=>{
+          commit('event_deleted',eventId);
+          resolve(resp);
+        }).catch(err=>{
+          commit('failed_to_delete_event');
+          reject(err);
+        })
+      })
+    },
     GetUsersTimeline({commit},id){
+      this.state.AccountData.TimelineData = [];
       return new Promise((resolve, reject)=>{
         TimelineServices.GetUserTimeline(id).then(resp=>{
+         // this.state.AccountData.TimelineData = [];
           commit('retrieved_timeline_data_for_user',resp.data);
           resolve(resp)
         }).catch(err=>{
@@ -126,7 +213,7 @@ export default new Vuex.Store({
         })
       })
     },
-    login({commit}, user){
+    async login({commit}, user){
       return new Promise((resolve, reject) => {
         commit('auth_request')
         AccountServices.Login(user).then(resp=>{

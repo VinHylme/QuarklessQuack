@@ -7,7 +7,8 @@ namespace QuarklessContexts.JobClass
 	{
 		string Queue<TJob,TJobOptions>(Action<TJobOptions> configureJob)
 			where TJobOptions : IJobOptions
-			where TJob : IJob<TJobOptions>;
+			where TJob : IJob<TJobOptions>; 
+		void ExecuteNow(string jobId);
 		JobDetailsDto GetJobDetails(string jobId);
 		JobList<ScheduledJobDto> GetScheduledJobs(int from, int limit);
 		JobList<ProcessingJobDto> GetCurrentlyRunningJobs(int from, int limit);

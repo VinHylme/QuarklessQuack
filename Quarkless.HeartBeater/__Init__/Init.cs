@@ -119,20 +119,20 @@ namespace Quarkless.HeartBeater.__Init__
 			
 				//Build Around Topics
 			
-				var ins = Task.Run(async () => await metadataBuilder.BuildBase(1)).ContinueWith(async tasker=>{
+				var ins = Task.Run(async () => await metadataBuilder.BuildBase(4)).ContinueWith(async tasker=>{
 					Console.WriteLine("Finished building Base");
 					await Task.Run(() =>
 					{
-						var likers = Task.Run(async () => await metadataBuilder.BuildUserFromLikers()).ContinueWith(async a =>
+						var likers = Task.Run(async () => await metadataBuilder.BuildUserFromLikers(takeMediaAmount:10,takeUserMediaAmount:300)).ContinueWith(async a =>
 						{
-							await metadataBuilder.BuildMediaFromUsersLikers().ContinueWith(async s => {
+							await metadataBuilder.BuildMediaFromUsersLikers(takeMediaAmount:10,takeUserMediaAmount:30).ContinueWith(async s => {
 								await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByLikers, MetaDataType.FetchCommentsViaPostsLiked, limit: 2, takeMediaAmount: 10, takeuserAmount: 200);
 							});
 						});
 
-						var commenters = Task.Run(async () => await metadataBuilder.BuildUsersFromCommenters()).ContinueWith(async c =>
+						var commenters = Task.Run(async () => await metadataBuilder.BuildUsersFromCommenters(takeMediaAmount: 10, takeUserMediaAmount: 300)).ContinueWith(async c =>
 						{
-							await metadataBuilder.BuildMediaFromUsersCommenters().ContinueWith(async s => {
+							await metadataBuilder.BuildMediaFromUsersCommenters(takeMediaAmount: 10, takeUserMediaAmount: 30).ContinueWith(async s => {
 								await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByCommenters, MetaDataType.FetchCommentsViaPostCommented, limit: 2, takeMediaAmount: 10, takeuserAmount: 200);
 							});
 						});

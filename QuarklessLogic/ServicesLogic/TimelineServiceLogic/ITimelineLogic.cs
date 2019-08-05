@@ -6,8 +6,11 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 {
 	public interface ITimelineLogic
 	{
+		string UpdateEvent(UpdateTimelineItemRequest updateTimelineItemRequest);
 		bool DeleteEvent(string eventId);
-		bool AddEventToTimeline(string actionName, RestModel restBody, DateTimeOffset executeTime);
+		void ExecuteNow(string eventId);
+		string AddEventToTimeline(string actionName, RestModel restBody, DateTimeOffset executeTime);
+		IEnumerable<TimelineItemShort> GetScheduledPosts(string username, string instagramId, int limit = 1000);
 		IEnumerable<ResultBase<TimelineItemShort>> ShortGetAllEventsForUser(string userName, DateTime startDate, DateTime? endDate = null,
 		string instaId = null, int limit = 1000, TimelineDateType timelineDateType = TimelineDateType.Backwards);
 		IEnumerable<ResultBase<TimelineItem>> GetAllEventsForUser(string userName, DateTime startDate, DateTime? endDate = null, string instaId = null, int limit = 1000, TimelineDateType timelineDateType = TimelineDateType.Backwards);

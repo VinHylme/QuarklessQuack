@@ -2,6 +2,7 @@
 using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.QueueLogic.Jobs.JobOptions;
 using QuarklessLogic.QueueLogic.Jobs.JobTypes;
+using QuarklessRepositories.RedisRepository.TimelineJobRedis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,9 +12,11 @@ namespace QuarklessLogic.QueueLogic.Services
 	public class TaskService : ITaskService
 	{
 		private readonly IJobRunner _jobRunner;
-		public TaskService(IJobRunner jobRunner)
+		private readonly ITimelineJobRepository _timelineJobRepository;
+		public TaskService(IJobRunner jobRunner, ITimelineJobRepository timelineJobRepository)
 		{
 			_jobRunner = jobRunner;
+			_timelineJobRepository = timelineJobRepository;
 		}
 
 		public void ActionTask(Delegate @delegate, DateTimeOffset executeTime, params object[] args)
@@ -47,6 +50,7 @@ namespace QuarklessLogic.QueueLogic.Services
 				ExecuteTime = actionDetails.ExecutionTime,
 				Url = actionDetails.Rest.BaseUrl,
 				User = actionDetails.Rest.User,
+				Rest = actionDetails.Rest,
 				History = job.History.Select(_=> new ItemHistory
 				{
 					CreatedAt = _.CreatedAt,
@@ -267,6 +271,11 @@ namespace QuarklessLogic.QueueLogic.Services
 		public bool DeleteEvent(string eventId)
 		{
 			return _jobRunner.DeleteJob(eventId);
+		}
+
+		public void ExecuteNow(string jobid)
+		{
+			_jobRunner.ExecuteNow(jobid);
 		}
 	}
 }

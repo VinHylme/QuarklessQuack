@@ -11,6 +11,7 @@ import VueScheduler from '../references/v-calendar-scheduler/index';
 
 Vue.use(Buefy);
 Vue.use(VueResource);
+
 Vue.use(VueScheduler, {
   locale: 'en',
   minDate: null,

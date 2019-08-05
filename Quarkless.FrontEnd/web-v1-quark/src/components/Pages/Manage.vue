@@ -12,7 +12,7 @@
                         v-bind:name="acc.fullName" v-bind:profilePicture="acc.profilePicture" v-bind:biography="acc.userBiography"
                         v-bind:userFollowers="acc.followersCount" v-bind:userFollowing="acc.followingCount" v-bind:totalPost="acc.totalPostsCount"/>
                 </div>
-                <div class="card">
+                <div class="card is-dark">
                         <div class="card-content">
                                 <a href="#"><h3 class="title is-1">+</h3></a>
                         </div>
@@ -69,13 +69,20 @@ export default {
 
 }
 .card {
-  .card-content{
-    h3{
-            color:#fefefe;
-            padding:0em;
-            font-size:250px;
-            text-align: center;
-    }
+        &.is-dark{
+                margin:0.2em;
+                width:400px !important;
+                height:395px !important;
+                background-color: #292929 !important;
+                color:white !important;
+        }
+        .card-content{
+        h3{
+                color:#fefefe;
+                padding:0em;
+                font-size:250px;
+                text-align: center;
+        }
    }
 }
 body {

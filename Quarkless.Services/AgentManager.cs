@@ -20,6 +20,7 @@ using MoreLinq;
 using QuarklessLogic.ServicesLogic.AgentLogic;
 using System.Collections.Async;
 using QuarklessContexts.Models.UserAuth.AuthTypes;
+using QuarklessContexts.Enums;
 
 namespace Quarkless.Services
 {
@@ -449,7 +450,7 @@ namespace Quarkless.Services
 			//TODO : MAKE SURE ALL USERS ARE BUSINESS ACCOUNTS AND USERS OVER 100 FOLLOWERS BASE THEIR POSTING ON WHICH HOUR WAS MOST POPULAR
 			int numberOfWorkers = 0;
 			while (true) {
-				if (numberOfWorkers < 10) { 
+				if (numberOfWorkers < 5) { 
 					_ = Task.Run(async () => { 
 						IEnumerable<ShortInstagramAccountModel> allActives = await _agentLogic.GetAllAccounts();
 						if (allActives != null) { 
@@ -586,11 +587,11 @@ namespace Quarkless.Services
 								var commentScheduleOptions = new CommentingActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1, 4)), CommentingActionType.Any);
 								var likecommentScheduleOptions = new LikeCommentActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(4)), LikeCommentActionType.Any);
 				
-								actionsContainerManager.AddAction(postAction, postScheduleOptions, 0.10);
+								actionsContainerManager.AddAction(postAction, postScheduleOptions, 0.125);
 								actionsContainerManager.AddAction(likeAction, likeScheduleOptions, 0.35);
-								actionsContainerManager.AddAction(followAction, followScheduleOptions, 0.15);
-								actionsContainerManager.AddAction(commentAction, commentScheduleOptions, 0.19);
-								actionsContainerManager.AddAction(likeCommentAction, likecommentScheduleOptions, 0.21);
+								actionsContainerManager.AddAction(followAction, followScheduleOptions, 0.125);
+								actionsContainerManager.AddAction(commentAction, commentScheduleOptions, 0.125);
+								actionsContainerManager.AddAction(likeCommentAction, likecommentScheduleOptions, 0.275);
 								#endregion
 								#region Agent State
 								if (_instaAccount == null) return;

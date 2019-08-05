@@ -2,6 +2,7 @@
 using Quarkless.Services.Extensions;
 using Quarkless.Services.Interfaces;
 using QuarklessContexts.Extensions;
+using QuarklessContexts.Models.MediaModels;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using QuarklessContexts.Models.Timeline;
@@ -43,7 +44,7 @@ namespace Quarkless.Services
 			//	type,topic,lang,size,limit) ;
 			return _textGeneration.MarkovIt(type,topic,lang,size,limit).GetAwaiter().GetResult();
 		}
-		public string GenerateMediaInfo(Topics topicSelect, string topicSelected, string language, string credit = null)
+		public MediaInfo GenerateMediaInfo(Topics topicSelect, string topicSelected, string language, string credit = null)
 		{
 			List<string> selections = new List<string>();
 			List<string> hashtagsToUse = new List<string>();
@@ -71,15 +72,14 @@ namespace Quarkless.Services
 			}
 			
 			hashtagsToUse.AddRange(selections.Take(SecureRandom.Next(20 , 26)).Select(s=> $"#{s}"));
-			var hashtags = hashtagsToUse.Select(j=>j.Replace(" ","")).JoinEvery(Environment.NewLine, 3);
-			var caption_ = GenerateText(topicSelect.TopicFriendlyName.ToLower(), language.ToUpper(), 1, SecureRandom.Next(2,4), SecureRandom.Next(14,25)).Split(',')[0];
-			string creditLine = string.Empty;
+			var caption_ = GenerateText(topicSelect.TopicFriendlyName.ToLower(), language.ToUpper(), 1, SecureRandom.Next(2, 4), SecureRandom.Next(14, 25)).Split(',')[0];
 
-			if (credit != null)
-				creditLine = $"@{credit}";
-			string seperate = "\n.\n.\n.\n";
-			string final_caption = caption_ + seperate + creditLine + Environment.NewLine + hashtags;
-			return final_caption;
+			return new MediaInfo
+			{
+				Caption = caption_,
+				Credit = credit,
+				Hashtags = hashtagsToUse
+			};
 		}
 		public string GenerateComment(string topic, string language)
 		{

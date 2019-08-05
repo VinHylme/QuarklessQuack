@@ -2,7 +2,7 @@ import Api from './Api'
 
 export default {
   Login(params){
-    return Api(false).post('/auth/loginaccount',params)
+    return Api(false).post('/auth/loginaccount', params)
   },
   GetInstagramAccountsForUser(params){
     return Api(true).get('/insta/' + params.accountId)

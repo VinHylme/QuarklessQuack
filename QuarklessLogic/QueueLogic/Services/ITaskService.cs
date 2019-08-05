@@ -18,6 +18,7 @@ namespace QuarklessLogic.QueueLogic.Services
 		IEnumerable<TimelineItem> GetTotalScheduledEvents(int from, int limit);
 		IEnumerable<TimelineInProgressItem> GetTotalCurrentlyRunningJobs(int from, int limit);
 		IEnumerable<TimelineFinishedItem> GetTotalFinishedJobs(int from, int limit);
+		void ExecuteNow(string jobid);
 		TimelineStatistics GetStatistics();
 		bool IsAnyJobsCurrentlyRunning();
 		bool DeleteEvent(string eventId);

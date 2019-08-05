@@ -10,11 +10,14 @@
   "dependencies": {
     "axios": "^0.19.0",
     "buefy": "^0.7.8",
+    "bulma-carousel": "^4.0.4",
     "core-js": "^2.6.5",
+    "crypto-js": "^3.1.9-1",
     "jwt-decode": "^2.2.0",
     "moment": "^2.24.0",
     "v-calendar-scheduler": "^0.7.4",
     "vue": "^2.6.10",
+    "vue-carousel": "^0.18.0",
     "vue-resource": "^1.5.1",
     "vue-router": "^3.0.7",
     "vuex": "^3.1.1"
@@ -39,7 +42,9 @@
       "plugin:vue/essential",
       "eslint:recommended"
     ],
-    "rules": {},
+    "rules": {
+      "vue/no-use-v-if-with-v-for": "off"
+    },
     "parserOptions": {
       "parser": "babel-eslint"
     }

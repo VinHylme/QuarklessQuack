@@ -10,6 +10,7 @@ import CreateAccount from "./components/Pages/CreateAccount.vue";
 import CreateProfile from "./components/Pages/CreateProfile.vue";
 import ViewAccount from "./components/Pages/ViewAccount.vue";
 import NotFound from "./components/Pages/HandlerPages/NotFound.vue";
+
 Vue.use(Router);
 var router = new Router({});
 router.beforeEach((to, from, next) => {
@@ -54,7 +55,7 @@ export default new Router({
        },
        {
            name:"stats",
-           path:"stats/",
+           path:"/stats",
            component:Stats,
            meta:{
                requiresAuth: true
