@@ -1,11 +1,11 @@
 <template>
 <div class="timeline_layout">
   <div class="columns is-mobile is-gapless">
-    <div class="column is-3">
+    <div class="column is-4">
       <div class="media_container">   
       </div>
     </div>
-    <div class="column is-9">
+    <div class="column is-8">
       <div class="timeline_container">
         <vue-scheduler :events="this.$store.getters.UserTimeline" :event-display="eventDisplay"/>
       </div>

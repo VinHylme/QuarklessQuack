@@ -14,7 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Quarkless.HeartBeater.ContentSearch
+namespace QuarklessLogic.ServicesLogic.ContentSearch
 {
 	public class ContentSearcherHandler : IContentSearcherHandler
 	{
@@ -686,7 +686,7 @@ namespace Quarkless.HeartBeater.ContentSearch
 			response.Message = $"SearchViaGoogle failed for  object{JsonConvert.SerializeObject(searchImageQuery)}";
 			return response;
 		}
-		public SearchResponse<Media> SearchSimilarImagesViaGoogle(List<GroupImagesAlike> imagesAlikes, int limit)
+		public SearchResponse<Media> SearchSimilarImagesViaGoogle(List<GroupImagesAlike> imagesAlikes, int limit, int offset = 0)
 		{
 			SearchResponse<Media> response = new SearchResponse<Media>();
 			try { 
@@ -696,6 +696,7 @@ namespace Quarkless.HeartBeater.ContentSearch
 						no_download = true,
 						similar_images = images.Url,
 						limit = limit,
+						offset = offset < limit ? offset : 0
 					};
 					var res = _restSharpClient.PostRequest("http://127.0.0.1:5000","searchImages",JsonConvert.SerializeObject(searchImage));
 					TempMedia responseValues = JsonConvert.DeserializeObject<TempMedia>(res.Content);
@@ -728,9 +729,9 @@ namespace Quarkless.HeartBeater.ContentSearch
 		{
 			return _yandexImageSearch.SearchSafeButSlow(imagesAlikes,limit);
 		}
-		public SearchResponse<Media> SearchViaYandexBySimilarImages(List<GroupImagesAlike> imagesSimilarUrls, int limit)
+		public SearchResponse<Media> SearchViaYandexBySimilarImages(List<GroupImagesAlike> imagesSimilarUrls, int limit, int offset = 0)
 		{
-			var images = _yandexImageSearch.SearchRelatedImagesREST(imagesSimilarUrls, limit);
+			var images = _yandexImageSearch.SearchRelatedImagesREST(imagesSimilarUrls, limit, offset);
 			return images;
 		}
 		public SearchResponse<Media> SearchViaYandex(YandexSearchQuery yandexSearchQuery, int limit)

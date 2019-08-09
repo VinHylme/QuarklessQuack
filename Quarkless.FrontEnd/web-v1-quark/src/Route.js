@@ -10,22 +10,10 @@ import CreateAccount from "./components/Pages/CreateAccount.vue";
 import CreateProfile from "./components/Pages/CreateProfile.vue";
 import ViewAccount from "./components/Pages/ViewAccount.vue";
 import NotFound from "./components/Pages/HandlerPages/NotFound.vue";
-
+import store from "./State";
 Vue.use(Router);
-var router = new Router({});
-router.beforeEach((to, from, next) => {
-    if(to.matched.some(record => record.meta.requiresAuth)) {
-      if (this.$store.getters.isLoggedIn) {
-        next()
-        return
-      }
-      next('/login') 
-    } else {
-      next() 
-    }
-  })
 
-export default new Router({
+const router = new Router({
     mode:"history",
     base: process.env.BASE_URL,
     routes:[
@@ -47,7 +35,7 @@ export default new Router({
        },
        {
             name:"manage",
-            path:"/manage/",
+            path:"/manage",
             component:Manage,
             meta:{
                 requiresAuth:true
@@ -79,7 +67,7 @@ export default new Router({
        },
        {
            name:"settings",
-           path:"/settings",
+           path:"settings",
            component:Settings,
            meta:{
                requiresAuth: true
@@ -88,8 +76,11 @@ export default new Router({
        {
            path:"/profile/",
            redirect:{
-               name:"profiles"
-           }
+               name:"profile"
+           }, 
+           meta:{
+             requiresAuth: true
+            }
        },
        {
            name:"linkAccount",
@@ -113,4 +104,18 @@ export default new Router({
            component:NotFound
        }
 ]
-})
+});
+
+router.beforeEach((to, from, next) => {
+    if(to.matched.some(record => record.meta.requiresAuth)) {
+      if (store.getters.IsLoggedIn) {
+        next()
+        return
+      }
+      next('/') 
+    } else {
+      next() 
+    }
+});
+
+export default router;

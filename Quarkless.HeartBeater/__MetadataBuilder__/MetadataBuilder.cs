@@ -1,7 +1,6 @@
 ﻿using InstagramApiSharp.Classes.Models;
 using MoreLinq;
 using Quarkless.HeartBeater.__Init__;
-using Quarkless.HeartBeater.ContentSearch;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.ResponseModels;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
@@ -9,6 +8,7 @@ using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Logic.InstagramAccountLogic;
 using QuarklessLogic.Logic.ProxyLogic;
+using QuarklessLogic.ServicesLogic.ContentSearch;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using System;
 using System.Collections.Async;

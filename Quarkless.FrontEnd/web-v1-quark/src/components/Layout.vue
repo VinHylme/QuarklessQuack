@@ -6,7 +6,7 @@
   </div>
   <div class="column is-11" >
       <div class="main_area">
-         <router-view></router-view>
+         <router-view :key="$route.fullPath"></router-view>
       </div>
   </div>
 </div>
@@ -19,6 +19,15 @@ export default {
   name: 'app',
   components: {
     Nav
+  },
+  data(){
+    return {
+      isProfileButtonDisabled:false
+    }
+  },
+  beforeMount(){
+    this.$store.dispatch('AccountDetails', {"userId":this.$store.state.user});
+    this.$store.dispatch('GetProfiles', this.$store.state.user);
   }
 }
 </script>

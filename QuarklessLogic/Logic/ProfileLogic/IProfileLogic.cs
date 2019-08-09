@@ -10,6 +10,6 @@ namespace QuarklessLogic.Logic.ProfileLogic
 		Task<IEnumerable<ProfileModel>> GetProfiles(string accountId);
 		Task<ProfileModel> GetProfile(string accountId, string instagramAccountId);
 		Task<long?> PartialUpdateProfile(string profileId, ProfileModel profile);
-
+		Task<bool> AddMediaUrl(string profileId, string mediaUrl);
 	}
 }

@@ -14,5 +14,6 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 		IEnumerable<string> DetectLangauge(string url, string targetElement, params string[] data);
 		IEnumerable<string> DetectLanguageViaGoogle(string url, string targetElement, bool getValues = false, params string[] data);
 		SearchResponse<List<SerpItem>> Reader(string url, int limit = 5 );
+		SearchResponse<List<SerpItem>> YandexSearchMe(string url, int pages, int offset = 0);
 	}
 }

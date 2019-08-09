@@ -16,6 +16,35 @@ namespace QuarklessRepositories.ProfileRepository
 		{
 			_context = context;
 		}
+
+		public async Task<bool> AddMediaUrl(string profileId, string mediaUrl)
+		{
+			try { 
+				var filter = Builders<ProfileModel>.Filter.Eq("_id", profileId);
+				var getProfile = (await _context.Profiles.FindAsync(filter)).FirstOrDefault();
+				if (getProfile != null)
+				{
+					var updates = Builders<ProfileModel>.Update;
+					GroupImagesAlike toAdd = new GroupImagesAlike
+					{
+						TopicGroup = getProfile.Topics.TopicFriendlyName,
+						Url = mediaUrl
+					};
+					var newup = updates.Push(e=>e.Theme.ImagesLike,toAdd);
+					var res = await _context.Profiles.UpdateOneAsync(filter, newup);
+					if (res.IsAcknowledged)
+					{
+						return true;
+					}
+				}
+				return false;
+			}
+			catch(Exception ee)
+			{
+				return false;
+			}
+		}
+
 		public async Task<ProfileModel> AddProfile(ProfileModel profile)
 		{
 			try

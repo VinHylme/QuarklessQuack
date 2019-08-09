@@ -91,7 +91,7 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 				{
 					//first check limit
 					var mediasfe = await _mediaCorpusLogic.MediasCount(topic);
-					if (mediasfe <= 5000) { 
+					if (mediasfe <= 15000) { 
 						ConcurrentBag<MediaCorpus> mediaCorpus = new ConcurrentBag<MediaCorpus>();
 						ConcurrentBag<HashtagsModel> hashtags = new ConcurrentBag<HashtagsModel>();
 						datass.ForEach(data => {
@@ -149,7 +149,7 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 				else if(metaDataType == MetaDataType.FetchUsersViaPostCommented)
 				{
 					var commentsfe = await _commentsLogic.CommentsCount(topic);
-					if (commentsfe <= 5000) { 
+					if (commentsfe <= 15000) { 
 						ConcurrentBag<CommentCorpus> commentCorpus = new ConcurrentBag<CommentCorpus>();
 						ConcurrentBag<HashtagsModel> hashtagsComments = new ConcurrentBag<HashtagsModel>();
 						datass.ForEach(data => {

@@ -2,6 +2,7 @@
 using Amazon.CognitoIdentityProvider;
 using Amazon.Extensions.CognitoAuthentication;
 using Amazon.Extensions.NETCore.Setup;
+using Amazon.S3;
 using Hangfire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -37,9 +38,12 @@ using QuarklessLogic.Logic.InstaUserLogic;
 using QuarklessLogic.Logic.MediaLogic;
 using QuarklessLogic.Logic.ProfileLogic;
 using QuarklessLogic.Logic.ProxyLogic;
+using QuarklessLogic.Logic.QueryLogic;
+using QuarklessLogic.Logic.StorageLogic;
 using QuarklessLogic.QueueLogic.Services;
 using QuarklessLogic.ServicesLogic;
 using QuarklessLogic.ServicesLogic.AgentLogic;
+using QuarklessLogic.ServicesLogic.ContentSearch;
 using QuarklessLogic.ServicesLogic.CorpusLogic;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic;
@@ -53,6 +57,7 @@ using QuarklessRepositories.RedisRepository.CorpusCache.MediaCorpusCache;
 using QuarklessRepositories.RedisRepository.HeartBeaterRedis;
 using QuarklessRepositories.RedisRepository.InstagramAccountRedis;
 using QuarklessRepositories.RedisRepository.RedisClient;
+using QuarklessRepositories.RedisRepository.SearchCache;
 using QuarklessRepositories.RedisRepository.TimelineJobRedis;
 using QuarklessRepositories.Repository.CorpusRepositories.Comments;
 using QuarklessRepositories.Repository.CorpusRepositories.Medias;
@@ -93,6 +98,9 @@ namespace Quarkless.Common
 			services.AddTransient<IAgentLogic,AgentLogic>();
 			services.AddTransient<ICommentCorpusLogic, CommentCorpusLogic>();
 			services.AddTransient<IMediaCorpusLogic, MediaCorpusLogic>();
+			services.AddTransient<IQueryLogic, QueryLogic>();
+			services.AddTransient<IContentSearcherHandler, ContentSearcherHandler>();
+			services.AddTransient<ISearchingCache, SearchingCache>();
 		}
 		public static void AddAuthHandlers(this IServiceCollection services, Accessors _accessors, AWSOptions aWSOptions)
 		{
@@ -104,8 +112,16 @@ namespace Quarkless.Common
 			RegionEndpoint regionEndpoint = RegionEndpoint.EUWest2;
 			IAmazonCognitoIdentityProvider amazonCognitoIdentityProvider = new AmazonCognitoIdentityProviderClient(_accessors.AWSAccess.AccessKey, _accessors.AWSAccess.SecretKey, regionEndpoint);
 			CognitoUserPool userPool = new CognitoUserPool(_accessors.AWSPool.PoolID, _accessors.AWSPool.AppClientID, amazonCognitoIdentityProvider, _accessors.AWSPool.AppClientSecret);
-			services.AddSingleton<IAmazonCognitoIdentityProvider>(amazonCognitoIdentityProvider);
-			services.AddSingleton<CognitoUserPool>(userPool);
+			services.AddSingleton(amazonCognitoIdentityProvider);
+			services.AddSingleton(userPool);
+			IAmazonS3 amazonS3 = new AmazonS3Client(_accessors.AWSAccess.AccessKey, _accessors.AWSAccess.SecretKey,new AmazonS3Config
+			{
+				RegionEndpoint = regionEndpoint,
+				SignatureVersion = "v4",
+				SignatureMethod = Amazon.Runtime.SigningAlgorithm.HmacSHA256
+			});
+			services.AddAWSService<IAmazonS3>();
+			services.AddSingleton<IS3BucketLogic>(new S3BucketLogic(amazonS3));
 
 			var mongoDbContext = new MongoDbContext(_accessors.ConnectionString, "Accounts");
 

@@ -16,7 +16,6 @@ namespace Quarkless
 {
 	public class Startup
     {
-        //public const string AppS3BucketKey = "AppS3Bucket";	
 		private readonly Accessors _accessors;
 		private const string CorsPolicy = "HashtagGrowCORSPolicy";
         public Startup(IConfiguration configuration)

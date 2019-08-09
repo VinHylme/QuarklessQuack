@@ -5,7 +5,7 @@ using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.ResponseModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 
-namespace Quarkless.HeartBeater.ContentSearch
+namespace QuarklessLogic.ServicesLogic.ContentSearch
 {
 	public interface IContentSearcherHandler
 	{
@@ -24,7 +24,7 @@ namespace Quarkless.HeartBeater.ContentSearch
 		SearchResponse<Media> SearchViaGoogle(SearchImageModel searchImageQuery);
 		SearchResponse<Media> SearchViaYandex(YandexSearchQuery yandexSearchQuery, int limit);
 		SearchResponse<Media> SearchYandexSimilarSafeMode(List<GroupImagesAlike> imagesAlikes, int limit);
-		SearchResponse<Media> SearchViaYandexBySimilarImages(List<GroupImagesAlike> imagesSimilarUrls, int limit);
-		SearchResponse<Media> SearchSimilarImagesViaGoogle(List<GroupImagesAlike> imagesAlikes, int limit);
+		SearchResponse<Media> SearchViaYandexBySimilarImages(List<GroupImagesAlike> imagesSimilarUrls, int limit, int offset = 0);
+		SearchResponse<Media> SearchSimilarImagesViaGoogle(List<GroupImagesAlike> imagesAlikes, int limit, int offset = 0);
 	}
 }

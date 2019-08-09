@@ -4,8 +4,8 @@
             <div class="media">
                 <div class="media-left">
                     <figure class="image is-96x96">
-                    <img v-if="profilePicture!==null" v-bind:src="profilePicture" alt="Placeholder image">
-                    <img v-else src="https://alumni.crg.eu/sites/default/files/default_images/default-picture_0_0.png" alt="default image">
+                    <img class="is-rounded"  v-if="profilePicture!==null" v-bind:src="profilePicture" alt="Placeholder image">
+                    <img class="is-rounded"  v-else src="https://alumni.crg.eu/sites/default/files/default_images/default-picture_0_0.png" alt="default image"> 
                     </figure>
                 </div>
                 <div class="media-content">
@@ -50,12 +50,29 @@
                         </div>
                     </div>
                     <div class="control">
-                        <button class="button is-warning"  @click="RefreshState()">
-                            <b-icon pack="fas" icon="sync-alt" >
-                            </b-icon>
-                            <span>Re-Login</span>
-                        </button>
+                        <b-tooltip label="Refresh this account" type="is-light" position="is-bottom">
+                            <button class="button is-warning" @click="RefreshState()">
+                                <b-icon pack="fas" icon="sync-alt" >
+                                </b-icon>
+                            </button>
+                        </b-tooltip>
                     </div>
+                      <div class="control">
+                        <b-tooltip label="Profile" type="is-light" position="is-top">
+                            <a @click="ViewProfile" class="button is-primary" :disabled="IsProfileButtonDisabled">
+                                <b-icon pack="fas" icon="bookmark" >
+                                </b-icon>
+                            </a>
+                        </b-tooltip>
+                        </div>
+                        <div class="control">
+                        <b-tooltip label="Delete this account" type="is-light" position="is-top">
+                            <a @click="ViewProfile" class="button is-danger">
+                                <b-icon pack="fas" icon="trash" >
+                                </b-icon>
+                            </a>
+                        </b-tooltip>
+                        </div>
                     </div>
                 </div>
                 <br>
@@ -66,9 +83,11 @@
         </div>
     </div>
       <footer class="card-footer">
-        <router-link :to="'/view/'+id" class="card-footer-item"> Manage </router-link>
-           <!--<a v-if="IsAdmin" @click="RefreshState()" class="card-footer-item"> Refresh </a>-->
-          <!-- <router-link v-if="IsAdmin" :to="'/view/'+id" class="card-footer-item"> Delete </router-link>-->
+            <router-link :to="'/view/'+id" class="card-footer-item"> 
+                <b-tooltip label="Manage this account" type="is-light" size="is-large" position="is-right">
+                    <b-icon pack="fas" icon="bolt" size="is-medium"></b-icon>
+                </b-tooltip>
+            </router-link>
     </footer> 
     </div>
 </template>
@@ -85,7 +104,8 @@ props: {
     agentState:Number,
     userFollowers:Number,
     userFollowing:Number,
-    totalPost:Number
+    totalPost:Number,
+    IsProfileButtonDisabled:Boolean
   },
   data(){
       return {
@@ -106,6 +126,9 @@ props: {
       this.IsAdmin = this.$store.getters.UserRole == 'Admin';
   },
   methods:{
+      ViewProfile(){
+          this.$emit("ViewProfile", this.id);
+      },
       RefreshState(){
           this.$store.dispatch('RefreshState',this.id).then(res=>{
               if(res.data == 'true' || res.data == true){
@@ -126,10 +149,7 @@ props: {
       },
       OnSelectChange(event){
           var objectToSend = {"instaId": this.id, "state": event.target.value};
-          this.$store.dispatch('ChangeState', objectToSend).then(res=>{
-                if(res)
-                window.location.reload();
-          })
+          this.$emit("ChangeState", objectToSend);
       },
       MapToCorrectState(state){
           switch(state){
@@ -158,7 +178,8 @@ props: {
 <style lang="scss" scoped>
 
 .card{
-    margin:0.2em;
+    margin-left:0.4em;
+    margin-top:1em;
     width:400px !important;
     height:395px !important;
     background-color: #292929 !important;
@@ -194,6 +215,11 @@ select{
     }
     .subtitle{
         color: antiquewhite !important;
+    }
+}
+img{
+    &:hover{
+        cursor: pointer;
     }
 }
 .card-content{

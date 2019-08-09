@@ -117,7 +117,7 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 				return null;
 			}
 		}
-		public SearchResponse<List<SerpItem>> YandexSearchMe(string url, int pages)
+		public SearchResponse<List<SerpItem>> YandexSearchMe(string url, int pages, int offset = 0)
 		{
 			try
 			{
@@ -134,7 +134,7 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 					}
 					else
 					{
-						totalCollected.AddRange(ReadSerpItems(Driver, pages));					
+						totalCollected.AddRange(ReadSerpItems(Driver, pages, offset));					
 					}
 				}
 				response.StatusCode = ResponseCode.Success;
@@ -215,12 +215,12 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 				return null;
 			}
 		}
-		private List<SerpItem> ReadSerpItems(IWebDriver driver, int pageLimit)
+		private List<SerpItem> ReadSerpItems(IWebDriver driver, int pageLimit, int offset = 0)
 		{
 			List<SerpItem> total = new List<SerpItem>();
-			for (int currPage = 0; currPage < pageLimit; currPage++)
+			for (int currPage = offset; currPage < pageLimit; currPage++)
 			{
-				var source = Driver.PageSource.Replace("&quot;", "\"");
+				var source = driver.PageSource.Replace("&quot;", "\"");
 				var regexMatch = Regex.Matches(source, "{\"serp-item\":.*?}}").Select(x =>
 				{
 					var newresults = x.Value.Replace("{\"serp-item\":", "");
@@ -248,9 +248,9 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 					if(total.Count>0)
 						total.RemoveAt(0); //remove the duplicate
 
-					var nextPageUrl = Driver.FindElement(By.ClassName("more__button")).GetAttribute("href");
+					var nextPageUrl = driver.FindElement(By.ClassName("more__button")).GetAttribute("href");
 					Thread.Sleep(1000);
-					Driver.Navigate().GoToUrl(nextPageUrl);
+					driver.Navigate().GoToUrl(nextPageUrl);
 				}
 			}
 			return total;

@@ -29,6 +29,7 @@ namespace QuarklessContexts.Models.ServicesModels.SearchModels
 	}
 	public enum ColorType
 	{
+		[Description("any")]
 		Any,
 		[Description("color")]
 		ColoredImagesOnly,

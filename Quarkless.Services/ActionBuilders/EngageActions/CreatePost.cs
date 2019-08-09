@@ -69,15 +69,12 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			try
 			{
 				var location = user.Profile.LocationTargetList?.ElementAtOrDefault(SecureRandom.Next(user.Profile.LocationTargetList.Count-1));
-				//var profileColor = user.Profile.Theme.Colors[(SecureRandom.Next(0, user.Profile.Theme.Colors.Count-1))];
 				Topics topic_;
-				if(user.Profile.Topics.SubTopics==null || user.Profile.Topics.SubTopics.Count <= 0) { 
+
+				if(user.Profile.Topics.SubTopics==null || user.Profile.Topics.SubTopics.Count <= 0) 
 					topic_ = _builder.GetTopic(user, user.Profile, 20).GetAwaiter().GetResult();
-				}
 				else
-				{
 					topic_ = user.Profile.Topics;
-				}
 
 				List<__Meta__<Media>> TotalResults = new List<__Meta__<Media>>();
 				MetaDataType selectedAction = MetaDataType.None;
@@ -140,11 +137,12 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					ActionType = (int)ActionType.CreatePost,
 					User = user.Profile.InstagramAccountId
 				};
+
 				var filteredResults = TotalResults.Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User
 				&& (e.ActionType == by.ActionType))).ToList();
 
 				TempSelect _selectedMedia = new TempSelect();
-				System.Drawing.Size size = new System.Drawing.Size(750,750);
+				System.Drawing.Size size = new System.Drawing.Size(850,850);
 
 				List<Chance<InstaMediaType>> typeOfPost = new List<Chance<InstaMediaType>>()
 				{
@@ -162,7 +160,6 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					foreach (var result in filteredResults.Shuffle())
 					{
 						var media = result.ObjectItem.Medias.FirstOrDefault();
-
 						if (media != null) {
 							if (_enteredType != InstaMediaType.All)
 							{
@@ -315,17 +312,17 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 							}
 						}
 					}
+				}
 
-					if(_selectedMedia.MediaData==null || _selectedMedia.MediaData.Count <=0)
+				if (_selectedMedia.MediaData == null || _selectedMedia.MediaData.Count <= 0)
+				{
+					Results.IsSuccesful = false;
+					Results.Info = new ErrorResponse
 					{
-						Results.IsSuccesful = false;
-						Results.Info = new ErrorResponse
-						{
-							Message = $"could not find any good image to post, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
-							StatusCode = System.Net.HttpStatusCode.NotFound
-						};
-						return Results;
-					}
+						Message = $"could not find any good image to post, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
+						StatusCode = System.Net.HttpStatusCode.NotFound
+					};
+					return Results;
 				}
 
 				RestModel restModel = new RestModel

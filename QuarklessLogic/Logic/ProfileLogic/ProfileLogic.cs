@@ -15,6 +15,11 @@ namespace QuarklessLogic.Logic.ProfileLogic
 			_profileRepository = profileRepository;
 		}
 
+		public Task<bool> AddMediaUrl(string profileId, string mediaUrl)
+		{
+			return _profileRepository.AddMediaUrl(profileId, mediaUrl);
+		}
+
 		public Task<ProfileModel> AddProfile(ProfileModel profile)
 		{
 			return _profileRepository.AddProfile(profile);

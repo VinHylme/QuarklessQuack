@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+	<PackageReference Include="AWSSDK.S3" Version="3.3.104.1" />
 	<PackageReference Include="Hangfire" Version="1.7.5" />
 	<PackageReference Include="Hangfire.Core" Version="1.7.5" />
 	<PackageReference Include="Hangfire.Mongo" Version="0.6.1" />

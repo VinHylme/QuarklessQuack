@@ -7,12 +7,12 @@
                 {{alert_text}}
         </b-notification>
         <div class="accounts_container">
-                <div v-for="(acc,index) in InstagramAccounts" v-bind:key="index">
-                        <InstaCard @RefreshState="NotifyRefresh" v-bind:id="acc.id" v-bind:username="acc.username" v-bind:agentState="acc.agentState" 
-                        v-bind:name="acc.fullName" v-bind:profilePicture="acc.profilePicture" v-bind:biography="acc.userBiography"
-                        v-bind:userFollowers="acc.followersCount" v-bind:userFollowing="acc.followingCount" v-bind:totalPost="acc.totalPostsCount"/>
+                <div v-for="(acc,index) in InstagramAccounts" :key="index">
+                        <InstaCard @ChangeState="StateChanged" @RefreshState="NotifyRefresh" @ViewProfile="GetProfile" :id="acc.id" :username="acc.username" :agentState="acc.agentState" 
+                        :name="acc.fullName" :profilePicture="acc.profilePicture" :biography="acc.userBiography"
+                        :userFollowers="acc.followersCount" :userFollowing="acc.followingCount" :totalPost="acc.totalPostsCount" :IsProfileButtonDisabled="IsProfileButtonDisabled"/>
                 </div>
-                <div class="card is-dark">
+                <div class="card is-hover">
                         <div class="card-content">
                                 <a href="#"><h3 class="title is-1">+</h3></a>
                         </div>
@@ -22,6 +22,7 @@
 </template>
 
 <script>
+import Vue from 'vue';
 import InstaCard from "../Objects/InstaAccountCard";
 export default {
         name:"manage",
@@ -30,20 +31,43 @@ export default {
         },
         data(){
         return{
+                IsProfileButtonDisabled:true,
                 InstagramAccounts:[],
                 isSuccess:false,
                 refreshShowNotification:false,
-                alert_text:''
+                alert_text:'',
         }
         },
-        mounted() {
-                this.$store.dispatch('AccountDetails', {"userId":this.$store.state.user}).then(res=>{
-                        if(res!==undefined){
-                                this.InstagramAccounts = this.$store.getters.GetInstagramAccounts;
-                        }
-                });
+        created(){
+               
+        },
+        beforeMount(){
+                this.InstagramAccounts = this.$store.getters.GetInstagramAccounts;
+                if(this.$store.getters.UserProfiles!==undefined)
+                        this.IsProfileButtonDisabled=false;          
+        },
+        computed:{
+
         },
         methods:{
+                GetProfile(id){
+                        if(!this.IsProfileButtonDisabled){
+                                var profile = this.$store.getters.UserProfiles[this.$store.getters.UserProfiles.findIndex((_)=>_.instagramAccountId == id)];
+                                this.$router.push('/profile/'+ profile._id)
+                        }
+                },
+                StateChanged(data){
+                        this.$store.dispatch('ChangeState', data).then(res=>{
+                                if(res)
+                                        Vue.prototype.$toast.open(
+                                        {
+                                                message: 'Updated!',
+                                                type: 'is-success',
+                                                position: 'is-bottom',
+                                        }   
+                                );   
+                        })
+                },
                 NotifyRefresh(isSuccess){
                         if(isSuccess){
                                 this.isSuccess = true;
@@ -69,21 +93,30 @@ export default {
 
 }
 .card {
-        &.is-dark{
-                margin:0.2em;
+        &.is-hover{
+                margin-left:0.4em;
+                margin-top:1em;
                 width:400px !important;
                 height:395px !important;
                 background-color: #292929 !important;
                 color:white !important;
+                .card-content{
+                        h3{
+                                color:wheat;
+                                padding:0em;
+                                font-size:250px;
+                                text-align: center;
+                                &:hover{
+                                        color:#292929;
+                                }
+                        }
+                        
+                }
+                &:hover{
+                        background:wheat !important;
+                }
         }
-        .card-content{
-        h3{
-                color:#fefefe;
-                padding:0em;
-                font-size:250px;
-                text-align: center;
-        }
-   }
+       
 }
 body {
         width: 100%;

@@ -23,6 +23,7 @@ paramsModel = {
     "size": fields.String(None),
     "exact_size": fields.String(None),
     "proxy": fields.String(None),
+    "offset":fields.Integer(0)
 }
 
 model = api.model('Model',paramsModel)

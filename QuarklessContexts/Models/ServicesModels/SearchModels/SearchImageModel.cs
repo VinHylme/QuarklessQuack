@@ -23,5 +23,6 @@ namespace QuarklessContexts.Models.ServicesModels.SearchModels
 		public string size { get; set; }
 		public string exact_size { get; set; }
 		public string proxy { get; set; }
+		public int offset { get; set; }
 	}
 }

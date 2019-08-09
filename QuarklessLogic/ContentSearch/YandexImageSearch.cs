@@ -312,9 +312,9 @@ namespace QuarklessLogic.ContentSearch
 			return response;
 		}
 
-		public SearchResponse<List<SerpItem>> SearchRest(string imageUrl, int numberOfPages)
+		public SearchResponse<List<SerpItem>> SearchRest(string imageUrl, int numberOfPages, int offset = 0)
 		{
-			return seleniumClient.YandexSearchMe(imageUrl,numberOfPages);
+			return seleniumClient.YandexSearchMe(imageUrl, numberOfPages, offset);
 			#region REST VERSION (SPAM DETECTED A LOT)
 //			RequestSettings requestSettings = new RequestSettings
 //			{
@@ -485,7 +485,7 @@ namespace QuarklessLogic.ContentSearch
 			#endregion
 		}
 
-		public SearchResponse<Media> SearchRelatedImagesREST(IEnumerable<GroupImagesAlike> imagesAlikes, int numberOfPages)
+		public SearchResponse<Media> SearchRelatedImagesREST(IEnumerable<GroupImagesAlike> imagesAlikes, int numberOfPages, int offset = 0)
 		{
 			SearchResponse<Media> response = new SearchResponse<Media>();
 			Media totalCollected = new Media();
@@ -497,7 +497,7 @@ namespace QuarklessLogic.ContentSearch
 					var fullImageUrl = yandexBaseImageUrl + url.Url + rpt;
 					try
 					{
-						var searchSerp = SearchRest(fullImageUrl, numberOfPages);
+						var searchSerp = SearchRest(fullImageUrl, numberOfPages, offset);
 						if (searchSerp.StatusCode == ResponseCode.Success || (searchSerp.StatusCode == ResponseCode.CaptchaRequired && searchSerp?.Result?.Count > 0))
 						{
 							totalCollected.Medias.AddRange(searchSerp.Result.Select(o => new MediaResponse

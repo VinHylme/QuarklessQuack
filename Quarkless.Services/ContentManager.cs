@@ -62,8 +62,7 @@ namespace Quarkless.Services
 			}
 			if (selectASubTopic != null)
 			{
-				//selections.Add(selectASubTopic.TopicName);
-				selections.Add(topicSelect.TopicFriendlyName);
+				selections.Add(selectASubTopic.TopicName);
 				selections.AddRange(selectASubTopic.RelatedTopics);
 
 				var hashes = GetHashTags(topicSelect.TopicFriendlyName, topicSelected, language, 1000, 200).GetAwaiter().GetResult();
@@ -71,7 +70,7 @@ namespace Quarkless.Services
 					selections.AddRange(hashes);
 			}
 			
-			hashtagsToUse.AddRange(selections.Take(SecureRandom.Next(20 , 26)).Select(s=> $"#{s}"));
+			hashtagsToUse.AddRange(selections.Take(SecureRandom.Next(24 , 27)).Select(s=> $"#{s}"));
 			var caption_ = GenerateText(topicSelect.TopicFriendlyName.ToLower(), language.ToUpper(), 1, SecureRandom.Next(2, 4), SecureRandom.Next(14, 25)).Split(',')[0];
 
 			return new MediaInfo

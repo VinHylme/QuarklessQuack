@@ -216,23 +216,26 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 					if (chosenHashtags.Count > 0) { 
 						var chosenHashtags_filtered = chosenHashtags.Where(space => space.Count(oc => oc == ' ') <= 1);
 						if (chosenHashtags_filtered.Count() <=0) return null;
-						hashtags.AddRange(chosenHashtags_filtered.Where(s => s.Length >= 3 && s.Length <= 20));
+						hashtags.AddRange(chosenHashtags_filtered.Where(s => s.Length >= 3 && s.Length <= 30));
 					}
 				}
-				if (subcategory != null) { 
-					subcategory = Regex.Replace(subcategory, @"\w*.?com", "");
-					hashtags.ForEach(s=>s.ToLower());
-					var orderedBySimilarity = hashtags.Distinct().Select(s => new { SimilarityScore = s.Similarity(subcategory), Text = s })
-						.OrderBy(s => s.SimilarityScore).Select(t=>t.Text);
+				return hashtags;
 
-					var filt = orderedBySimilarity.Select(r => r.Replace("\t","").Replace("\n","").Replace("\r","").Replace(".","").Replace(" ",""))
-						.Where(x=>!string.IsNullOrEmpty(x)).Take(80).Shuffle();
-					return filt;
-				}
-				else
-				{
-					return hashtags;
-				}
+				///code here is for brining back hashtags similar to the subcategory
+				//if (subcategory != null) { 
+				//	subcategory = Regex.Replace(subcategory, @"\w*.?com", "");
+				//	hashtags.ForEach(s=>s.ToLower());
+				//	var orderedBySimilarity = hashtags.Distinct().Select(s => new { SimilarityScore = s.Similarity(subcategory), Text = s })
+				//		.OrderBy(s => s.SimilarityScore).Select(t=>t.Text);
+
+				//	var filt = orderedBySimilarity.Select(r => r.Replace("\t","").Replace("\n","").Replace("\r","").Replace(".","").Replace(" ",""))
+				//		.Where(x=>!string.IsNullOrEmpty(x)).Take(100);
+				//	return filt;
+				//}
+				//else
+				//{
+				//	return hashtags;
+				//}
 			}
 			return null;
 		}

@@ -2,6 +2,7 @@ import Vue from 'vue'
 import Vuex from 'vuex';
 import AccountServices from './Services/accountServices';
 import TimelineServices from './Services/timelineService';
+import QueryServices from './Services/queryServices';
 import Axios from 'axios';
 import decoder from 'jwt-decode';
 import moment from 'moment';
@@ -12,7 +13,8 @@ export default new Vuex.Store({
     AccountData:{
       InstagramAccounts:[],
       Profiles:[],
-      TimelineData:[]
+      TimelineData:[],
+      ProfileConfg:{}
     },
     status:'',
     token: localStorage.getItem('token') || '',
@@ -46,7 +48,7 @@ export default new Vuex.Store({
       state.accounts.push(value);
     },
     account_details_retrieved(state, value){
-      state.AccountData = value;
+      state.AccountData.InstagramAccounts = value;
     },
     failed_to_retrive_account_details(state){
       state.AccountData = null;
@@ -61,7 +63,8 @@ export default new Vuex.Store({
 
     },
     refreshed_state(){},
-    retrieved_timeline_data_for_user(state, data){      
+    retrieved_timeline_data_for_user(state, data){
+      state.AccountData.TimelineData = [];
       for(var i = 0; i < data.length; i++){
         var item = data[i];
         var moment_enqueued = moment(item.enqueueTime);
@@ -113,20 +116,93 @@ export default new Vuex.Store({
       tojsonObject.Location = event.location;
       tojsonObject.MediaInfo.Credit = event.credit;
       state.AccountData.TimelineData[index].actionObject.body = JSON.stringify(tojsonObject);
+},
+    failed_to_update_event(){},
+    profiles_retrieved(state, profiles){
+      state.AccountData.Profiles = profiles;
     },
-    failed_to_update_event(){}
-    
+    failed_to_retieve_profiles(state){
+      state.AccountData.Profiles = []
+    },
+    profile_config_retrieved(state, data){
+      state.AccountData.ProfileConfg = data;
+    },
+    failed_to_retrieve_profile_config(state){
+      state.AccountData.ProfileConfg = {}
+    },
+    profile_uploaded_files(state, data){
+      //todo: make sure that the profile data files are upto date
+    },
   },
   getters: {
     IsLoggedIn: state => !!state.token,
     AuthStatus: state => state.status,
-    GetInstagramAccounts:state => {
-       return state.AccountData;
+    UserRole:state=> state.role,
+    GetInstagramAccounts:state => {return state.AccountData.InstagramAccounts},
+    UserTimeline: state => {return state.AccountData.TimelineData},
+    UserProfiles: state => {return state.AccountData.Profiles},
+    InstagramProfilePicture: state => id => {
+      var elment = state.AccountData.InstagramAccounts[state.AccountData.InstagramAccounts.findIndex(_=>_.id==id)];
+      if(elment !== undefined){
+        return elment.profilePicture;
+      }
     },
-    UserRole:state=>{return state.role},
-    UserTimeline:state=> { return state.AccountData.TimelineData}
+    GetProfileConfig:state=> state.AccountData.ProfileConfg
   },
   actions: {
+    UploadFileForProfile({commit}, data){
+      return new Promise((resolve, reject)=>{
+        AccountServices.UploadFile(data.instaId, data.profileId, data.formData).then(resp=>{
+          commit('profile_uploaded_files',data);
+          resolve(resp);
+        }).catch((err)=>reject(err))
+      })
+    },
+    SimilarSearch({commit},data){
+      return new Promise((resolve,reject)=>{
+        QueryServices.SimilarImageSearch(data.urls,data.limit, data.offset).then(resp=>{
+          resolve(resp);
+        }).catch((err)=>reject(err));
+      })
+    },
+    GooglePlacesSearch({commit},query){
+      return new Promise((resolve,reject)=>{
+        QueryServices.GooglePlaceSearch(query).then(resp=>{
+          resolve(resp);
+        }).catch(err=>{
+          reject(err);
+        })
+      })
+    },
+    GooglePlacesAutoCompleteSearch({commit},queryObject){
+      return new Promise((resolve, reject)=>{
+        QueryServices.GooglePlacesAutocomplete(queryObject.query, queryObject.radius).then(resp=>{
+          resolve(resp);
+        }).catch(err=>reject(err));
+      })
+    },
+    GetProfileConfig({commit}){
+      return new Promise((resolve,reject)=>{
+        QueryServices.GetProfileConfig().then(resp=>{
+          commit('profile_config_retrieved', resp.data);
+          resolve(resp);
+        }).catch(err=>{
+          commit('failed_to_retrieve_profile_config');
+          reject(err);
+        })
+      })
+    },
+    GetProfiles({commit}, userId){
+      return new Promise((resolve, reject)=>{
+        AccountServices.GetProfilesForUser(userId).then(resp=>{
+          commit('profiles_retrieved', resp.data)
+          resolve(resp);
+        }).catch(err=>{
+          commit('failed_to_retieve_profiles')
+          reject(err);
+        })
+      })
+    },
     UpdateEvent({commit}, event){
       return new Promise((resolve, reject)=>{
         TimelineServices.UpdateEvent(event).then(resp=>{
@@ -161,10 +237,8 @@ export default new Vuex.Store({
       })
     },
     GetUsersTimeline({commit},id){
-      this.state.AccountData.TimelineData = [];
       return new Promise((resolve, reject)=>{
         TimelineServices.GetUserTimeline(id).then(resp=>{
-         // this.state.AccountData.TimelineData = [];
           commit('retrieved_timeline_data_for_user',resp.data);
           resolve(resp)
         }).catch(err=>{

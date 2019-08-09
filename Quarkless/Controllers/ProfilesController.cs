@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using QuarklessContexts.Contexts;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.UserAuth.AuthTypes;
 using QuarklessLogic.Logic.ProfileLogic;
+using QuarklessLogic.Logic.StorageLogic;
 
 namespace Quarkless.Controllers
 {

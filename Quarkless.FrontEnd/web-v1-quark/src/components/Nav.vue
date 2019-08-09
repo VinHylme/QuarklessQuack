@@ -1,75 +1,8 @@
 <template>
-<!--<nav class="navbar is-info">
-  <div class="navbar-brand">
-    <a class="navbar-item">
-     <h3>#Grow</h3>
-    </a>
-    <div class="navbar-burger burger" data-target="navbarExampleTransparentExample">
-      <span></span>
-      <span></span>
-      <span></span>
-    </div>
-  </div>
-
-  <div id="navbarExampleTransparentExample" class="navbar-menu">
-    <div class="navbar-start">
-      <a class="navbar-item" href="https://bulma.io/">
-          <span class="icon">
-            <i class="fa fa-rocket"></i>
-          </span>
-          <span>
-             Manage
-          </span>
-      </a>
-     <a class="navbar-item" href="https://bulma.io/">
-        <span class="icon">
-            <i class="fa fa-bookmark"></i>
-          </span>
-          <span>
-             Profiles
-          </span>
-      </a>
-     <a class="navbar-item" href="https://bulma.io/">
-         <span class="icon">
-            <i class="fa fa-heartbeat"></i>
-          </span>
-          <span>
-             Schedule
-          </span>
-      </a>
-      <a class="navbar-item" href="https://bulma.io/">
-         <span class="icon">
-            <i class="fa fa-cog"></i>
-          </span>
-          <span>
-             Settings
-          </span>
-      </a>
-    </div>
-
-    <div class="navbar-end">
-      <div class="navbar-item has-dropdown is-hoverable">
-         <a class="navbar-link">
-            <span class="icon">
-               <i class="fa fa-user-circle"></i>
-            </span>
-          <span>
-             Account
-          </span>
-        </a>
-        <div class="navbar-dropdown">
-      <a class="navbar-item">
-        Logout
-      </a>
-       </div>
-      </div>
-    </div>
-  </div>
-</nav>-->
 <aside class="menu">
   <router-link to="/">
   <a class="logo" href="#">
-     <img src="../assets/hashtag3.png" width="65" height="65">
+     <img src="../assets/logo_grow.svg" width="90" height="90">
   </a>
   </router-link>
   <ul class="menu-list">
@@ -82,7 +15,7 @@
        </router-link>
       </b-tooltip>
     </li>
-    <li>
+    <!-- <li>
       <b-tooltip label="Profiles" position="is-right">
        <router-link class="navbar-item" to="/profiles">
         <span class="icon">
@@ -90,7 +23,7 @@
         </span>
        </router-link>
       </b-tooltip>
-    </li>
+    </li> -->
     <li>
      <b-tooltip label="Statistics" position="is-right">
        <router-link  class="navbar-item" to="/stats">
@@ -110,15 +43,38 @@
       </b-tooltip>
     </li>
     <li>
-        <a class="navbar-item" href="https://bulma.io/">
-         <span class="icon">
-            <i class="fa fa-user-circle"></i>
-          </span>
-        </a>
+      <b-dropdown hoverable aria-role="list">
+            <a class="navbar-item" slot="trigger">
+            <span class="icon">
+                <i class="fa fa-user-circle"></i>
+              </span>
+            </a>
+            <b-dropdown-item position="is-top-left" @click="logout" aria-role="listitem">
+              <div class="media">
+                <b-icon class="media-left" pack="fas" icon="sign-out-alt"></b-icon>
+                <div class="media-content">
+                    <h3>Logout</h3>
+                    <small>Sign me out</small>
+                </div>
+              </div>
+            </b-dropdown-item>
+        </b-dropdown>
     </li>
   </ul>
 </aside>
 </template>
+
+<script>
+export default {
+  methods:{
+    logout(){
+      this.$store.dispatch('logout');
+      window.location.reload();
+    }
+  }
+}
+</script>
+
 
 <style lang="sass" scoped>
 .menu
@@ -136,7 +92,4 @@
   &:focus
       background-color:#141414
       color:#3ea6ff
-
-  
-
 </style>

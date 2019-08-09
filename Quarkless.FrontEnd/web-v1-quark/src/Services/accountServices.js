@@ -1,11 +1,14 @@
 import Api from './Api'
-
+import axios from 'axios';
 export default {
   Login(params){
     return Api(false).post('/auth/loginaccount', params)
   },
   GetInstagramAccountsForUser(params){
-    return Api(true).get('/insta/' + params.accountId)
+    return Api(true).get('insta/' + params.accountId)
+  },
+  GetProfilesForUser(userId){
+    return Api(true).get('profiles/' + userId)
   },
   GetInstagramAccount(params){
     return Api(true).get('insta/state/'+ params.accountId + '/' + params.instagramAccountId)
@@ -18,5 +21,14 @@ export default {
   },
   RefreshState(id){
     return Api(true).get('insta/refreshLogin/'+id)
+  },
+  UploadFile(instaId,profileId,formData){
+    return axios.put('http://localhost:51518/api/storage/upload/'+instaId+'/'+profileId, formData, 
+    {
+      headers:{
+        'Content-Type': 'multipart/form-data',
+        'Authorization': 'Bearer '+  axios.defaults.headers.common['Authorization']
+        }
+    })
   }
 }
