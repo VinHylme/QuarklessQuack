@@ -6,15 +6,17 @@
                 role="alert">
                 {{alert_text}}
         </b-notification>
-        <div class="accounts_container">
-                <div v-for="(acc,index) in InstagramAccounts" :key="index">
-                        <InstaCard @ChangeState="StateChanged" @RefreshState="NotifyRefresh" @ViewProfile="GetProfile" :id="acc.id" :username="acc.username" :agentState="acc.agentState" 
-                        :name="acc.fullName" :profilePicture="acc.profilePicture" :biography="acc.userBiography"
-                        :userFollowers="acc.followersCount" :userFollowing="acc.followingCount" :totalPost="acc.totalPostsCount" :IsProfileButtonDisabled="IsProfileButtonDisabled"/>
-                </div>
-                <div class="card is-hover">
-                        <div class="card-content">
-                                <a href="#"><h3 class="title is-1">+</h3></a>
+        <div :style="!isNavOn === 'true' ? 'margin-left:5em;' : '' ">
+                <div class="accounts_container">
+                        <div v-for="(acc,index) in InstagramAccounts" :key="index">
+                                <InstaCard @ChangeState="StateChanged" @RefreshState="NotifyRefresh" @ViewProfile="GetProfile" :id="acc.id" :username="acc.username" :agentState="acc.agentState" 
+                                :name="acc.fullName" :profilePicture="acc.profilePicture" :biography="acc.userBiography"
+                                :userFollowers="acc.followersCount" :userFollowing="acc.followingCount" :totalPost="acc.totalPostsCount" :IsProfileButtonDisabled="IsProfileButtonDisabled"/>
+                        </div>
+                        <div class="card is-hover">
+                                <div class="card-content">
+                                        <a href="#"><h3 class="title is-1">+</h3></a>
+                                </div>
                         </div>
                 </div>
         </div>
@@ -27,7 +29,7 @@ import InstaCard from "../Objects/InstaAccountCard";
 export default {
         name:"manage",
         components:{
-                        InstaCard
+                InstaCard
         },
         data(){
         return{
@@ -46,8 +48,13 @@ export default {
                 if(this.$store.getters.UserProfiles!==undefined)
                         this.IsProfileButtonDisabled=false;          
         },
+        watch:{
+                
+        },
         computed:{
-
+                isNavOn(){
+                        return this.$store.getters.MenuState === 'true';
+                }
         },
         methods:{
                 GetProfile(id){
@@ -86,7 +93,9 @@ export default {
 
 <style lang="scss">
 .accounts_container{
-        padding:1em;
+        width: 100%;
+        padding-top:0.5em;
+        padding-left:3.5em;
         display: flex;
         flex-flow: row wrap;
         align-items: center;
@@ -118,7 +127,8 @@ export default {
         }
        
 }
-body {
+body,html {
+        overflow-y: hidden;
         width: 100%;
         text-align: center;
 }

@@ -1,5 +1,6 @@
 module.exports = {
-  devServer: {
-    proxy: 'http://backend.test/',
-  }
-}
+  configureWebpack: {
+    // other webpack options to merge in ...
+  },
+
+};

@@ -10,6 +10,7 @@ using QuarklessContexts.Models.Proxies;
 using QuarklessContexts.Models.ServicesModels;
 using QuarklessContexts.Models.ServicesModels.Corpus;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
+using QuarklessContexts.Models.Topics;
 using System;
 using System.Threading.Tasks;
 
@@ -108,6 +109,8 @@ namespace QuarklessRepositories.RepositoryClientManager
 		public IMongoCollection<JobDto> Timeline => _schedulerDatabase.GetCollection<JobDto>("Timeline.jobGraph");
 		public IMongoCollection<CommentCorpus> CorpusComments => _contentDatabase.GetCollection<CommentCorpus>("CComments");
 		public IMongoCollection<MediaCorpus> CorpusMedia => _contentDatabase.GetCollection<MediaCorpus>("CMedias");
+		public IMongoCollection<TopicCategories> TopicCategories => _contentDatabase.GetCollection<TopicCategories>("CTopic");
+
 		internal async Task<bool> CreateCollection(string collectionName, BsonDocument document = null)
 		{
 			try

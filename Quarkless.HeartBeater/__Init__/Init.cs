@@ -119,6 +119,11 @@ namespace Quarkless.HeartBeater.__Init__
 			
 				//Build Around Topics
 			
+			 	//await _topicBuilder.AddTopicCategories(await metadataBuilder.BuildTopicTypes());
+
+				var suba = await _topicBuilder.GetAllTopicCategories();
+				await _topicBuilder.BuildTopics(suba);
+
 				var ins = Task.Run(async () => await metadataBuilder.BuildBase(4)).ContinueWith(async tasker=>{
 					Console.WriteLine("Finished building Base");
 					await Task.Run(() =>

@@ -1,15 +1,42 @@
 <template>
 <div class="home_layout">
-<div class="columns is-mobile">
-  <div class="column is-1">
-      <Nav></Nav>
+  <div class="columns is-mobile">
+    <div v-if="isNavOn" class="column is-1">
+        <Nav @onHide="changeState"></Nav>
+    </div>
+    <div v-else>
+      <b-tooltip type="is-dark" label="Show Panel" position="is-right">
+        <a @click="changeState">
+        <b-icon
+          class="floater"
+          pack="fas"
+          icon="compress"
+          size="is-medium"
+          type="is-light">
+        </b-icon>
+        </a>
+      </b-tooltip>
+      <b-tooltip type="is-dark" label="Go to Dashboard" position="is-right">
+        <router-link to="/manage">
+        <b-icon
+          class="floater is-house"
+          pack="fas"
+          icon="rocket"
+          size="is-default"
+          type="is-light">
+        </b-icon>
+        </router-link>
+      </b-tooltip>
+    </div>
+    <div :class="isNavOn ? 'column is-11' : 'column is-12'" :style="isNavOn ? '' : 'margin:0 0 0 0em'" >
+        <div class="main_area">
+          <router-view :key="$route.fullPath"></router-view>
+        </div>
+    </div>
   </div>
-  <div class="column is-11" >
-      <div class="main_area">
-         <router-view :key="$route.fullPath"></router-view>
-      </div>
+  <div class="footere">
+    <p class="subtitle is-8">Copyright © 2019 HashtagGrow; All rights have been reserved</p>
   </div>
-</div>
 </div>
 </template>
 <script>
@@ -22,26 +49,70 @@ export default {
   },
   data(){
     return {
-      isProfileButtonDisabled:false
+      isProfileButtonDisabled:false,
+      isNavOn:true
     }
   },
   beforeMount(){
     this.$store.dispatch('AccountDetails', {"userId":this.$store.state.user});
     this.$store.dispatch('GetProfiles', this.$store.state.user);
+    this.isNavOn = this.$store.getters.MenuState === 'true'
+  },
+  methods:{
+    changeState(){
+      this.$store.dispatch('HideunHideMenu', this.isNavOn = !this.isNavOn)
+      console.log(this.isNavOn)
+    }
   }
 }
 </script>
 
-<style lang="sass">
-.column
-  background:#141414
+<style lang="scss">
+.column{
+  background:#141414;
+}
+.footere{
+  background:#141414 !important;
+  opacity: .7;
+  width:100%;
+  padding:0;
+  margin: 0 auto;
+  margin-top:2em;
+  height:50px;
+  p{
+    padding:4em;
+    color:#d9d9d9;
+  }
+  .subtitle{
+    background:#141414;
+  }
+}
+.floater{
+  z-index: 99999;
+  position:absolute !important;
+  top:1.15em;
+  left:1.6em;
+  width:50px;
+  height:50px;
+  &:hover{
+    color:#13b94d !important;
+    cursor: pointer;
+  }
+  &.is-house{
+    top:4.5em;
+    left:1.85em;
+  }
+}
 
-.main_area
-  width:100%
-  height:100%
-  background-color:#141414
-  border-radius:10px
-.home_layout
-   padding:0.7em
-   height:100%
+.main_area{
+  width:100%;
+  height:100%;
+  margin: 0 auto;
+  background-color:#141414;
+  border-radius:0px;
+}
+.home_layout{
+   padding:0em;
+   height:100%;
+}
 </style>

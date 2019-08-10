@@ -147,9 +147,13 @@ export default new Vuex.Store({
         return elment.profilePicture;
       }
     },
-    GetProfileConfig:state=> state.AccountData.ProfileConfg
+    GetProfileConfig:state=> state.AccountData.ProfileConfg,
+    MenuState: () => localStorage.getItem("menu_state")
   },
   actions: {
+    HideunHideMenu({commit}, value){
+        localStorage.setItem("menu_state", value);
+    },
     UploadFileForProfile({commit}, data){
       return new Promise((resolve, reject)=>{
         AccountServices.UploadFile(data.instaId, data.profileId, data.formData).then(resp=>{

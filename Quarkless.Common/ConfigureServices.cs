@@ -61,6 +61,7 @@ using QuarklessRepositories.RedisRepository.SearchCache;
 using QuarklessRepositories.RedisRepository.TimelineJobRedis;
 using QuarklessRepositories.Repository.CorpusRepositories.Comments;
 using QuarklessRepositories.Repository.CorpusRepositories.Medias;
+using QuarklessRepositories.Repository.CorpusRepositories.Topic;
 using QuarklessRepositories.Repository.ServicesRepositories;
 using QuarklessRepositories.Repository.ServicesRepositories.CommentsRepository;
 using QuarklessRepositories.Repository.ServicesRepositories.HashtagsRepository;
@@ -198,6 +199,7 @@ namespace Quarkless.Common
 			services.AddTransient<IHashtagCoprusCache, HashtagCoprusCache>();
 			services.AddTransient<IMediaCorpusCache, MediaCorpusCache>();
 			services.AddTransient<ITimelineJobRepository,TimelineJobRepository>();
+			services.AddTransient<ITopicCategoryRepository, TopicCategoryRepository>();
 			services.Configure<RedisOptions>(o =>
 			{
 				o.ConnectionString = _accessors.RedisConnectionString;

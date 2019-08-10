@@ -1,4 +1,5 @@
-﻿using System;
+﻿using QuarklessContexts.Models.Topics;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -6,7 +7,7 @@ namespace QuarklessContexts.Models.QueryModels.Settings
 {
 	public class ProfileConfiguration
 	{
-		public IEnumerable<string> Topics;
+		public IEnumerable<TopicCategories> Topics;
 		public Dictionary<string,string> Languages;
 		public IEnumerable<string> ColorsAllowed;
 		public bool CanUserEditProfile = true;

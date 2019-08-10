@@ -218,21 +218,24 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 		private List<SerpItem> ReadSerpItems(IWebDriver driver, int pageLimit, int offset = 0)
 		{
 			List<SerpItem> total = new List<SerpItem>();
-			for (int currPage = offset; currPage < pageLimit; currPage++)
+			for (int currPage = offset; currPage <= pageLimit; currPage++)
 			{
 				var source = driver.PageSource.Replace("&quot;", "\"");
-				var regexMatch = Regex.Matches(source, "{\"serp-item\":.*?}}").Select(x =>
+				var regexMatch = Regex.Matches(source, "{\"serp-item\":.*?}}");		
+				List<string> results = new List<string>();
+				foreach(Match x in regexMatch)
 				{
-					var newresults = x.Value.Replace("{\"serp-item\":", "");
-					return newresults.Substring(0, newresults.Length - 1);
-				});
-				if (regexMatch == null && regexMatch.Count() <= 0)
+					var newRes = x.Value.Replace("{\"serp-item\":", "");
+					if(newRes!=null)
+						results.Add(newRes.Substring(0, newRes.Length - 1));
+				}
+				if (results.Count <= 0)
 				{
 					break;
 				}
 				else
 				{
-					foreach(var serpString in regexMatch)
+					foreach(var serpString in results)
 					{
 						try
 						{
@@ -244,7 +247,6 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 							continue;
 						}
 					}
-
 					if(total.Count>0)
 						total.RemoveAt(0); //remove the duplicate
 

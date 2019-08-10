@@ -5,6 +5,7 @@ using QuarklessContexts.Models.QueryModels.Settings;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessLogic.ContentSearch;
 using QuarklessLogic.Handlers.RestSharpClient;
+using QuarklessLogic.ServicesLogic;
 using QuarklessLogic.ServicesLogic.ContentSearch;
 using QuarklessRepositories.RedisRepository.SearchCache;
 using System;
@@ -19,12 +20,15 @@ namespace QuarklessLogic.Logic.QueryLogic
 	{
 		private readonly IRestSharpClientManager _restSharpClientManager;
 		private readonly IContentSearcherHandler _contentSearcherHandler;
+		private readonly ITopicServicesLogic _topicServicesLogic;
 		private readonly ISearchingCache _searchingCache;
-		public QueryLogic(IRestSharpClientManager restSharpClientManager, IContentSearcherHandler contentSearcherHandler, ISearchingCache searchingCache)
+		public QueryLogic(IRestSharpClientManager restSharpClientManager, IContentSearcherHandler contentSearcherHandler,
+			ISearchingCache searchingCache, ITopicServicesLogic topicServicesLogic)
 		{
 			_searchingCache = searchingCache;
 			_restSharpClientManager = restSharpClientManager;
 			_contentSearcherHandler = contentSearcherHandler;
+			_topicServicesLogic = topicServicesLogic;
 		}
 		public object SearchPlaces(string query)
 		{
@@ -83,7 +87,9 @@ namespace QuarklessLogic.Logic.QueryLogic
 			}
 			else
 			{
-				response = _contentSearcherHandler.SearchViaYandexBySimilarImages(strurl,1+offset,offset).Result; 
+				response = _contentSearcherHandler.SearchViaYandexBySimilarImages(strurl,1+offset,offset).Result;
+				response.Medias.Reverse();
+				//response.Medias = response.Medias.Take(limit).ToList();
 				searchRequest.ResponseData = response;
 				await _searchingCache.StoreSearchData(userId, searchRequest);
 			}
@@ -91,13 +97,11 @@ namespace QuarklessLogic.Logic.QueryLogic
 
 			return response;
 		}
-		public ProfileConfiguration GetProfileConfig()
+		public async Task<ProfileConfiguration> GetProfileConfig()
 		{
 			return new ProfileConfiguration
 			{
-				Topics = Enum.GetValues(typeof(TopicTypes))
-						.Cast<TopicTypes>()
-						.Select(v => v.GetDescription()),
+				Topics = await _topicServicesLogic.GetAllTopicCategories(),
 				ColorsAllowed = Enum.GetValues(typeof(ColorType)).Cast<ColorType>().Select(v=>v.GetDescription()),
 				ImageTypes = Enum.GetValues(typeof(ImageType)).Cast<ImageType>().Select(v=>v.GetDescription()),
 				Orientations = Enum.GetValues(typeof(Orientation)).Cast<Orientation>().Select(v=>v.GetDescription()),
@@ -106,5 +110,6 @@ namespace QuarklessLogic.Logic.QueryLogic
 				CanUserEditProfile = true
 			};
 		}
+
 	}
 }

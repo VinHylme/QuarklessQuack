@@ -25,12 +25,12 @@ namespace Quarkless.Controllers
 
 		[HttpGet]
 		[Route("api/query/config")]
-		public IActionResult GetProfileConfig()
+		public async Task<IActionResult> GetProfileConfig()
 		{
 			if(string.IsNullOrEmpty(_userContext.CurrentUser))
 				return BadRequest("Invalid Request");
 
-			return Ok(_queryLogic.GetProfileConfig());
+			return Ok(await _queryLogic.GetProfileConfig());
 		}
 
 		[HttpGet]

@@ -9,6 +9,7 @@ using QuarklessContexts.Models.Proxies;
 using QuarklessContexts.Models.ServicesModels;
 using QuarklessContexts.Models.ServicesModels.Corpus;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
+using QuarklessContexts.Models.Topics;
 
 namespace QuarklessRepositories.RepositoryClientManager
 {
@@ -24,11 +25,12 @@ namespace QuarklessRepositories.RepositoryClientManager
 		IMongoCollection<TopicsModel> Topics {get; }
 		IMongoCollection<CommentCorpus> CorpusComments { get; }
 		IMongoCollection<MediaCorpus> CorpusMedia { get; }
-
+		IMongoCollection<TopicCategories> TopicCategories { get; }
 		IMongoCollection<CommentsModel> Comments { get; }
 		IMongoCollection<CaptionsModel> Captions { get; }
 		IMongoCollection<HashtagsModel> Hashtags { get; }
 		IMongoCollection<UserBiographyModel> UserBiography { get; }
 		IMongoCollection<JobDto> Timeline { get; }
+
 	}
 }

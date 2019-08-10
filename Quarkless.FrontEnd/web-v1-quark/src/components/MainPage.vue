@@ -1,8 +1,11 @@
 <template>
-<div class="container">
+<div class="contain">
+  <a class="logo">
+    <img src="../assets/logo_grow.svg" width="275" height="275">
+  </a>
   <div class="modal-card">
         <section class="modal-card-body">
-            <h3 class="title has-text-centered">VIP LOGIN</h3>
+            <h3 class="title has-text-centered">HashtagGrow - VIP Login</h3>
             <div class="box">
                     <b-field label=""  type="is-light">
                         <b-input v-model="username" type="text" placeholder="username">
@@ -26,6 +29,9 @@
       role="alert">
       {{alert_text}}
     </b-notification>
+    <div class="footer">
+      <p class="subtitle is-8">Copyright © 2019 HashtagGrow; All rights have been reserved</p>
+    </div>
 </div>
 </template>
 
@@ -62,13 +68,29 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-body{
-  background-color:#242424;
+body,html{
+  background-color:#212121!important;
+  overflow: hidden !important;
 }
-
+.footer{
+  background:#141414;
+  opacity: .7;
+  width:100%;
+  padding:0;
+  margin: 0 auto;
+  margin-top:2em;
+  height:200px;
+  p{
+    padding:4em;
+    color:#d9d9d9;
+  }
+}
 .modal-card{
   background-color:#242424;
   padding:4em;
+  border-radius: 1em;
+  opacity: 0.95;
+  box-shadow: 1px 5px 5px 5px rgba(0, 0, 0, 0.06);
   .modal-card-body{
     .box{
       padding:1em;

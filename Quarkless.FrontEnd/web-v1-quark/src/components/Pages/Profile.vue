@@ -1,8 +1,8 @@
 <template>
-  <div class="container is-fluid" style="padding-top:1em; padding-right:2em;">
-    <div class="columns is-variable is-4-mobile is-0-tablet is-5-desktop is-5-widescreen is-5-fullhd">
+  <div class="container is-fluid" style="padding-top:0.7em; padding-right:0em;">
+    <div class="columns is-variable is-4-mobile is-0-tablet is-8-desktop is-5-widescreen is-5-fullhd">
       <div class="column is-12 profile_container">
-        <b-steps type="is-info" size="is-medium" v-model="activeStep" :animated="true" :has-navigation="true">
+        <b-steps type="is-success" size="is-medium" v-model="activeStep" :animated="true" :has-navigation="true">
           <b-step-item label="Profile" :clickable="true" icon="account-plus">
             <section class="box container is-profile">
                <b-field grouped>
@@ -21,14 +21,23 @@
             </section>
             <section class="section topic_area">
               <div class="box" style="background:#1f1f1f;" >
-                <b-field position="is-centered"  label="Topic" :type="!canEdit ?'is-success' : 'is-primary'">
-                  <b-select class="full-rounded" style="border:none;" :disabled="!canEdit" :value="profile.topics.topicFriendlyName" size="is-medium">
-                    <option v-for="(topic,index) in config.topics" :key="topic+'_'+index" :value="topic">{{topic}}</option>
-                  </b-select> 
+                <b-field position="is-centered" label="Topic" :type="!canEdit ?'is-success' : 'is-primary'">
+                  <b-autocomplete
+                  size="is-medium"
+                  style="width:50%; margin: 0 auto"
+                  icon="magnify"
+                  v-model="profile.topics.topicFriendlyName"
+                  placeholder="What is your business about? e.g. Ecommerce"
+                  :keep-first="false"
+                  :open-on-focus="true"
+                  :data="filteredDataObj"
+                  field="subCategories"
+                  @select="option => selected = option">
+                </b-autocomplete>
                 </b-field>
-                <div class="box subtopics_container" style="background:#292929;">
-                  <b-collapse v-for="(subTopic,index) in profile.topics.subTopics" :key="subTopic+'_'+index" :open="false" class="is-small" aria-id="contentIdForA11y1">
-                    <b-tag type="is-danger" slot="trigger" aria-controls="contentIdForA11y1" size="is-medium" attached aria-close-label="Close tag" closable @close="deleteSubTopic(index)">{{subTopic.topicName}}</b-tag>
+                <div class="box subtopics_container" style="background:#121212;">
+                  <!-- <b-collapse v-for="(subTopic,index) in profile.topics.subTopics" :key="subTopic+'_'+index" :open="false" class="is-small" aria-id="contentIdForA11y1">
+                    <b-tag type="is-dark" slot="trigger" aria-controls="contentIdForA11y1" size="is-medium" attached aria-close-label="Close tag" closable @close="deleteSubTopic(index)">{{subTopic.topicName}}</b-tag>
                     <div style="margin-top:1em; background:#444;" class="notification">
                         <div class="content">
                             <h3 style="color:#d9d9d9">
@@ -37,20 +46,45 @@
                             <b-field
                               type="is-success">
                               <b-taginput 
-                                type="is-primary"
+                                type="is-twitter"
                                 :disabled="!canEdit"
                                 :value="subTopic.relatedTopics">
                               </b-taginput>
                           </b-field>
                         </div>
                     </div>
-                  </b-collapse>
-                  <div class="control" style="padding:1em; margin-top:1em;">
+                  </b-collapse> -->
+                  <div v-for="(subTopic,index) in profile.topics.subTopics" :key="subTopic+'_'+index" class="field is-grouped is-grouped-multiline" style="padding:0.4em;">
+                    <div class="control">
+                      <div class="tags has-addons">
+                        <a class="tag is-medium is-dark">{{subTopic.topicName}}</a>
+                        <a class="tag is-medium is-delete"></a>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- <b-taginput
+                    maxlength="10"
+                    size="is-medium"
+                    type="is-dark"
+                    field="topicName"
+                    :value="profile.topics.subTopics">
+                  </b-taginput> -->
+                  <div class="field has-addons" style="margin-top:-0.8em;">
+                    <div class="control">
+                      <input class="input is-tag" type="text" placeholder="Add More">
+                    </div>
+                    <div class="control">
+                    <button class="button is-success">
+                        <b-icon icon="plus"></b-icon>
+                    </button>
+                    </div>
+                  </div>
+                  <!-- <div class="control" style="padding:0.4em; margin-top:-0.8em">
                       <b-taglist attached>
                           <b-tag size="is-medium" type="is-success">Add more</b-tag>
                           <b-tag size="is-medium" type="is-light"><a style="color:grey; font-size:22px; margin:0 auto;" href="#">+</a></b-tag>
                       </b-taglist>
-                  </div>      
+                  </div>       -->
                 </div>
               </div>
             </section>
@@ -62,7 +96,7 @@
                         :before-adding="evaluate"
                         :on-paste-separators="[',','@','-',' ']"
                         :confirm-key-codes="[32, 13]"	
-                        type="is-primary"
+                        type="is-twitter"
                         icon="at"
                         v-model="profile.userTargetList"
                         placeholder="Add a user to watch for"
@@ -74,7 +108,7 @@
             <b-field label="Current Locations Targeted" class="is-dark">
               <b-taginput
                   size="is-medium"
-                  type="is-info"
+                  type="is-dark"
                   v-model="profile.locationTargetList"
                   :data="searchItems"
                   autocomplete
@@ -157,9 +191,9 @@
                     </b-icon>
                 </a>
             </div>
-           <div class="card-content" style="background:#1f1f1f">
+           <div ref="content" class="card-content" style="background:#1f1f1f">
             <div class="box" style="background:#1f1f1f; color:white;">
-              <div class="box" style="background:#292929;">            
+              <div class="box" style="background:#292929; border:none;">            
                 <b-field class="is-dark" label="Here you can tell our agent what types images you would like to have on your profile"></b-field>
               </div>
               <d-drop @readyUpload="onUpload"></d-drop>
@@ -173,13 +207,21 @@
                         </b-icon>
                     </b-loading>
                 </b-notification>
-                <div v-if="finishedSearching" class="searchResults">
-                  <b-field class="is-dark" label="Search Results"></b-field>
+                <b-field class="is-dark" label="Search Results"></b-field>
+                <div v-if="finishedSearching" class="searchResults" id="searchSection">
                   <div class="similarImages_Container">
-                    <div v-for="(image,index) in searchMediaItems" :key=index >
-                        <img v-if="evaluateImage(image.url)" class="image" :src="image.url" alt="">
+                    <div v-for="(image,index) in searchMediaItems" :key="image+'_'+index" >
+                        <!-- <img v-if="evaluateImage(image.url)" class="image zoomable" :src="image.url" alt=""> -->
+                        <ImageItem
+                        class="image zoomable"
+                        v-if="image.url"
+                        :source="image.url"
+                        />
                     </div>
-                  </div>
+                  </div>     
+              </div>
+               <b class="hr anim"></b>
+                  <br>
                    <!-- <d-page @pageUpdate="updatePage" :currentPage="this.currentPageAt" :perPage="25" :total="200" :isRounded="false" :rangeBefore="5" :rangeAfter="5"/> -->
                     <b-pagination
                       @change="updatePage"
@@ -198,11 +240,18 @@
                       aria-current-label="Current page">
                     </b-pagination>                  
                    <br>
-              </div>
               <b class="hr anim"></b>
                 <b-field class="is-dark" label="Images you have so far"></b-field>
                 <div class="similarImages_Container">
-                  <img class="image" v-for="(image,index) in profile.theme.imagesLike" :key=index :src="image.url" alt="">
+                   <div  v-for="(image,index) in profile.theme.imagesLike" :key="image+'_'+index" >
+                  <!-- <img class="image zoomable" v-for="(image,index) in profile.theme.imagesLike" :key=index :src="image.url" alt=""> -->
+                   <ImageItem 
+                        class="image zoomable"
+                        :id="image+'_'+index"
+                        v-if="image.url"
+                        :source="image.url"
+                        />
+                   </div>
                 </div>
             </div>
            </div>
@@ -227,8 +276,11 @@ import ColorCard from '../Objects/ColorCard';
 import Color from '../Objects/Colors';
 import DropZone from '../Objects/DropZone';
 import Pagination from '../Objects/Pagination';
+import ImageItem from '../Objects/ImageItem';
+
 export default {
   components:{
+    ImageItem,
     ColorCard,
     'c-color':Color,
     'd-drop':DropZone,
@@ -236,7 +288,7 @@ export default {
   },
   data(){
     return{
-      perPage:25,
+      perPage:15,
       total:200,
       isRounded:false,
       rangeBefore:5,
@@ -256,27 +308,40 @@ export default {
       searchMediaItems:[],
       urls:[],
       currentPage: 1,
-      pageSet:0,
       finishedSearching:false,
-      displaySet:[]
     }
   },
   created(){
-    this.$store.dispatch('GetProfileConfig').then(con => this.config = this.$store.getters.GetProfileConfig);
     this.profile = this.$store.getters.UserProfiles[this.$store.getters.UserProfiles.findIndex(_=>_._id == this.$route.params.id)];
+    this.profile.topics.topicFriendlyName = this.profile.topics.topicFriendlyName.replace(/^\w/, c => c.toUpperCase());
   },
   mounted(){
+    this.$store.dispatch('GetProfileConfig').then(con => this.config = this.$store.getters.GetProfileConfig);
   },
   computed:{
-    nextSet(){
-      this.pageSet = (this.currentPage*this.perPage);
-      this.displaySet = this.searchMediaItems.slice(this.pageSet - this.perPage, this.pageSet)
+    filteredDataObj() {
+      var total = []
+      if(this.config.topics!==undefined){
+        this.config.topics.forEach( (item) =>
+        {
+          total.push(item.categoryName);
+          item.subCategories.forEach((subItems)=>total.push(subItems))
+        });
+        return total.filter((option) => {
+          return option.toString()
+          .toLowerCase()
+          .indexOf(this.profile.topics.topicFriendlyName.toLowerCase()) >= 0
+        })
+      }
     }
   },
   methods:{
-    loadNextSet(){
-      this.pageSet = (this.currentPage*this.perPage);
-      this.displaySet = this.searchMediaItems.slice(this.pageSet - this.perPage, this.pageSet)
+    scrollBehavior: function (to) {
+      if (to.hash) {
+        return {
+          selector: to.hash
+        }
+      }
     },
     evaluateImage(emage){
       if(new RegExp('(.*?)(.jpg|.png|.svg)').test(emage))
@@ -286,10 +351,9 @@ export default {
     },
     updatePage(e){
       this.currentPage = e;
-      if(this.pageSet >= this.searchMediaItems.length)
-        this.searchImage();
-      else
-        this.loadNextSet();
+      this.searchMediaItems = []
+      this.scrollBehavior("#searchSection")
+      this.searchImage();
     },
     onUpload(e){
       this.currentPage = 1;
@@ -301,13 +365,12 @@ export default {
     },
     searchImage(data){
       this.isLoading = true;
-      this.$store.dispatch('SimilarSearch',{urls:this.urls, limit:25, offset:this.currentPage}).then(
+      this.$store.dispatch('SimilarSearch',{urls:this.urls, limit:this.perPage, offset:this.currentPage}).then(
         res=> {
           this.searchMediaItems = []
           res.data.medias.forEach((item=> this.searchMediaItems.push({url:item.mediaUrl[0]})));
           this.isLoading = false;
           this.finishedSearching = true;
-          this.nextSet;
         }).catch(err=>{this.isLoading = false})
     },
     deleteColor(id){
@@ -362,7 +425,23 @@ export default {
 
 <style lang="scss">
 .pagination-previous, .pagination-next, .pagination-link{
-  color:#d9d9d9 !important;
+  color:#121212 !important;
+  background:#d9d9d9;
+}
+.dropdown-content{
+  max-height: 430px!important;
+  background: #242424;
+  color:#d5d5d5;
+  &:hover{
+    background:#323232;
+  }
+}
+.dropdown-item{
+  color:#d5d5d5 !important;
+  &:hover{
+    background:#444 !important;
+    color:white !important;
+  }
 }
 .similarImages_Container{
   width:100%;
@@ -374,19 +453,21 @@ export default {
   margin-left:0.5em;
 }
 .image{
-  padding:0.5em;
-  border-radius: 0.5em;
-  width:150px;
-  height:150px;
-  object-fit: contain;
+  transition: all .2s ease-in-out;
   &:hover{
     opacity: 0.4;
     cursor: pointer;
+      &.zoomable{
+        transform: scale(1.1);
+        border-radius:0.25em;
+      }
   }
+
+}
+.searchResults{
+  margin-left:6em;
 }
 .map_container #map{
-  //width:680px;
- // margin-left:30em;
   border-radius: 0.5em;
   min-height: 400px !important;
 }
@@ -531,6 +612,9 @@ input{
     box-shadow: 0;
     border:none !important;
   }
+  &:hover{
+    background:#212121 !important;
+  }
 }
 ::placeholder{
   color:#d8d8d8 !important;
@@ -544,6 +628,16 @@ input{
     box-shadow: 0;
     border:none !important;
   }
+   &:hover{
+    background:#212121 !important;
+    &.is-tag{
+      background:#333 !important;
+    }
+  }
+  &.is-tag
+  {
+    background:#212121 !important;
+  }
 }
 select{
   background:#121212 !important;
@@ -553,6 +647,9 @@ select{
     color:#d9d9d9 !important;
     box-shadow: 0 !important;
     border:none !important;
+  }
+  &:hover{
+    background:#212121 !important;
   }
   option{
     background:#212121 !important;
@@ -571,11 +668,17 @@ select{
   background:transparent;
   border:none !important;
   color:white;
+   &:hover{
+    background:#212121 !important;
+  }
 }
 .input, .taginput .taginput-container.is-focusable, .textarea{
   background:#121212;
   border:none;
   color:#d9d9d9;
+   &:hover{
+    background:#212121 !important;
+  }
 }
 $bg: #292929;
 $barsize: 25px;

@@ -15,15 +15,15 @@
                         <b-field grouped group-multiline>
                             <div class="control">
                                 <b-taglist attached>
-                                    <b-tag type="is-dark">Followers</b-tag>
-                                    <b-tag type="is-info">{{userFollowers}}</b-tag>
+                                    <b-tag size="is-default" type="is-dark">Followers</b-tag>
+                                    <b-tag size="is-default" type="is-info">{{userFollowers}}</b-tag>
                                 </b-taglist>
                             </div>
 
                             <div class="control">
                                 <b-taglist attached>
-                                    <b-tag type="is-dark">Following</b-tag>
-                                    <b-tag type="is-success">{{userFollowing}}</b-tag>
+                                    <b-tag size="is-default" type="is-dark">Following</b-tag>
+                                    <b-tag size="is-default" type="is-danger">{{userFollowing}}</b-tag>
                                 </b-taglist>
                             </div>
            
@@ -45,29 +45,29 @@
                                 </select>
                             </div>
                             <span class="icon is-left">
-                                <i class="fas fa-globe"></i>
+                                <i class="fas fa-bug"></i>
                             </span>
                         </div>
                     </div>
-                    <div class="control">
-                        <b-tooltip label="Refresh this account" type="is-light" position="is-bottom">
-                            <button class="button is-warning" @click="RefreshState()">
-                                <b-icon pack="fas" icon="sync-alt" >
-                                </b-icon>
-                            </button>
-                        </b-tooltip>
-                    </div>
                       <div class="control">
-                        <b-tooltip label="Profile" type="is-light" position="is-top">
-                            <a @click="ViewProfile" class="button is-primary" :disabled="IsProfileButtonDisabled">
+                        <b-tooltip label="Profile" type="is-dark" position="is-top">
+                            <a @click="ViewProfile" class="button is-light-dark" :disabled="IsProfileButtonDisabled">
                                 <b-icon pack="fas" icon="bookmark" >
                                 </b-icon>
                             </a>
                         </b-tooltip>
                         </div>
                         <div class="control">
-                        <b-tooltip label="Delete this account" type="is-light" position="is-top">
-                            <a @click="ViewProfile" class="button is-danger">
+                        <b-tooltip label="Refresh this account" type="is-dark" position="is-bottom">
+                            <button class="button is-light-dark" @click="RefreshState()">
+                                <b-icon pack="fas" icon="sync-alt" >
+                                </b-icon>
+                            </button>
+                        </b-tooltip>
+                        </div>
+                        <div class="control">
+                        <b-tooltip label="Delete this account" type="is-dark" position="is-top">
+                            <a @click="ViewProfile" class="button is-light-dark">
                                 <b-icon pack="fas" icon="trash" >
                                 </b-icon>
                             </a>
@@ -84,7 +84,7 @@
     </div>
       <footer class="card-footer">
             <router-link :to="'/view/'+id" class="card-footer-item"> 
-                <b-tooltip label="Manage this account" type="is-light" size="is-large" position="is-right">
+                <b-tooltip label="Manage this account" type="is-dark" size="is-large" position="is-right">
                     <b-icon pack="fas" icon="bolt" size="is-medium"></b-icon>
                 </b-tooltip>
             </router-link>
@@ -201,6 +201,18 @@ select{
     overflow: hidden;
     padding-top:0.3em;    
 }
+.is-light-dark{
+    background: #414141;
+    color:white;
+    border:none;
+    &:focus{
+        border:none;
+    }
+    &:hover{
+        background:#212121;
+        color:wheat;
+    }
+}
 .card-header{
     background-color: #414141;
     padding-top:0.4em;
@@ -232,7 +244,7 @@ img{
     height:100px;
     border: none;
     font-weight: bold;
-    background-color:#f22929;
+    background-color:#13b94d;
     .card-footer-item{
         font-size: 20px;
         border: none;

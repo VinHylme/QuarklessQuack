@@ -87,7 +87,7 @@ $v-cal-times-bg	: #242424;
 $v-cal-times-font-size	:0.88rem;
 $v-cal-times-border-color	:#242424;
 
-$v-cal-event-bg	:#3B86FF;
+$v-cal-event-bg	:#13b94d;
 $v-cal-event-color	: $white;
 $v-cal-event-border-radius	: 0px;
 
@@ -96,10 +96,10 @@ $v-cal-button-shadow	:0 2px 3px rgba(0,0,0,.05);
 $v-cal-button-padding	: 8px 18px;
 $v-cal-button-border-color	:#242424;
 $v-cal-button-border-radius	:50px;
-$v-cal-button-active-bg	:#3B86FF;
+$v-cal-button-active-bg	:#13b94d;
 $v-cal-button-active-color	:$white;
 $v-cal-button-hover-bg	:#fcfcfc;
-$v-cal-button-hover-color	:#3B86FF;
+$v-cal-button-hover-color	:#13b94d;
 $v-cal-button-disabled-bg	:#f0f0f0;
 $v-cal-button-disabled-color	:#d0d0d0;
 $v-cal-button-disabled-cursor	:not-allowed;

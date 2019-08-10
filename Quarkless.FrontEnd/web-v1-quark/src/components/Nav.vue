@@ -1,13 +1,22 @@
 <template>
 <aside class="menu">
   <router-link to="/">
-  <a class="logo" href="#">
+  <a class="logo">
      <img src="../assets/logo_grow.svg" width="90" height="90">
   </a>
   </router-link>
   <ul class="menu-list">
     <li>
-      <b-tooltip label="Manage Accounts" position="is-right">
+      <b-tooltip type="is-dark" label="Hide Panel" position="is-right">
+       <a class="navbar-item" @click="hideNav">
+          <span class="icon">
+            <i class="fa fa-expand"></i>
+          </span>
+       </a>
+      </b-tooltip>
+    </li>
+    <li>
+      <b-tooltip type="is-dark" label="Manage Accounts" position="is-right">
        <router-link  class="navbar-item" to="/manage">
           <span class="icon">
             <i class="fa fa-rocket"></i>
@@ -25,21 +34,21 @@
       </b-tooltip>
     </li> -->
     <li>
-     <b-tooltip label="Statistics" position="is-right">
-       <router-link  class="navbar-item" to="/stats">
+     <b-tooltip type="is-dark" label="Statistics ❤️ coming soon ❤️" position="is-right">
+       <a class="navbar-item is-disabled">
          <span class="icon">
             <i class="fa fa-heartbeat"></i>
           </span>
-       </router-link>
+       </a>
      </b-tooltip>
     </li>
     <li>
-      <b-tooltip label="Settings" position="is-right">
-       <router-link  class="navbar-item" to="/settings">
+      <b-tooltip type="is-dark" label="Settings ❤️ coming soon ❤️" position="is-right">
+       <a  class="navbar-item is-disabled">
          <span class="icon">
             <i class="fa fa-cog"></i>
           </span>
-       </router-link>
+       </a>
       </b-tooltip>
     </li>
     <li>
@@ -67,6 +76,9 @@
 <script>
 export default {
   methods:{
+    hideNav(){
+      this.$emit('onHide');
+    },
     logout(){
       this.$store.dispatch('logout');
       window.location.reload();
@@ -76,20 +88,35 @@ export default {
 </script>
 
 
-<style lang="sass" scoped>
-.menu
-   font-size:1.55em
-   height:100%
-   background-color:#141414
-.navbar-item
-  color:#ddd
-  &:hover
-    background-color:#141414
-    color:#3ea6ff
-  &:active
-      background-color:#141414
-      color:#3ea6ff
-  &:focus
-      background-color:#141414
-      color:#3ea6ff
+<style lang="scss" scoped>
+.is-disabled{
+  cursor:initial;
+  opacity: 0.6;
+}
+
+.menu{
+   font-size:1.55em;
+   height:100%;
+   background-color:#141414;
+}
+
+.navbar-item{
+  color:#ddd;
+  &:hover{
+    background-color:#141414;
+    color:#13c551;
+    &.is-disabled{
+      color:#696969;
+      opacity:0.4;
+    }
+  }
+  &:active{
+      background-color:#141414;
+      color:#13c551;
+  }
+  &:focus{
+      background-color:#141414;
+      color:#13c551;
+  }
+}
 </style>

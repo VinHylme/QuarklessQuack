@@ -47,32 +47,34 @@ export default {
 </script>
 
 <style lang="scss">
-$card-background-color:black;
+//$card-background-color:black;
 @import "~bulma/sass/utilities/_all";
-$primary: #3ea6ff;
-$primary-invert: findColorInvert($primary);
-$twitter: rgb(16, 51, 90);
+//$primary: #3ea6ff;
+//$primary-invert: findColorInvert($primary);
+$sucess:#13b94d;
+$twitter: rgb(35, 73, 117);
 $twitter-invert: findColorInvert($twitter);
 $colors: (
     "white": ($white, $black),
     "black": ($black, $white),
     "light": ($light, $light-invert),
     "dark": ($dark, $dark-invert),
-    "primary": ($primary, $primary-invert),
+    //"primary": ($primary, $primary-invert),
     "info": ($info, $info-invert),
     "success": ($success, $success-invert),
     "warning": ($warning, $warning-invert),
     "danger": ($danger, $danger-invert),
     "twitter": ($twitter, $twitter-invert)
 );
-$link: $primary;
-$link-invert: $primary-invert;
-$link-focus-border: $primary;
+//$link: $primary;
+//$link-invert: $primary-invert;
+//$link-focus-border: $primary;
 @import "~bulma";
 @import "~buefy/src/scss/buefy";
 html,
 body{
   background: #141414;
   height:100%;
+  overflow-x: hidden !important;
 }
 </style>

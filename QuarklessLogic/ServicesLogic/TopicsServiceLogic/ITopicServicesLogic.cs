@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
+using QuarklessContexts.Models.Topics;
 
 namespace QuarklessLogic.ServicesLogic
 {
@@ -9,5 +10,8 @@ namespace QuarklessLogic.ServicesLogic
 		Task<bool> AddOrUpdateTopic(TopicsModel topics);
 		Task<TopicsModel> GetTopicByName(string topicName);
 		Task<IEnumerable<TopicsModel>> GetTopics();
+		Task AddTopicCategories(IEnumerable<TopicCategories> topicCategories);
+		Task<IEnumerable<TopicCategories>> GetAllTopicCategories();
+		Task AddRelated(QuarklessContexts.Models.Profiles.SubTopics subTopics);
 	}
 }

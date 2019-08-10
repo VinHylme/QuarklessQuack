@@ -5,6 +5,7 @@ using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.ResponseModels;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
+using QuarklessContexts.Models.Topics;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Logic.InstagramAccountLogic;
 using QuarklessLogic.Logic.ProxyLogic;
@@ -309,6 +310,20 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 				Console.WriteLine(ee.Message);
 			}
 			Console.WriteLine($"Ended - BuildYandexImages : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+		}
+		public async Task<IEnumerable<TopicCategories>> BuildTopicTypes()
+		{
+			try
+			{
+				var anyworker = _assignments.FirstOrDefault().Worker;
+				ContentSearcherHandler contentSearcher = new ContentSearcherHandler(anyworker,anyworker.GetContext.Proxy);
+				return await contentSearcher.GetBusinessCategories();
+			}
+			catch(Exception e)
+			{
+				Console.WriteLine(e);
+				return null;
+			}
 		}
 		public async Task BuildBase(int limit = 2, int cutBy = 1, int takeTopicAmount = 1)
 		{

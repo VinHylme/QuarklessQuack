@@ -5,6 +5,7 @@ using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using QuarklessContexts.Models.Timeline;
+using QuarklessContexts.Models.Topics;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.ReportHandler;
 using QuarklessLogic.Logic.HashtagLogic;
@@ -47,6 +48,42 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 		public void Init(UserStoreDetails userStore)
 		{
 			tempuser = userStore;
+		}
+		public async Task BuildTopics(IEnumerable<TopicCategories> topicCategories)
+		{
+			_aPIClientContainer = new APIClientContainer(_context, tempuser.OAccountId, tempuser.OInstagramAccountUser);
+			if (_aPIClientContainer == null) return;
+		
+			foreach(var topic in topicCategories)
+			{
+				foreach(var subcat in topic.SubCategories)
+				{
+					try { 
+						QuarklessContexts.Models.Profiles.SubTopics subTopics_ = new QuarklessContexts.Models.Profiles.SubTopics();
+						subTopics_.TopicName = subcat;
+						subTopics_.RelatedTopics = new List<string>();
+						var hashres = await _aPIClientContainer.Hashtag.SearchHashtagAsync(subcat);
+						if (hashres.Succeeded)
+						{
+							subTopics_.RelatedTopics.AddRange(hashres.Value.Where(s=>s.NonViolating).Select(c=>c.Name));
+							foreach(var hashr in hashres.Value.Take(20))
+							{
+								var sectionRes = await _aPIClientContainer.Hashtag.GetHashtagsSectionsAsync(hashr.Name, PaginationParameters.MaxPagesToLoad(1));
+								if (sectionRes.Succeeded)
+								{
+									subTopics_.RelatedTopics.AddRange(sectionRes.Value.RelatedHashtags.Select(sx=>sx.Name));
+									await Task.Delay(755);
+								}
+							}
+						}
+						await _topicServicesLogic.AddRelated(subTopics_);
+					}
+					catch(Exception e)
+					{
+						continue;
+					} 
+				}
+			}
 		}
 		public async Task<Topics> BuildTopics(ProfileModel profile, int takeSuggested = 15)
 		{
@@ -192,7 +229,6 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 				return null;
 			}
 		}
-
 		public async Task<IEnumerable<string>> BuildHashtags(string topic, string subcategory, string language, int limit = 1, int pickRate = 20)
 		{
 			var res = (await _hashtagLogic.GetHashtagsByTopicAndLanguage(topic, language.ToUpper(), language.MapLanguages(),limit)).Shuffle().ToList();
@@ -238,6 +274,13 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 				//}
 			}
 			return null;
+		}
+
+		public async Task AddTopicCategories(IEnumerable<TopicCategories> topicCategories) => await _topicServicesLogic.AddTopicCategories(topicCategories);
+
+		public Task<IEnumerable<TopicCategories>> GetAllTopicCategories()
+		{
+			return _topicServicesLogic.GetAllTopicCategories();
 		}
 	}
 }

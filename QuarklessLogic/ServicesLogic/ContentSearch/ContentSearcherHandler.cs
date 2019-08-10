@@ -6,6 +6,7 @@ using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.Proxies;
 using QuarklessContexts.Models.ResponseModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
+using QuarklessContexts.Models.Topics;
 using QuarklessLogic.ContentSearch;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.RestSharpClient;
@@ -31,6 +32,28 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 		public void ChangeUser(IAPIClientContainer newUser)
 		{
 			_container = newUser;
+		}
+		public async Task<IEnumerable<TopicCategories>> GetBusinessCategories()
+		{
+			var cat = await _container.Business.GetCategoriesAsync();
+			List<TopicCategories> categories = new List<TopicCategories>();
+			if (cat.Succeeded)
+			{
+				foreach(var ca in cat.Value)
+				{
+					var subcat = await _container.Business.GetSubCategoriesAsync(ca.CategoryId);
+					if (subcat.Succeeded)
+					{
+						categories.Add(new TopicCategories
+						{
+							CategoryName = ca.CategoryName,
+							SubCategories = subcat.Value.Select(s=>s.CategoryName).ToList()
+						});
+					}
+					await Task.Delay(1000);
+				}
+			}
+			return categories;
 		}
 		public async Task<IEnumerable<UserResponse<string>>> GetUserFollowingList(string username, int limit, string query = null)
 		{
