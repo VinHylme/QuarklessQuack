@@ -13,10 +13,10 @@
                     </b-field>
 
                     <b-field label="">
-                        <b-input v-model="password" type="password" placeholder="Password" minlength="6" password-reveal>
+                        <b-input v-model="password" type="password"  @keyup.enter.native="doLogin" placeholder="Password" minlength="6" password-reveal>
                         </b-input>
                     </b-field>
-                    <button class="button is-large is-fullwidth" @click="doLogin()" :disabled="isActive">
+                    <button type="submit" class="button is-large is-fullwidth"  @click="doLogin" :disabled="isActive">
                         Login
                     </button>
                 </div>

@@ -6,7 +6,7 @@
                 role="alert">
                 {{alert_text}}
         </b-notification>
-        <div :style="!isNavOn === 'true' ? 'margin-left:5em;' : '' ">
+        <div :style="!isNavOn?'margin-left:5.5em;':''">
                 <div class="accounts_container">
                         <div v-for="(acc,index) in InstagramAccounts" :key="index">
                                 <InstaCard @ChangeState="StateChanged" @RefreshState="NotifyRefresh" @ViewProfile="GetProfile" :id="acc.id" :username="acc.username" :agentState="acc.agentState" 
@@ -38,23 +38,20 @@ export default {
                 isSuccess:false,
                 refreshShowNotification:false,
                 alert_text:'',
+                isNavOn:false
         }
         },
         created(){
                
         },
         beforeMount(){
+                this.isNavOn = this.$store.getters.MenuState === 'true';
                 this.InstagramAccounts = this.$store.getters.GetInstagramAccounts;
                 if(this.$store.getters.UserProfiles!==undefined)
                         this.IsProfileButtonDisabled=false;          
         },
-        watch:{
-                
-        },
         computed:{
-                isNavOn(){
-                        return this.$store.getters.MenuState === 'true';
-                }
+
         },
         methods:{
                 GetProfile(id){

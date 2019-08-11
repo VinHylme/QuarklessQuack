@@ -21,10 +21,11 @@
             </section>
             <section class="section topic_area">
               <div class="box" style="background:#1f1f1f;" >
-                <b-field position="is-centered" label="Topic" :type="!canEdit ?'is-success' : 'is-primary'">
+                <div style="display:inline-flex; flex-flow: row wrap; align-items: center;">
+                <b-field position="is-centered" class="is-dark" label="Topic" :type="!canEdit ?'is-success' : 'is-primary'">
                   <b-autocomplete
                   size="is-medium"
-                  style="width:50%; margin: 0 auto"
+                  style="width:550px; margin: 0 auto"
                   icon="magnify"
                   v-model="profile.topics.topicFriendlyName"
                   placeholder="What is your business about? e.g. Ecommerce"
@@ -32,59 +33,110 @@
                   :open-on-focus="true"
                   :data="filteredDataObj"
                   field="subCategories"
-                  @select="option => selected = option">
+                  @select="searchReleatedTopics"
+                  @keyup.enter="searchReleatedTopics">
                 </b-autocomplete>
                 </b-field>
+                <a @click="isTip1Active = !isTip1Active;" :disabled="isTip1Active"  style="margin-top:1.7em; margin-left:1em">
+                  <b-tooltip label="View tip" type="is-dark">
+                    <b-icon pack="fas" icon="question-circle" size="is-medium" type="is-light"></b-icon>
+                  </b-tooltip>
+                </a>
+                </div>
+                 <b-notification
+                    :active.sync="isTip1Active"
+                    style="width:40%; margin-left:0"
+                    position="is-bottom-left"
+                    size="is-small"
+                    type="is-info"
+                    has-icon
+                    aria-close-label="Close notification">
+                    You can use the above search to find the topic which most matches your business or expresses yourself
+                </b-notification>
+                <b-field position="is-centered" class="is-dark is-small" label="Selected topics "></b-field>
+                  <b-notification
+                   :active.sync="isTip1Active"
+                    style="width:50%; margin-left:55.5em"
+                    position="is-bottom-left"
+                    size="is-small"
+                    type="is-warning"
+                    has-icon
+                    aria-close-label="Close notification">
+                    The keywords you use here are very important, you can specify a topic which most relates to your niche, each of those topics will also have many sub topics which will help our team build your profile to their best ability.
+                </b-notification>
                 <div class="box subtopics_container" style="background:#121212;">
-                  <!-- <b-collapse v-for="(subTopic,index) in profile.topics.subTopics" :key="subTopic+'_'+index" :open="false" class="is-small" aria-id="contentIdForA11y1">
-                    <b-tag type="is-dark" slot="trigger" aria-controls="contentIdForA11y1" size="is-medium" attached aria-close-label="Close tag" closable @close="deleteSubTopic(index)">{{subTopic.topicName}}</b-tag>
-                    <div style="margin-top:1em; background:#444;" class="notification">
-                        <div class="content">
-                            <h3 style="color:#d9d9d9">
-                                Releated
-                            </h3>
-                            <b-field
-                              type="is-success">
-                              <b-taginput 
-                                type="is-twitter"
-                                :disabled="!canEdit"
-                                :value="subTopic.relatedTopics">
-                              </b-taginput>
-                          </b-field>
-                        </div>
-                    </div>
-                  </b-collapse> -->
                   <div v-for="(subTopic,index) in profile.topics.subTopics" :key="subTopic+'_'+index" class="field is-grouped is-grouped-multiline" style="padding:0.4em;">
                     <div class="control">
                       <div class="tags has-addons">
-                        <a class="tag is-medium is-dark">{{subTopic.topicName}}</a>
-                        <a class="tag is-medium is-delete"></a>
+                        <a @click="showSubTopicReleated(subTopic,index)" style="text-decoration: none;" class="tag is-medium is-danger">
+                          <b-tooltip label="Expand and show all" type="is-dark">
+                          <b-icon pack="fas" icon="tag"></b-icon>
+                          </b-tooltip>
+                        </a>
+                        <span class="tag is-medium is-dark">{{subTopic.topicName}}</span>
+                        <a class="tag is-medium is-delete" @click="deleteTopic(subTopic)"></a>
                       </div>
                     </div>
-                  </div>
-                  <!-- <b-taginput
-                    maxlength="10"
-                    size="is-medium"
-                    type="is-dark"
-                    field="topicName"
-                    :value="profile.topics.subTopics">
-                  </b-taginput> -->
+                  </div> 
                   <div class="field has-addons" style="margin-top:-0.8em;">
                     <div class="control">
-                      <input class="input is-tag" type="text" placeholder="Add More">
+                      <input class="input is-tag" @keyup.enter="addTopic(undefined)" v-model="toAddTopic" type="text" placeholder="Add More">
                     </div>
                     <div class="control">
-                    <button class="button is-success">
+                    <button @click="addTopic(undefined)" class="button is-success">
                         <b-icon icon="plus"></b-icon>
                     </button>
                     </div>
                   </div>
-                  <!-- <div class="control" style="padding:0.4em; margin-top:-0.8em">
-                      <b-taglist attached>
-                          <b-tag size="is-medium" type="is-success">Add more</b-tag>
-                          <b-tag size="is-medium" type="is-light"><a style="color:grey; font-size:22px; margin:0 auto;" href="#">+</a></b-tag>
-                      </b-taglist>
-                  </div>       -->
+                </div>               
+                <b-field v-if="isExpandedSubTopics" position="is-centered" class="is-dark is-small" :label="'Showing Results For: '+selectedTopic.topicName"></b-field>
+                <div class="box subtopics_container" style="background:#121212;" v-if="isExpandedSubTopics">
+                  <b-notification v-if="searchingTopics" style="width:100%; background:transparent; height:150px;" :closable="false">
+                    <b-loading :is-full-page="false" :active.sync="searchingTopics">
+                      <b-icon
+                          pack="fas"
+                          icon="spinner"
+                          size="is-large"
+                          custom-class="fa-spin">
+                      </b-icon>
+                    </b-loading>
+                  </b-notification>
+                  <div class="closeSubTopics">
+                    <a @click="isExpandedSubTopics=false">
+                      <b-icon type="is-dark" pack="fas" size="is-default" icon="times-circle">
+                      </b-icon>
+                    </a>
+                  </div>
+                   <div v-for="(topic,index) in selectedTopic.relatedTopics" :key="index" class="control"  style="padding:0.4em;">
+                      <div class="tags has-addons">
+                        <span class="tag is-medium is-twitter">{{topic}}</span>
+                        <a @click="profile.topics.subTopics[profile.topics.subTopics.findIndex((ob)=>ob.topicName === selectedTopic.topicName)].relatedTopics.splice(index,1)" class="tag is-medium is-delete"></a>
+                      </div>
+                    </div>
+                </div>
+                <div v-if="searchReleatedTopic.length>0">
+                  <b-field position="is-centered" class="is-dark is-small" label="Releated topics "></b-field>
+                  <div class="box subtopics_container" style="background:#121212;">
+                    <div v-for="(subTopic,index) in displayedReleatedTopic" :key="subTopic+'_'+index" class="field is-grouped is-grouped-multiline" style="padding:0.4em;">
+                      <div class="control">
+                        <div class="tags has-addons">
+                          <span class="tag is-large is-dark">{{subTopic}}</span>
+                            <a @click="addTopic(subTopic)" class="tag is-large is-success">
+                              <b-tooltip label="Add this to your selected list" type="is-twitter" position="is-top">
+                                <b-icon icon="plus"></b-icon>
+                              </b-tooltip>
+                            </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <br>
+                  <div class="buttons has-addons is-centered">
+                    <span class="button is-dark is-medium" @click="prevset()">Back</span>
+                    <span class="button is-dark is-medium" @click="nextset()">Next</span>
+                  </div>
                 </div>
               </div>
             </section>
@@ -288,7 +340,7 @@ export default {
   },
   data(){
     return{
-      perPage:15,
+      perPage:30,
       total:200,
       isRounded:false,
       rangeBefore:5,
@@ -309,6 +361,14 @@ export default {
       urls:[],
       currentPage: 1,
       finishedSearching:false,
+      searchReleatedTopic:[],
+      displayedReleatedTopic:[],
+      currentPage:1,
+      toAddTopic:'',
+      isTip1Active:false,
+      isExpandedSubTopics:false,
+      selectedTopic:[],
+      searchingTopics:false
     }
   },
   created(){
@@ -317,6 +377,7 @@ export default {
   },
   mounted(){
     this.$store.dispatch('GetProfileConfig').then(con => this.config = this.$store.getters.GetProfileConfig);
+    this.searchReleatedTopics(this.profile.topics.topicFriendlyName);
   },
   computed:{
     filteredDataObj() {
@@ -324,7 +385,7 @@ export default {
       if(this.config.topics!==undefined){
         this.config.topics.forEach( (item) =>
         {
-          total.push(item.categoryName);
+          //total.push(item.categoryName);
           item.subCategories.forEach((subItems)=>total.push(subItems))
         });
         return total.filter((option) => {
@@ -333,9 +394,80 @@ export default {
           .indexOf(this.profile.topics.topicFriendlyName.toLowerCase()) >= 0
         })
       }
+    },
+    filterReleatedTopics(){
+      // let subtopics = this.profile.topics.subTopics;
+      //  return this.searchReleatedTopic.filter((val,index)=> {
+      //    return subtopics.indexOf((ob) => ob.topicName.toLowerCase() == val.toLowerCase()) == -1
+      //  });
+      // //return this.searchReleatedTopic.filter(val=>!this.profile.topics.subTopics.includes(val))
+      var index;
+      for(var x = 0 ; x < this.profile.topics.subTopics.length; x++){
+        index = this.searchReleatedTopic.indexOf(this.profile.topics.subTopics[x].topicName);
+        if(index > -1){
+          this.searchReleatedTopic.splice(index, 1);
+        }
+      }
+      return this.searchReleatedTopic;
     }
   },
   methods:{
+    showSubTopicReleated(item, index){
+      this.isExpandedSubTopics = true;
+      if(this.profile.topics.subTopics[index].relatedTopics.length<=0){
+        this.searchingTopics = true;
+        this.$store.dispatch('ReleatedTopics', {instaId: this.profile.instagramAccountId, topic:item.topicName}).then(resp=>{
+          this.profile.topics.subTopics[index].relatedTopics = resp.data.relatedTopics;
+          this.searchingTopics = false;
+        })
+      }
+      this.selectedTopic = this.profile.topics.subTopics[index];
+      //this.searchingTopics = false;
+    },
+    deleteTopic(e){
+      var index = this.profile.topics.subTopics.findIndex((ob=>ob===e));
+      this.profile.topics.subTopics.splice(index,1);
+    },
+    addTopic(e){
+      if(e!==undefined){
+        if(e){
+          if(this.profile.topics.subTopics.findIndex((ob)=>ob.topicName === e) < 0)
+            this.profile.topics.subTopics.push({topicName:e, relatedTopics:[] })
+        }
+      }
+      else if(this.toAddTopic){
+        if(this.profile.topics.subTopics.findIndex((ob)=>ob.topicName === this.toAddTopic) < 0){
+          this.profile.topics.subTopics.push({topicName:this.toAddTopic, relatedTopics:[] })
+          this.toAddTopic = ''
+        }
+      }
+    },
+    nextset(){
+      if(this.searchReleatedTopic.length!==0 || this.searchReleatedTopic!==undefined){
+        const maxpagerelated = this.searchReleatedTopic.length / this.perPage;
+        if(maxpagerelated > this.currentPage){
+            this.currentPage++;
+            this.displayedReleatedTopic = this.filterReleatedTopics.slice((this.currentPage-1)*this.perPage,this.currentPage*this.perPage);
+        }
+      }
+    },
+    prevset(){
+      if(this.currentPage > 1){
+        this.currentPage--;
+        this.displayedReleatedTopic = this.filterReleatedTopics.slice((this.currentPage-1)*this.perPage,this.currentPage*this.perPage);
+      }
+    },
+    searchReleatedTopics(e){
+      if(e!==null){
+        this.$store.dispatch('ReleatedTopics', {instaId: this.profile.instagramAccountId, topic:e}).then(resp=>{
+          this.searchReleatedTopic = []
+          this.displayedReleatedTopic = []
+          resp.data.relatedTopics.forEach((item)=>this.searchReleatedTopic.push(item))
+          this.displayedReleatedTopic = this.filterReleatedTopics.slice((this.currentPage-1)*this.perPage,this.currentPage*this.perPage);
+        })
+      }
+      //this.$store.dispatch('ReleatedTopics',)
+    },
     scrollBehavior: function (to) {
       if (to.hash) {
         return {
@@ -424,6 +556,12 @@ export default {
 </script>
 
 <style lang="scss">
+.loading-overlay .loading-background{
+  background:transparent;
+}
+.closeSubTopics{
+  position:relative;
+}
 .pagination-previous, .pagination-next, .pagination-link{
   color:#121212 !important;
   background:#d9d9d9;
@@ -507,6 +645,12 @@ export default {
   label{
     color:#d9d9d9 ;
     font-size:20px;
+  }
+  &.is-small{
+    label{
+      color:#d9d9d9 ;
+      font-size:16px;
+    }
   }
 }
 .is-button{

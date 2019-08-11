@@ -1,10 +1,12 @@
 ﻿using QuarklessContexts.Enums;
 using QuarklessContexts.Extensions;
+using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.QueryModels;
 using QuarklessContexts.Models.QueryModels.Settings;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessLogic.ContentSearch;
 using QuarklessLogic.Handlers.RestSharpClient;
+using QuarklessLogic.Logic.HashtagLogic;
 using QuarklessLogic.ServicesLogic;
 using QuarklessLogic.ServicesLogic.ContentSearch;
 using QuarklessRepositories.RedisRepository.SearchCache;
@@ -22,9 +24,12 @@ namespace QuarklessLogic.Logic.QueryLogic
 		private readonly IContentSearcherHandler _contentSearcherHandler;
 		private readonly ITopicServicesLogic _topicServicesLogic;
 		private readonly ISearchingCache _searchingCache;
+		private readonly IHashtagLogic _hashtagLogic;
+
 		public QueryLogic(IRestSharpClientManager restSharpClientManager, IContentSearcherHandler contentSearcherHandler,
-			ISearchingCache searchingCache, ITopicServicesLogic topicServicesLogic)
+			ISearchingCache searchingCache, ITopicServicesLogic topicServicesLogic, IHashtagLogic hashtagLogic)
 		{
+			_hashtagLogic = hashtagLogic;
 			_searchingCache = searchingCache;
 			_restSharpClientManager = restSharpClientManager;
 			_contentSearcherHandler = contentSearcherHandler;
@@ -110,6 +115,28 @@ namespace QuarklessLogic.Logic.QueryLogic
 				CanUserEditProfile = true
 			};
 		}
-
+		public async Task<SubTopics> GetReleatedKeywords(string topicName)
+		{
+			var res = await _searchingCache.GetReleatedTopic(topicName);
+			if (res == null)
+			{
+				var hashtagsRes = await _hashtagLogic.SearchHashtagAsync(topicName);
+				if(!hashtagsRes.Succeeded) return null;
+				else
+				{
+					SubTopics subTopics = new SubTopics
+					{
+						TopicName = topicName,
+						RelatedTopics = hashtagsRes.Value.Select(s=>s.Name).ToList()
+					};
+					await _searchingCache.StoreRelatedTopics(subTopics);
+					return subTopics;
+				}
+			}
+			else
+			{
+				return res;
+			}
+		}
 	}
 }

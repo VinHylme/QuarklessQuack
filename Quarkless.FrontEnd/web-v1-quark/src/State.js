@@ -151,6 +151,14 @@ export default new Vuex.Store({
     MenuState: () => localStorage.getItem("menu_state")
   },
   actions: {
+    ReleatedTopics({commit}, data)
+    {
+      return new Promise((resolve,reject)=>{
+        QueryServices.ReleatedTopic(data.instaId, data.topic).then(resp=>{
+          resolve(resp);
+        }).catch((err)=>reject(err))
+      })
+    },
     HideunHideMenu({commit}, value){
         localStorage.setItem("menu_state", value);
     },

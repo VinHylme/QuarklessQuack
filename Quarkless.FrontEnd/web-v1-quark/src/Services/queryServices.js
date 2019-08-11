@@ -11,5 +11,8 @@ export default {
   },
   SimilarImageSearch(urls, limit, offset){
     return Api(true).put('query/search/similar/'+ limit +'/' + offset, urls);
+  },
+  ReleatedTopic(instaAccount, topic){
+    return Api(true, instaAccount).get('query/releated/'+topic);
   }
 }

@@ -27,6 +27,17 @@
         </b-icon>
         </router-link>
       </b-tooltip>
+        <b-tooltip type="is-dark" label="Logout" style="position:absolute; bottom:3em;right:2.8em;">
+        <a @click="signout">
+        <b-icon
+          class="is-user"
+          pack="fas"
+          icon="sign-out-alt"
+          size="is-medium"
+          type="is-light">
+        </b-icon>
+        </a>
+        </b-tooltip>
     </div>
     <div :class="isNavOn ? 'column is-11' : 'column is-12'" :style="isNavOn ? '' : 'margin:0 0 0 0em'" >
         <div class="main_area">
@@ -59,6 +70,10 @@ export default {
     this.isNavOn = this.$store.getters.MenuState === 'true'
   },
   methods:{
+    signout(){
+      this.$store.dispatch('logout');
+      window.location.reload();
+    },
     changeState(){
       this.$store.dispatch('HideunHideMenu', this.isNavOn = !this.isNavOn)
       console.log(this.isNavOn)
@@ -87,20 +102,41 @@ export default {
     background:#141414;
   }
 }
+.nextto{
+  
+
+}
 .floater{
   z-index: 99999;
-  position:absolute !important;
+  position:fixed !important;
   top:1.15em;
   left:1.6em;
   width:50px;
   height:50px;
+  transition: all .2s ease-in-out;
   &:hover{
     color:#13b94d !important;
     cursor: pointer;
+    transform: scale(1.2);
   }
   &.is-house{
     top:4.5em;
     left:1.85em;
+  }
+}
+
+.is-user{
+  z-index: 99999;
+  position:fixed !important;
+  bottom:1.15em;
+  right:1.6em;
+  width:50px;
+  height:50px;
+  transition: all .2s ease-in-out;
+    &:hover{
+    transform: scale(1.2);
+    color:#13b94d !important;
+    cursor: pointer;
   }
 }
 
