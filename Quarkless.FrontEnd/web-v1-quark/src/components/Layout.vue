@@ -41,7 +41,7 @@
     </div>
     <div :class="isNavOn ? 'column is-11' : 'column is-12'" :style="isNavOn ? '' : 'margin:0 0 0 0em'" >
         <div class="main_area">
-          <router-view :key="$route.fullPath"></router-view>
+          <router-view v-if="isLoaded" :key="$route.fullPath"></router-view>
         </div>
     </div>
   </div>
@@ -61,12 +61,16 @@ export default {
   data(){
     return {
       isProfileButtonDisabled:false,
-      isNavOn:true
+      isNavOn:true,
+      isLoaded:false
     }
   },
-  beforeMount(){
-    this.$store.dispatch('AccountDetails', {"userId":this.$store.state.user});
-    this.$store.dispatch('GetProfiles', this.$store.state.user);
+  mounted(){
+    this.$store.dispatch('AccountDetails', {"userId":this.$store.state.user}).then(s=>{
+          this.$store.dispatch('GetProfiles', this.$store.state.user).then(c=>{
+            this.isLoaded = true;
+          })
+    });
     this.isNavOn = this.$store.getters.MenuState === 'true'
   },
   methods:{

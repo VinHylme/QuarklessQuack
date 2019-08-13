@@ -32,7 +32,7 @@ namespace QuarklessContexts.InstaClient
 			.UseLogger(new DebugLogger(LogLevel.All))
 			.SetRequestDelay(RequestDelay.FromSeconds(0, 2))
 			.Build();
-			_client.SetApiVersion(InstagramApiSharp.Enums.InstaApiVersionType.Version94);
+			_client.SetApiVersion(InstagramApiSharp.Enums.InstaApiVersionType.Version100);
 			return this;
 		}
 		public IInstaApi ReturnClient
@@ -185,15 +185,33 @@ namespace QuarklessContexts.InstaClient
 		{
 			await _client.LoadStateDataFromStringAsync(state);
 		}
-		public void SetInitialClientInfo()
+		public async Task<IResult<InstaChallengeRequireVerifyMethod>> GetChallengeRequireVerifyMethodAsync(string username, string password)
 		{
 			_client.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
-			//set a first random proxy
+			_client.SetUser(new UserSessionData
+			{
+				Password = password,
+				UserName = username
+			});
+			_client.SetApiVersion(InstagramApiSharp.Enums.InstaApiVersionType.Version100);
+			return await _client.GetChallengeRequireVerifyMethodAsync();
+		}
+		public async Task<IResult<InstaLoginResult>> SubmitChallangeCode(string username, string password, InstaChallengeLoginInfo instaChallengeLoginInfo, string code)
+		{
+			_client.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
+			_client.SetUser(new UserSessionData
+			{
+				Password = password,
+				UserName = username
+			});
+			_client.SetChallengeInfo(instaChallengeLoginInfo);
+			_client.SetApiVersion(InstagramApiSharp.Enums.InstaApiVersionType.Version100);
+			return await _client.VerifyCodeForChallengeRequireAsync(code);
 		}
 		#endregion
 
 
-		public async Task<bool> TryLogin(string username, string password)
+		public async Task<IResult<InstaLoginResult>> TryLogin(string username, string password)
 		{
 			UserSessionData userSessionData = new UserSessionData
 			{
@@ -203,12 +221,7 @@ namespace QuarklessContexts.InstaClient
 			_client.SetUser(userSessionData);
 			_client.SetApiVersion(InstagramApiSharp.Enums.InstaApiVersionType.Version100);
 
-			var res =  await _client.LoginAsync();
-			if (res.Succeeded)
-			{
-				return _client.IsUserAuthenticated;
-			}
-			return false;
+			return await _client.LoginAsync();
 		}
 
 	}

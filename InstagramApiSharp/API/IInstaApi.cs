@@ -358,12 +358,13 @@ namespace InstagramApiSharp.API
         /// </summary>
         /// <param name="Challenge">Challenge info</param>
         void SetChallengeInfo(InstaChallengeLoginInfo Challenge);
+		InstaChallengeLoginInfo GetChallengeLoginInfo { get; }
 
-        /// <summary>
-        ///     Get challenge data for logged in user
-        ///     <para>This will pop-on, if some suspecious login happend</para>
-        /// </summary>
-        Task<IResult<InstaLoggedInChallengeDataInfo>> GetLoggedInChallengeDataInfoAsync();
+		/// <summary>
+		///     Get challenge data for logged in user
+		///     <para>This will pop-on, if some suspecious login happend</para>
+		/// </summary>
+		Task<IResult<InstaLoggedInChallengeDataInfo>> GetLoggedInChallengeDataInfoAsync();
 
         /// <summary>
         ///     Accept challlenge, it is THIS IS ME feature!!!!

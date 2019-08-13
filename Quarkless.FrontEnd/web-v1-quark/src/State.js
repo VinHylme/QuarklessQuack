@@ -133,6 +133,11 @@ export default new Vuex.Store({
     profile_uploaded_files(state, data){
       //todo: make sure that the profile data files are upto date
     },
+    profile_updates(state, data){
+    },
+    failed_profile_update(state, profileData){
+
+    }
   },
   getters: {
     IsLoggedIn: state => !!state.token,
@@ -203,6 +208,17 @@ export default new Vuex.Store({
           reject(err);
         })
       })
+    },
+    UpdateProfile({commit}, profileData){
+      return new Promise((resolve, reject)=>{
+        AccountServices.UpdateProfile(profileData._id, profileData).then(resp=>{
+          commit('profile_updates', {profileData: profileData, response:resp});
+          resolve(resolve);
+        }).catch(err=>{
+          commit('failed_profile_update',profileData);
+          reject(err);
+        })
+      });
     },
     GetProfiles({commit}, userId){
       return new Promise((resolve, reject)=>{
@@ -337,16 +353,21 @@ export default new Vuex.Store({
         resolve()
       })
     },
-    LinkInstagramAccount({
-      commit
-    }) {
-      commit('ADD_ACCOUNT', this.state.accounts[0]);
-
-      //todo
-      //make sure the account is verified
-      //if it is
-      //call api function to populate the accounts
-
+    LinkInstagramAccount({commit}, data) {
+      return new Promise((resolve,reject)=>{
+        AccountServices.LinkInstagramAccount(data).then(resp=>{
+          resolve(resp);
+        }).catch(err=>{
+          reject(err);
+        })
+      })
+    },
+    SubmitCodeForChallange({commit},data){
+      return new Promise((resolve,reject)=>{
+        AccountServices.SubmitCodeForChallange(data.code, data.account).then(resp=>{
+          resolve(resp)
+        }).catch(err=>reject(err));
+      })
     }
   }
 });

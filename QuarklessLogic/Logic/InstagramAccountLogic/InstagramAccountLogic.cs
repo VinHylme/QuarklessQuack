@@ -3,6 +3,7 @@ using Quarkless.Extensions;
 using QuarklessContexts.Classes.Carriers;
 using QuarklessContexts.Models.InstagramAccounts;
 using QuarklessContexts.Models.Proxies;
+using QuarklessLogic.Logic.ProfileLogic;
 using QuarklessLogic.Logic.ProxyLogic;
 using QuarklessRepositories.InstagramAccountRepository;
 using QuarklessRepositories.RedisRepository.InstagramAccountRedis;
@@ -16,72 +17,108 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 	public class InstagramAccountLogic : IInstagramAccountLogic
 	{
 		private readonly IProxyLogic _proxyLogic;
+		private readonly IProfileLogic _profileLogic;
 		private readonly IInstagramAccountRepository _instagramAccountRepository;
 		private readonly IInstagramAccountRedis _instagramAccountRedis;
 		public InstagramAccountLogic(IProxyLogic proxyLogic, IInstagramAccountRepository instagramAccountRepository, 
-			IInstagramAccountRedis instagramAccountRedis)
+			IInstagramAccountRedis instagramAccountRedis, IProfileLogic profileLogic)
 		{
+			_profileLogic = profileLogic;
 			_proxyLogic = proxyLogic;
 			_instagramAccountRepository = instagramAccountRepository;
 			_instagramAccountRedis = instagramAccountRedis;
 		}
-		public async Task<ResultCarrier<bool>> AddInstagramAccount(string accountId, StateData state, AddInstagramAccountRequest addInstagram)
+		public async Task<ResultCarrier<AddInstagramAccountResponse>> AddInstagramAccount(string accountId, StateData state, AddInstagramAccountRequest addInstagram)
 		{
-			ResultCarrier<bool> @Result = new ResultCarrier<bool>();
-				try {
-					var device = state.DeviceInfo.DeviceModel;
-					var instamodel = new InstagramAccountModel
+			ResultCarrier<AddInstagramAccountResponse> @Result = new ResultCarrier<AddInstagramAccountResponse>();
+			try {
+				var device = state.DeviceInfo.DeviceModel;
+				var instamodel = new InstagramAccountModel
+				{
+					Device = device,
+					State = state,
+					AccountId = accountId,
+					FollowersCount = null,
+					FollowingCount = null,
+					Password = addInstagram.Password,
+					Username = addInstagram.Username,
+					TotalPostsCount = null,
+					Type = addInstagram.Type,
+					AgentState = (int) AgentState.NotStarted,
+					LastPurgeCycle = null,			
+					DateAdded = DateTime.UtcNow,
+					SleepTimeRemaining = null,
+					Email = null,
+					FullName = state.UserSession.LoggedInUser.FullName,
+					IsBusiness = null,
+					PhoneNumber = null,
+					ProfilePicture = state.UserSession.LoggedInUser.ProfilePicture ?? state.UserSession.LoggedInUser.ProfilePicUrl,
+					UserBiography = null,
+					UserLimits = null,
+					Location = null
+				};
+				var result = await _instagramAccountRepository.AddInstagramAccount(instamodel);
+				if(result!=null)
+				{
+					var createEmptyProfile = await _profileLogic.AddProfile(new QuarklessContexts.Models.Profiles.ProfileModel
 					{
-						Device = device,
-						State = state,
-						AccountId = accountId,
-						FollowersCount = null,
-						FollowingCount = null,
-						Password = addInstagram.Password,
-						Username = addInstagram.Username,
-						TotalPostsCount = null,
-						Type = addInstagram.Type,
-						AgentState = (int) AgentState.NotStarted,
-						LastPurgeCycle = null,			
-						DateAdded = DateTime.UtcNow,
-						SleepTimeRemaining = null,
-						Email = null,
-						FullName = state.UserSession.LoggedInUser.FullName,
-						IsBusiness = null,
-						PhoneNumber = null,
-						ProfilePicture = state.UserSession.LoggedInUser.ProfilePicture ?? state.UserSession.LoggedInUser.ProfilePicUrl,
-						UserBiography = null,
-						UserLimits = null,
-						Location = null
-					};
-					var result = await _instagramAccountRepository.AddInstagramAccount(instamodel);
-					if(result!=null)
-					{
+						Account_Id = result.AccountId,
+						InstagramAccountId = result._id,
+						Topics = new QuarklessContexts.Models.Profiles.Topics
+						{
+							SubTopics = new List<QuarklessContexts.Models.Profiles.SubTopics>(),
+						},
+						Description = "Add a description about this profile",
+						Name = "My Profile 1",
+						AdditionalConfigurations = new QuarklessContexts.Models.Profiles.AdditionalConfigurations
+						{
+							ImageType = 0,
+							IsTumblry = false,
+							SearchTypes = new List<int> { 0, 1, 2 }
+						},
+						AutoGenerateTopics = false,
+						Language = "English",
+						Theme = new QuarklessContexts.Models.Profiles.Themes
+						{
+							Name = "My Cool Theme",
+							Percentage = 20,
+							Colors = new List<QuarklessContexts.Models.Profiles.Color>(),
+							ImagesLike = new List<QuarklessContexts.Models.Profiles.GroupImagesAlike>()
+						},
+						LocationTargetList = new List<QuarklessContexts.Models.Profiles.Location>(),
+						UserTargetList = new List<string>(),
+						UserLocation = new QuarklessContexts.Models.Profiles.Location()
+					});
+					if (createEmptyProfile != null) { 
 						var assign = await _proxyLogic.AssignProxy(new AssignedTo { Account_Id = result.AccountId, InstaId = result._id.ToString()});
 						if (assign)
 						{
 							Result.IsSuccesful = true;
-							Result.Results = true;
+							Result.Results = new AddInstagramAccountResponse{
+								AccountId = result.AccountId,
+								InstagramAccountId = result._id,
+								ProfileId = createEmptyProfile._id
+							};
 							return Result;
-
 						}
 						Result.Info = new ErrorResponse
 						{
 							Message =  $"Failed to assign proxy to user {result.AccountId}, instagram account {result.Username}",
 						};
 					}
-					Result.Info = new ErrorResponse{Message = $"Failed to add instagram user of {result.AccountId}, instagram account {result.Username}" };
-					return Result;
 				}
-				catch(Exception ee)
-				{
-					Result.Info = new ErrorResponse
-					{ 
-						Message = $"Exepction trying to add user: {addInstagram.Username}, error: {ee.Message}",
-						Exception = ee
-					};
-					return Result;
-				}	
+				Result.Info = new ErrorResponse{Message = $"Failed to add instagram user of {result.AccountId}, instagram account {result.Username}" };
+				return Result;
+			}
+			catch(Exception ee)
+			{
+				Result.Info = new ErrorResponse
+				{ 
+					Message = $"Exepction trying to add user: {addInstagram.Username}, error: {ee.Message}",
+					Exception = ee
+				};
+				return Result;
+			}	
 		}
 		public async Task<StateData> GetInstagramAccountStateData(string accountId, string InstagramAccountId)
 		{

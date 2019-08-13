@@ -2,18 +2,18 @@
   <div class="container is-fluid" style="padding-top:0.7em; padding-right:0em;">
     <div class="columns is-variable is-4-mobile is-0-tablet is-8-desktop is-5-widescreen is-5-fullhd">
       <div class="column is-12 profile_container">
-        <b-steps type="is-success" size="is-medium" v-model="activeStep" :animated="true" :has-navigation="true">
+        <b-steps type="is-success" size="is-medium" v-model="activeStep" :animated="true" :has-navigation="false">
           <b-step-item label="Profile" :clickable="true" icon="account-plus">
             <section class="box container is-profile">
                <b-field grouped>
                   <b-field class="name" label="Profile Name" :type="!canEdit ?'is-success' : 'is-primary'" >
-                    <b-input :value="profile.name" maxlength="30" size="is-medium" :disabled="!canEdit"></b-input>
+                    <b-input v-model="profile.name" maxlength="30" size="is-medium" :disabled="!canEdit"></b-input>
                   </b-field>
                   <b-field class="descr" label="Profile Description" :type="!canEdit ?'is-success' : 'is-primary'" >
-                    <b-input :value="profile.description" maxlength="100" size="is-medium" :disabled="!canEdit"></b-input>
+                    <b-input v-model="profile.description" maxlength="100" size="is-medium" :disabled="!canEdit"></b-input>
                   </b-field>
                   <b-field class="lang" label="Profile Language" :type="!canEdit ?'is-success' : 'is-primary'" >
-                     <b-select :disabled="!canEdit" :value="profile.language" size="is-medium">
+                     <b-select :disabled="!canEdit" v-model="profile.language" size="is-medium">
                       <option v-for="(lang,index) in config.languages" :key="index" :value="lang">{{lang}}</option>
                     </b-select>
                   </b-field>
@@ -25,7 +25,7 @@
                 <b-field position="is-centered" class="is-dark" label="Topic" :type="!canEdit ?'is-success' : 'is-primary'">
                   <b-autocomplete
                   size="is-medium"
-                  style="width:550px; margin: 0 auto"
+                  style="width:40vw; margin: 0 auto"
                   icon="magnify"
                   v-model="profile.topics.topicFriendlyName"
                   placeholder="What is your business about? e.g. Ecommerce"
@@ -70,7 +70,7 @@
                       <div class="tags has-addons">
                         <a @click="showSubTopicReleated(subTopic,index)" style="text-decoration: none;" class="tag is-medium is-danger">
                           <b-tooltip label="Expand and show all" type="is-dark">
-                          <b-icon pack="fas" icon="tag"></b-icon>
+                          <b-icon pack="fas" icon="eye"></b-icon>
                           </b-tooltip>
                         </a>
                         <span class="tag is-medium is-dark">{{subTopic.topicName}}</span>
@@ -177,7 +177,7 @@
             <div class="box" style="background:#1f1f1f; color:white;">
               <b-field grouped style="margin:0 auto; width:100%;">
                   <b-field class="is-dark" style="margin:0 auto;" label="Theme Name" :type="!canEdit ?'is-success' : 'is-primary'" >
-                    <b-input :value="profile.theme.name" maxlength="30" size="is-medium" :disabled="!canEdit"></b-input>
+                    <b-input v-model="profile.theme.name" maxlength="30" size="is-medium" :disabled="!canEdit"></b-input>
                   </b-field>            
               </b-field>
             </div>
@@ -259,22 +259,22 @@
                         </b-icon>
                     </b-loading>
                 </b-notification>
-                <b-field class="is-dark" label="Search Results"></b-field>
+                <b-field v-if="finishedSearching" class="is-dark" label="Preview on what kind of posts you will see..."></b-field>
                 <div v-if="finishedSearching" class="searchResults" id="searchSection">
                   <div class="similarImages_Container">
-                    <div v-for="(image,index) in searchMediaItems" :key="image+'_'+index" >
+                    <div v-for="(image,index) in searchMediaItems" :key="image+'_'+index" class="image_container zoomable">
                         <!-- <img v-if="evaluateImage(image.url)" class="image zoomable" :src="image.url" alt=""> -->
                         <ImageItem
-                        class="image zoomable"
                         v-if="image.url"
                         :source="image.url"
                         />
+                        <div class="overlay"></div>
+                        <a class="button is-success is-rounded is-overlayed" style="color:whitesmoke" @click="addImageToList(index)">Add</a>
                     </div>
                   </div>     
               </div>
                <b class="hr anim"></b>
                   <br>
-                   <!-- <d-page @pageUpdate="updatePage" :currentPage="this.currentPageAt" :perPage="25" :total="200" :isRounded="false" :rangeBefore="5" :rangeAfter="5"/> -->
                     <b-pagination
                       @change="updatePage"
                       :total="total"
@@ -293,33 +293,72 @@
                     </b-pagination>                  
                    <br>
               <b class="hr anim"></b>
-                <b-field class="is-dark" label="Images you have so far"></b-field>
-                <div class="similarImages_Container">
-                   <div  v-for="(image,index) in profile.theme.imagesLike" :key="image+'_'+index" >
-                  <!-- <img class="image zoomable" v-for="(image,index) in profile.theme.imagesLike" :key=index :src="image.url" alt=""> -->
-                   <ImageItem 
-                        class="image zoomable"
-                        :id="image+'_'+index"
-                        v-if="image.url"
-                        :source="image.url"
-                        />
-                   </div>
-                </div>
+              <b-field class="is-dark" label="Images you have so far"></b-field>
+              <draggable style="z-index:2 !important; width:100%;" v-model="imagesAlikeList" 
+                @start="isDraggingChosenImages=true" @end="isDraggingChosenImages=false" 
+                draggable=".dropitem" group="firstgroup" class="similarImages_Container">
+                  <div class="dropitem" style="z-index:2 !important;" v-for="(image,index) in imagesAlikeList" :key="'dropitem-imageOf-'+index">
+                    <b-tooltip label="You can delete me by dragging me" type="is-danger">
+                      <img class="image zoomable" style="z-index:2;" :id="'dropitem-imageOf-'+index" :src="image.url" alt="my images">
+                    </b-tooltip>
+                  </div> 
+              </draggable>
+              
+              <div v-if="isDraggingChosenImages" class="dropOptionsBackground"></div>
+              <div v-if="isDraggingChosenImages"  class="dropOptions_Container">
+                <draggable style="z-index:75 !important" v-model="trashZone" class="dropzone trashzone" :group="{name: 'trash',draggable: '.dropitem',  put: () => true, pull: false}">
+                  <div slot="footer" class="footer">
+                    <b-icon pack="fas" size="is-large" type="is-light" icon="trash"></b-icon>
+                  </div>
+                </draggable>
+              </div>
             </div>
            </div>
             </b-collapse>
           </b-step-item>
           <b-step-item label="Additional" :clickable="true" icon="atom">
-              {{profile.additionalConfigurations}}
+            <b-field label="Additional Settings" class="is-dark"></b-field>
+            <div class="box" style="background:#1f1f1f; width:60%; margin:0 auto;">
+               <b-field label="Specific Sites" size="is-small" class="is-dark is-small">
+                    <b-taginput
+                        :before-adding="evaluateSiteTags"
+                        :on-paste-separators="[',','@','-',' ']"
+                        :confirm-key-codes="[32, 13]"	
+                        type="is-info"
+                        icon="feather"
+                        v-model="profile.additionalConfigurations.sites"
+                        placeholder="Add another site"
+                        size="is-medium">
+                    </b-taginput>
+                </b-field>
+                <br>
+                <b-field label="What type of images would you like? e.g. face (for images which only contain a face inside)" class="is-dark is-small">
+                  <b-select placeholder="Image Type" icon="camera" v-model="profile.additionalConfigurations.imageType" expanded>
+                      <option v-for="(type,index) in config.imageTypes" :key="index" :value="index">{{type}}</option>
+                  </b-select>
+                </b-field>
+                <br>
+                 <b-dropdown v-if="$store.state.role==='Admin'"
+                    v-model="profile.additionalConfigurations.searchTypes"
+                    multiple
+                    aria-role="list">
+                    <button class="button is-darker" type="button" slot="trigger">
+                        <span>Selected Search Types ({{ profile.additionalConfigurations.searchTypes.length }})</span>
+                        <b-icon icon="menu-down"></b-icon>
+                    </button>
+                    <b-dropdown-item v-for="(sType, index) in config.searchTypes" :key="index" :value="index" aria-role="listitem">
+                        <span>{{sType}}</span>
+                    </b-dropdown-item>
+                </b-dropdown>
+            </div>
           </b-step-item>
       </b-steps>
-        <p class="control" style="float:right;">
-            <a class="button is-success">
-              Save changes
-            </a>
-          </p>
+        
       </div>
     </div>   
+    <p class="control" style="float:right;">
+            <b-button type="is-success" @click="saveProfile" :disabled="savingProfile" :loading="savingProfile">Save Changes</b-button>
+        </p>
   </div>
 </template>
 <script>
@@ -329,6 +368,8 @@ import Color from '../Objects/Colors';
 import DropZone from '../Objects/DropZone';
 import Pagination from '../Objects/Pagination';
 import ImageItem from '../Objects/ImageItem';
+import draggable from 'vuedraggable'
+import Vue from 'vue';
 
 export default {
   components:{
@@ -336,10 +377,16 @@ export default {
     ColorCard,
     'c-color':Color,
     'd-drop':DropZone,
-    'd-page':Pagination
+    'd-page':Pagination,
+    //Intersect 
+    draggable
   },
   data(){
     return{
+      savingProfile:false,
+      isDraggingChosenImages:false,
+      trashZone: [],
+      currentGroup: null,
       perPage:30,
       total:200,
       isRounded:false,
@@ -380,6 +427,14 @@ export default {
     this.searchReleatedTopics(this.profile.topics.topicFriendlyName);
   },
   computed:{
+    imagesAlikeList:{
+      get(){
+        return this.profile.theme.imagesLike
+      },
+      set(value){
+        this.profile.theme.imagesLike = value;
+      }
+    },
     filteredDataObj() {
       var total = []
       if(this.config.topics!==undefined){
@@ -412,6 +467,28 @@ export default {
     }
   },
   methods:{
+    saveProfile(){
+      this.savingProfile = true;
+      if(this.profile!==undefined || this.profile!==null || this.profile){
+         this.$store.dispatch('UpdateProfile', this.profile).then(resp=>{
+           this.savingProfile = false;
+           Vue.prototype.$toast.open({
+                    message: 'Changes Saved!',
+                    type: 'is-success'
+            })
+         }).catch(err=>{
+           this.savingProfile = false;
+           Vue.prototype.$toast.open({
+                    message: 'Oops, looks like something went wrong on our end',
+                    type: 'is-danger'
+            })
+         })
+      }
+    },
+    addImageToList(index){
+      let imageUrl = this.searchMediaItems[index].url;
+      this.profile.theme.imagesLike.push({topicGroup:this.profile.topics.topicFriendlyName, url:imageUrl});
+    },
     showSubTopicReleated(item, index){
       this.isExpandedSubTopics = true;
       if(this.profile.topics.subTopics[index].relatedTopics.length<=0){
@@ -497,7 +574,7 @@ export default {
     },
     searchImage(data){
       this.isLoading = true;
-      this.$store.dispatch('SimilarSearch',{urls:this.urls, limit:this.perPage, offset:this.currentPage}).then(
+      this.$store.dispatch('SimilarSearch',{urls:this.urls, limit:this.perPage/2, offset:this.currentPage}).then(
         res=> {
           this.searchMediaItems = []
           res.data.medias.forEach((item=> this.searchMediaItems.push({url:item.mediaUrl[0]})));
@@ -523,6 +600,9 @@ export default {
     },
     evaluate(val){
       return true;
+    },
+    evaluateSiteTags(tag){
+       return true;
     },
     openColorDialog(id, data){
       this.currentlySelectedColor={color:{red:0,green:0,blue:0, name:undefined}, id:0}
@@ -556,6 +636,53 @@ export default {
 </script>
 
 <style lang="scss">
+.dropOptions_Container{
+  position: fixed; /* Stay in place */
+  z-index: 4; /* Sit on top */
+  left: 0;
+  top: 0;
+  right:0;
+}
+.dropOptionsBackground{
+  background:rgba(60,60,60,0.8);
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+}
+.dropzone {
+  background:rgba(30,30,30,0.8);
+  min-height: 140px;
+  width:250px;
+  margin:0 auto;
+  margin-top:2em;
+  border-radius:1.5em;
+}
+.trashzone .dropitem {
+  display: none;   
+  height:140px;
+}
+.trashzone .footer {
+  border-radius:1.5em;
+  margin:0 auto; 
+  margin-top:2em;
+  height:140px;
+  width:250px;
+  background:transparent;
+  display: block;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+.trashzone .dropitem + .footer {
+  background: #fc2b39;
+  color: transparent !important;
+}
 .loading-overlay .loading-background{
   background:transparent;
 }
@@ -590,7 +717,56 @@ export default {
   background:transparent;
   margin-left:0.5em;
 }
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0);
+  transition: background 0.5s ease;
+}
+.image_container{
+  position: relative;
+  margin-top: 50px;
+  width: 250px;
+  height: 250px;
+  transition: all .2s ease-in-out;
+  &:hover{
+    display: block;
+    background: rgba(0, 0, 0, .3);
+      &.zoomable{
+        transform: scale(1.1);
+        border-radius:0.25em;
+    }
+    .title {
+      top: 90px;
+    }
+    .is-overlayed{
+      opacity: 1;
+    }
+  }
+}
+.is-overlayed{
+  position: absolute;
+  width:50%;
+  margin:0 auto;
+  left:0;
+  right:0;
+  top: 180px;
+  text-align: center;
+  opacity: 0;
+  transition: opacity .35s ease;
+}
 .image{
+  width: 100%;
+  border-radius: 4px;
+  padding:1em;
+  border-radius: 0.5em;
+  width:250px;
+  height:250px;
+  box-shadow: 5px 4px 3px 4px rgba(0,0,0,0.05);
+  object-fit: cover;
   transition: all .2s ease-in-out;
   &:hover{
     opacity: 0.4;
@@ -648,9 +824,19 @@ export default {
   }
   &.is-small{
     label{
+      text-align: left;
       color:#d9d9d9 ;
       font-size:16px;
     }
+  }
+}
+.is-darker{
+  background:#121212;
+  border:none;
+  color:#d9d9d9;
+  &:hover{
+    background:#212121;
+    color:white;
   }
 }
 .is-button{

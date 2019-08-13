@@ -944,7 +944,7 @@ namespace InstagramApiSharp.API
         /// </summary>
         /// <param name="Challenge"></param>
         public void SetChallengeInfo(InstaChallengeLoginInfo Challenge) => _challengeinfo = Challenge;
-
+		public InstaChallengeLoginInfo GetChallengeLoginInfo => _challengeinfo;
         /// <summary>
         ///     Accept consent required (only for GDPR countries)
         /// </summary>

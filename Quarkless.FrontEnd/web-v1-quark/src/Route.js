@@ -1,17 +1,11 @@
 import Vue from "vue";
 import Router from "vue-router";
-import Home from './components/Pages/Home.vue';
-import Manage from "./components/Pages/Manage.vue";
-import Profiles from "./components/Pages/Profiles.vue";
-import Profile from "./components/Pages/Profile.vue";
-import Stats from "./components/Pages/Stats.vue";
-import Settings from './components/Pages/Settings.vue';
-import CreateAccount from "./components/Pages/CreateAccount.vue";
-import CreateProfile from "./components/Pages/CreateProfile.vue";
-import ViewAccount from "./components/Pages/ViewAccount.vue";
-import NotFound from "./components/Pages/HandlerPages/NotFound.vue";
 import store from "./State";
 Vue.use(Router);
+
+function LazyLoad(view){
+    return() => import('@/components/Pages/'+view+'.vue')
+}
 
 const router = new Router({
     mode:"history",
@@ -20,7 +14,7 @@ const router = new Router({
         {
         name:"home",
         path:"/",
-        component:Home,
+        component:LazyLoad('Home'),
         meta:{
             requiresAuth: true
         }
@@ -28,7 +22,7 @@ const router = new Router({
        {
            name:"view",
            path:"/view/:id",
-           component:ViewAccount,
+           component:LazyLoad('ViewAccount'),
            meta:{
                requiresAuth: true
            }
@@ -36,7 +30,7 @@ const router = new Router({
        {
             name:"manage",
             path:"/manage",
-            component:Manage,
+            component:LazyLoad('Manage'),
             meta:{
                 requiresAuth:true
             }
@@ -44,7 +38,7 @@ const router = new Router({
        {
            name:"stats",
            path:"/stats",
-           component:Stats,
+           component:LazyLoad('Stats'),
            meta:{
                requiresAuth: true
            }
@@ -52,7 +46,7 @@ const router = new Router({
        {
        name:"profiles",
        path:"/profiles",
-       component:Profiles,
+       component:LazyLoad('Profiles'),
        meta:{
            requiresAuth: true
        }
@@ -60,7 +54,7 @@ const router = new Router({
        {
            name:"profile",
            path:"/profile/:id",
-           component:Profile,
+           component:LazyLoad('Profile'),
            meta:{
                requiresAuth: true
            }
@@ -68,7 +62,7 @@ const router = new Router({
        {
            name:"settings",
            path:"settings",
-           component:Settings,
+           component:LazyLoad('Settings'),
            meta:{
                requiresAuth: true
            }
@@ -85,7 +79,7 @@ const router = new Router({
        {
            name:"linkAccount",
            path:"/linkAccount",
-           component:CreateAccount,
+           component:LazyLoad('CreateAccount'),
            meta:{
                requiresAuth: true
            }
@@ -93,7 +87,7 @@ const router = new Router({
        {
            name:"createProfile",
            path:"/createProfile",
-           component:CreateProfile,
+           component:LazyLoad('CreateProfile'),
            meta:{
                requiresAuth: true
            }
@@ -101,10 +95,11 @@ const router = new Router({
        {
            name:"Error404",
            path:"*",
-           component:NotFound
+           component:LazyLoad('NotFound')
        }
 ]
 });
+
 
 router.beforeEach((to, from, next) => {
     if(to.matched.some(record => record.meta.requiresAuth)) {

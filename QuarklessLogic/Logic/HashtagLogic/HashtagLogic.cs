@@ -84,6 +84,19 @@ namespace QuarklessLogic.Logic.HashtagLogic
 			}
 		}
 
+		public async Task<IResult<InstaSectionMedia>> SearchReleatedHashtagAsync(string query, int limit = 1)
+		{
+			try
+			{
+				return await Client.Hashtag.GetHashtagsSectionsAsync(query, PaginationParameters.MaxPagesToLoad(limit));
+			}
+			catch (Exception ee)
+			{
+				_reportHandler.MakeReport(ee);
+				return null;
+			}
+		}
+
 		public Task<IResult<bool>> UnFollowHashtagAsync(string tagname)
 		{
 			throw new NotImplementedException();

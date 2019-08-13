@@ -21,7 +21,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 			_reportHandler.SetupReportHandler("Logic/InstaUser");
 		}
 
-		public async Task<bool> TryLogin(string username, string password)
+		public async Task<IResult<InstaLoginResult>> TryLogin(string username, string password)
 		{
 			try
 			{
@@ -31,7 +31,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 			catch (Exception ee)
 			{
 				_reportHandler.MakeReport(ee.Message);
-				return false;
+				return null;
 			}
 		}
 		public async Task<IResult<bool>> AcceptConsent()
@@ -67,6 +67,67 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 			catch (Exception ee)
 			{
 				_reportHandler.MakeReport(ee.Message);
+				return null;
+			}
+		}
+
+		public async Task<IResult<InstaChallengeRequireEmailVerify>> RequestVerifyCodeToEmailForChallengeRequireAsync(string username, string password)
+		{
+			try
+			{
+				return await Client.EmptyClient.ReturnClient.RequestVerifyCodeToEmailForChallengeRequireAsync();
+			}
+			catch(Exception ee)
+			{
+				_reportHandler.MakeReport(ee);
+				return null;
+			}
+		}
+		public async Task<IResult<InstaChallengeRequireSMSVerify>> RequestVerifyCodeToSMSForChallengeRequireAsync(string username, string password)
+		{
+			try
+			{
+				return await Client.EmptyClient.ReturnClient.RequestVerifyCodeToSMSForChallengeRequireAsync();
+			}
+			catch (Exception ee)
+			{
+				_reportHandler.MakeReport(ee);
+				return null;
+			}
+		}
+		public InstaChallengeLoginInfo GetChallangeInfo()
+		{
+			try
+			{
+				return Client.EmptyClient.ReturnClient.GetChallengeLoginInfo;
+			}
+			catch (Exception ee)
+			{
+				_reportHandler.MakeReport(ee);
+				return null;
+			}
+		}
+		public async Task<IResult<InstaChallengeRequireVerifyMethod>> GetChallengeRequireVerifyMethodAsync(string username, string password)
+		{
+			try
+			{
+				return await Client.EmptyClient.GetChallengeRequireVerifyMethodAsync(username,password);
+			}
+			catch(Exception ee)
+			{
+				_reportHandler.MakeReport(ee);
+				return null;
+			}
+		}
+		public async Task<IResult<InstaLoginResult>> SubmitChallangeCode(string username, string password, InstaChallengeLoginInfo instaChallengeLoginInfo, string code)
+		{
+			try
+			{
+				return await Client.EmptyClient.SubmitChallangeCode(username, password, instaChallengeLoginInfo, code);
+			}
+			catch (Exception ee)
+			{
+				_reportHandler.MakeReport(ee);
 				return null;
 			}
 		}

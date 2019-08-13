@@ -111,6 +111,7 @@ namespace QuarklessLogic.Logic.QueryLogic
 				ImageTypes = Enum.GetValues(typeof(ImageType)).Cast<ImageType>().Select(v=>v.GetDescription()),
 				Orientations = Enum.GetValues(typeof(Orientation)).Cast<Orientation>().Select(v=>v.GetDescription()),
 				SizeTypes = Enum.GetValues(typeof(SizeType)).Cast<SizeType>().Select(v=>v.GetDescription()),
+				SearchTypes = Enum.GetValues(typeof(SearchType)).Cast<SearchType>().Select(v=>v.GetDescription()),
 				Languages = CultureInfo.GetCultures(CultureTypes.AllCultures).Where(_=>!_.Name.Contains("-")).Distinct().ToDictionary(_ => _.Name, _ => _.EnglishName),
 				CanUserEditProfile = true
 			};
@@ -121,7 +122,24 @@ namespace QuarklessLogic.Logic.QueryLogic
 			if (res == null)
 			{
 				var hashtagsRes = await _hashtagLogic.SearchHashtagAsync(topicName);
-				if(!hashtagsRes.Succeeded) return null;
+				if (!hashtagsRes.Succeeded)
+				{
+					var releated = await _hashtagLogic.SearchReleatedHashtagAsync(topicName, 1);
+					if (releated.Succeeded)
+					{
+						SubTopics subTopics = new SubTopics
+						{
+							TopicName = topicName,
+							RelatedTopics = releated.Value.RelatedHashtags.Select(s => s.Name).ToList()
+						};
+						await _searchingCache.StoreRelatedTopics(subTopics);
+						return subTopics;
+					}
+					else
+					{
+						return null;
+					}
+				}
 				else
 				{
 					SubTopics subTopics = new SubTopics

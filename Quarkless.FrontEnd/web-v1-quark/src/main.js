@@ -9,6 +9,9 @@ import Axios from 'axios'
 import VueScheduler from '../references/v-calendar-scheduler/index';
 import LazyLoadDirective from "./directives/LazyLoadDirective";
 
+// optionally import default styles
+
+
 Vue.use(Buefy);
 Vue.use(VueResource);
 Vue.directive("lazyload", LazyLoadDirective);

@@ -10,6 +10,9 @@ export default {
   GetProfilesForUser(userId){
     return Api(true).get('profiles/' + userId)
   },
+  UpdateProfile(profileId, profileData){
+    return Api(true).put('profiles/partial/'+profileId,profileData);
+  },
   GetInstagramAccount(params){
     return Api(true).get('insta/state/'+ params.accountId + '/' + params.instagramAccountId)
   },
@@ -18,6 +21,9 @@ export default {
   },
   LinkInstagramAccount(params){
     return Api(true).post('insta/add',params)
+  },
+  SubmitCodeForChallange(code,data){
+    return Api(true).put('insta/challange/submitCode/'+code,data);
   },
   RefreshState(id){
     return Api(true).get('insta/refreshLogin/'+id)

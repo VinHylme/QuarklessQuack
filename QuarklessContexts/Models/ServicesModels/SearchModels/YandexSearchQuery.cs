@@ -7,6 +7,7 @@ namespace QuarklessContexts.Models.ServicesModels.SearchModels
 {
 	public enum Orientation
 	{
+		[Description("any")]
 		Any,
 		[Description("horizontal")]
 		Landscape,
@@ -17,6 +18,7 @@ namespace QuarklessContexts.Models.ServicesModels.SearchModels
 	}
 	public enum ImageType
 	{
+		[Description("any")]
 		Any,
 		[Description("photo")]
 		Photo,
@@ -64,6 +66,7 @@ namespace QuarklessContexts.Models.ServicesModels.SearchModels
 	}
 	public enum FormatType
 	{
+		[Description("any")]
 		Any,
 		[Description("jpg")]
 		JPEG,
@@ -74,6 +77,7 @@ namespace QuarklessContexts.Models.ServicesModels.SearchModels
 	}
 	public enum SizeType
 	{
+		[Description("none")]
 		None,
 		[Description("large")]
 		Large,

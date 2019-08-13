@@ -2,6 +2,7 @@
 using QuarklessContexts.Enums;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace QuarklessContexts.Models.Profiles
 {
@@ -24,6 +25,10 @@ namespace QuarklessContexts.Models.Profiles
 		public List<Color> Colors { get; set; }
 		public List<GroupImagesAlike> ImagesLike { get; set; }
 		public double Percentage { get; set; }
+		public Themes()
+		{
+			
+		}
 	}
 	public class Coordinates
 	{
@@ -39,8 +44,11 @@ namespace QuarklessContexts.Models.Profiles
 	}
 	public enum SearchType
 	{
+		[Description("Google")]
 		Google = 0,
+		[Description("Yandex")]
 		Yandex = 1,
+		[Description("Instagram")]
 		Instagram = 2
 	}
 	public class AdditionalConfigurations
@@ -49,15 +57,11 @@ namespace QuarklessContexts.Models.Profiles
 		public List<string> Sites { get; set; }
 		public int ImageType { get; set; }
 		public string PostSize { get; set; }
-		public List<int> SearchTypes {get; set; } = new List<int>();
+		public List<int> SearchTypes {get; set; }
 		public AdditionalConfigurations()
 		{
-			Sites = new List<string>
-			{
-				"weheartit.com",
-				"tumblr.com",
-				"pinterest.co.uk"
-			};
+			Sites = new List<string>();
+			SearchTypes = new List<int>();
 		}
 	}
 	public class SubTopics
@@ -68,8 +72,8 @@ namespace QuarklessContexts.Models.Profiles
 	public class Topics
 	{
 		[BsonRepresentation(MongoDB.Bson.BsonType.Int32)]
-		public TopicTypes TopicType { get; set; }
-		public string TopicFriendlyName { get; set; } 
+		public TopicTypes TopicType { get; set; } = TopicTypes.NotSelected;
+		public string TopicFriendlyName { get; set; } = string.Empty;
 		public List<SubTopics> SubTopics { get; set; }
 	}
 	public class ProfileModel

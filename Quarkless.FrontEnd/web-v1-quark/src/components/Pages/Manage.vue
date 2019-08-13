@@ -15,11 +15,77 @@
                         </div>
                         <div class="card is-hover">
                                 <div class="card-content">
-                                        <a href="#"><h3 class="title is-1">+</h3></a>
+                                        <a @click="isAccountLinkModalOpened = true"><h3 class="title is-1">+</h3></a>
                                 </div>
                         </div>
                 </div>
         </div>
+        <b-modal :active.sync="isAccountLinkModalOpened" has-modal-card>
+                <!-- <form action="" style="width:50vw;" > -->
+                <div class="modal-card" style="width: 100%; height:35vw;">
+                    <header class="modal-card-head">
+                        <p class="modal-card-title">Link your Instagram Account</p>
+                    </header>
+                    <section class="modal-card-body" v-if="!needToVerify">
+                        <b-field label="Username">
+                            <b-input
+                                type="text"
+                                v-model="linkData.username"
+                                placeholder="Your Username"
+                                required>
+                            </b-input>
+                        </b-field>
+
+                        <b-field label="Password">
+                            <b-input
+                                type="password"
+                                v-model="linkData.password"
+                                password-reveal
+                                placeholder="Your password"
+                                required>
+                            </b-input>
+                        </b-field>
+
+                        <!-- <b-checkbox>Remember me</b-checkbox> -->
+                        <br>
+                        <br>
+                        <b-message title="Account Linking" type="is-danger" has-icon aria-close-label="Close message">
+                        Please enter your Instagram Credentials, your password is encrypted and not seen by anyone
+                        </b-message>
+                    </section>
+                    <section v-else class="modal-card-body" style="width:35vw;">
+                        <b-field label="Verification Code">
+                            <b-input
+                                type="text"
+                                v-model="code"
+                                placeholder="Your Code"
+                                required>
+                            </b-input>
+                        </b-field>
+                        <br>
+                        <b-message title="Account Linking - Verify" type="is-info" has-icon aria-close-label="Close message">
+                         Please enter the verification code sent to you, sometimes Instagram detects your account as a spammer or for other security reasons, verifying your account will allow instagram to register your current location as safe
+                        </b-message>
+                    </section>
+                    <footer class="modal-card-foot" v-if="!needToVerify">
+                        <button @click="LinkAccount" :class="isLinkingAccount?'button is-light is-rounded is-large is-loading' : 'button is-light is-rounded'" style="margin:0 auto;">
+                                <b-icon icon="link">
+
+                                </b-icon>
+                                <span>Link Account</span>
+                        </button>                    
+                    </footer>
+                     <footer class="modal-card-foot" v-else>
+                        <button @click="SendVerifyCode" :class="isSendingVerifyCode?'button is-light is-rounded is-large is-loading' : 'button is-light is-rounded'" style="margin:0 auto;">
+                                <b-icon icon="badge">
+
+                                </b-icon>
+                                <span>Send Verification Code</span>
+                        </button>                    
+                    </footer>
+                </div>
+        <!-- </form> -->
+        </b-modal>
 </div>
 </template>
 
@@ -38,13 +104,23 @@ export default {
                 isSuccess:false,
                 refreshShowNotification:false,
                 alert_text:'',
-                isNavOn:false
+                isNavOn:false,
+                isAccountLinkModalOpened:false,
+                isLinkingAccount:false,
+                isSendingVerifyCode:false,
+                linkData:{
+                        username:'',
+                        password:''
+                },
+                needToVerify:false,
+                code:'',
+                verifyPath:{}
         }
         },
         created(){
                
         },
-        beforeMount(){
+        mounted(){
                 this.isNavOn = this.$store.getters.MenuState === 'true';
                 this.InstagramAccounts = this.$store.getters.GetInstagramAccounts;
                 if(this.$store.getters.UserProfiles!==undefined)
@@ -54,6 +130,65 @@ export default {
 
         },
         methods:{
+                SendVerifyCode(){
+                        if(this.code){
+                                this.isSendingVerifyCode = true;
+                                let data = JSON.stringify({username:this.linkData.username, password:this.linkData.password, challangeLoginInfo:this.verifyPath});
+                                this.$store.dispatch('SubmitCodeForChallange', {code:this.code, account:data}).then(resp=>{
+                                        this.isSendingVerifyCode = false;
+                                        if(resp.data===true || resp.data === 'true'){
+                                                this.LinkAccount();
+                                        }
+                                }).catch(err=>{
+                                        this.isSendingVerifyCode = false;
+                                })
+                        }
+                },
+                LinkAccount(){
+                        if(this.linkData.username && this.linkData.password){
+                                this.isLinkingAccount = true;
+                                let data = JSON.stringify({username:this.linkData.username, password:this.linkData.password, type:0});
+                                this.$store.dispatch('LinkInstagramAccount',data).then(resp=>{
+                                        if(resp.data !== undefined || resp.data !==null || resp.data.instagramAccountId!==undefined){
+                                                if(resp.data.verify!==undefined){
+                                                        Vue.prototype.$toast.open({
+                                                                message: "We need to verify you are the right account holder, please verify with the code sent to you at " + resp.data.details,
+                                                                type: 'is-info',
+                                                                position:'is-top',
+                                                                duration:25000
+                                                        });
+                                                        this.needToVerify = true;
+                                                        this.verifyPath  = resp.data.challangePath;
+
+                                                }else{
+                                                        Vue.prototype.$toast.open({
+                                                                message: "Successfully added, will now redirect you to your profile page",
+                                                                type: 'is-success',
+                                                                position:'is-bottom',
+                                                                duration:8000
+                                                        })
+                                                        this.$store.dispatch('AccountDetails', {"userId":this.$store.state.user}).then(resp=>{
+                                                                console.log(resp);
+                                                        }).catch(err=>{console.log(err.response)})
+                                                        this.$store.dispatch('GetProfiles', this.$store.state.user).then(respo=>{
+                                                                this.$router.push('/profile/'+ resp.data.profileId)
+                                                        }).catch(err=>console.log(err.response));
+                                                }
+                                        }
+                                        this.isLinkingAccount = false;
+                                }).catch(err=>{                   
+                                        console.log(err.response);                    
+                                                Vue.prototype.$toast.open({
+                                                        message: "Oops, looks like the account details don't match the instagram servers or the account has already been registered here, please try again",
+                                                        type: 'is-danger',
+                                                        position:'is-bottom',
+                                                        duration:8000
+                                                })
+                                        
+                                        this.isLinkingAccount = false;
+                                })
+                        }
+                },
                 GetProfile(id){
                         if(!this.IsProfileButtonDisabled){
                                 var profile = this.$store.getters.UserProfiles[this.$store.getters.UserProfiles.findIndex((_)=>_.instagramAccountId == id)];
@@ -89,6 +224,31 @@ export default {
 </script>
 
 <style lang="scss">
+.modal-card-body{
+        background:#323232;
+        color:#d9d9d9;
+        label{
+                color:#d9d9d9;
+                text-align: left;
+        }
+        .control-label{
+                &:hover{
+                        color:wheat;
+                }
+        }
+}
+.modal-card-foot{
+        background:#121212;
+        border:none;
+}
+.modal-card-head{
+        background:#121212;
+        border:none;
+        .modal-card-title{
+                color:#d9d9d9;
+        }
+        
+}
 .accounts_container{
         width: 100%;
         padding-top:0.5em;

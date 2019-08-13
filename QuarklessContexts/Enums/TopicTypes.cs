@@ -3,6 +3,8 @@ namespace QuarklessContexts.Enums
 {
 	public enum TopicTypes
 	{
+		[Description("not selected")]
+		NotSelected,
 		[Description("art")]
 		Art ,
 		[Description("decor")]

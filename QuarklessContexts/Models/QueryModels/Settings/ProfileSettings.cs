@@ -14,6 +14,7 @@ namespace QuarklessContexts.Models.QueryModels.Settings
 		public IEnumerable<string> ImageTypes;
 		public IEnumerable<string> Orientations;
 		public IEnumerable<string> SizeTypes;
+		public IEnumerable<string> SearchTypes;
 		public ProfileConfiguration()
 		{
 		}
