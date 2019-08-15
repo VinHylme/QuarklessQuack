@@ -4,8 +4,9 @@
       class="image__spinner"
     />
     <img
-      class="image__item"
+      :class="['image__item']"
       :data-url="source"
+      :style="size"
       alt="random image"
     >
   </figure>
@@ -23,8 +24,25 @@ export default {
     source: {
       type: String,
       required: true
+    },
+    width:String,
+    height:String,
+  },
+  data(){
+    return {
+      size:{
+        width:this.width,
+        height:this.height,
+        objectfit: 'cover',
+      }
     }
-  }
+  },
+  created(){
+
+  },
+  mounted(){
+
+  },
 };
 </script>
 
@@ -53,17 +71,13 @@ export default {
   }
 
   &__item {
-    width: 100%;
     border-radius: 4px;
     transition: all 0.4s ease-in-out;
     opacity: 0;
     visibility: hidden;
-    padding:1em;
+    padding:0.4em;
     border-radius: 0.5em;
-    width:250px;
-    height:250px;
     box-shadow: 5px 4px 3px 4px rgba(0,0,0,0.05);
-    object-fit: cover;
     transition: all .2s ease-in-out;
   }
 }

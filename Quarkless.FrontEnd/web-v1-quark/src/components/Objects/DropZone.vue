@@ -2,9 +2,7 @@
 <div class="container_dropzone">
  <section>
         <b-field>
-            <b-upload @input="onChange" v-model="dropFiles"
-                multiple
-                drag-drop>
+            <b-upload @input="onChange" v-model="dropFiles" :multiple="isMulti" :accept="acceptFile" drag-drop>
                 <section class="section">
                     <div class="content has-text-centered">
                         <p>
@@ -37,6 +35,10 @@
 <script>
 
 export default {
+    props:{
+        isMulti:Boolean,
+        acceptFile:String
+    },
    data() {
     return {
         dropFiles: []

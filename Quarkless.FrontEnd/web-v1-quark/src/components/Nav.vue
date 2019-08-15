@@ -95,9 +95,10 @@ export default {
 }
 
 .menu{
-   font-size:1.55em;
-   height:100%;
-   background-color:#141414;
+  margin-left: 2em;
+  font-size:1.55em;
+  height:100%;
+  background-color:#141414;
 }
 
 .navbar-item{

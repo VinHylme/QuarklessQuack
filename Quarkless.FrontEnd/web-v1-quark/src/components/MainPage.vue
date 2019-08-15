@@ -1,25 +1,23 @@
 <template>
 <div class="contain">
-  <a class="logo">
+  <a class="logoImage">
     <img src="../assets/logo_grow.svg" width="275" height="275">
   </a>
+  
   <div class="modal-card">
         <section class="modal-card-body">
-            <h3 class="title has-text-centered">HashtagGrow - VIP Login</h3>
-            <div class="box">
-                    <b-field label=""  type="is-light">
-                        <b-input v-model="username" type="text" placeholder="username">
-                        </b-input>
-                    </b-field>
-
-                    <b-field label="">
-                        <b-input v-model="password" type="password"  @keyup.enter.native="doLogin" placeholder="Password" minlength="6" password-reveal>
-                        </b-input>
-                    </b-field>
-                    <button type="submit" class="button is-large is-fullwidth"  @click="doLogin" :disabled="isActive">
-                        Login
-                    </button>
-                </div>
+            <h3 class="title has-text-centered">HashtagGrow</h3>
+            <div class="box long">
+              <b-field>
+                  <b-input v-model="username" type="text" placeholder="username"></b-input>
+              </b-field>
+              <b-field>
+                  <b-input v-model="password" type="password"  @keyup.enter.native="doLogin" placeholder="Password" minlength="6" password-reveal></b-input>
+              </b-field>
+              <button type="submit" class="button is-large is-dark is-fullwidth"  @click="doLogin" :disabled="isActive">
+                  Login
+              </button>
+            </div>
         </section>
     </div>
     <br>
@@ -67,13 +65,51 @@ export default {
 }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 body,html{
-  background-color:#212121!important;
-  overflow: hidden !important;
+  background-color:#121212!important;
+  margin: 0 auto;
 }
+.contain{
+  background:#121212;
+  text-align: center;
+  width:100%;
+  height:100%;
+  margin: 0 auto;
+  .logoImage{
+    margin: 0 auto;
+    width:100%;
+    img{
+      margin: 0 auto ;
+    }
+  }
+  input{
+    background:#121212 !important;
+    border:none !important;
+    color:#d9d9d9 !important;
+    &:focus{
+      color:#d9d9d9 !important;
+      box-shadow: 0;
+      border:none !important;
+    }
+    &:hover{
+      background:#212121 !important;
+    }
+  }
+  ::placeholder{
+    color:#d8d8d8 !important;
+  }
+  label{
+    color:#d9d9d9;
+  }
+}
+
+.long{
+  width:100%;
+}
+
 .footer{
-  background:#141414;
+  background:#121212 !important;
   opacity: .7;
   width:100%;
   padding:0;
@@ -81,17 +117,22 @@ body,html{
   margin-top:2em;
   height:200px;
   p{
+    text-align: center !important;
     padding:4em;
     color:#d9d9d9;
   }
 }
 .modal-card{
   background-color:#242424;
-  padding:4em;
-  border-radius: 1em;
+  padding:2em;
+  border-radius: 0.8em;
   opacity: 0.95;
+  margin: 0 auto !important;
   box-shadow: 1px 5px 5px 5px rgba(0, 0, 0, 0.06);
   .modal-card-body{
+    width: 100%;
+    padding:0;
+    margin: 0 auto;
     .box{
       padding:1em;
       background-color:#242424;
@@ -100,6 +141,7 @@ body,html{
     }
     background-color: #242424;
     .title{
+      font-size:3vh;
       color:white;
     }
     h3{
@@ -107,4 +149,5 @@ body,html{
     }
   }
 }
+
 </style>

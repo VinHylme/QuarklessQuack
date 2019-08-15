@@ -1,5 +1,5 @@
 <template>
-  <div class="container is-fluid" style="padding-top:0.7em; padding-right:0em;">
+  <div class="container is-fluid" style="padding-top:2em; padding-right:0em; background:#232323;">
     <div class="columns is-variable is-4-mobile is-0-tablet is-8-desktop is-5-widescreen is-5-fullhd">
       <div class="column is-12 profile_container">
         <b-steps type="is-success" size="is-medium" v-model="activeStep" :animated="true" :has-navigation="false">
@@ -21,11 +21,11 @@
             </section>
             <section class="section topic_area">
               <div class="box" style="background:#1f1f1f;" >
-                <div style="display:inline-flex; flex-flow: row wrap; align-items: center;">
-                <b-field position="is-centered" class="is-dark" label="Topic" :type="!canEdit ?'is-success' : 'is-primary'">
+                <div style="display:flex; flex-flow: row wrap; align-items: center;">
+                <b-field position="is-centered" style="margin: 0 auto;" class="is-dark" label="Topic" :type="!canEdit ?'is-success' : 'is-primary'">
                   <b-autocomplete
                   size="is-medium"
-                  style="width:40vw; margin: 0 auto"
+                  style="width:40vw;"
                   icon="magnify"
                   v-model="profile.topics.topicFriendlyName"
                   placeholder="What is your business about? e.g. Ecommerce"
@@ -37,7 +37,7 @@
                   @keyup.enter="searchReleatedTopics">
                 </b-autocomplete>
                 </b-field>
-                <a @click="isTip1Active = !isTip1Active;" :disabled="isTip1Active"  style="margin-top:1.7em; margin-left:1em">
+                <a @click="isTip1Active = !isTip1Active;" :disabled="isTip1Active"  style="margin-top:1.7em; margin-left:-1em">
                   <b-tooltip label="View tip" type="is-dark">
                     <b-icon pack="fas" icon="question-circle" size="is-medium" type="is-light"></b-icon>
                   </b-tooltip>
@@ -205,7 +205,7 @@
               <div class="box" style="background:#292929;">            
                 <b-field class="is-dark" label="Style your profile to suit you"></b-field>
               </div>
-              <div class="box" style="background:#292929; width:40%; margin:0 auto; color:#d9d9d9;">
+              <div class="box" style="background:#292929; width:40%; margin:0 auto; color:#d9d9d9; text-align:center;">
                 <b-field class="is-dark">Colors Currently using</b-field>
                 <c-color @openColorDialog="openColorDialog" v-for="(color,index) in profile.theme.colors" :key=index :color="color" :id="index"></c-color>
                 <b class="hr"></b>
@@ -214,7 +214,7 @@
                 <span>Add</span>
               </button>
               </div>
-              <b-field :label="'Follow the color theme('+profile.theme.percentage+'%)' " class="is-dark">
+              <b-field style="text-align:center;" :label="'Follow the color theme('+profile.theme.percentage+'%)' " class="is-dark">
                   <input type="range" min="0" max="90" v-model="profile.theme.percentage" class="slider" id="myRange">
               </b-field>
               <b-modal :active.sync="isModalActive">
@@ -243,12 +243,12 @@
                     </b-icon>
                 </a>
             </div>
-           <div ref="content" class="card-content" style="background:#1f1f1f">
+           <div ref="content" class="card-content" style="background:#1f1f1f; text-align:center;">
             <div class="box" style="background:#1f1f1f; color:white;">
               <div class="box" style="background:#292929; border:none;">            
                 <b-field class="is-dark" label="Here you can tell our agent what types images you would like to have on your profile"></b-field>
               </div>
-              <d-drop @readyUpload="onUpload"></d-drop>
+              <d-drop accept="image/*" :isMulti="true" @readyUpload="onUpload"></d-drop>
                 <b-notification style="background:transparent;" :closable="false">
                     <b-loading :is-full-page="true" :active.sync="isLoading" :can-cancel="false">
                         <b-icon
@@ -267,6 +267,7 @@
                         <ImageItem
                         v-if="image.url"
                         :source="image.url"
+                        width="250px" height="250px"
                         />
                         <div class="overlay"></div>
                         <a class="button is-success is-rounded is-overlayed" style="color:whitesmoke" @click="addImageToList(index)">Add</a>
@@ -536,9 +537,9 @@ export default {
     },
     searchReleatedTopics(e){
       if(e!==null){
+        this.searchReleatedTopic = []
+        this.displayedReleatedTopic = []
         this.$store.dispatch('ReleatedTopics', {instaId: this.profile.instagramAccountId, topic:e}).then(resp=>{
-          this.searchReleatedTopic = []
-          this.displayedReleatedTopic = []
           resp.data.relatedTopics.forEach((item)=>this.searchReleatedTopic.push(item))
           this.displayedReleatedTopic = this.filterReleatedTopics.slice((this.currentPage-1)*this.perPage,this.currentPage*this.perPage);
         })
@@ -636,6 +637,7 @@ export default {
 </script>
 
 <style lang="scss">
+
 .dropOptions_Container{
   position: fixed; /* Stay in place */
   z-index: 4; /* Sit on top */
@@ -734,7 +736,7 @@ export default {
   transition: all .2s ease-in-out;
   &:hover{
     display: block;
-    background: rgba(0, 0, 0, .3);
+    //background: rgba(0, 0, 0, .3);
       &.zoomable{
         transform: scale(1.1);
         border-radius:0.25em;
@@ -760,12 +762,10 @@ export default {
 }
 .image{
   width: 100%;
-  border-radius: 4px;
   padding:1em;
   border-radius: 0.5em;
   width:250px;
   height:250px;
-  box-shadow: 5px 4px 3px 4px rgba(0,0,0,0.05);
   object-fit: cover;
   transition: all .2s ease-in-out;
   &:hover{
@@ -773,7 +773,7 @@ export default {
     cursor: pointer;
       &.zoomable{
         transform: scale(1.1);
-        border-radius:0.25em;
+       // border-radius:0.25em;
       }
   }
 
@@ -824,7 +824,7 @@ export default {
   }
   &.is-small{
     label{
-      text-align: left;
+      text-align: center;
       color:#d9d9d9 ;
       font-size:16px;
     }
@@ -1003,7 +1003,7 @@ select{
   }
 }
 .input, .taginput .taginput-container.is-focusable, .textarea{
-  background:#121212;
+  background:#121212!important;;
   border:none;
   color:#d9d9d9;
    &:hover{

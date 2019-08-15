@@ -4,7 +4,6 @@ using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessRepositories.RedisRepository.RedisClient;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace QuarklessRepositories.RedisRepository.HeartBeaterRedis

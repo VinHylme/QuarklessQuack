@@ -39,7 +39,7 @@
         </a>
         </b-tooltip>
     </div>
-    <div :class="isNavOn ? 'column is-11' : 'column is-12'" :style="isNavOn ? '' : 'margin:0 0 0 0em'" >
+    <div :class="isNavOn ? 'column is-11' : 'column is-12'" :style="isNavOn ? '' : 'margin:0 auto'" >
         <div class="main_area">
           <router-view v-if="isLoaded" :key="$route.fullPath"></router-view>
         </div>
@@ -89,26 +89,20 @@ export default {
 <style lang="scss">
 .column{
   background:#141414;
+  padding:0 !important;
 }
 .footere{
-  background:#141414 !important;
+  background:#121212 !important;
   opacity: .7;
   width:100%;
   padding:0;
   margin: 0 auto;
-  margin-top:2em;
-  height:50px;
+  height:200px;
   p{
+    text-align: center !important;
     padding:4em;
     color:#d9d9d9;
   }
-  .subtitle{
-    background:#141414;
-  }
-}
-.nextto{
-  
-
 }
 .floater{
   z-index: 99999;
@@ -145,14 +139,19 @@ export default {
 }
 
 .main_area{
-  width:100%;
-  height:100%;
-  margin: 0 auto;
+  width:100% !important;
+  height:100% !important;
+  margin: 0 auto !important;
   background-color:#141414;
   border-radius:0px;
+  //padding-left:10em;
 }
 .home_layout{
-   padding:0em;
-   height:100%;
+  width: 100%;
+  padding:0em;
+  height:100%;
+}
+::-webkit-scrollbar {
+    display: none;
 }
 </style>

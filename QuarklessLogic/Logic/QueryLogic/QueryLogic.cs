@@ -62,7 +62,7 @@ namespace QuarklessLogic.Logic.QueryLogic
 		public async Task<Media> SimilarImagesSearch(string userId, int limit = 1, int offset = 0, IEnumerable<string> urls = null)
 		{
 			if(urls == null || limit < 1) return null;
-			var strurl = urls.Select(_ => new QuarklessContexts.Models.Profiles.GroupImagesAlike { TopicGroup = "any", Url = _ }).ToList();
+			var strurl = urls.Select(_ => new GroupImagesAlike { TopicGroup = "any", Url = _ }).ToList();
 			int newLimit = limit;
 			if(offset==1) offset = 0;
 			if(offset > 0)

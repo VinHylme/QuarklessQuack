@@ -146,6 +146,12 @@ export default new Vuex.Store({
     GetInstagramAccounts:state => {return state.AccountData.InstagramAccounts},
     UserTimeline: state => {return state.AccountData.TimelineData},
     UserProfiles: state => {return state.AccountData.Profiles},
+    UserProfile: state => (instaId) => 
+    {
+      let profile = state.AccountData.Profiles[state.AccountData.Profiles.findIndex(_=>_.instagramAccountId ==instaId)];
+      if(profile!==undefined)
+        return profile; 
+    },
     InstagramProfilePicture: state => id => {
       var elment = state.AccountData.InstagramAccounts[state.AccountData.InstagramAccounts.findIndex(_=>_.id==id)];
       if(elment !== undefined){

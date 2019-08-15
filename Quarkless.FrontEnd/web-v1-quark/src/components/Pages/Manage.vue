@@ -22,11 +22,11 @@
         </div>
         <b-modal :active.sync="isAccountLinkModalOpened" has-modal-card>
                 <!-- <form action="" style="width:50vw;" > -->
-                <div class="modal-card" style="width: 100%; height:35vw;">
+                <div class="modal-card" style="width: 100%; height:35vw; padding:0;">
                     <header class="modal-card-head">
                         <p class="modal-card-title">Link your Instagram Account</p>
                     </header>
-                    <section class="modal-card-body" v-if="!needToVerify">
+                    <section class="modal-card-body" style="padding:3em;" v-if="!needToVerify">
                         <b-field label="Username">
                             <b-input
                                 type="text"
@@ -45,8 +45,6 @@
                                 required>
                             </b-input>
                         </b-field>
-
-                        <!-- <b-checkbox>Remember me</b-checkbox> -->
                         <br>
                         <br>
                         <b-message title="Account Linking" type="is-danger" has-icon aria-close-label="Close message">
@@ -256,7 +254,6 @@ export default {
         display: flex;
         flex-flow: row wrap;
         align-items: center;
-
 }
 .card {
         &.is-hover{
@@ -285,8 +282,9 @@ export default {
        
 }
 body,html {
-        overflow-y: hidden;
+       // overflow-y:hidden;
         width: 100%;
         text-align: center;
 }
+
 </style>
