@@ -248,7 +248,7 @@
               <div class="box" style="background:#292929; border:none;">            
                 <b-field class="is-dark" label="Here you can tell our agent what types images you would like to have on your profile"></b-field>
               </div>
-              <d-drop accept="image/*" :isMulti="true" @readyUpload="onUpload"></d-drop>
+              <d-drop accept="image/*" :isHidden="false" :isMulti="true" @readyUpload="onUpload"></d-drop>
                 <b-notification style="background:transparent;" :closable="false">
                     <b-loading :is-full-page="true" :active.sync="isLoading" :can-cancel="false">
                         <b-icon
@@ -268,6 +268,7 @@
                         v-if="image.url"
                         :source="image.url"
                         width="250px" height="250px"
+                        :isRounded="false"
                         />
                         <div class="overlay"></div>
                         <a class="button is-success is-rounded is-overlayed" style="color:whitesmoke" @click="addImageToList(index)">Add</a>
@@ -567,7 +568,7 @@ export default {
     },
     onUpload(e){
       this.currentPage = 1;
-      const data = {instaId: this.profile.instagramAccountId, profileId: this.profile._id, formData:e};
+      const data = {instaId: this.profile.instagramAccountId, profileId: this.profile._id, formData:e.formData};
       this.$store.dispatch('UploadFileForProfile',data).then(resp=>{
         this.urls = resp.data.urls;
         this.searchImage(this.urls);

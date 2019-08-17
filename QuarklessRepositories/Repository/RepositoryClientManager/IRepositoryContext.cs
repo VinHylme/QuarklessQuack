@@ -3,6 +3,7 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using QuarklessContexts.Contexts.AccountContext;
 using QuarklessContexts.Models.InstagramAccounts;
+using QuarklessContexts.Models.Library;
 using QuarklessContexts.Models.Logger;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.Proxies;
@@ -19,7 +20,7 @@ namespace QuarklessRepositories.RepositoryClientManager
 		IMongoCollection<InstagramClientAccount> InstagramClientAccount { get;}
 		IMongoCollection<ProxyModel> Proxies { get;}
 		IMongoCollection<AccountUser> Account { get; }
-		IMongoCollection<ProfileModel> Profiles { get;  }
+		IMongoCollection<ProfileModel> Profiles { get; }
 		IMongoCollection<LoggerModel> Logger { get; }
 		IMongoCollection<PostServiceModel> PostingService { get; }
 		IMongoCollection<TopicsModel> Topics {get; }

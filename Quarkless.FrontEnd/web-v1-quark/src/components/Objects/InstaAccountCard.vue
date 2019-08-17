@@ -34,7 +34,7 @@
          </header>
         <div class="card-content">
             <div class="content">
-                <div id="user_info">
+                <div id="user_info" style="margin-left:-.7em">
                     <div class="field is-grouped">
                     <div class="control has-icons-left">
                         <div class="control has-icons-left">
@@ -53,6 +53,14 @@
                         <b-tooltip label="Profile" type="is-dark" position="is-top">
                             <a @click="ViewProfile" class="button is-light-dark" :disabled="IsProfileButtonDisabled">
                                 <b-icon pack="fas" icon="bookmark" >
+                                </b-icon>
+                            </a>
+                        </b-tooltip>
+                        </div>
+                        <div class="control">
+                        <b-tooltip label="Library" type="is-dark" position="is-top">
+                            <a @click="ViewLibrary" class="button is-light-dark">
+                                <b-icon pack="fas" icon="images" >
                                 </b-icon>
                             </a>
                         </b-tooltip>
@@ -128,6 +136,9 @@ props: {
   methods:{
       ViewProfile(){
           this.$emit("ViewProfile", this.id);
+      },
+    ViewLibrary(){
+          this.$emit("ViewLibrary", this.id);
       },
       RefreshState(){
           this.$store.dispatch('RefreshState',this.id).then(res=>{

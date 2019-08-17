@@ -13,5 +13,7 @@ namespace QuarklessLogic.Logic.QueryLogic
 		object AutoCompleteSearchPlaces(string query, int radius = 500);
 		Task<Media> SimilarImagesSearch(string userId, int limit = 1, int offset = 0, IEnumerable<string> urls = null);
 		Task<SubTopics> GetReleatedKeywords(string topicName);
+		Task<IEnumerable<string>> BuildHashtags(string topic, string subcategory, string language,
+			int limit = 1, int pickRate = 20);
 	}
 }

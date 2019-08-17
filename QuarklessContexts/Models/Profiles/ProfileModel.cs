@@ -1,4 +1,5 @@
-﻿using MongoDB.Bson.Serialization.Attributes;
+﻿using System;
+using MongoDB.Bson.Serialization.Attributes;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using System.Collections.Generic;
@@ -76,6 +77,7 @@ namespace QuarklessContexts.Models.Profiles
 		public string TopicFriendlyName { get; set; } = string.Empty;
 		public List<SubTopics> SubTopics { get; set; }
 	}
+
 	public class ProfileModel
 	{
 		[BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]

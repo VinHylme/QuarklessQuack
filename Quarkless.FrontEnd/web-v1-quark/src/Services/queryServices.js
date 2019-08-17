@@ -14,5 +14,8 @@ export default {
   },
   ReleatedTopic(instaAccount, topic){
     return Api(true, instaAccount).get('query/releated/'+topic);
+  },
+  BuildTags(topic, subcat, lang, limit, pickRate){
+    return Api(true).get('query/build/tags/'+topic + '/' + subcat + '/' + lang + '/' + limit + '/'+ pickRate);
   }
 }

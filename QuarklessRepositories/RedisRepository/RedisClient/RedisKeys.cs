@@ -13,7 +13,8 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 			MetaData,
 			Timelinejob,
 			Corpus,
-			SearchSession
+			SearchSession,
+			UserLibrary
 		}
 	}
 }

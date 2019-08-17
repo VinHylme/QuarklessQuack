@@ -7,7 +7,7 @@
             <b-tab-item label="Upload Media"  icon="upload">
             </b-tab-item>
             <b-tab-item label="Reverse Search" pack="fas" icon="book-open">
-              <d-drop accept="image/x-png,image/jpeg, image/bmp" :isMulti="false" class="dropStyle" @readyUpload="onUpload"></d-drop>
+              <d-drop accept="image/x-png,image/jpeg, image/bmp" :isHidden="false" :isMulti="false" class="dropStyle" @readyUpload="onUpload"></d-drop>
               <br>
               <div class="uploadSearchResults">
                  <b-notification v-if="uploadMethodData.isLoading" style="width:100%; height:100px; background:#323232;" :closable="false">
@@ -22,7 +22,7 @@
                 </b-notification>
                 <div id="items" class="uploadSearchResults">
                  <div v-for="(image,index) in uploadMethodData.searchMediaItems" :key="image+'_'+index" class="image_container zoomable dropitem" >
-                   <ImageItem v-if="image.url" :source="image.url" width="120px" height="120px" />
+                   <ImageItem v-if="image.url" :source="image.url" width="120px" height="120px" :isRounded="false"/>
                    <div class="overlayTick">
                       <span class="icon has-text-info">
                         <i class="fas fa-lg fa-check-circle"></i>
@@ -96,6 +96,7 @@ export default {
   mounted(){
       this.IsAdmin = this.$store.getters.UserRole == 'Admin';
       this.profile = this.$store.getters.UserProfile;
+      this.$emit('selectedAccount',this.$route.params.id);
       var vm = this;
       this.$nextTick(() => {
         let count = 0;
@@ -217,7 +218,7 @@ export default {
     },
      onUpload(e){
       this.uploadMethodData.currentPage = 1;
-      const data = {instaId: this.profile.instagramAccountId, profileId: this.profile._id, formData:e};
+      const data = {instaId: this.profile.instagramAccountId, profileId: this.profile._id, formData:e.formData};
       this.$store.dispatch('UploadFileForProfile',data).then(resp=>{
         this.uploadMethodData.urls = resp.data.urls;
         this.searchImage(this.uploadMethodData.urls);

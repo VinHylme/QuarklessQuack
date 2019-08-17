@@ -1,12 +1,12 @@
 <template>
-  <figure v-lazyload class="image__wrapper">
+  <figure @click="click" v-lazyload class="image__wrapper">
     <ImageSpinner
       class="image__spinner"
     />
     <img
       :class="['image__item']"
       :data-url="source"
-      :style="size"
+      :style="[size]"
       alt="random image"
     >
   </figure>
@@ -27,6 +27,7 @@ export default {
     },
     width:String,
     height:String,
+    isRounded:Boolean
   },
   data(){
     return {
@@ -34,6 +35,7 @@ export default {
         width:this.width,
         height:this.height,
         objectfit: 'cover',
+        borderRadius:this.isRounded ? '.4em' : '0'
       }
     }
   },
@@ -41,8 +43,12 @@ export default {
 
   },
   mounted(){
-
   },
+  methods:{
+    click(e){
+      this.$emit('click',e);
+    }
+  }
 };
 </script>
 

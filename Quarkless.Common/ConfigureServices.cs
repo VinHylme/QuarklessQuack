@@ -69,6 +69,8 @@ using QuarklessRepositories.Repository.ServicesRepositories.TopicsRepository;
 using QuarklessRepositories.Repository.TimelineRepository;
 using QuarklessRepositories.RepositoryClientManager;
 using System;
+using QuarklessLogic.Logic.LibaryLogic;
+using QuarklessRepositories.RedisRepository.LibraryCache;
 
 namespace Quarkless.Common
 {
@@ -102,6 +104,7 @@ namespace Quarkless.Common
 			services.AddTransient<IQueryLogic, QueryLogic>();
 			services.AddTransient<IContentSearcherHandler, ContentSearcherHandler>();
 			services.AddTransient<ISearchingCache, SearchingCache>();
+			services.AddTransient<ILibraryLogic, LibraryLogic>();
 		}
 		public static void AddAuthHandlers(this IServiceCollection services, Accessors _accessors, AWSOptions aWSOptions)
 		{
@@ -200,6 +203,7 @@ namespace Quarkless.Common
 			services.AddTransient<IMediaCorpusCache, MediaCorpusCache>();
 			services.AddTransient<ITimelineJobRepository,TimelineJobRepository>();
 			services.AddTransient<ITopicCategoryRepository, TopicCategoryRepository>();
+			services.AddTransient<ILibraryCache, LibraryCache>();
 			services.Configure<RedisOptions>(o =>
 			{
 				o.ConnectionString = _accessors.RedisConnectionString;

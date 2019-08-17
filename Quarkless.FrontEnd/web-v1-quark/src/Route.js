@@ -28,6 +28,14 @@ const router = new Router({
            }
        },
        {
+           name:"library",
+           path:"/library/:id",
+           component:LazyLoad('Library'),
+           meta:{
+               requiresAuth:true
+           }
+       },
+       {
             name:"manage",
             path:"/manage",
             component:LazyLoad('Manage'),
@@ -42,14 +50,6 @@ const router = new Router({
            meta:{
                requiresAuth: true
            }
-       },
-       {
-       name:"profiles",
-       path:"/profiles",
-       component:LazyLoad('Profiles'),
-       meta:{
-           requiresAuth: true
-       }
        },
        {
            name:"profile",
@@ -75,22 +75,6 @@ const router = new Router({
            meta:{
              requiresAuth: true
             }
-       },
-       {
-           name:"linkAccount",
-           path:"/linkAccount",
-           component:LazyLoad('CreateAccount'),
-           meta:{
-               requiresAuth: true
-           }
-       },
-       {
-           name:"createProfile",
-           path:"/createProfile",
-           component:LazyLoad('CreateProfile'),
-           meta:{
-               requiresAuth: true
-           }
        },
        {
            name:"Error404",

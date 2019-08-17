@@ -14,7 +14,9 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using MoreLinq.Extensions;
 
 namespace QuarklessLogic.Logic.QueryLogic
 {
@@ -115,6 +117,33 @@ namespace QuarklessLogic.Logic.QueryLogic
 				Languages = CultureInfo.GetCultures(CultureTypes.AllCultures).Where(_=>!_.Name.Contains("-")).Distinct().ToDictionary(_ => _.Name, _ => _.EnglishName),
 				CanUserEditProfile = true
 			};
+		}
+
+		public async Task<IEnumerable<string>> BuildHashtags(string topic, string subcategory, string language,
+			int limit = 1, int pickRate = 20)
+		{
+			var res = (await _hashtagLogic.GetHashtagsByTopicAndLanguage(topic, language.ToUpper(), language.MapLanguages(),limit)).Shuffle().ToList();
+			Regex clean = new Regex(@"[^\w\d]");
+			if (res == null || res.Count <= 0) return null;
+			List<string> hashtags = new List<string>();
+			while (hashtags.Count < pickRate) { 
+				var chosenHashtags = new List<string>();
+				foreach(var hashtagres in res)
+				{
+					if(!string.IsNullOrEmpty(hashtagres.Language)){
+						var hlang = clean.Replace(hashtagres.Language.ToLower(),"");
+						var langpicked = clean.Replace(language.MapLanguages().ToLower(),"");
+
+						if(hlang == langpicked)
+							chosenHashtags.AddRange(hashtagres.Hashtags);
+					}
+				}
+				if (chosenHashtags.Count <= 0) continue;
+				var chosenHashtagsFiltered = chosenHashtags.Where(space => space.Count(oc => oc == ' ') <= 1);
+				if (!chosenHashtagsFiltered.Any()) return null;
+				hashtags.AddRange(chosenHashtagsFiltered.Where(s => s.Length >= 3 && s.Length <= 30));
+			}
+			return hashtags.Take(pickRate);
 		}
 		public async Task<SubTopics> GetReleatedKeywords(string topicName)
 		{

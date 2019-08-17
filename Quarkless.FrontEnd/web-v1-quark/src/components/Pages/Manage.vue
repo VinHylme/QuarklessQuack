@@ -9,7 +9,7 @@
         <div :style="!isNavOn?'margin-left:5.5em;':''">
                 <div class="accounts_container">
                         <div v-for="(acc,index) in InstagramAccounts" :key="index">
-                                <InstaCard @ChangeState="StateChanged" @RefreshState="NotifyRefresh" @ViewProfile="GetProfile" :id="acc.id" :username="acc.username" :agentState="acc.agentState" 
+                                <InstaCard @ChangeState="StateChanged" @RefreshState="NotifyRefresh" @ViewLibrary="GetLibrary" @ViewProfile="GetProfile" :id="acc.id" :username="acc.username" :agentState="acc.agentState" 
                                 :name="acc.fullName" :profilePicture="acc.profilePicture" :biography="acc.userBiography"
                                 :userFollowers="acc.followersCount" :userFollowing="acc.followingCount" :totalPost="acc.totalPostsCount" :IsProfileButtonDisabled="IsProfileButtonDisabled"/>
                         </div>
@@ -116,7 +116,7 @@ export default {
         }
         },
         created(){
-               
+               this.$emit('unSelectAccount');
         },
         mounted(){
                 this.isNavOn = this.$store.getters.MenuState === 'true';
@@ -192,6 +192,9 @@ export default {
                                 var profile = this.$store.getters.UserProfiles[this.$store.getters.UserProfiles.findIndex((_)=>_.instagramAccountId == id)];
                                 this.$router.push('/profile/'+ profile._id)
                         }
+                },
+                GetLibrary(id){
+                        this.$router.push('/library/'+ id)
                 },
                 StateChanged(data){
                         this.$store.dispatch('ChangeState', data).then(res=>{

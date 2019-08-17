@@ -13,6 +13,7 @@ using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using QuarklessContexts.Models.Topics;
 using System;
 using System.Threading.Tasks;
+using QuarklessContexts.Models.Library;
 
 namespace QuarklessRepositories.RepositoryClientManager
 {
@@ -34,75 +35,15 @@ namespace QuarklessRepositories.RepositoryClientManager
 			}
 		}
 
-		public IMongoCollection<TopicsModel> Topics
-		{
-			get
-			{
-				return _contentDatabase.GetCollection<TopicsModel>("Topics");
-			}
-		}
-
-		public IMongoCollection<LoggerModel> Logger
-		{
-			get
-			{
-				return _controlDatabase.GetCollection<LoggerModel>("ReportHandle");
-			}
-		}
-
-		public IMongoCollection<InstagramAccountModel> InstagramAccounts
-		{
-			get
-			{
-				return _clientDatabase.GetCollection<InstagramAccountModel>("InstagramAccounts");
-			}
-		}
-		public IMongoCollection<InstagramClientAccount> InstagramClientAccount
-		{
-			get
-			{
-				return _clientDatabase.GetCollection<InstagramClientAccount>("InstagramAccounts");
-			}
-		}
-		public IMongoCollection<ProxyModel> Proxies
-		{
-			get
-			{
-				return _clientDatabase.GetCollection<ProxyModel>("Proxies");
-			}
-		}
-
-		public IMongoCollection<AccountUser> Account { 
-			get 
-			{
-				return _clientDatabase.GetCollection<AccountUser>("accountUsers");	
-			} 
-		}
-
-		public IMongoCollection<ProfileModel> Profiles 
-		{
-			get
-			{
-				return _clientDatabase.GetCollection<ProfileModel>("Profiles");
-			}
-		}
-
-		public IMongoCollection<PostServiceModel> PostingService
-		{
-			get
-			{
-				return _controlDatabase.GetCollection<PostServiceModel>("PostsAnalyser");
-			}
-		}
-
-		public IMongoCollection<CommentsModel> Comments 
-		{ 
-			get 
-			{
-				return _contentDatabase.GetCollection<CommentsModel>("Comments");
-			} 
-		}
-
+		public IMongoCollection<TopicsModel> Topics => _contentDatabase.GetCollection<TopicsModel>("Topics");
+		public IMongoCollection<LoggerModel> Logger => _controlDatabase.GetCollection<LoggerModel>("ReportHandle");
+		public IMongoCollection<InstagramAccountModel> InstagramAccounts => _clientDatabase.GetCollection<InstagramAccountModel>("InstagramAccounts");
+		public IMongoCollection<InstagramClientAccount> InstagramClientAccount => _clientDatabase.GetCollection<InstagramClientAccount>("InstagramAccounts");
+		public IMongoCollection<ProxyModel> Proxies => _clientDatabase.GetCollection<ProxyModel>("Proxies");
+		public IMongoCollection<AccountUser> Account => _clientDatabase.GetCollection<AccountUser>("accountUsers");
+		public IMongoCollection<ProfileModel> Profiles => _clientDatabase.GetCollection<ProfileModel>("Profiles");
+		public IMongoCollection<PostServiceModel> PostingService => _controlDatabase.GetCollection<PostServiceModel>("PostsAnalyser");
+		public IMongoCollection<CommentsModel> Comments => _contentDatabase.GetCollection<CommentsModel>("Comments");
 		public IMongoCollection<CaptionsModel> Captions => _contentDatabase.GetCollection<CaptionsModel>("Captions");
 		public IMongoCollection<HashtagsModel> Hashtags => _contentDatabase.GetCollection<HashtagsModel>("CHashtags");
 		public IMongoCollection<UserBiographyModel> UserBiography => _contentDatabase.GetCollection<UserBiographyModel>("BiographyDetail");
@@ -110,7 +51,6 @@ namespace QuarklessRepositories.RepositoryClientManager
 		public IMongoCollection<CommentCorpus> CorpusComments => _contentDatabase.GetCollection<CommentCorpus>("CComments");
 		public IMongoCollection<MediaCorpus> CorpusMedia => _contentDatabase.GetCollection<MediaCorpus>("CMedias");
 		public IMongoCollection<TopicCategories> TopicCategories => _contentDatabase.GetCollection<TopicCategories>("CTopic");
-
 		internal async Task<bool> CreateCollection(string collectionName, BsonDocument document = null)
 		{
 			try

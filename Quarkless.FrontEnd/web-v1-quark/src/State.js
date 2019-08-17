@@ -3,6 +3,7 @@ import Vuex from 'vuex';
 import AccountServices from './Services/accountServices';
 import TimelineServices from './Services/timelineService';
 import QueryServices from './Services/queryServices';
+import LibraryServices from './Services/libraryServices';
 import Axios from 'axios';
 import decoder from 'jwt-decode';
 import moment from 'moment';
@@ -13,6 +14,7 @@ export default new Vuex.Store({
     AccountData:{
       InstagramAccounts:[],
       Profiles:[],
+      Library:[],
       TimelineData:[],
       ProfileConfg:{}
     },
@@ -137,15 +139,45 @@ export default new Vuex.Store({
     },
     failed_profile_update(state, profileData){
 
-    }
+    },
+    set_saved_medias(state, data){
+      state.AccountData.Library.push(data.request);
+    },
+    failed_to_set_saved_medias(state, data){
+
+    },
+    get_saved_medias(state, data){
+      state.AccountData.Library = data.response.data.data;
+    },
+    failed_to_get_saved_medias(state){
+      state.AccountData.Library = null;
+    },
+    delete_saved_medias(state, data){
+      let position = -1;
+      state.AccountData.Library.forEach((item,index) => 
+      {
+        if(item.groupName === data.request.data.groupName)
+          position = index;
+      });
+      state.AccountData.Library.splice(position,1);
+    },
+    failed_to_delete_saved_medias(state){
+      state.AccountData.Library = null;
+    },
   },
   getters: {
+    User: state => state.user,
     IsLoggedIn: state => !!state.token,
     AuthStatus: state => state.status,
     UserRole:state=> state.role,
     GetInstagramAccounts:state => {return state.AccountData.InstagramAccounts},
     UserTimeline: state => {return state.AccountData.TimelineData},
     UserProfiles: state => {return state.AccountData.Profiles},
+    UserLibraries: state => {return state.AccountData.Library},
+    UserLibrary: state => (instagramAccountId) => {
+      let datar = state.AccountData.Library.filter(item=>item.instagramAccountId === instagramAccountId);
+      return datar;
+    },
     UserProfile: state => (instaId) => 
     {
       let profile = state.AccountData.Profiles[state.AccountData.Profiles.findIndex(_=>_.instagramAccountId ==instaId)];
@@ -162,6 +194,46 @@ export default new Vuex.Store({
     MenuState: () => localStorage.getItem("menu_state")
   },
   actions: {
+    SetSavedMedias({commit}, data){
+      return new Promise((resolve, reject)=>{
+        LibraryServices.SetSavedMedias(data.accountId, data.instagramAccountId, data.data).then(resp=>{
+          commit('set_saved_medias', {request: data.data, response: resp});
+          resolve(resp);
+        }).catch((err)=>{
+          commit('failed_to_set_saved_medias', { request: data, error: err })
+          reject(err);
+        })
+      })
+    },
+    GetSavedMedias({commit}, data){
+      return new Promise((resolve, reject)=>{
+        LibraryServices.GetSavedMedias(data.accountId, data.instagramAccountId).then(resp=>{
+          commit('get_saved_medias', {request: data, response: resp});
+          resolve(resp);
+        }).catch((err)=>{
+          commit('failed_to_get_saved_medias')
+          reject(err);
+        })
+      })
+    },
+    DeleteSavedMedia({commit}, data){
+      return new Promise((resolve, reject)=>{
+        LibraryServices.DeleteSavedMedias(data.accountId, data.instagramAccountId, data.data).then(resp=>{
+          commit('delete_saved_medias', {request: data, response: resp});
+          resolve(resp);
+        }).catch((err)=>{
+          commit('failed_to_delete_saved_medias')
+          reject(err);
+        })
+      })
+    },
+    BuildTags({commit}, data){
+      return new Promise((resolve, reject)=>{
+        QueryServices.BuildTags(data.topic, data.subcat, data.lang, data.limit, data.pickRate).then(resp=>{
+          resolve(resp);
+        }).catch((err)=>reject(err));
+      })
+    },
     ReleatedTopics({commit}, data)
     {
       return new Promise((resolve,reject)=>{

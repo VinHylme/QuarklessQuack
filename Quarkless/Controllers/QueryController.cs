@@ -41,6 +41,16 @@ namespace Quarkless.Controllers
 				return BadRequest("Invalid Request");
 			return Ok(await _queryLogic.GetReleatedKeywords(topic));
 		}
+
+		[HttpGet]
+		[Route("api/query/build/tags/{topic}/{subcategory}/{language}/{limit}/{pickRate}")]
+		public async Task<IActionResult> BuildTags(string topic, string subcategory, 
+			string language, int limit, int pickRate)
+		{
+			if (string.IsNullOrEmpty(_userContext.CurrentUser))
+				return BadRequest("Invalid Request");
+			return Ok(await _queryLogic.BuildHashtags(topic, subcategory, language, limit, pickRate));
+		}
 		[HttpGet]
 		[Route("api/query/search/places/{query}")]
 		public IActionResult SearchPlaces(string query)

@@ -27,6 +27,17 @@
         </b-icon>
         </router-link>
       </b-tooltip>
+      <b-tooltip v-if="showData.userSelected" type="is-dark" label="Media Library" position="is-right" style="position:absolute; top:8em;left:4em;">
+        <router-link :to="'/library/'+showData.userSelected">
+        <b-icon
+          class="floater is-library"
+          pack="fa"
+          icon="images"
+          size="is-default"
+          type="is-light">
+        </b-icon>
+        </router-link>
+      </b-tooltip>
         <b-tooltip type="is-dark" label="Logout" style="position:absolute; bottom:3em;right:2.8em;">
         <a @click="signout">
         <b-icon
@@ -39,9 +50,9 @@
         </a>
         </b-tooltip>
     </div>
-    <div :class="isNavOn ? 'column is-11' : 'column is-12'" :style="isNavOn ? '' : 'margin:0 auto'" >
+    <div :class="isNavOn ? 'column is-11' : 'column is-12'" :style="isNavOn ? 'margin:0 auto;' : 'margin:0 auto'" >
         <div class="main_area">
-          <router-view v-if="isLoaded" :key="$route.fullPath"></router-view>
+          <router-view @selectedAccount="activateUser" @unSelectAccount="deactivateUser" v-if="isLoaded" :key="$route.fullPath"></router-view>
         </div>
     </div>
   </div>
@@ -62,7 +73,10 @@ export default {
     return {
       isProfileButtonDisabled:false,
       isNavOn:true,
-      isLoaded:false
+      isLoaded:false,
+      showData:{
+        userSelected:null,
+      }
     }
   },
   mounted(){
@@ -74,6 +88,12 @@ export default {
     this.isNavOn = this.$store.getters.MenuState === 'true'
   },
   methods:{
+    deactivateUser(){
+      this.showData.userSelected  = null;
+    },
+    activateUser(e){
+      this.showData.userSelected = e;
+    },
     signout(){
       this.$store.dispatch('logout');
       window.location.reload();
@@ -93,7 +113,7 @@ export default {
 }
 .footere{
   background:#121212 !important;
-  opacity: .7;
+ // opacity: .7;
   width:100%;
   padding:0;
   margin: 0 auto;
@@ -105,7 +125,7 @@ export default {
   }
 }
 .floater{
-  z-index: 99999;
+  z-index: 888;
   position:fixed !important;
   top:1.15em;
   left:1.6em;
@@ -119,6 +139,10 @@ export default {
   }
   &.is-house{
     top:4.5em;
+    left:1.85em;
+  }
+  &.is-library{
+    top:7.3em;
     left:1.85em;
   }
 }
