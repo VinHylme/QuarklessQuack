@@ -12,5 +12,14 @@ export default {
   },
   UpdateEvent(event){
     return Api(true).put('timeline/update/', event);
+  },
+  CreatePost(id, event){
+    return Api(true).post('timeline/post/'+ id, event);
+  },
+  GetEventLogs(instagramAccountId, limit){
+    return Api(true).get('timeline/log/'+instagramAccountId+'/'+limit);
+  },
+  GetAllEventLogsForUser(limit){
+    return Api(true).get('timeline/log/'+limit)
   }
 }

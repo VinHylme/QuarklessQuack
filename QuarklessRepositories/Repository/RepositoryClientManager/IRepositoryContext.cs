@@ -10,6 +10,7 @@ using QuarklessContexts.Models.Proxies;
 using QuarklessContexts.Models.ServicesModels;
 using QuarklessContexts.Models.ServicesModels.Corpus;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
+using QuarklessContexts.Models.TimelineLoggingRepository;
 using QuarklessContexts.Models.Topics;
 
 namespace QuarklessRepositories.RepositoryClientManager
@@ -22,6 +23,7 @@ namespace QuarklessRepositories.RepositoryClientManager
 		IMongoCollection<AccountUser> Account { get; }
 		IMongoCollection<ProfileModel> Profiles { get; }
 		IMongoCollection<LoggerModel> Logger { get; }
+		IMongoCollection<TimelineEventLog> TimelineLogger { get; }
 		IMongoCollection<PostServiceModel> PostingService { get; }
 		IMongoCollection<TopicsModel> Topics {get; }
 		IMongoCollection<CommentCorpus> CorpusComments { get; }

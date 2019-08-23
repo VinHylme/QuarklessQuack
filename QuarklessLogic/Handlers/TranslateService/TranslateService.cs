@@ -67,7 +67,8 @@ namespace QuarklessLogic.Handlers.TranslateService
 				"--silent",
 				"--disable-extensions",
 				"test-type",
-				"--ignore-certificate-errors"
+				"--ignore-certificate-errors",
+				"--disable-logging"
 			);
 		}
 		static int pos = 0;
@@ -94,7 +95,8 @@ namespace QuarklessLogic.Handlers.TranslateService
 			if (pos >= trykey.Length)
 			{
 				var res = DetectLanguageRest(texts);
-				foreach(var det in res)
+				if (res == null) yield break;
+				foreach (var det in res)
 				{
 					if (det != null)
 					{
@@ -104,39 +106,33 @@ namespace QuarklessLogic.Handlers.TranslateService
 			}
 			else 
 			{ 
-				string url = "https://translate.yandex.net/api/v1.5/tr.json/detect?key="+trykey[pos]+"&text=";
+				var url = "https://translate.yandex.net/api/v1.5/tr.json/detect?key="+trykey[pos]+"&text=";
 				foreach(var text in texts)
 				{
 					var postRes = _restSharpClient.PostRequest(url + HttpUtility.UrlEncode(text), null, null);
-					if (postRes != null && !string.IsNullOrEmpty(postRes.Content))
+					if (postRes == null || string.IsNullOrEmpty(postRes.Content)) continue;
+					var yanRes = JsonConvert.DeserializeObject<YandexLanguageResults>(postRes.Content);
+					if (yanRes.Code != 404 && yanRes.Code!=401)
 					{
-						YandexLanguageResults yanRes = JsonConvert.DeserializeObject<YandexLanguageResults>(postRes.Content);
-						if (yanRes.Code != 404 && yanRes.Code!=401)
-						{
-							yield return yanRes.Lang;
-						}
-						else
-						{
-							pos++;
-							DetectLanguageYandex(texts);
-						}
+						yield return yanRes.Lang;
+					}
+					else
+					{
+						pos++;
+						DetectLanguageYandex(texts);
 					}
 				}
 			}
 		}
 		public IEnumerable<string> DetectLanguageRest(params string[] texts)
 		{
+
 			string url = "https://ws.detectlanguage.com/";
 			var res = _restSharpClient.PostRequest(url,"/0.2/detect",JsonConvert.SerializeObject(new { q = texts }),username: _detectAPIKey ,password:"");
-			if (res.IsSuccessful)
-			{
-				var batchResult = JsonConvert.DeserializeObject<BatchResult>(res.Content);
-				return batchResult.data.detections.Select(s => s.FirstOrDefault().language);
-			}
-			else
-			{
-				return DetectLanguageViaGoogle(texts: texts);
-			}
+			if (!res.IsSuccessful) return DetectLanguageViaGoogle(texts: texts);
+			var batchResult = JsonConvert.DeserializeObject<BatchResult>(res.Content);
+			return batchResult.data.detections.Select(s => s.FirstOrDefault()?.language);
+
 		}
 
 		public IEnumerable<string> DetectLanguageViaGoogle(bool selectMostOccuring = false, string splitPattern = "-", params string[] @texts)

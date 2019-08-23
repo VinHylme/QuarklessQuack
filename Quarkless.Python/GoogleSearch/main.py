@@ -33,18 +33,15 @@ googleApiClient = google_images_download.googleimagesdownload()  # class instant
 class SearchRelated(Resource):
     @api.expect(model)
     def post(self):
-        print(api.payload)
         path = googleApiClient.download(api.payload)        
-        return path;
+        return path
 
 @api.route('/searchImages')
 class SearchImage(Resource):
     @api.expect(model)
     def post(self):
-        print(api.payload)
         path = googleApiClient.download(api.payload)
         mediaResponse  = []
-
         for k,v in path[0].items():
             for n in v:
                 mediaResponse.append({"Topic":k, "MediaUrl": n})

@@ -70,6 +70,8 @@ using QuarklessRepositories.Repository.TimelineRepository;
 using QuarklessRepositories.RepositoryClientManager;
 using System;
 using QuarklessLogic.Logic.LibaryLogic;
+using QuarklessLogic.Logic.TimelineEventLogLogic;
+using QuarklessRepositories.RedisRepository.APILogger;
 using QuarklessRepositories.RedisRepository.LibraryCache;
 
 namespace Quarkless.Common
@@ -105,6 +107,7 @@ namespace Quarkless.Common
 			services.AddTransient<IContentSearcherHandler, ContentSearcherHandler>();
 			services.AddTransient<ISearchingCache, SearchingCache>();
 			services.AddTransient<ILibraryLogic, LibraryLogic>();
+			services.AddTransient<ITimelineEventLogLogic, TimelineEventLogLogic>();
 		}
 		public static void AddAuthHandlers(this IServiceCollection services, Accessors _accessors, AWSOptions aWSOptions)
 		{
@@ -193,7 +196,7 @@ namespace Quarkless.Common
 			services.AddTransient<ITopicsRepository,TopicsRepository>();
 			services.AddTransient<ICommentsRepository,CommentsRepository>();
 			services.AddTransient<IHashtagsRepository,HashtagsRepository>();
-			services.AddTransient<ITimelineRepository,TimelineRepository>();
+			services.AddTransient<ITimelineLoggingRepository,TimelineLoggingRepository>();
 			services.AddTransient<IHeartbeatRepository, HeartbeatRepository>();
 			services.AddTransient<IInstagramAccountRedis,InstagramAccountRedis>();
 			services.AddTransient<ICommentCorpusRepository, CommentCorpusRepository>();
@@ -204,6 +207,7 @@ namespace Quarkless.Common
 			services.AddTransient<ITimelineJobRepository,TimelineJobRepository>();
 			services.AddTransient<ITopicCategoryRepository, TopicCategoryRepository>();
 			services.AddTransient<ILibraryCache, LibraryCache>();
+			services.AddTransient<IAPILogCache, APILogCache>();
 			services.Configure<RedisOptions>(o =>
 			{
 				o.ConnectionString = _accessors.RedisConnectionString;

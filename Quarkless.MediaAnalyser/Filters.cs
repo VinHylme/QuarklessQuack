@@ -13,10 +13,10 @@ namespace Quarkless.MediaAnalyser
 	{
 		public static byte[] SharpenImage(this byte[] imageData, int size)
 		{
-			GaussianLayer gaussianLayer = new GaussianLayer(size);
-			using (MemoryStream outStream = new MemoryStream())
+			var gaussianLayer = new GaussianLayer(size);
+			using (var outStream = new MemoryStream())
 			{
-				using (ImageFactory factory = new ImageFactory(preserveExifData: true))
+				using (var factory = new ImageFactory(preserveExifData: true))
 				{
 					factory.Load(imageData)
 						.Format(new JpegFormat() { Quality = 100 })
@@ -51,10 +51,10 @@ namespace Quarkless.MediaAnalyser
 		public static byte[] ResizeImage(this byte[] imageData, ResizeMode resizeMode, Size size)
 		{
 			if (imageData == null) return null;
-			ResizeLayer resizeLayer = new ResizeLayer(size,resizeMode);
-			using (MemoryStream outStream = new MemoryStream())
+			var resizeLayer = new ResizeLayer(size,resizeMode);
+			using (var outStream = new MemoryStream())
 			{
-				using (ImageFactory factory = new ImageFactory(preserveExifData: true))
+				using (var factory = new ImageFactory(preserveExifData: true))
 				{
 					factory.Load(imageData)
 						.Format(new JpegFormat() { Quality = 100 })
@@ -67,9 +67,9 @@ namespace Quarkless.MediaAnalyser
 		public static byte[] DetectEdges(this byte[] imageData, IEdgeFilter edgeFilter, bool grayScale)
 		{
 			if (imageData == null) return null;
-			using (MemoryStream outStream = new MemoryStream())
+			using (var outStream = new MemoryStream())
 			{
-				using (ImageFactory factory = new ImageFactory(preserveExifData: true))
+				using (var factory = new ImageFactory(preserveExifData: true))
 				{
 					factory.Load(imageData)
 						.Format(new JpegFormat() { Quality = 100 })
@@ -82,9 +82,9 @@ namespace Quarkless.MediaAnalyser
 		public static byte[] Constrain(this byte[] imageData, Size size)
 		{
 			if (imageData == null) return null;
-			using (MemoryStream outStream = new MemoryStream())
+			using (var outStream = new MemoryStream())
 			{
-				using (ImageFactory factory = new ImageFactory(preserveExifData: true))
+				using (var factory = new ImageFactory(preserveExifData: true))
 				{
 					factory.Load(imageData)
 						.Format(new JpegFormat() { Quality = 100 })
@@ -97,9 +97,9 @@ namespace Quarkless.MediaAnalyser
 		public static byte[] EntropyCrop(this byte[] imageData, byte threshHold = 128)
 		{
 			if (imageData == null) return null;
-			using (MemoryStream outStream = new MemoryStream())
+			using (var outStream = new MemoryStream())
 			{
-				using (ImageFactory factory = new ImageFactory(preserveExifData: true))
+				using (var factory = new ImageFactory(preserveExifData: true))
 				{
 					factory.Load(imageData)
 						.Format(new JpegFormat() { Quality = 100 })
@@ -112,9 +112,9 @@ namespace Quarkless.MediaAnalyser
 		public static byte[] ApplyFilter(this byte[] imageData, FilterType filterType)
 		{
 			if(imageData==null) return null;
-			using(MemoryStream outStream = new MemoryStream())
+			using(var outStream = new MemoryStream())
 			{
-				using(ImageFactory factory = new ImageFactory(preserveExifData: true))
+				using(var factory = new ImageFactory(preserveExifData: true))
 				{
 					factory.Load(imageData)
 						.Format(new JpegFormat() { Quality = 100})

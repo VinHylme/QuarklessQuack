@@ -70,7 +70,7 @@ namespace QuarklessRepositories.RedisRepository.SearchCache
 			RedisKey key = $"ReleatedTopics:{topic}";
 			try
 			{
-				var res = await _redis.GetMembers<SubTopics>(key, RedisKeys.HashtagGrowKeys.SearchSession);
+				var res = await _redis.Database(2).GetMembers<SubTopics>(key, RedisKeys.HashtagGrowKeys.SearchSession);
 				return res.FirstOrDefault();
 			}
 			catch(Exception e)
@@ -84,7 +84,7 @@ namespace QuarklessRepositories.RedisRepository.SearchCache
 			try
 			{
 				RedisKey key = $"ReleatedTopics:{subTopics.TopicName}";
-				await _redis.SetAdd(key,RedisKeys.HashtagGrowKeys.SearchSession, JsonConvert.SerializeObject(subTopics),TimeSpan.FromDays(9999));
+				await _redis.Database(2).SetAdd(key,RedisKeys.HashtagGrowKeys.SearchSession, JsonConvert.SerializeObject(subTopics),TimeSpan.FromDays(9999));
 			}
 			catch(Exception e)
 			{

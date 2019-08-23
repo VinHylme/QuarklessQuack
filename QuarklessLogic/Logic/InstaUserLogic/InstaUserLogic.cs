@@ -34,6 +34,20 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 				return null;
 			}
 		}
+
+		public async Task<IResult<InstaAccountCreation>> CreateAccount(string username, string email, string password, string firstname)
+		{
+			try
+			{
+				return await Client.EmptyClient.ReturnClient.CreateNewAccountAsync(username, password, email,
+					firstname);
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine(e);
+				return null;
+			}
+		}
 		public async Task<IResult<bool>> AcceptConsent()
 		{
 			try

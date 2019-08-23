@@ -1,5 +1,5 @@
 <template>
-<div class="container-fluid">
+<div class="ccontainer">
         <b-notification v-if="refreshShowNotification"
                 v-bind:type="isSuccess?'is-success':'is-danger'"
                 aria-close-label="Close notification"

@@ -17,7 +17,7 @@ namespace QuarklessLogic.Handlers.ClientProvider
 		{
 			_clientContext = clientContext;
 			_userContext = userContext;
-			if(userContext!=null && userContext.FocusInstaAccount!=null)
+			if(userContext?.FocusInstaAccount != null)
 				this.Context = _clientContext.Create(userContext.CurrentUser, userContext.FocusInstaAccount).GetAwaiter().GetResult();
 		}
 		public APIClientContainer(IAPIClientContext clientContext, string userId, string instaId)

@@ -14,7 +14,7 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 {
 	public class SeleniumClient : ISeleniumClient
 	{
-		internal IWebDriver Driver { get; set; }
+		//internal IWebDriver Driver { get; set; }
 		private readonly ChromeDriverService _chromeService;
 		private ChromeOptions _chromeOptions { get; set; }
 
@@ -33,16 +33,16 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 		{
 			//Driver = new ChromeDriver(_chromeService, _chromeOptions);
 		}
-		public void ScrollPage(int counter)
+		public void ScrollPage(IWebDriver driver, int counter)
 		{
 			const string script =
 				@"window.scrollTo(0,Math.max(document.documentElement.scrollHeight,document.body.scrollHeight,document.documentElement.clientHeight));";
 
-			int count = 0;
+			var count = 0;
 
 			while (count != counter)
 			{
-				IJavaScriptExecutor js = Driver as IJavaScriptExecutor;
+				var js = driver as IJavaScriptExecutor;
 				js.ExecuteScript(script);
 
 				Thread.Sleep(500);
@@ -50,10 +50,10 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 				count++;
 			}
 		}
-		public void ScrollToElement(int positionX, int positionY)
+		public void ScrollToElement(IWebDriver driver, int positionX, int positionY)
 		{
-			string script = $@"window.scrollTo({positionX},{positionY});";
-			IJavaScriptExecutor js = Driver as IJavaScriptExecutor;
+			var script = $@"window.scrollTo({positionX},{positionY});";
+			var js = driver as IJavaScriptExecutor;
 			js.ExecuteScript(script);
 			Thread.Sleep(500);
 		}
@@ -61,19 +61,19 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 		{
 			try
 			{
-				using (Driver = new ChromeDriver(_chromeService, _chromeOptions))
+				using (var driver = new ChromeDriver(_chromeService, _chromeOptions))
 				{
-					List<string> results = new List<string>();
+					var results = new List<string>();
 					foreach (var text in data)
 					{
 						var urlreq = string.Format(url, text.Replace(" ", "%20"));
-						Driver.Navigate().GoToUrl(urlreq);
-						IWebElement searchBox = Driver.FindElement(By.Id("source"));
+						driver.Navigate().GoToUrl(urlreq);
+						var searchBox = driver.FindElement(By.Id("source"));
 						TextCopy.Clipboard.SetText(text);
 						searchBox.SendKeys(OpenQA.Selenium.Keys.Control + 'v');
 						Thread.Sleep(800);
-						List<IWebElement> elements_results = Driver.FindElements(By.XPath($"//div[contains(@class,'{targetElement}')]")).ToList();
-						results.AddRange(elements_results.Select(a => a.Text).Where(c => c.Contains("-")));
+						List<IWebElement> elementsResults = driver.FindElements(By.XPath($"//div[contains(@class,'{targetElement}')]")).ToList();
+						results.AddRange(elementsResults.Select(a => a.Text).Where(c => c.Contains("-")));
 					}
 					return results;
 				}
@@ -86,19 +86,18 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 		public IEnumerable<string> DetectLanguageViaGoogle(string url, string targetElement,
 			bool getValues = false, params string[] data)
 		{
-			List<string> results = new List<string>();
+			var results = new List<string>();
 			try
 			{
-				using (IWebDriver Driver_ = new ChromeDriver(ChromeDriverService.CreateDefaultService(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\chrome\"), _chromeOptions))
+				using (IWebDriver driver = new ChromeDriver(ChromeDriverService.CreateDefaultService(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\chrome\"), _chromeOptions))
 				{
 					foreach (var text in data)
 					{
 						var urlreq = string.Format(url, text);
-						Driver_.Navigate().GoToUrl(urlreq);
+						driver.Navigate().GoToUrl(urlreq);
 						Thread.Sleep(22);
-						List<IWebElement> elements = Driver_.FindElements(By.XPath($"//div[contains(@class,'{targetElement}')]")).ToList();
+						var elements = driver.FindElements(By.XPath($"//div[contains(@class,'{targetElement}')]")).ToList();
 
-						if (elements == null) { throw new Exception("results empty"); }
 						if (!getValues)
 						{
 							results.Add(elements.Select(a => a.GetAttribute("outerHTML")).SingleOrDefault());
@@ -121,27 +120,26 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 		{
 			try
 			{
-				List<SerpItem> totalCollected = new List<SerpItem>();
-				SearchResponse<List<SerpItem>> response = new SearchResponse<List<SerpItem>>();
-				using (var Driver = new ChromeDriver(_chromeService, _chromeOptions))
+				var totalCollected = new List<SerpItem>();
+				var response = new SearchResponse<List<SerpItem>>();
+				using (var driver = new ChromeDriver(_chromeService, _chromeOptions))
 				{
-					Driver.Navigate().GoToUrl(url);
-					if (Driver.Url.Contains("captcha"))
+					driver.Navigate().GoToUrl(url);
+					if (driver.Url.Contains("captcha"))
 					{
 						response.StatusCode = ResponseCode.CaptchaRequired;
 						response.Message = "Yandex captcha needed";
 						return response;
 					}
-					else
-					{
-						totalCollected.AddRange(ReadSerpItems(Driver, pages, offset));					
-					}
+
+					totalCollected.AddRange(ReadSerpItems(driver, pages, offset));
 				}
+
 				response.StatusCode = ResponseCode.Success;
 				response.Result = totalCollected;
 				return response;
 			}
-			catch(Exception io)
+			catch (Exception io)
 			{
 				Console.WriteLine(io.Message);
 				return null;
@@ -151,42 +149,40 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 		{
 			try
 			{
-				using(Driver = new ChromeDriver(_chromeService, _chromeOptions))
+				List<string> urls = new List<string>();
+				using(var driver = new ChromeDriver(_chromeService, _chromeOptions))
 				{
-					Driver.Navigate().GoToUrl(url);
+					driver.Navigate().GoToUrl(url);
 
-					IWebElement searchButton = Driver.FindElement(By.ClassName("input__button"));
+					var searchButton = driver.FindElement(By.ClassName("input__button"));
 					TextCopy.Clipboard.SetText(imageurl);
 					
 					searchButton.Click();
-					IWebElement searchField = Driver.FindElement(By.Name("cbir-url"));
+					var searchField = driver.FindElement(By.Name("cbir-url"));
 					searchField.SendKeys(Keys.Control + 'v');
-					IWebElement submitButton = Driver.FindElement(By.Name("cbir-submit"));
+					var submitButton = driver.FindElement(By.Name("cbir-submit"));
 					submitButton.Click();
 					
-					var pagehere = Driver.PageSource;
+					var pagehere = driver.PageSource;
 					Thread.Sleep(2000);
 
-					IWebElement similarButton = Driver.FindElement(By.ClassName("similar__link"));
+					var similarButton = driver.FindElement(By.ClassName("similar__link"));
 					//var hrefval = similarButton.GetAttribute("href");
 
-					((IJavaScriptExecutor)Driver).ExecuteScript("arguments[0].click();", similarButton);
+					((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", similarButton);
 					Thread.Sleep(3000);
-					Driver.FindElement(By.ClassName("pane2__close-icon")).Click();
-					List<IWebElement> elements = Driver.FindElements(By.XPath($"//div[contains(@class,'{targetElement}')]")).ToList();
-
-					if (elements == null) { throw new Exception("results empty"); }
+					driver.FindElement(By.ClassName("pane2__close-icon")).Click();
+					var elements = driver.FindElements(By.XPath($"//div[contains(@class,'{targetElement}')]")).ToList();
 
 					while (elements.Count < limit)
 					{
-						ScrollPage(1);
-						var uniqueFind = Driver.FindElements(By.XPath($"//div[contains(@class,'{targetElement}')]"));
+						ScrollPage(driver,1);
+						var uniqueFind = driver.FindElements(By.XPath($"//div[contains(@class,'{targetElement}')]"));
 						elements.AddRange(uniqueFind);
 						elements = elements.Distinct().ToList();
 					}
 
-					List<string> urls = new List<string>();
-					for (int x = 0; x <= limit; x++)
+					for (var x = 0; x <= limit; x++)
 					{
 						var tohtml = elements[x].GetAttribute("outerHTML");
 
@@ -199,7 +195,6 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 								throw new Exception("can't find any images, all returning null");
 							}
 							x = x == 0 ? 0 : x--;
-							continue;
 						}
 						else
 						{
@@ -217,17 +212,16 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 		}
 		private List<SerpItem> ReadSerpItems(IWebDriver driver, int pageLimit, int offset = 0)
 		{
-			List<SerpItem> total = new List<SerpItem>();
-			for (int currPage = offset; currPage <= pageLimit; currPage++)
+			var total = new List<SerpItem>();
+			for (var currPage = offset; currPage <= pageLimit; currPage++)
 			{
 				var source = driver.PageSource.Replace("&quot;", "\"");
 				var regexMatch = Regex.Matches(source, "{\"serp-item\":.*?}}");		
-				List<string> results = new List<string>();
+				var results = new List<string>();
 				foreach(Match x in regexMatch)
 				{
 					var newRes = x.Value.Replace("{\"serp-item\":", "");
-					if(newRes!=null)
-						results.Add(newRes.Substring(0, newRes.Length - 1));
+					results.Add(newRes.Substring(0, newRes.Length - 1));
 				}
 				if (results.Count <= 0)
 				{
@@ -244,7 +238,6 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 						catch
 						{
 							Console.WriteLine("could not convert serp object");
-							continue;
 						}
 					}
 					if(total.Count>0)
@@ -257,79 +250,91 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 			}
 			return total;
 		}
+
+		private object _locker = new object();
 		public SearchResponse<List<SerpItem>> Reader(string url, int limit = 1)
 		{
 			try
 			{
-				List<SerpItem> totalCollected = new List<SerpItem>();
-				SearchResponse<List<SerpItem>> response = new SearchResponse<List<SerpItem>>();
-				using (Driver = new ChromeDriver(_chromeService, _chromeOptions))
+				lock (_locker)
 				{
-					Driver.Navigate().GoToUrl(url);
-					if (Driver.Url.Contains("captcha"))
+					var totalCollected = new List<SerpItem>();
+					var response = new SearchResponse<List<SerpItem>>();
+					using (var driver = new ChromeDriver(_chromeService, _chromeOptions))
 					{
-						response.StatusCode = ResponseCode.CaptchaRequired;
-						response.Message = "Yandex captcha needed";
-						return response;
-					}
-					else
-					{
-						Thread.Sleep(500);
-						try { 
-							var mispelltag = Driver.FindElement(By.ClassName("misspell__message"));
-							if (mispelltag != null)
+						driver.Navigate().GoToUrl(url);
+						if (driver.Url.Contains("captcha"))
 						{
-							var gotosuggestedurl = "https://yandex.com" + Regex.Match(mispelltag.GetAttribute("outerHTML"), "href=.*?/images.*?>").Value.Replace("href=","").Replace(">","").Replace("\"","");
-							Driver.Navigate().GoToUrl(gotosuggestedurl);
-							Thread.Sleep(2000);
+							response.StatusCode = ResponseCode.CaptchaRequired;
+							response.Message = "Yandex captcha needed";
+							return response;
 						}
+
+						Thread.Sleep(500);
+						try
+						{
+							var misspell = driver.FindElement(By.ClassName("misspell__message"));
+							if (misspell != null)
+							{
+								var autosuggestion = "https://yandex.com" +
+								                     Regex.Match(misspell.GetAttribute("outerHTML"),
+										                     "href=.*?/images.*?>").Value.Replace("href=", "")
+									                     .Replace(">", "").Replace("\"", "");
+								driver.Navigate().GoToUrl(autosuggestion);
+								Thread.Sleep(2000);
+							}
 						}
 						catch
 						{
 							Console.WriteLine("nothing suggested for yandex search query");
 						}
-						totalCollected.AddRange(ReadSerpItems(Driver,limit));
-					}
-					#region old stuff
-					/*
-					List<IWebElement> elements = Driver.FindElements(By.XPath($"//div[contains(@class,'{targetElement}')]")).ToList();
-					if (elements == null || elements.Count<=0) { return null; }
-					while (elements.Count < limit)
-					{
-						ScrollPage(1);
-						var uniqueFind = Driver.FindElements(By.XPath($"//div[contains(@class,'{targetElement}')]"));
-						elements.AddRange(uniqueFind);
-						elements = elements.Distinct().ToList();
-					}
 
-					List<string> urls = new List<string>();
-					for (int x = 0; x < limit; x++)
-					{
-						var tohtml = elements[x].GetAttribute("outerHTML");
+						totalCollected.AddRange(ReadSerpItems(driver, limit));
 
-						var decoded = HttpUtility.HtmlDecode(tohtml);
-						var imageUrl = Regex.Matches(decoded, patternRegex).Select(_ => _.Value).FirstOrDefault();
-						if (string.IsNullOrEmpty(imageUrl))
+						#region old stuff
+
+						/*
+						List<IWebElement> elements = Driver.FindElements(By.XPath($"//div[contains(@class,'{targetElement}')]")).ToList();
+						if (elements == null || elements.Count<=0) { return null; }
+						while (elements.Count < limit)
 						{
-							if (x > elements.Count)
+							ScrollPage(1);
+							var uniqueFind = Driver.FindElements(By.XPath($"//div[contains(@class,'{targetElement}')]"));
+							elements.AddRange(uniqueFind);
+							elements = elements.Distinct().ToList();
+						}
+	
+						List<string> urls = new List<string>();
+						for (int x = 0; x < limit; x++)
+						{
+							var tohtml = elements[x].GetAttribute("outerHTML");
+	
+							var decoded = HttpUtility.HtmlDecode(tohtml);
+							var imageUrl = Regex.Matches(decoded, patternRegex).Select(_ => _.Value).FirstOrDefault();
+							if (string.IsNullOrEmpty(imageUrl))
 							{
-								throw new Exception("can't find any images, all returning null");
+								if (x > elements.Count)
+								{
+									throw new Exception("can't find any images, all returning null");
+								}
+								x = x == 0 ? 0 : x--;
+								continue;
 							}
-							x = x == 0 ? 0 : x--;
-							continue;
+							else
+							{
+								urls.Add(imageUrl);
+							}
 						}
-						else
-						{
-							urls.Add(imageUrl);
-						}
+						var waitResults = new WebDriverWait(Driver, TimeSpan.FromSeconds(10));
+						return urls;*/
+
+						#endregion
 					}
-					var waitResults = new WebDriverWait(Driver, TimeSpan.FromSeconds(10));
-					return urls;*/
-					#endregion
+
+					response.StatusCode = ResponseCode.Success;
+					response.Result = totalCollected;
+					return response;
 				}
-				response.StatusCode = ResponseCode.Success;
-				response.Result = totalCollected;
-				return response;
 			}
 			catch (Exception ee)
 			{
@@ -341,13 +346,13 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 		{
 			try
 			{
-				using(Driver = new ChromeDriver(_chromeService, _chromeOptions))
+				using(var driver = new ChromeDriver(_chromeService, _chromeOptions))
 				{
-					Driver.Navigate().GoToUrl(baseurl);
-					var souce = Driver.PageSource;
-					Driver.Navigate().GoToUrl(url);
-					var manageD = Driver.Manage().Cookies.AllCookies;
-					var source = Driver.PageSource;
+					driver.Navigate().GoToUrl(baseurl);
+					var souce = driver.PageSource;
+					driver.Navigate().GoToUrl(url);
+					var manageD = driver.Manage().Cookies.AllCookies;
+					var source = driver.PageSource;
 				}
 
 
@@ -363,10 +368,10 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 		{
 			try
 			{
-				using(Driver = new ChromeDriver(_chromeService, _chromeOptions))
+				using(var driver = new ChromeDriver(_chromeService, _chromeOptions))
 				{
-					Driver.Navigate().GoToUrl(url);
-					return Driver.Manage().Cookies.AllCookies;
+					driver.Navigate().GoToUrl(url);
+					return driver.Manage().Cookies.AllCookies;
 				}
 			}
 			catch(Exception ee)

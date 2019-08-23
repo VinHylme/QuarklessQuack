@@ -9,22 +9,15 @@ using System.Globalization;
 
 namespace QuarklessContexts.Extensions
 {
-	static public class MarkovHelper
+	public static class MarkovHelper
 	{
 		public static string MapLanguages(this string language)
 		{
 			var all = CultureInfo.GetCultures(CultureTypes.AllCultures);
 			var shortv = all.Where(s => s.EnglishName.ToLower() == language.ToLower()).Select(s => s.Name).SingleOrDefault();
-			if (!string.IsNullOrEmpty(shortv))
-			{
-				return shortv;
-			}
-			else
-			{
-				return null;
-			}
+			return !string.IsNullOrEmpty(shortv) ? shortv : null;
 		}
-		static public TDict BuildTDict(string s, int size)
+		public static TDict BuildTDict(string s, int size)
 		{
 			TDict t = new TDict();
 			string prev = "";
@@ -47,7 +40,7 @@ namespace QuarklessContexts.Extensions
 			return t;
 		}
 
-		static public string[] Chunk(string s, int size)
+		public static string[] Chunk(string s, int size)
 		{
 			string[] ls = s.Split(' ');
 			List<string> chunk = new List<string>();
@@ -62,7 +55,7 @@ namespace QuarklessContexts.Extensions
 			return chunk.ToArray();
 		}
 
-		static public string BuildString(TDict t, int len, bool exact)
+		public static string BuildString(TDict t, int len, bool exact)
 		{
 			string last;
 			List<string> ucStr = new List<string>();
@@ -110,7 +103,7 @@ namespace QuarklessContexts.Extensions
 			return sb.ToString();
 		}
 
-		static private string Choose(WDict w)
+		private static string Choose(WDict w)
 		{
 			long total = w.Sum(t => t.Value);
 

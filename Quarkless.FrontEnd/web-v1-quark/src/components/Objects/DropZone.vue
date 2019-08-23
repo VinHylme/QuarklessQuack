@@ -2,7 +2,7 @@
 <div class="container_dropzone">
  <section>
         <b-field>
-            <b-upload :style="isHidden ? styleObject : '' " @input="onChange" v-model="dropFiles" :multiple="isMulti" :accept="acceptFile" drag-drop>
+            <b-upload :style="isHidden ? styleObject : '' " @input="onChange" v-model="dropFiles" :multiple="isMulti" :accept="acceptFile" @drop="droped" drag-drop>
                 <section class="section">
                     <div class="content has-text-centered">
                         <p>
@@ -62,17 +62,21 @@ export default {
           (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
         )
     },
+    droped(e){
+    },
     onChange(e){
-        let formData = new FormData();
-        for(var i = 0; i < this.dropFiles.length; i++){
-            formData.append('file_'+ this.dropFiles[i].name.replace('.',"_"), this.dropFiles[i]);
+        if(e!==null){
+            let formData = new FormData();
+            for(var i = 0; i < this.dropFiles.length; i++){
+                formData.append('file_'+ this.dropFiles[i].name.replace('.',"_"), this.dropFiles[i]);
+            }
+            this.$emit('readyUpload', 
+            {
+                formData: formData, 
+                requestData: this.dropFiles
+            });
+            this.dropFiles = [];
         }
-        this.$emit('readyUpload', 
-        {
-            formData: formData, 
-            requestData: this.dropFiles
-        });
-        this.dropFiles = [];
         },
       deleteDropFile(index) {
           this.dropFiles.splice(index, 1)
@@ -85,6 +89,7 @@ export default {
 .container_dropzone{
     width:100%;
     margin-left:0;
+    text-align: center;
 }
 .body-container .dropStyle{
     margin-left:0 !important;

@@ -7,6 +7,8 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 {
 	public interface IInstaUserLogic
 	{
+		Task<IResult<InstaAccountCreation>> CreateAccount(string username, string email, string password,
+			string firstname);
 		InstaChallengeLoginInfo GetChallangeInfo();
 		Task<IResult<InstaLoginResult>> SubmitChallangeCode(string username, string password, InstaChallengeLoginInfo instaChallengeLoginInfo, string code);
 		Task<IResult<InstaChallengeRequireEmailVerify>> RequestVerifyCodeToEmailForChallengeRequireAsync(string username, string password);

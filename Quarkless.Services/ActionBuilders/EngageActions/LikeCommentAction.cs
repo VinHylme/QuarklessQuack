@@ -6,7 +6,6 @@ using QuarklessContexts.Classes.Carriers;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models;
-using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessContexts.Models.Timeline;
@@ -15,7 +14,6 @@ using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Quarkless.Services.ActionBuilders.EngageActions
 {
@@ -31,18 +29,16 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	}
 	public class LikeCommentAction : IActionCommit
 	{
-		private readonly IContentManager _builder;
 		private readonly IHeartbeatLogic _heartbeatLogic;
 		private UserStoreDetails user;
 		private LikeStrategySettings likeStrategySettings;
 		public LikeCommentAction(IContentManager contentManager, IHeartbeatLogic heartbeatLogic)
 		{
-			_builder = contentManager;
 			_heartbeatLogic = heartbeatLogic;
 		}
 		private long? CommentingByTopic()
 		{
-			By by = new By
+			var by = new By
 			{
 				ActionType = (int)ActionType.LikeComment,
 				User = user.Profile.InstagramAccountId
@@ -51,52 +47,35 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				.GetAwaiter().GetResult().Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Count > 0);
 
-			if (fetchComments != null)
-			{
-				var select = fetchComments.ElementAtOrDefault(SecureRandom.Next(fetchComments.Count()));
-				if (select != null)
-				{
-					select.SeenBy.Add(by);
-					_heartbeatLogic.UpdateMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchUsersViaPostCommented, user.Profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
-					var comment = select.ObjectItem.FirstOrDefault();
-					if (comment != null)
-					{
-						return comment.Object.Pk;
-					}
-				}
-			}
-			return null;
+			var meta_S = fetchComments as __Meta__<List<UserResponse<InstaComment>>>[] ?? fetchComments.ToArray();
+			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
+			if (@select == null) return null;
+			@select.SeenBy.Add(@by);
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostCommented, user.Profile.Topics.TopicFriendlyName, @select).GetAwaiter().GetResult();
+			var comment = @select.ObjectItem.FirstOrDefault();
+			return comment?.Object.Pk;
 		}
 		private long? CommentingByCommenters()
 		{
-			By by = new By
+			var by = new By
 			{
 				ActionType = (int)ActionType.LikeComment,
 				User = user.Profile.InstagramAccountId
 			};
 			var fetchComments = _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaPostCommented, user.Profile.Topics.TopicFriendlyName)
-				.GetAwaiter().GetResult().Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-				.Where(s => s.ObjectItem.Count > 0);
-
-			if (fetchComments != null)
-			{
-				var select = fetchComments.ElementAtOrDefault(SecureRandom.Next(fetchComments.Count()));
-				if (select != null)
-				{
-					select.SeenBy.Add(by);
-					_heartbeatLogic.UpdateMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaPostCommented, user.Profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
-					var comment = select.ObjectItem.FirstOrDefault();
-					if (comment != null)
-					{
-						return comment.Object.Pk;
-					}
-				}
-			}
-			return null;
+			.GetAwaiter().GetResult().Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
+			.Where(s => s.ObjectItem.Count > 0);
+			var meta_S = fetchComments as __Meta__<List<UserResponse<InstaComment>>>[] ?? fetchComments.ToArray();
+			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
+			if (@select == null) return null;
+			@select.SeenBy.Add(@by);
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchCommentsViaPostCommented, user.Profile.Topics.TopicFriendlyName, @select).GetAwaiter().GetResult();
+			var comment = @select.ObjectItem.FirstOrDefault();
+			return comment?.Object.Pk;
 		}
 		private long? CommentingByLikers()
 		{
-			By by = new By
+			var by = new By
 			{
 				ActionType = (int)ActionType.LikeComment,
 				User = user.Profile.InstagramAccountId
@@ -104,26 +83,17 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			var fetchComments = _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaPostsLiked, user.Profile.Topics.TopicFriendlyName)
 				.GetAwaiter().GetResult().Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Count > 0);
-
-			if (fetchComments != null)
-			{
-				var select = fetchComments.ElementAtOrDefault(SecureRandom.Next(fetchComments.Count()));
-				if (select != null)
-				{
-					select.SeenBy.Add(by);
-					_heartbeatLogic.UpdateMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaPostsLiked, user.Profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
-					var comment = select.ObjectItem.FirstOrDefault();
-					if (comment != null)
-					{
-						return comment.Object.Pk;
-					}
-				}
-			}
-			return null;
+			var meta_S = fetchComments as __Meta__<List<UserResponse<InstaComment>>>[] ?? fetchComments.ToArray();
+			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
+			if (@select == null) return null;
+			@select.SeenBy.Add(@by);
+			_heartbeatLogic.UpdateMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaPostsLiked, user.Profile.Topics.TopicFriendlyName, @select).GetAwaiter().GetResult();
+			var comment = @select.ObjectItem.FirstOrDefault();
+			return comment?.Object.Pk;
 		}
 		private long? CommentingByTarget()
 		{
-			By by = new By
+			var by = new By
 			{
 				ActionType = (int)ActionType.LikeComment,
 				User = user.Profile.InstagramAccountId
@@ -132,25 +102,17 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				.GetAwaiter().GetResult().Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Count > 0);
 
-			if (fetchComments != null)
-			{
-				var select = fetchComments.ElementAtOrDefault(SecureRandom.Next(fetchComments.Count()));
-				if (select != null)
-				{
-					select.SeenBy.Add(by);
-					_heartbeatLogic.UpdateMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaUserTargetList, user.Profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
-					var comment = select.ObjectItem.FirstOrDefault();
-					if (comment != null)
-					{
-						return comment.Object.Pk;
-					}
-				}
-			}
-			return null;
+			var meta_S = fetchComments as __Meta__<List<UserResponse<InstaComment>>>[] ?? fetchComments.ToArray();
+			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
+			if (@select == null) return null;
+			@select.SeenBy.Add(@by);
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchCommentsViaUserTargetList, user.Profile.Topics.TopicFriendlyName, @select).GetAwaiter().GetResult();
+			var comment = @select.ObjectItem.FirstOrDefault();
+			return comment?.Object.Pk;
 		}
 		private long? CommentingByLocation()
 		{
-			By by = new By
+			var by = new By
 			{
 				ActionType = (int)ActionType.LikeComment,
 				User = user.Profile.InstagramAccountId
@@ -159,25 +121,17 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				.GetAwaiter().GetResult().Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Count > 0);
 
-			if (fetchComments != null)
-			{
-				var select = fetchComments.ElementAtOrDefault(SecureRandom.Next(fetchComments.Count()));
-				if (select != null)
-				{
-					select.SeenBy.Add(by);
-					_heartbeatLogic.UpdateMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaLocationTargetList, user.Profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
-					var comment = select.ObjectItem.FirstOrDefault();
-					if (comment != null)
-					{
-						return comment.Object.Pk;
-					}
-				}
-			}
-			return null;
+			var meta_S = fetchComments as __Meta__<List<UserResponse<InstaComment>>>[] ?? fetchComments.ToArray();
+			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
+			if (@select == null) return null;
+			@select.SeenBy.Add(@by);
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchCommentsViaLocationTargetList, user.Profile.Topics.TopicFriendlyName, @select).GetAwaiter().GetResult();
+			var comment = @select.ObjectItem.FirstOrDefault();
+			return comment?.Object.Pk;
 		}
 		private long? CommentingByUserFeed()
 		{
-			By by = new By
+			var by = new By
 			{
 				ActionType = (int)ActionType.LikeComment,
 				User = user.Profile.InstagramAccountId
@@ -186,21 +140,13 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				.GetAwaiter().GetResult().Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Count > 0);
 
-			if (fetchComments != null)
-			{
-				var select = fetchComments.ElementAtOrDefault(SecureRandom.Next(fetchComments.Count()));
-				if (select != null)
-				{
-					select.SeenBy.Add(by);
-					_heartbeatLogic.UpdateMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaUserFeed, user.Profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
-					var comment = select.ObjectItem.FirstOrDefault();
-					if (comment != null)
-					{
-						return comment.Object.Pk;
-					}
-				}
-			}
-			return null;
+			var meta_S = fetchComments as __Meta__<List<UserResponse<InstaComment>>>[] ?? fetchComments.ToArray();
+			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
+			if (@select == null) return null;
+			@select.SeenBy.Add(@by);
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchCommentsViaUserFeed, user.Profile.Topics.TopicFriendlyName, @select).GetAwaiter().GetResult();
+			var comment = @select.ObjectItem.FirstOrDefault();
+			return comment?.Object.Pk;
 		}
 
 
@@ -219,29 +165,29 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
 			Console.WriteLine($"Like Comment Action Started: {user.OAccountId}, {user.OInstagramAccountUsername}, {user.OInstagramAccountUser}");
-			ResultCarrier<IEnumerable<TimelineEventModel>> Results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
-			LikeCommentActionOptions likeActionOptions = actionOptions as LikeCommentActionOptions;
+			var results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
+			var likeActionOptions = actionOptions as LikeCommentActionOptions;
 
 			if (likeStrategySettings == null && user == null)
 			{
-				Results.IsSuccesful = false;
-				Results.Info = new ErrorResponse
+				results.IsSuccesful = false;
+				results.Info = new ErrorResponse
 				{
 					Message = $"user is null, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
 					StatusCode = System.Net.HttpStatusCode.NotFound
 				};
-				return Results;
+				return results;
 			};
 
 			try
 			{
-				if(likeStrategySettings.LikeStrategy == LikeStrategyType.Default)
+				if(likeStrategySettings != null && likeStrategySettings.LikeStrategy == LikeStrategyType.Default)
 				{
 					long? nominatedComment = null;
-					LikeCommentActionType likeActionTypeSelected = LikeCommentActionType.ByTopic;
-					if(likeActionOptions.LikeActionType == LikeCommentActionType.Any)
+					var likeActionTypeSelected = LikeCommentActionType.ByTopic;
+					if(likeActionOptions != null && likeActionOptions.LikeActionType == LikeCommentActionType.Any)
 					{
-						List<Chance<LikeCommentActionType>> likeActionsChances = new List<Chance<LikeCommentActionType>>
+						var likeActionsChances = new List<Chance<LikeCommentActionType>>
 						{
 							new Chance<LikeCommentActionType>{Object = LikeCommentActionType.ByTopic, Probability = 0.20},
 							new Chance<LikeCommentActionType>{Object = LikeCommentActionType.ByUserFeed, Probability = 0.20},
@@ -283,54 +229,52 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					}
 					if (nominatedComment==null)
 					{
-						Results.IsSuccesful = false;
-						Results.Info = new ErrorResponse
+						results.IsSuccesful = false;
+						results.Info = new ErrorResponse
 						{
 							Message = $"could not find any good comment to like, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
 							StatusCode = System.Net.HttpStatusCode.NotFound
 						};
-						return Results;
+						return results;
 					}
-					else
+
+					var restModel = new RestModel
 					{
-						RestModel restModel = new RestModel
+						BaseUrl = string.Format(UrlConstants.LikeComment, nominatedComment.ToString()),
+						RequestType = RequestType.POST,
+						User = user,
+						JsonBody = null
+					};
+					results.IsSuccesful = true;
+					results.Results = new List<TimelineEventModel>
+					{
+						new TimelineEventModel
 						{
-							BaseUrl = string.Format(UrlConstants.LikeComment, nominatedComment.ToString()),
-							RequestType = RequestType.POST,
-							User = user,
-							JsonBody = null
-						};
-						Results.IsSuccesful = true;
-						Results.Results = new List<TimelineEventModel>
-						{
-							new TimelineEventModel
-							{
-								ActionName = $"LikeComment_{likeStrategySettings.LikeStrategy.ToString()}_{likeActionTypeSelected.ToString()}",
-								Data = restModel,
-								ExecutionTime = likeActionOptions.ExecutionTime
-							}
-						};
-						return Results;
-					}
+							ActionName = $"LikeComment_{likeStrategySettings.LikeStrategy.ToString()}_{likeActionTypeSelected.ToString()}",
+							Data = restModel,
+							ExecutionTime = likeActionOptions.ExecutionTime
+						}
+					};
+					return results;
 				}
-				Results.IsSuccesful = false;
-				Results.Info = new ErrorResponse
+				results.IsSuccesful = false;
+				results.Info = new ErrorResponse
 				{
 					Message = $"strategy not implemented, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
 					StatusCode = System.Net.HttpStatusCode.Forbidden
 				};
-				return Results;
+				return results;
 			}
 			catch(Exception ee)
 			{
-				Results.IsSuccesful = false;
-				Results.Info = new ErrorResponse
+				results.IsSuccesful = false;
+				results.Info = new ErrorResponse
 				{
 					Message = $"{ee.Message}, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
 					StatusCode = System.Net.HttpStatusCode.InternalServerError,
 					Exception = ee
 				};
-				return Results;
+				return results;
 			}
 		}
 	}

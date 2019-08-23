@@ -11,11 +11,13 @@ import moment from 'moment';
 Vue.use(Vuex);
 export default new Vuex.Store({
   state:{
+    showingLogs:false,
     AccountData:{
       InstagramAccounts:[],
       Profiles:[],
       Library:[],
       TimelineData:[],
+      TimelineLogData:[],
       ProfileConfg:{}
     },
     status:'',
@@ -164,6 +166,15 @@ export default new Vuex.Store({
     failed_to_delete_saved_medias(state){
       state.AccountData.Library = null;
     },
+    create_post(state,event){},
+    failed_to_create_post(state){},
+    retrieved_event_logs(state, logs){
+      state.AccountData.TimelineLogData = logs;
+    },
+    failed_to_retrieve_event_logs(state)
+    {
+      state.AccountData.TimelineLogData = []
+    }
   },
   getters: {
     User: state => state.user,
@@ -172,6 +183,10 @@ export default new Vuex.Store({
     UserRole:state=> state.role,
     GetInstagramAccounts:state => {return state.AccountData.InstagramAccounts},
     UserTimeline: state => {return state.AccountData.TimelineData},
+    UserTimelineLogs: state => state.AccountData.TimelineLogData,
+    UserTimelineLogForUser: state => instaId => {
+      return state.AccountData.TimelineLogData.filter(item=>item.instagramAccountID === instaId);
+    },
     UserProfiles: state => {return state.AccountData.Profiles},
     UserLibraries: state => {return state.AccountData.Library},
     UserLibrary: state => (instagramAccountId) => {
@@ -194,6 +209,39 @@ export default new Vuex.Store({
     MenuState: () => localStorage.getItem("menu_state")
   },
   actions: {
+    GetEventLogs({commit}, data){
+      return new Promise((resolve, reject)=>{
+        TimelineServices.GetEventLogs(data.instagramAccountId, data.limit).then(resp=>{
+          commit('retrieved_event_logs_in',resp.data);
+          resolve(resp);
+        }).catch((err)=>{
+          commit('failed_to_retrieve_event_logs_in',err);
+          reject(err);
+        })
+      })
+    },
+    GetAllEventLogsForUser({commit},limit){
+      return new Promise((resolve, reject)=>{
+        TimelineServices.GetAllEventLogsForUser(limit).then(resp=>{
+          commit('retrieved_event_logs',resp.data);
+          resolve(resp);
+        }).catch((err)=>{
+          commit('failed_to_retrieve_event_logs');
+          reject(err);
+        })
+      })
+    },
+    CreatePost({commit}, data){
+      return new Promise((resolve, reject)=>{
+        TimelineServices.CreatePost(data.id, data.event).then(resp=>{
+          commit('create_post', data);
+          resolve(resp);
+        }).catch((err)=>{
+          commit('failed_to_create_post', err);
+          reject(err);
+        })
+      })
+    },
     SetSavedMedias({commit}, data){
       return new Promise((resolve, reject)=>{
         LibraryServices.SetSavedMedias(data.accountId, data.instagramAccountId, data.data).then(resp=>{

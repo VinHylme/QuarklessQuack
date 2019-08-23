@@ -19,4 +19,5 @@ namespace QuarklessContexts.Models.ServicesModels.DatabaseModels
 		public string TopicName { get; set; }
 		public List<SubTopics> SubTopics { get; set; }
 	}
+
 }

@@ -26,5 +26,6 @@ namespace Quarkless.HeartBeater.__Init__
 	public interface IInit
 	{
 		Task Endeavor(Settings settings);
+		Task Populator(Settings settings);
 	}
 }

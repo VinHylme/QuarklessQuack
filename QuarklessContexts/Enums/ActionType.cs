@@ -16,14 +16,10 @@ namespace QuarklessContexts.Enums
 	}
 	public enum ActionType
 	{
+		[Description("none")]
+		None,
 		[Description("createpost")]
 		CreatePost,
-		//[Description("createphoto")]
-		//CreatePostTypeImage,
-		//[Description("createvideo")]
-		//CreatePostTypeVideo,
-		//[Description("createcarousel")]
-		//CreatePostTypeCarousel,
 		[Description("createstory")]
 		CreateStory,
 		[Description("comment")]
@@ -49,6 +45,8 @@ namespace QuarklessContexts.Enums
 		[Description("unlikecomment")]
 		UnlikeComment,
 		[Description("actionchecker")]
-		MaintainAccount
+		MaintainAccount,
+		[Description("GetRecentActivityFeed")]
+		RecentActivityFeed
 	}
 }

@@ -66,7 +66,7 @@
                         </b-tooltip>
                         </div>
                         <div class="control">
-                        <b-tooltip label="Refresh this account" type="is-dark" position="is-bottom">
+                        <b-tooltip label="Refresh this account" type="is-dark" position="is-top">
                             <button class="button is-light-dark" @click="RefreshState()">
                                 <b-icon pack="fas" icon="sync-alt" >
                                 </b-icon>

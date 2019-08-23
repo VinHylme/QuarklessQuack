@@ -108,7 +108,7 @@ namespace QuarklessLogic.Logic.QueryLogic
 		{
 			return new ProfileConfiguration
 			{
-				Topics = await _topicServicesLogic.GetAllTopicCategories(),
+				Topics = (await _topicServicesLogic.GetAllTopicCategories()).DistinctBy(item=>item.CategoryName),
 				ColorsAllowed = Enum.GetValues(typeof(ColorType)).Cast<ColorType>().Select(v=>v.GetDescription()),
 				ImageTypes = Enum.GetValues(typeof(ImageType)).Cast<ImageType>().Select(v=>v.GetDescription()),
 				Orientations = Enum.GetValues(typeof(Orientation)).Cast<Orientation>().Select(v=>v.GetDescription()),

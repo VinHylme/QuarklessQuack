@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Web;
 
 namespace QuarklessContexts.Extensions
@@ -35,6 +36,16 @@ namespace QuarklessContexts.Extensions
 				File.Exists(Path.Combine(assemblyLocation, cultureInfo.Name, resourceFilename))
 			).ToList();
 		}
+
+		public static bool ContainsWebAddress(this string target)
+		{
+			var regex = new Regex(@"(http|www|.*?\.)\S*");
+			return regex.IsMatch(target);
+		}
+
+		public static bool ContainsMentions(this string target) => new Regex(@"@\S*").IsMatch(target);
+		public static bool ContainsHashtags(this string target) => new Regex(@"#\S*").IsMatch(target);
+		public static bool ContainsPhoneNumber(this string target) => new Regex(@"\d{7,}").IsMatch(target);
 		public static int Similarity(this string s, string t)
 		{
 			if (string.IsNullOrEmpty(s))

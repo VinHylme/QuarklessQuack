@@ -25,7 +25,9 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 		Task SetKeyExpiryDate(string userId, RedisKeys.HashtagGrowKeys hashtagGrowKey, TimeSpan expires);
 		Task<bool> SetMemberExists(string userId, RedisKeys.HashtagGrowKeys hashtagGrowKey, string value);
 		Task<string> StringGet(string userId, RedisKeys.HashtagGrowKeys hashtagGrowKey);
+		Task<string> StringGet(RedisKeys.HashtagGrowKeys hashtagGrowKey);
 		Task StringSet(string userId, RedisKeys.HashtagGrowKeys hashtagGrowKey, string value, TimeSpan? expiry = null, When when = When.Always);
+		Task StringSet(RedisKeys.HashtagGrowKeys hashtagGrowKey, string value, TimeSpan? expiry = null, When when = When.Always);
 		Task SetRemove(string userId, RedisKeys.HashtagGrowKeys hashtagGrowKey, string value);
 	}
 }

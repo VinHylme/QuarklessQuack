@@ -9,5 +9,6 @@ namespace QuarklessLogic.ServicesLogic.CorpusLogic
 		Task AddMedias(IEnumerable<MediaCorpus> medias);
 		Task<IEnumerable<MediaCorpus>> GetMedias(string topic, string lang, string langmapped, int limit);
 		Task<long> MediasCount(string topic);
+		Task UpdateTopicName(string topic, string newTopic);
 	}
 }

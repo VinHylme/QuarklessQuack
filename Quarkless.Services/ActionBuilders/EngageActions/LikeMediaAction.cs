@@ -47,7 +47,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		}
 		private string LikeUserFeedMedia()
 		{
-			By by = new By
+			var by = new By
 			{
 				ActionType = (int)ActionType.LikePost,
 				User = user.Profile.InstagramAccountId
@@ -55,21 +55,17 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchUsersFeed, user.Profile.Topics.TopicFriendlyName, user.Profile.InstagramAccountId)
 				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s=>s.ObjectItem.Medias.Count>0);
-			if (fetchMedias != null)
-			{
-				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
-				if (select!=null)
-				{
-					select.SeenBy.Add(by);
-					_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFeed, user.Profile.Topics.TopicFriendlyName, select,user.Profile.InstagramAccountId).GetAwaiter().GetResult();
-					return select.ObjectItem.Medias.FirstOrDefault().MediaId;
-				}
-			}
-			return null;
+			if (fetchMedias == null) return null;
+			var meta_S = fetchMedias as __Meta__<Media>[] ?? fetchMedias.ToArray();
+			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
+			if (@select == null) return null;
+			@select.SeenBy.Add(@by);
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFeed, user.Profile.Topics.TopicFriendlyName, @select,user.Profile.InstagramAccountId).GetAwaiter().GetResult();
+			return @select.ObjectItem.Medias.FirstOrDefault()?.MediaId;
 		}
 		private string LikeUsersMediaByTopic()
 		{
-			By by = new By
+			var by = new By
 			{
 				ActionType = (int)ActionType.LikePost,
 				User = user.Profile.InstagramAccountId
@@ -77,21 +73,16 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic, user.Profile.Topics.TopicFriendlyName)
 				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Medias.Count > 0);
-			if (fetchMedias != null)
-			{
-				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
-				if (select != null)
-				{
-					select.SeenBy.Add(by);
-					_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByTopic, user.Profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
-					return select.ObjectItem.Medias.FirstOrDefault().MediaId;
-				}
-			}
-			return null;
+			var meta_S = fetchMedias as __Meta__<Media>[] ?? fetchMedias.ToArray();
+			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
+			if (@select == null) return null;
+			@select.SeenBy.Add(@by);
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByTopic, user.Profile.Topics.TopicFriendlyName, @select).GetAwaiter().GetResult();
+			return @select.ObjectItem.Medias.FirstOrDefault()?.MediaId;
 		}
 		private string LikeUsersMediaByLocation()
 		{
-			By by = new By
+			var by = new By
 			{
 				ActionType = (int)ActionType.LikePost,
 				User = user.Profile.InstagramAccountId
@@ -99,21 +90,17 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByUserLocationTargetList, user.Profile.Topics.TopicFriendlyName,user.Profile.InstagramAccountId)
 				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Medias.Count > 0);
-			if (fetchMedias != null)
-			{
-				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
-				if (select != null)
-				{
-					select.SeenBy.Add(by);
-					_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByUserLocationTargetList, user.Profile.Topics.TopicFriendlyName, select,user.Profile.InstagramAccountId).GetAwaiter().GetResult();
-					return select.ObjectItem.Medias.FirstOrDefault().MediaId;
-				}
-			}
-			return null;
+			if (fetchMedias == null) return null;
+			var meta_S = fetchMedias as __Meta__<Media>[] ?? fetchMedias.ToArray();
+			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
+			if (@select == null) return null;
+			@select.SeenBy.Add(@by);
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByUserLocationTargetList, user.Profile.Topics.TopicFriendlyName, @select,user.Profile.InstagramAccountId).GetAwaiter().GetResult();
+			return @select.ObjectItem.Medias.FirstOrDefault()?.MediaId;
 		}
 		private string LikeUsersMediaLikers()
 		{
-			By by = new By
+			var by = new By
 			{
 				ActionType = (int)ActionType.LikePost,
 				User = user.Profile.InstagramAccountId
@@ -121,21 +108,17 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByLikers, user.Profile.Topics.TopicFriendlyName)
 				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Medias.Count > 0);
-			if (fetchMedias != null)
-			{
-				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
-				if (select != null)
-				{
-					select.SeenBy.Add(by);
-					_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByLikers, user.Profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
-					return select.ObjectItem.Medias.FirstOrDefault().MediaId;
-				}
-			}
-			return null;
+			if (fetchMedias == null) return null;
+			var meta_S = fetchMedias as __Meta__<Media>[] ?? fetchMedias.ToArray();
+			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
+			if (@select == null) return null;
+			@select.SeenBy.Add(@by);
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByLikers, user.Profile.Topics.TopicFriendlyName, @select).GetAwaiter().GetResult();
+			return @select.ObjectItem.Medias.FirstOrDefault()?.MediaId;
 		}
 		private string LikeUsersMediaCommenters()
 		{
-			By by = new By
+			var by = new By
 			{
 				ActionType = (int)ActionType.LikePost,
 				User = user.Profile.InstagramAccountId
@@ -143,99 +126,96 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByCommenters, user.Profile.Topics.TopicFriendlyName)
 				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Medias.Count > 0);
-			if (fetchMedias != null)
-			{
-				var select = fetchMedias.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count()));
-				if (select != null)
-				{
-						select.SeenBy.Add(by);
-						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByCommenters, user.Profile.Topics.TopicFriendlyName, select).GetAwaiter().GetResult();
-						return select.ObjectItem.Medias.FirstOrDefault().MediaId;
-				}
-			}
-			return null;
+			var meta_S = fetchMedias as __Meta__<Media>[] ?? fetchMedias.ToArray();
+			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
+			if (@select == null) return null;
+			@select.SeenBy.Add(@by);
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByCommenters, user.Profile.Topics.TopicFriendlyName, @select).GetAwaiter().GetResult();
+			return @select.ObjectItem.Medias.FirstOrDefault()?.MediaId;
 		}
 		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
 			Console.WriteLine($"Like Post Action Started: {user.OAccountId}, {user.OInstagramAccountUsername}, {user.OInstagramAccountUser}");
 
-			ResultCarrier<IEnumerable<TimelineEventModel>> Results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
-			LikeActionOptions likeActionOptions = actionOptions as LikeActionOptions;
+			var results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
+			var likeActionOptions = actionOptions as LikeActionOptions;
 			if (likeStrategySettings == null && user==null)
 			{
-				Results.IsSuccesful = false;
-				Results.Info = new ErrorResponse
+				results.IsSuccesful = false;
+				results.Info = new ErrorResponse
 				{
 					Message = $"user is null, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
 					StatusCode = System.Net.HttpStatusCode.NotFound
 				};
-				return Results;
+				return results;
 			};
 			try
 			{
-				if (likeStrategySettings.LikeStrategy == LikeStrategyType.Default)
+				switch (likeStrategySettings.LikeStrategy)
 				{
-					string nominatedMedia = string.Empty;
-					LikeActionType likeActionTypeSelected = LikeActionType.LikeByTopic;
-					if (likeActionOptions.LikeActionType == LikeActionType.Any)
+					case LikeStrategyType.Default:
 					{
-						List<Chance<LikeActionType>> likeActionsChances = new List<Chance<LikeActionType>>
+						var nominatedMedia = string.Empty;
+						var likeActionTypeSelected = LikeActionType.LikeByTopic;
+						if (likeActionOptions != null && likeActionOptions.LikeActionType == LikeActionType.Any)
 						{
-							new Chance<LikeActionType>{Object = LikeActionType.LikeByTopic, Probability = 0.10},
-							new Chance<LikeActionType>{Object = LikeActionType.LikeFromUsersFeed, Probability = 0.30},
-							new Chance<LikeActionType>{Object = LikeActionType.LikeUsersMediaByCommenters, Probability = 0.15},
-							new Chance<LikeActionType>{Object = LikeActionType.LikeUsersMediaByLikers, Probability = 0.29},
-						};
+							var likeActionsChances = new List<Chance<LikeActionType>>
+							{
+								new Chance<LikeActionType>{Object = LikeActionType.LikeByTopic, Probability = 0.10},
+								new Chance<LikeActionType>{Object = LikeActionType.LikeFromUsersFeed, Probability = 0.30},
+								new Chance<LikeActionType>{Object = LikeActionType.LikeUsersMediaByCommenters, Probability = 0.15},
+								new Chance<LikeActionType>{Object = LikeActionType.LikeUsersMediaByLikers, Probability = 0.29},
+							};
 
-						if (user.Profile.LocationTargetList != null)
-							if(user.Profile.LocationTargetList.Count > 0)
-							likeActionsChances.Add(new Chance<LikeActionType> { Object = LikeActionType.LikeUsersMediaByLocation, Probability = 0.16 });
+							if (user.Profile.LocationTargetList != null)
+								if(user.Profile.LocationTargetList.Count > 0)
+									likeActionsChances.Add(new Chance<LikeActionType> { Object = LikeActionType.LikeUsersMediaByLocation, Probability = 0.16 });
 
-						likeActionTypeSelected = SecureRandom.ProbabilityRoll(likeActionsChances);
-					}
-					else
-					{
-						likeActionTypeSelected = likeActionOptions.LikeActionType;
-					}
-
-					switch (likeActionTypeSelected)
-					{
-						case LikeActionType.LikeByTopic:
-							nominatedMedia = LikeUsersMediaByTopic();
-							break;
-						case LikeActionType.LikeFromUsersFeed:
-							nominatedMedia = LikeUserFeedMedia();
-							break;
-						case LikeActionType.LikeUsersMediaByCommenters:
-							nominatedMedia = LikeUsersMediaCommenters();
-							break;
-						case LikeActionType.LikeUsersMediaByLikers:
-							nominatedMedia = LikeUsersMediaLikers();
-							break;
-						case LikeActionType.LikeUsersMediaByLocation:
-							nominatedMedia = LikeUsersMediaByLocation();
-							break;
-					}
-					if (string.IsNullOrEmpty(nominatedMedia))
-					{
-						Results.IsSuccesful = false;
-						Results.Info = new ErrorResponse
+							likeActionTypeSelected = SecureRandom.ProbabilityRoll(likeActionsChances);
+						}
+						else
 						{
-							Message = $"could not find any good media to like, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
-							StatusCode = System.Net.HttpStatusCode.NotFound
-						};
-						return Results;
-					}
-					else { 
-						RestModel restModel = new RestModel
+							likeActionTypeSelected = likeActionOptions.LikeActionType;
+						}
+
+						switch (likeActionTypeSelected)
+						{
+							case LikeActionType.LikeByTopic:
+								nominatedMedia = LikeUsersMediaByTopic();
+								break;
+							case LikeActionType.LikeFromUsersFeed:
+								nominatedMedia = LikeUserFeedMedia();
+								break;
+							case LikeActionType.LikeUsersMediaByCommenters:
+								nominatedMedia = LikeUsersMediaCommenters();
+								break;
+							case LikeActionType.LikeUsersMediaByLikers:
+								nominatedMedia = LikeUsersMediaLikers();
+								break;
+							case LikeActionType.LikeUsersMediaByLocation:
+								nominatedMedia = LikeUsersMediaByLocation();
+								break;
+						}
+						if (string.IsNullOrEmpty(nominatedMedia))
+						{
+							results.IsSuccesful = false;
+							results.Info = new ErrorResponse
+							{
+								Message = $"could not find any good media to like, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
+								StatusCode = System.Net.HttpStatusCode.NotFound
+							};
+							return results;
+						}
+
+						var restModel = new RestModel
 						{
 							BaseUrl = string.Format(UrlConstants.LikeMedia, nominatedMedia),
 							RequestType = RequestType.POST,
 							User = user,
 							JsonBody = null
 						};
-						Results.IsSuccesful = true;
-						Results.Results = new List<TimelineEventModel>
+						results.IsSuccesful = true;
+						results.Results = new List<TimelineEventModel>
 						{
 							new TimelineEventModel
 							{
@@ -244,72 +224,72 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 								ExecutionTime = likeActionOptions.ExecutionTime
 							}
 						};
-						return Results;
+						return results;
 					}
-				}
-				else if(likeStrategySettings.LikeStrategy == LikeStrategyType.TwoDollarCent)
-				{
-					By by = new By
-					{
-						ActionType = (int)ActionType.LikePost,
-						User = user.Profile.InstagramAccountId
-					};
-					var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic, user.Profile.Topics.TopicFriendlyName)
-						.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType));
-					if (fetchMedias != null)
-					{
-						int timerCounter = 0;
+					case LikeStrategyType.TwoDollarCent:
 						List<TimelineEventModel> events_ = new List<TimelineEventModel>();
-						var grouped = fetchMedias.Where(s=>s!=null).GroupBy(a=>a.ObjectItem.Medias.FirstOrDefault().Topic);
-						foreach(var topic in grouped)
+					{
+						var by = new By
 						{
-							for (int i = 0; i < likeStrategySettings.NumberOfActions; i++)
+							ActionType = (int)ActionType.LikePost,
+							User = user.Profile.InstagramAccountId
+						};
+						var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic, user.Profile.Topics.TopicFriendlyName)
+							.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == @by.User && e.ActionType == @by.ActionType));
+							var timerCounter = 0;
+							var grouped = fetchMedias.GroupBy(a=>a.ObjectItem.Medias.FirstOrDefault()?.Topic);
+							foreach(var topic in grouped)
 							{
-								var media = topic.ElementAtOrDefault(i);
-									media.SeenBy.Add(by);
-									_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFeed, user.Profile.Topics.TopicFriendlyName, media, user.Profile.InstagramAccountId).GetAwaiter().GetResult();
-									var nominatedMedia = media.ObjectItem.Medias.FirstOrDefault().MediaId;
-									if (nominatedMedia != null)
+								for (var i = 0; i < likeStrategySettings.NumberOfActions; i++)
+								{
+									var media = topic.ElementAtOrDefault(i);
+									if (media == null) continue;
+									media.SeenBy.Add(@by);
+									_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFeed,
+										user.Profile.Topics.TopicFriendlyName, media,
+										user.Profile.InstagramAccountId).GetAwaiter().GetResult();
+									var nominatedMedia = media.ObjectItem.Medias.FirstOrDefault()?.MediaId;
+									if (nominatedMedia == null) continue;
+									var restModel = new RestModel
 									{
-										RestModel restModel = new RestModel
-										{
-											BaseUrl = string.Format(UrlConstants.LikeMedia, nominatedMedia),
-											RequestType = RequestType.POST,
-											JsonBody = null,
-											User = user
-										};
-										events_.Add(new TimelineEventModel
-										{
-											ActionName = $"LikeMedia{likeStrategySettings.LikeStrategy.ToString()}_{likeActionOptions.LikeActionType.ToString()}",
-											Data = restModel,
-											ExecutionTime = likeActionOptions.ExecutionTime.AddMinutes((likeStrategySettings.OffsetPerAction.TotalMinutes) * timerCounter++)
-										});
-									}
+										BaseUrl = string.Format(UrlConstants.LikeMedia, nominatedMedia),
+										RequestType = RequestType.POST,
+										JsonBody = null,
+										User = user
+									};
+									events_.Add(new TimelineEventModel
+									{
+										ActionName =
+											$"LikeMedia{likeStrategySettings.LikeStrategy.ToString()}_{likeActionOptions?.LikeActionType.ToString()}",
+										Data = restModel,
+										ExecutionTime = likeActionOptions.ExecutionTime.AddMinutes(
+											(likeStrategySettings.OffsetPerAction.TotalMinutes) * timerCounter++)
+									});
+								}
 							}
-						}
-						Results.IsSuccesful = true;
-						Results.Results = events_;
-						return Results;
+							results.IsSuccesful = true;
+							results.Results = events_;
+							return results;
 					}
 				}
-				Results.IsSuccesful = false;
-				Results.Info = new ErrorResponse
+				results.IsSuccesful = false;
+				results.Info = new ErrorResponse
 				{
 					Message = $"strategy not implemented, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
 					StatusCode = System.Net.HttpStatusCode.Forbidden
 				};
-				return Results;
+				return results;
 			}
 			catch (Exception ee)
 			{
-				Results.IsSuccesful = false;
-				Results.Info = new ErrorResponse
+				results.IsSuccesful = false;
+				results.Info = new ErrorResponse
 				{
 					Message = $"{ee.Message}, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}",
 					StatusCode = System.Net.HttpStatusCode.InternalServerError,
 					Exception = ee
 				};
-				return Results;
+				return results;
 			}
 		}
 

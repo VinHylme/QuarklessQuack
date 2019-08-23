@@ -5,6 +5,10 @@ using QuarklessContexts.Contexts;
 using QuarklessContexts.Models.UserAuth.AuthTypes;
 using QuarklessLogic.Logic.InstaUserLogic;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using QuarklessContexts.Enums;
+using QuarklessContexts.Models.TimelineLoggingRepository;
+using QuarklessLogic.Logic.TimelineEventLogLogic;
 
 namespace Quarkless.Controllers
 {
@@ -18,10 +22,29 @@ namespace Quarkless.Controllers
 	{
 		private readonly IUserContext _userContext;
 		private readonly IInstaUserLogic _instaUserLogic;
-		public InstaUserController(IUserContext userContext, IInstaUserLogic instaUserLogic)
+		private readonly ITimelineEventLogLogic _timelineEventLogLogic;
+
+		public InstaUserController(IUserContext userContext, IInstaUserLogic instaUserLogic, ITimelineEventLogLogic timelineEventLogLogic)
 		{
 			_userContext = userContext;
 			_instaUserLogic = instaUserLogic;
+			_timelineEventLogLogic = timelineEventLogLogic;
+		}
+
+		[HttpPost]
+		[Route("api/instaUser/createAccount/{username}/{password}/{email}/{firstname}")]
+		public async Task<IActionResult> CreateInstaAccount(string username, string password, string email,
+			string firstname)
+		{
+			if (string.IsNullOrEmpty(_userContext.CurrentUser))
+				return BadRequest("Invalid Request");
+			var results = await _instaUserLogic.CreateAccount(username, email, password, firstname);
+			if (results == null) return BadRequest("Failed");
+			if (results.Succeeded)
+			{
+				return Ok(results.Value);
+			}
+			return BadRequest(results.Info);
 		}
 
 		[HttpGet]
@@ -136,66 +159,85 @@ namespace Quarkless.Controllers
 		[Route("api/instaUser/followUser/{userId}")]
 		public async Task<IActionResult> FollowUser(long userId)
 		{
-			if (_userContext.UserAccountExists)
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid Request");
+			var res = await _instaUserLogic.FollowUser(userId);
+			if (res.Succeeded)
 			{
-				var res = await _instaUserLogic.FollowUser(userId);
-				if (res.Succeeded)
+				await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
 				{
-					return Ok(res.Value);
-				}
-				else
-				{
-					return NotFound(res.Info);
-				}
+					ActionType = ActionType.FollowUser,
+					Message = $"Followed user {userId} who happens to follow similar tags as you [{_userContext.CurrentUser}] Of [{_userContext.FocusInstaAccount}]",
+					Request = userId.ToString(),
+					AccountID = _userContext.CurrentUser,
+					InstagramAccountID = _userContext.FocusInstaAccount,
+					Status = TimelineEventStatus.Success,
+					Response =  JsonConvert.SerializeObject(res.Value),
+					Level = 1
+				});
+				return Ok(res.Value);
 			}
-			else
+			await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
 			{
-				return BadRequest("Invalid Id");
-			}
+				ActionType = ActionType.FollowUser,
+				Message = $"Failed to Follow user {userId} [{_userContext.CurrentUser}] Of [{_userContext.FocusInstaAccount}]",
+				Request = userId.ToString(),
+				AccountID = _userContext.CurrentUser,
+				InstagramAccountID = _userContext.FocusInstaAccount,
+				Status = TimelineEventStatus.Failed,
+				Response =  JsonConvert.SerializeObject(res.Info),
+				Level = 1
+			});
+			return NotFound(res.Info);
 		}
 
 		[HttpGet]
 		[Route("api/instaUser/currentUserFollowers/{limit}")]
 		public async Task<IActionResult> GetCurrentUserFollowers(int limit=2)
 		{
-			if (_userContext.UserAccountExists)
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
+			var res = await _instaUserLogic.GetCurrentUserFollowers(limit);
+			if (res.Succeeded)
 			{
-				var res = await _instaUserLogic.GetCurrentUserFollowers(limit);
-				if (res.Succeeded)
-				{
-					return Ok(res.Value);
-				}
-				else
-				{
-					return NotFound(res.Info);
-				}
+				return Ok(res.Value);
 			}
-			else
-			{
-				return BadRequest("Invalid Id");
-			}
+
+			return NotFound(res.Info);
+
 		}
 
 		[HttpGet]
 		[Route("api/instaUser/followingActicityFeed/{limit}")]
 		public async Task<IActionResult> GetFollowingActivityFeed(int limit)
 		{
-			if (_userContext.UserAccountExists)
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
+			var res = await _instaUserLogic.GetFollowingActivityFeed(limit);
+			if (res.Succeeded)
 			{
-				var res = await _instaUserLogic.GetFollowingActivityFeed(limit);
-				if (res.Succeeded)
+				await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
 				{
-					return Ok(res.Value);
-				}
-				else
-				{
-					return NotFound(res.Info);
-				}
+					ActionType = ActionType.RecentActivityFeed,
+					Message = $"Retrieved Activity Feed For [{_userContext.CurrentUser}] Of [{_userContext.FocusInstaAccount}]",
+					Request = _userContext.CurrentUser,
+					AccountID = _userContext.CurrentUser,
+					InstagramAccountID = _userContext.CurrentUser,
+					Status = TimelineEventStatus.Success,
+					Response =  JsonConvert.SerializeObject(res.Value),
+					Level = 1
+				});
+				return Ok(res.Value);
 			}
-			else
+			await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
 			{
-				return BadRequest("Invalid Id");
-			}
+				ActionType = ActionType.RecentActivityFeed,
+				Message = $"Failed to retrieve Activity Feed For [{_userContext.CurrentUser}] Of [{_userContext.FocusInstaAccount}]",
+				Request = _userContext.CurrentUser,
+				AccountID = _userContext.CurrentUser,
+				InstagramAccountID = _userContext.CurrentUser,
+				Status = TimelineEventStatus.Failed,
+				Response =  JsonConvert.SerializeObject(res?.Info),
+				Level = 2
+			});
+			return NotFound(res?.Info);
 		}
 
 		[HttpPut]
@@ -209,15 +251,11 @@ namespace Quarkless.Controllers
 				{
 					return Ok(res.Value);
 				}
-				else
-				{
-					return NotFound(res.Info);
-				}
+
+				return NotFound(res.Info);
 			}
-			else
-			{
-				return BadRequest("Invalid Id");
-			}
+
+			return BadRequest("Invalid Id");
 		}
 
 		[HttpGet]
@@ -253,81 +291,56 @@ namespace Quarkless.Controllers
 				{
 					return Ok(res.Value);
 				}
-				else
-				{
-					return NotFound(res.Info);
-				}
+
+				return NotFound(res.Info);
 			}
-			else
-			{
-				return BadRequest("Invalid Id");
-			}
+
+			return BadRequest("Invalid Id");
 		}
 
 		[HttpPut]
 		[Route("api/instaUser/suggestionDetails/{userId}")]
 		public async Task<IActionResult> GetSuggestionDetails(long userId, [FromBody] long[] userIds)
 		{
-			if (_userContext.UserAccountExists)
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
+			var res = await _instaUserLogic.GetSuggestionDetails(userId,userIds);
+			if (res.Succeeded)
 			{
-				var res = await _instaUserLogic.GetSuggestionDetails(userId,userIds);
-				if (res.Succeeded)
-				{
-					return Ok(res.Value);
-				}
-				else
-				{
-					return NotFound(res.Info);
-				}
+				return Ok(res.Value);
 			}
-			else
-			{
-				return BadRequest("Invalid Id");
-			}
+
+			return NotFound(res.Info);
+
 		}
 
 		[HttpGet]
 		[Route("api/instaUser/user/{username}")]
 		public async Task<IActionResult> GetUser(string username)
 		{
-			if (_userContext.UserAccountExists)
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
+			var res = await _instaUserLogic.GetUser(username);
+			if (res.Succeeded)
 			{
-				var res = await _instaUserLogic.GetUser(username);
-				if (res.Succeeded)
-				{
-					return Ok(res.Value);
-				}
-				else
-				{
-					return NotFound(res.Info);
-				}
+				return Ok(res.Value);
 			}
-			else
-			{
-				return BadRequest("Invalid Id");
-			}
+
+			return NotFound(res.Info);
+
 		}
 
 		[HttpGet]
 		[Route("api/instaUser/userFollowers/{username}/{limit}/{query}/{mutualfirst}")]
 		public async Task<IActionResult> GetUserFollowers(string username, int limit=2, string query = "", bool mutalfirst = false)
 		{
-			if (_userContext.UserAccountExists)
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
+			var res = await _instaUserLogic.GetUserFollowers(username,limit, query, mutalfirst);
+			if (res.Succeeded)
 			{
-				var res = await _instaUserLogic.GetUserFollowers(username,limit, query, mutalfirst);
-				if (res.Succeeded)
-				{
-					return Ok(res.Value);
-				}
-				else
-				{
-					return NotFound(res.Info);
-				}
+				return Ok(res.Value);
 			}
-			else
-			{
-				return BadRequest("Invalid Id");
-			}
+
+			return NotFound(res.Info);
+
 		}
 
 		[HttpGet]
@@ -757,83 +770,74 @@ namespace Quarkless.Controllers
 				var res = await _instaUserLogic.UnFollowUser(userid);
 				if (res.Succeeded)
 				{
+					await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
+					{
+						ActionType = ActionType.UnFollowUser,
+						Message = $"UnFollowed user {userid} [{_userContext.CurrentUser}] Of [{_userContext.FocusInstaAccount}]",
+						Request = userid.ToString(),
+						AccountID = _userContext.CurrentUser,
+						InstagramAccountID = _userContext.FocusInstaAccount,
+						Status = TimelineEventStatus.Success,
+						Response =  JsonConvert.SerializeObject(res.Value),
+						Level = 1
+					});
 					return Ok(res.Value);
 				}
-				else
+				await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
 				{
-					return NotFound(res.Info);
-				}
+					ActionType = ActionType.UnFollowUser,
+					Message = $"Failed to UnFollow user {userid} [{_userContext.CurrentUser}] Of [{_userContext.FocusInstaAccount}]",
+					Request = userid.ToString(),
+					AccountID = _userContext.CurrentUser,
+					InstagramAccountID = _userContext.FocusInstaAccount,
+					Status = TimelineEventStatus.Failed,
+					Response =  JsonConvert.SerializeObject(res.Info),
+					Level = 2
+				});
+				return NotFound(res.Info);
 			}
-			else
-			{
-				return BadRequest("Invalid Id");
-			}
+			return BadRequest("Invalid Id");
 		}
 
 		[HttpGet]
 		[Route("api/instaUser/unhideMyStory/{userId}")]
 		public async Task<IActionResult> UnHideMyStoryFromUser(long userid)
 		{
-			if (_userContext.UserAccountExists)
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
+			var res = await _instaUserLogic.UnHideMyStoryFromUser(userid);
+			if (res.Succeeded)
 			{
-				var res = await _instaUserLogic.UnHideMyStoryFromUser(userid);
-				if (res.Succeeded)
-				{
-					return Ok(res.Value);
-				}
-				else
-				{
-					return NotFound(res.Info);
-				}
+				return Ok(res.Value);
 			}
-			else
-			{
-				return BadRequest("Invalid Id");
-			}
+			return NotFound(res.Info);
 		}
 
 		[HttpGet]
 		[Route("api/instaUser/unmuteFriendStory/{userId}")]
 		public async Task<IActionResult> UnMuteFriendStory(long userid)
 		{
-			if (_userContext.UserAccountExists)
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
+			var res = await _instaUserLogic.UnMuteFriendStory(userid);
+			if (res.Succeeded)
 			{
-				var res = await _instaUserLogic.UnMuteFriendStory(userid);
-				if (res.Succeeded)
-				{
-					return Ok(res.Value);
-				}
-				else
-				{
-					return NotFound(res.Info);
-				}
+				return Ok(res.Value);
 			}
-			else
-			{
-				return BadRequest("Invalid Id");
-			}
+			return NotFound(res.Info);
 		}
 
 		[HttpGet]
 		[Route("api/instaUser/unmuteUserMedia/{userId}/{muteOption}")]
 		public async Task<IActionResult> UnMuteUserMedia(long userid, int muteOption)
 		{
-			if (_userContext.UserAccountExists)
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
+			var res = await _instaUserLogic.UnMuteUserMedia(userid, (InstaMuteOption) muteOption);
+			if (res.Succeeded)
 			{
-				var res = await _instaUserLogic.UnMuteUserMedia(userid, (InstaMuteOption) muteOption);
-				if (res.Succeeded)
-				{
-					return Ok(res.Value);
-				}
-				else
-				{
-					return NotFound(res.Info);
-				}
+				return Ok(res.Value);
 			}
-			else
-			{
-				return BadRequest("Invalid Id");
-			}
+
+			return NotFound(res.Info);
+
 		}
 	}
 }

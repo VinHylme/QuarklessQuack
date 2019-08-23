@@ -104,15 +104,16 @@ namespace QuarklessLogic.Logic.HashtagLogic
 		public async Task AddHashtagsToRepositoryAndCache(IEnumerable<HashtagsModel> hashtags)
 		{
 			await _hashtagsRepository.AddHashtags(hashtags);
-			await _hashtagCoprusCache.AddHashtags(hashtags);
+			//await _hashtagCoprusCache.AddHashtags(hashtags);
 		}
 		public async Task<IEnumerable<HashtagsModel>> GetHashtagsByTopicAndLanguage(string topic, string lang, string langmapped, int limit = 1)
 		{
 			try
 			{
 				var cacheRes = await _hashtagCoprusCache.GetHashtags(topic, lang, limit);
-				if(cacheRes!=null && cacheRes.Count()>0)
-					return cacheRes;
+				var hashtagsByTopicAndLanguage = cacheRes as HashtagsModel[] ?? cacheRes.ToArray();
+				if(hashtagsByTopicAndLanguage.Any())
+					return hashtagsByTopicAndLanguage;
 				else
 				{
 					return await _hashtagsRepository.GetHashtags(topic, lang, langmapped, limit);

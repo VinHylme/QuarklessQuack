@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 
 namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 {
@@ -55,6 +56,18 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 			filters = builders.Eq(_ => _.Topic, topic);
 			return await _context.CorpusMedia.CountDocumentsAsync(filters);
 		}
+
+		public async Task UpdateTopicName(string topic, string newTopic)
+		{
+			var updateDef = Builders<MediaCorpus>.Update.Set(o => o.Topic, newTopic);
+			var updateDef2 = Builders<CommentCorpus>.Update.Set(o => o.Topic, newTopic);
+			var updateDef3 = Builders<HashtagsModel>.Update.Set(o => o.Topic, newTopic);
+
+			await _context.CorpusMedia.UpdateManyAsync(o => o.Topic == topic, updateDef);
+			await _context.CorpusComments.UpdateManyAsync(o => o.Topic == topic, updateDef2);
+			await _context.Hashtags.UpdateManyAsync(o => o.Topic == topic, updateDef3);
+		}
+
 		public async Task<IEnumerable<MediaCorpus>> GetMedias(string topic, string language = null ,string mapedLang = null, int limit = -1)
 		{
 			try

@@ -1,4 +1,5 @@
 ﻿using System;
+using AspNetCoreRateLimit;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -8,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Common;
 using QuarklessLogic.QueueLogic.Jobs.Filters;
 using StackExchange.Redis;
-using Microsoft.AspNetCore.Cors.Infrastructure;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Cors.Internal;
 using Quarkless.Filters;
 
@@ -28,11 +29,44 @@ namespace Quarkless
 
         public void ConfigureServices(IServiceCollection services)
         {
-			var Redis = ConnectionMultiplexer.Connect(_accessors.RedisConnectionString);
+			var redis = ConnectionMultiplexer.Connect(_accessors.RedisConnectionString);
+			// needed to load configuration from appsettings.json
+			services.AddOptions();
 
+			// needed to store rate limit counters and ip rules
+			services.AddMemoryCache();
+
+			//load general configuration from appsettings.json
+			services.Configure<IpRateLimitOptions>(Configuration.GetSection("IpRateLimiting"));
+
+			//load ip rules from appsettings.json
+			services.Configure<IpRateLimitPolicies>(Configuration.GetSection("IpRateLimitPolicies"));
+
+			//// inject counter and rules stores
+			//services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
+			//services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
+			// inject counter and rules distributed cache stores
+			services.AddSingleton<IIpPolicyStore, DistributedCacheIpPolicyStore>();
+			services.AddSingleton<IRateLimitCounterStore,DistributedCacheRateLimitCounterStore>();
+			services.Configure<CookiePolicyOptions>(options =>
+			{
+				// This lambda determines whether user consent for non-essential cookies is needed for a given request.
+				options.CheckConsentNeeded = context => true;
+				options.MinimumSameSitePolicy = SameSiteMode.None;
+			});
+
+			services.ConfigureRequestThrottleServices(Configuration);
 			services.AddAuthHandlers(_accessors, Configuration.GetAWSOptions());		
 			services.AddHttpContextAccessor();
 			services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+			// https://github.com/aspnet/Hosting/issues/793
+			// the IHttpContextAccessor service is not registered by default.
+			// the clientId/clientIp resolvers use it.
+			services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+			// configuration (resolvers, counter key builders)
+			services.AddSingleton<IRateLimitConfiguration, CustomRateLimitConfiguration>();
+
 			services.AddLogics();
 			services.AddContexts();
 			services.AddHandlers();
@@ -69,7 +103,7 @@ namespace Quarkless
 				//});
 				#endregion
 
-				options.UseRedisStorage(Redis, new Hangfire.Redis.RedisStorageOptions
+				options.UseRedisStorage(redis, new Hangfire.Redis.RedisStorageOptions
 				{
 					Db = 1,
 					Prefix = "Timeline",
@@ -101,12 +135,14 @@ namespace Quarkless
             {
                 app.UseHsts();
             }
-			BackgroundJobServerOptions jobServerOptions = new BackgroundJobServerOptions
+			var jobServerOptions = new BackgroundJobServerOptions
 			{
 				WorkerCount = Environment.ProcessorCount * 5,
 				ServerName = string.Format("ISE_{0}.{1}", Environment.MachineName, Guid.NewGuid().ToString()),
 				//Activator = new WorkerActivator(services.BuildServiceProvider(false)),
 			};
+			
+			//app.UseIpRateLimiting();
 			app.UseCors(CorsPolicy);
 			app.UseHangfireServer(jobServerOptions);
 			app.UseHangfireDashboard();
@@ -116,6 +152,7 @@ namespace Quarkless
 			app.UseCookiePolicy();
 			app.UseAuthentication();
 			//app.UseMiddleware<RequestResponseLoggingMiddleware>();
+			app.UseMaxConcurrentRequests();
 			app.UseMvc();
 		}
     }

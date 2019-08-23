@@ -1,5 +1,5 @@
 <template>
-  <div class="container is-fluid" style="padding-top:2em; padding-right:0em; background:#232323;">
+  <div class="" style="padding:3em; background:#232323;">
     <div class="columns is-variable is-4-mobile is-0-tablet is-8-desktop is-5-widescreen is-5-fullhd">
       <div class="column is-12 profile_container">
         <b-steps type="is-success" size="is-medium" v-model="activeStep" :animated="true" :has-navigation="false">
@@ -819,6 +819,7 @@ export default {
   background:#4f4f4f;
 }
 .is-dark{
+  text-align:center;
   label{
     color:#d9d9d9 ;
     font-size:20px;
@@ -854,6 +855,7 @@ export default {
     color:#121212;
   }
 }
+
 .topic_area{
   padding:0;
   margin: 0 auto;
@@ -886,6 +888,27 @@ export default {
   label{
     color:#d9d9d9;
   }
+}
+.dropdown-menu{
+    opacity: .9;
+    border-radius: 1em;
+    border:none;
+    margin-top:.5em;
+    background:#323232 !important;
+    color:white !important;
+    .dropdown-content{
+        .dropdown-item{
+            color:#d9d9d9 !important;
+            &:hover{
+                background:#232323;
+                opacity: .8;
+            }
+            &.is-hovered{
+                background:#232323;
+                opacity: .8;
+            }
+        }
+    }
 }
 .step_size{
   border:none;

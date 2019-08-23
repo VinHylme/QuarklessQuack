@@ -77,6 +77,7 @@ export default {
     }
   },
   mounted(){
+    this.$emit('unSelectAccount');
     this.isLoading = true;
     let data = this.$store.dispatch('GetSavedMedias', {accountId: this.$store.getters.User, instagramAccountId: this.$route.params.id}).then(resp=>{
       if(resp.data!==undefined){
@@ -131,7 +132,6 @@ export default {
           }
           this.$store.dispatch('SetSavedMedias', submitData).then(resp=>{
             this.mediaLibrary.items = this.$store.getters.UserLibrary(mediaData.instagramAccountId);
-            console.log(this.$store.getters.UserLibrary(mediaData.instagramAccountId))
           })
         })            
       }
@@ -182,7 +182,7 @@ export default {
   }
 }
 .media-section-lib{
-  background:#212121 !important;
+  background:#202020 !important;
   width:100%;
   height:100%; 
   border: 1px solid #313131;

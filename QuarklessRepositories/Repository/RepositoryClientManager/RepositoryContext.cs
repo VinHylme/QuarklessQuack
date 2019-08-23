@@ -14,6 +14,7 @@ using QuarklessContexts.Models.Topics;
 using System;
 using System.Threading.Tasks;
 using QuarklessContexts.Models.Library;
+using QuarklessContexts.Models.TimelineLoggingRepository;
 
 namespace QuarklessRepositories.RepositoryClientManager
 {
@@ -37,6 +38,9 @@ namespace QuarklessRepositories.RepositoryClientManager
 
 		public IMongoCollection<TopicsModel> Topics => _contentDatabase.GetCollection<TopicsModel>("Topics");
 		public IMongoCollection<LoggerModel> Logger => _controlDatabase.GetCollection<LoggerModel>("ReportHandle");
+
+		public IMongoCollection<TimelineEventLog> TimelineLogger =>
+			_controlDatabase.GetCollection<TimelineEventLog>("TimelineLogger");
 		public IMongoCollection<InstagramAccountModel> InstagramAccounts => _clientDatabase.GetCollection<InstagramAccountModel>("InstagramAccounts");
 		public IMongoCollection<InstagramClientAccount> InstagramClientAccount => _clientDatabase.GetCollection<InstagramClientAccount>("InstagramAccounts");
 		public IMongoCollection<ProxyModel> Proxies => _clientDatabase.GetCollection<ProxyModel>("Proxies");

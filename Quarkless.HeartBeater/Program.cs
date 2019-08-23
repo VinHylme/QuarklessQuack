@@ -14,11 +14,12 @@ namespace Quarkless.HeartBeater
 	{
 		static void Main(string[] args)
 		{
+			if (args.Length <= 0) return;
 			var settingPath = Path.GetFullPath(Path.Combine(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Quarkless"));
 			IConfiguration configuration = new ConfigurationBuilder().
 				SetBasePath(settingPath).AddJsonFile("appsettings.json").Build();
 
-			Accessors accessors = new Accessors(configuration);
+			var accessors = new Accessors(configuration);
 			var services = new ServiceCollection();
 			services.AddLogics();
 			services.AddContexts();
@@ -27,14 +28,24 @@ namespace Quarkless.HeartBeater
 			services.AddTransient<IInit,Init>();
 			services.AddTransient<ITopicBuilder, TopicBuilder>();
 			services.AddLogging();
-			ServiceReacher serviceReacher = new ServiceReacher(services.BuildServiceProvider());
+			var servicePreacher = new ServiceReacher(services.BuildServiceProvider());
+			var settings = new Settings
+			{
+				Accounts = new List<Account> { new Account("lemonkaces") }
+			};
 			var results = WithExceptionLogAsync(async () =>
 			{
-				Settings settings = new Settings
+				switch (args[0])
 				{
-					Accounts = new List<Account> { new Account("lemonkaces") }
-				};
-				await serviceReacher.Get<IInit>().Endeavor(settings);
+					case "app1":
+						await servicePreacher.Get<IInit>().Endeavor(settings);
+						break;
+					case "app2":
+						await servicePreacher.Get<IInit>().Populator(settings);
+						break;
+					default:
+						return;
+				}
 			});
 			Task.WaitAll(results);
 		}

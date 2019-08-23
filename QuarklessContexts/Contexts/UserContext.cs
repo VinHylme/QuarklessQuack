@@ -1,9 +1,7 @@
 ﻿using System.Linq;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using QuarklessContexts.Models.UserAuth.AuthTypes;
 using QuarklessContexts.Extensions;
-using System;
 
 namespace QuarklessContexts.Contexts
 {
@@ -17,20 +15,14 @@ namespace QuarklessContexts.Contexts
 		public string CurrentUser 
 		{
 			get {
-				if (_httpContextAccessor.HttpContext == null) 
-					{ return null;}
+				if (_httpContextAccessor.HttpContext == null)
+					return null;
 				if (_httpContextAccessor.HttpContext?.User?.Identity != null || _httpContextAccessor.HttpContext.User.Identity.IsAuthenticated)
 				{
-					if (_httpContextAccessor.HttpContext.User.Claims != null) {
+					return _httpContextAccessor.HttpContext.User.Claims?.Single(_ => _.Type == "cognito:username").Value;
+				}
 
-						return _httpContextAccessor.HttpContext.User.Claims.Where(_=>_.Type == "cognito:username").Single().Value;
-					}
-					return null;
-				}
-				else
-				{
-					return null;
-				}
+				return null;
 			}
 		}
 		public AuthTypes UserRoleLevel
@@ -39,17 +31,10 @@ namespace QuarklessContexts.Contexts
 			{
 				if (_httpContextAccessor.HttpContext?.User?.Identity != null || _httpContextAccessor.HttpContext.User.Identity.IsAuthenticated)
 				{
-					if (_httpContextAccessor.HttpContext.User.Claims != null)
-					{
+					return _httpContextAccessor.HttpContext.User.Claims?.Single(_ => _.Type == "cognito:groups").Value.GetValueFromDescription<AuthTypes>() ?? AuthTypes.Expired;
+				}
 
-						return _httpContextAccessor.HttpContext.User.Claims.Where(_ => _.Type == "cognito:groups").Single().Value.GetValueFromDescription<AuthTypes>();
-					}
-					return AuthTypes.Expired;
-				}
-				else
-				{
-					return AuthTypes.Expired;
-				}
+				return AuthTypes.Expired;
 			}
 		}
 
@@ -62,27 +47,13 @@ namespace QuarklessContexts.Contexts
 				{
 					return _httpContextAccessor.HttpContext.Request.Headers["FocusInstaAccount"].FirstOrDefault();				
 				}
-				else
-				{
-					return null;
-				}
+
+				return null;
 			}
 			set { }
 		}
-		public bool IsAdmin
-		{
-			get
-			{
-				return CurrentUser!=null && UserRoleLevel == AuthTypes.Admin;
-			}
-		}
-		public bool UserAccountExists
-		{
-			get
-			{
-				return CurrentUser != null && FocusInstaAccount != null;
-			}
-		}
+		public bool IsAdmin => !string.IsNullOrEmpty(CurrentUser) && UserRoleLevel == AuthTypes.Admin;
 
+		public bool UserAccountExists => CurrentUser != null && FocusInstaAccount != null;
 	}
 }

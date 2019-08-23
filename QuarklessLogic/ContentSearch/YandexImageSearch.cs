@@ -188,15 +188,7 @@ namespace QuarklessLogic.ContentSearch
 			_restSharpClientManager = restSharpClientManager;
 			if (proxy != null)
 			{
-				string proxyLine = string.Empty;
-				if (string.IsNullOrEmpty(proxy.Username))
-				{
-					proxyLine = $"http://{proxy.Address}:{proxy.Port}";
-				}
-				else
-				{
-					proxyLine = $"http://{proxy.Username}:{proxy.Password}@{proxy.Address}:{proxy.Port}";
-				}
+				var proxyLine = string.IsNullOrEmpty(proxy.Username) ? $"http://{proxy.Address}:{proxy.Port}" : $"http://{proxy.Username}:{proxy.Password}@{proxy.Address}:{proxy.Port}";
 				seleniumClient.AddArguments($"--proxy-server={proxyLine}");
 			}
 			seleniumClient.AddArguments(
@@ -244,14 +236,14 @@ namespace QuarklessLogic.ContentSearch
 		}
 		public SearchResponse<Media> SearchQueryREST(YandexSearchQuery yandexSearchQuery, int limit = 16)
 		{
-			SearchResponse<Media> response = new SearchResponse<Media>();
-			Media TotalFound = new Media();
+			var response = new SearchResponse<Media>();
+			var totalFound = new Media();
 			try
 			{
 				var url = BuildUrl(yandexSearchQuery);
 				var result = seleniumClient.Reader(url, limit);
-				if (result.Result != null) { 
-					TotalFound.Medias.AddRange(result.Result.Select(o => new MediaResponse
+				if (result?.Result != null) { 
+					totalFound.Medias.AddRange(result.Result.Select(o => new MediaResponse
 					{
 						Topic = yandexSearchQuery.OriginalTopic,
 						MediaType = InstagramApiSharp.Classes.Models.InstaMediaType.Image,
@@ -264,9 +256,9 @@ namespace QuarklessLogic.ContentSearch
 				}
 				return new SearchResponse<Media>
 				{
-					Message = result.Message,
-					Result = TotalFound,
-					StatusCode = result.StatusCode
+					Message = result?.Message,
+					Result = totalFound,
+					StatusCode = result?.StatusCode ?? ResponseCode.InternalServerError
 				};
 			}
 			catch (Exception ee)
@@ -279,36 +271,42 @@ namespace QuarklessLogic.ContentSearch
 		}
 		public SearchResponse<Media> SearchSafeButSlow(IEnumerable<GroupImagesAlike> ImagesLikeUrls, int limit)
 		{
-			Media TotalFound = new Media();
-			SearchResponse<Media> response = new SearchResponse<Media>();
+			var totalFound = new Media();
+			var response = new SearchResponse<Media>();
 
 			ImagesLikeUrls.ToList().ForEach(url =>
 			{
-				if (url != null)
+				if (url == null) return;
+				var fullurl_ = yandexImages;
+				try
 				{
-					var fullurl_ = yandexImages;
-					try
+					var result = seleniumClient.YandexImageSearch(fullurl_, url.Url, "serp-item_pos_", limit);
+					totalFound.Medias.AddRange(result.Where(s => !s.Contains(".gif")).Select(a => new MediaResponse
 					{
-						var result = seleniumClient.YandexImageSearch(fullurl_, url.Url, "serp-item_pos_", limit);
-						TotalFound.Medias.AddRange(result.Where(s => !s.Contains(".gif")).Select(a => new MediaResponse
-						{
-							Topic = url.TopicGroup,
-							MediaUrl = new List<string> { a },
-							MediaFrom = MediaFrom.Yandex,
-							MediaType = InstagramApiSharp.Classes.Models.InstaMediaType.Image
-						}));
-					}
-					catch (Exception ee)
-					{
-						Console.Write(ee.Message);
-						response.Message = ee.Message;
-						response.StatusCode = ResponseCode.InternalServerError;
-						TotalFound.errors++;
-					}
+						Topic = url.TopicGroup,
+						MediaUrl = new List<string> { a },
+						MediaFrom = MediaFrom.Yandex,
+						MediaType = InstagramApiSharp.Classes.Models.InstaMediaType.Image
+					}));
+				}
+				catch (Exception ee)
+				{
+					Console.Write(ee.Message);
+					response.Message = ee.Message;
+					response.StatusCode = ResponseCode.InternalServerError;
+					totalFound.errors++;
 				}
 			});
-			response.StatusCode = ResponseCode.Success;
-			response.Result = TotalFound;
+			if (totalFound.Medias.Count > 0)
+			{
+				response.Result = totalFound;
+				response.StatusCode = ResponseCode.Success;
+			}
+			else
+			{
+				response.Result = null;
+				response.StatusCode = ResponseCode.ReachedEndAndNull;
+			}
 			return response;
 		}
 
@@ -487,46 +485,54 @@ namespace QuarklessLogic.ContentSearch
 
 		public SearchResponse<Media> SearchRelatedImagesREST(IEnumerable<GroupImagesAlike> imagesAlikes, int numberOfPages, int offset = 0)
 		{
-			SearchResponse<Media> response = new SearchResponse<Media>();
-			Media totalCollected = new Media();
+			var response = new SearchResponse<Media>();
+			var totalCollected = new Media();
 
 			foreach (var url in imagesAlikes)
 			{
-				if (url != null)
+				if (url == null) continue;
+				var fullImageUrl = yandexBaseImageUrl + url.Url + rpt;
+				try
 				{
-					var fullImageUrl = yandexBaseImageUrl + url.Url + rpt;
-					try
+					var searchSerp = SearchRest(fullImageUrl, numberOfPages, offset);
+					if (searchSerp.StatusCode == ResponseCode.Success || (searchSerp.StatusCode == ResponseCode.CaptchaRequired && searchSerp?.Result?.Count > 0))
 					{
-						var searchSerp = SearchRest(fullImageUrl, numberOfPages, offset);
-						if (searchSerp.StatusCode == ResponseCode.Success || (searchSerp.StatusCode == ResponseCode.CaptchaRequired && searchSerp?.Result?.Count > 0))
+						totalCollected.Medias.AddRange(searchSerp.Result.Select(o => new MediaResponse
 						{
-							totalCollected.Medias.AddRange(searchSerp.Result.Select(o => new MediaResponse
-							{
-								MediaType = InstagramApiSharp.Classes.Models.InstaMediaType.Image,
-								MediaFrom = MediaFrom.Yandex,
-								MediaUrl = new List<string> { o?.Preview?.OrderByDescending(s => s?.FileSizeInBytes).FirstOrDefault().Url },
-								Caption = o?.Snippet?.Text,
-								Title = o?.Snippet?.Title,
-								Domain = o?.Snippet?.Domain
-							}));
-						}
-						else
-						{
-							response.StatusCode = searchSerp.StatusCode;
-							response.Message = searchSerp.Message;
-							return response;
-						}
+							MediaType = InstagramApiSharp.Classes.Models.InstaMediaType.Image,
+							MediaFrom = MediaFrom.Yandex,
+							MediaUrl = new List<string> { o?.Preview?.OrderByDescending(s => s?.FileSizeInBytes).FirstOrDefault()?.Url },
+							Caption = o?.Snippet?.Text,
+							Title = o?.Snippet?.Title,
+							Domain = o?.Snippet?.Domain
+						}));
 					}
-					catch (Exception ee)
+					else
 					{
-						response.Message = ee.Message;
-						response.StatusCode = ResponseCode.InternalServerError;
+						response.StatusCode = searchSerp.StatusCode;
+						response.Message = searchSerp.Message;
 						return response;
 					}
 				}
+				catch (Exception ee)
+				{
+					response.Message = ee.Message;
+					response.StatusCode = ResponseCode.InternalServerError;
+					return response;
+				}
 			}
-			response.Result = totalCollected;
-			response.StatusCode = ResponseCode.Success;
+
+			if (totalCollected.Medias.Count > 0)
+			{
+				response.Result = totalCollected;
+				response.StatusCode = ResponseCode.Success;
+			}
+			else
+			{
+				response.Result = null;
+				response.StatusCode = ResponseCode.ReachedEndAndNull;
+			}
+
 			return response;
 		}
 		public Media Search(IEnumerable<GroupImagesAlike> ImagesLikeUrls, int limit)

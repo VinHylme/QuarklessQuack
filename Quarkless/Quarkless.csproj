@@ -5,6 +5,7 @@
     <AWSProjectType>Lambda</AWSProjectType>
   </PropertyGroup>
   <ItemGroup>
+	<PackageReference Include="AspNetCoreRateLimit" Version="3.0.5" />
 	<PackageReference Include="Hangfire" Version="1.7.5" />
 	<PackageReference Include="Hangfire.Core" Version="1.7.5" />
 	<PackageReference Include="Amazon.AspNetCore.Identity.Cognito" Version="1.0.1" />

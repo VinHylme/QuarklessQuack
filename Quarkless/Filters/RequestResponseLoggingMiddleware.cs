@@ -1,47 +1,137 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
+using QuarklessContexts.Models.APILogger;
+using QuarklessRepositories.RedisRepository.APILogger;
 
 namespace Quarkless.Filters
 {
 	public class RequestResponseLoggingMiddleware
 	{
+		#region Fields
+		private int _concurrentRequestsCount;
 		private readonly RequestDelegate _next;
-		private readonly Encrypter _encrypter;
-		private readonly byte[] _senderPublicKey;
-		public RequestResponseLoggingMiddleware(RequestDelegate next)
+		private readonly MaxConcurrentRequestsOptions _options;
+		private readonly MaxConcurrentRequestsEnqueuer _enqueuer;
+		private readonly IAPILogCache _apiLogCache;
+		//private readonly Encrypter _encrypter;
+		//private readonly byte[] _senderPublicKey;
+		#endregion
+		public RequestResponseLoggingMiddleware(RequestDelegate next, IAPILogCache apiLogCache,
+			IOptions<MaxConcurrentRequestsOptions> options)
 		{
-			_next = next;
-			_encrypter = new Encrypter(_senderPublicKey);
-		}
+			_concurrentRequestsCount = 0;
 
-		public async Task Invoke(HttpContext context)
-		{
-			//First, get the incoming request
-			var request = await FormatRequest(context.Request);
+			_next = next ?? throw new ArgumentNullException(nameof(next));
+			_options = options?.Value ?? throw new ArgumentNullException(nameof(options));
 
-			//Copy a pointer to the original response body stream
-			var originalBodyStream = context.Response.Body;
-
-			//Create a new memory stream...
-			using (var responseBody = new MemoryStream())
+			if (_options.LimitExceededPolicy != MaxConcurrentRequestsLimitExceededPolicy.Drop)
 			{
-				//...and use that for the temporary response body
-				context.Response.Body = responseBody;
+				_enqueuer = new MaxConcurrentRequestsEnqueuer(_options.MaxQueueLength, (MaxConcurrentRequestsEnqueuer.DropMode)_options.LimitExceededPolicy, _options.MaxTimeInQueue);
+			}
+			_apiLogCache = apiLogCache;
+			//_encrypter = new Encrypter(_senderPublicKey);
+		}
+		public async Task Invoke(HttpContext httpContext)
+		{
+			if (httpContext == null) throw new ArgumentNullException(nameof(httpContext));
+			httpContext.Request.Headers.Add("X-Client-ID", new [] { "x-key-1-v" });
+			async Task Execute()
+			{
+				var sw = Stopwatch.StartNew();
+				try
+				{
+					var request = new RequestMeta
+					{
+						RequestContentType = httpContext.Request.ContentType,
+						RequestMethod = httpContext.Request.Method,
+						RequestTimestamp = DateTime.UtcNow,
+						RequestUri = httpContext.Request.Path,
+						//RequestBody = httpContext.Request.Body,
+					};
+					await _next(httpContext);
+					var response = new ResponseMeta
+					{
+						ResponseContentType = httpContext.Response.ContentType,
+						ResponseStatusCode = httpContext.Response?.StatusCode,
+						//ResponseBody = httpContext.Response.Body,
+						ResponseTimestamp = DateTime.UtcNow
+					};
 
-				//Continue down the Middleware pipeline, eventually returning to this class
-				await _next(context);
+					sw.Stop();
+					if (response.ResponseStatusCode == 409)
+					{
 
-				//Format the response from the server
-				var response = await FormatResponse(context.Response);
+					}
+					var log = new ApiLogMetaData
+					{
+						User = new UserDetail
+						{
+							Ip = httpContext.Connection?.RemoteIpAddress.ToString(),
+							Identity = httpContext.User?.Claims.Select(o=>new IdentityUser
+							{
+								//Subject = new Subject
+								//{
+								//	Name = o.Subject.Name,
+								//	AuthType = o.Subject.AuthenticationType,
+								//},
+								Type = o.Type,
+								//Issuer = o.Issuer,
+								Value = o.Value,
+								//Props = o.Properties,
+								ValueType = o.ValueType
+							})
+						},
+						RequestMetaData = request,
+						ResponseMeta =  response,
+						TotalTimeTaken = sw.Elapsed
+					};
+					await _apiLogCache.LogData(log);
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine(ex.Message);
+				}
+			}
 
-				//TODO: Save log to chosen datastore
+			if (_options.ExcludePaths.Any(path => httpContext.Request.Path.Value.StartsWith(path)))
+			{
+				await Execute();
+				return;
+			}
+			if (_options.Enabled && CheckLimitExceeded() && !(await TryWaitInQueueAsync(httpContext.RequestAborted)))
+			{
+				if (!httpContext.RequestAborted.IsCancellationRequested)
+				{
+					var responseFeature = httpContext.Features.Get<IHttpResponseFeature>();
 
-				//Copy the contents of the new memory stream (which contains the response) to the original stream, which is then returned to the client.
-				await responseBody.CopyToAsync(originalBodyStream);
+					responseFeature.StatusCode = StatusCodes.Status503ServiceUnavailable;
+					responseFeature.ReasonPhrase = "Concurrent request limit exceeded.";
+				}
+			}
+			else
+			{
+				try
+				{
+					await Execute();
+				}
+				finally
+				{
+					if (await ShouldDecrementConcurrentRequestsCountAsync())
+					{
+						Interlocked.Decrement(ref _concurrentRequestsCount);
+					}
+				}
 			}
 		}
 
@@ -66,7 +156,6 @@ namespace Quarkless.Filters
 
 			return $"{request.Scheme} {request.Host}{request.Path} {request.QueryString} {bodyAsText}";
 		}
-
 		private async Task<string> FormatResponse(HttpResponse response)
 		{
 			//We need to read the response stream from the beginning...
@@ -80,6 +169,44 @@ namespace Quarkless.Filters
 
 			//Return the string for the response, including the status code (e.g. 200, 404, 401, etc.)
 			return $"{response.StatusCode}: {text}";
+		}
+		private bool CheckLimitExceeded()
+		{
+			bool limitExceeded;
+
+			if (_options.Limit == MaxConcurrentRequestsOptions.ConcurrentRequestsUnlimited)
+			{
+				limitExceeded = false;
+			}
+			else
+			{
+				int initialConcurrentRequestsCount, incrementedConcurrentRequestsCount;
+				do
+				{
+					limitExceeded = true;
+
+					initialConcurrentRequestsCount = _concurrentRequestsCount;
+					if (initialConcurrentRequestsCount >= _options.Limit)
+					{
+						break;
+					}
+
+					limitExceeded = false;
+					incrementedConcurrentRequestsCount = initialConcurrentRequestsCount + 1;
+				}
+				while (initialConcurrentRequestsCount != Interlocked.CompareExchange(ref _concurrentRequestsCount, incrementedConcurrentRequestsCount, initialConcurrentRequestsCount));
+			}
+
+			return limitExceeded;
+		}
+		private async Task<bool> TryWaitInQueueAsync(CancellationToken requestAbortedCancellationToken)
+		{
+			return (_enqueuer != null) && (await _enqueuer.EnqueueAsync(requestAbortedCancellationToken));
+		}
+		private async Task<bool> ShouldDecrementConcurrentRequestsCountAsync()
+		{
+			return (_options.Limit != MaxConcurrentRequestsOptions.ConcurrentRequestsUnlimited)
+			       && ((_enqueuer == null) || !(await _enqueuer.DequeueAsync()));
 		}
 	}
 }

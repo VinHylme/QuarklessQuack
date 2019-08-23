@@ -36,7 +36,6 @@ namespace QuarklessRepositories.Repository.ServicesRepositories.TopicsRepository
 				return false;
 			}
 		}
-
 		public async Task<TopicsModel> GetTopicByName(string topicName)
 		{
 			try
@@ -48,7 +47,6 @@ namespace QuarklessRepositories.Repository.ServicesRepositories.TopicsRepository
 				return null;
 			}
 		}
-
 		public async Task<IEnumerable<TopicsModel>> GetTopics()
 		{
 			try

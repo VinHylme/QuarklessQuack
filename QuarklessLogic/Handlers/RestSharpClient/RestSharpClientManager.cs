@@ -80,56 +80,56 @@ namespace QuarklessLogic.Handlers.RestSharpClient
 				if (!string.IsNullOrEmpty(username)) { 
 					RestClient.Authenticator = new HttpBasicAuthenticator(username,password);
 				}
-				if (userStore != null) { 
-					if(userStore?.OAccessToken!=null)
-						RestClient.Authenticator = new JwtAuthenticator(userStore.OAccessToken);
-				}
-				if (parameters!=null && parameters.Count() > 0)
+
+				if(userStore?.OAccessToken != null)
+					RestClient.Authenticator = new JwtAuthenticator(userStore.OAccessToken.Replace("Bearer ",""));
+				if (parameters!=null && parameters.Any())
 				{
 					foreach (var param_ in parameters)
 					{
 						request.AddParameter(param_);
 					}
 				}
-				if(headers!=null && headers.Count() > 0)
+				if(headers!=null && headers.Any())
 				{
 					foreach(var header in headers)
 						request.AddHeader(header.Name,header.Value);
 				}
 				var response = RestClient.Execute(request);
 
-				if(response.StatusCode == HttpStatusCode.Unauthorized && userStore!=null)
+				switch (response.StatusCode)
 				{
-					return null;
-				}
-				if(response.StatusCode == HttpStatusCode.NotFound || response.StatusCode == HttpStatusCode.InternalServerError)
-				{
-					var respType = int.Parse(JObject.Parse(response.Content)["responseType"].ToString());
-					if(respType == (int) ResponseType.ChallengeRequired)
+					case HttpStatusCode.Unauthorized when userStore!=null:
+						return null;
+					case HttpStatusCode.NotFound:
+					case HttpStatusCode.InternalServerError:
 					{
-						_instagramAccountLogic.PartialUpdateInstagramAccount(userStore.OAccountId, userStore.OInstagramAccountUser,
-							new InstagramAccountModel
-							{
-								AgentState = (int)AgentState.Challenge
-							}).GetAwaiter().GetResult();
-					}
-					else if(respType == (int) ResponseType.RequestsLimit)
-					{
-						_instagramAccountLogic.PartialUpdateInstagramAccount(userStore.OAccountId, userStore.OInstagramAccountUser,
-						new InstagramAccountModel
+						var captured = JObject.Parse(response.Content)["responseType"];
+						if (captured == null)
+							return null;
+						var respType = int.Parse(captured.ToString());
+						switch (respType)
 						{
-							AgentState = (int)AgentState.Blocked
-						}).GetAwaiter().GetResult();
-					}
-					else if(respType == (int) ResponseType.Spam)
-					{
-						_instagramAccountLogic.PartialUpdateInstagramAccount(userStore.OAccountId,userStore.OInstagramAccountUser,
-							new InstagramAccountModel
-							{
-								AgentState = (int) AgentState.Blocked
-							}).GetAwaiter().GetResult();
+							case (int) ResponseType.ChallengeRequired:
+								_instagramAccountLogic.PartialUpdateInstagramAccount(userStore.OAccountId, userStore.OInstagramAccountUser,
+									new InstagramAccountModel
+									{
+										AgentState = (int)AgentState.Challenge
+									}).GetAwaiter().GetResult();
+								break;
+							case (int) ResponseType.RequestsLimit:
+							case (int) ResponseType.Spam:
+								_instagramAccountLogic.PartialUpdateInstagramAccount(userStore.OAccountId, userStore.OInstagramAccountUser,
+									new InstagramAccountModel
+									{
+										AgentState = (int)AgentState.Blocked
+									}).GetAwaiter().GetResult();
+								break;
+						}
+						break;
 					}
 				}
+
 				return response;
 			}
 			catch (Exception ee)

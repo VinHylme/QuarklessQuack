@@ -32,22 +32,20 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 		private readonly TimeSpan _defaultKeyExpiry;
 		public RedisClient(IOptions<RedisOptions> options)
 		{
-			if (options != null)
+			if (options == null) return;
+			try
 			{
-				try
-				{
-					ConfigurationOptions configuration = ConfigurationOptions.Parse(options.Value.ConnectionString);
-					_redis = ConnectionMultiplexer.Connect(configuration);
-					_redis.ConnectionFailed += _redis_ConnectionFailed;
-					_redis.ErrorMessage += _redis_ErrorMessage;
-					_redis.ConnectionRestored += _redis_ConnectionRestored;
-					_defaultKeyExpiry = options.Value.DefaultKeyExpiry;
-					_DbNumber = options.Value.DatabaseNumber;
-				}
-				catch(Exception ee)
-				{
-					return;
-				}
+				var configuration = ConfigurationOptions.Parse(options.Value.ConnectionString);
+				_redis = ConnectionMultiplexer.Connect(configuration);
+				_redis.ConnectionFailed += _redis_ConnectionFailed;
+				_redis.ErrorMessage += _redis_ErrorMessage;
+				_redis.ConnectionRestored += _redis_ConnectionRestored;
+				_defaultKeyExpiry = options.Value.DefaultKeyExpiry;
+				_DbNumber = options.Value.DatabaseNumber;
+			}
+			catch(Exception ee)
+			{
+				return;
 			}
 		}
 		#region Settings
@@ -260,6 +258,14 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 			{
 				await _redis.GetDatabase(_DbNumber).StringSetAsync(redisKey,value,expiry,when);
 			}, userId, redisKey.ToString());
+		}
+		public async Task StringSet(HashtagGrowKeys hashtagGrowKey, string value, TimeSpan? expiry = null, When when = When.Always)
+		{
+			RedisKey key = hashtagGrowKey.ToString();
+			await WithExceptionLogAsync(async () =>
+			{
+				await _redis.GetDatabase(_DbNumber).StringSetAsync(key,value,expiry,when);
+			}, "", key.ToString());
 		}
 		public async Task DeleteKey(string userId, HashtagGrowKeys hashtagGrowKey)
 		{

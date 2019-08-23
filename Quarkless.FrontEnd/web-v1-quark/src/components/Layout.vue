@@ -38,6 +38,17 @@
         </b-icon>
         </router-link>
       </b-tooltip>
+      <b-tooltip v-if="showData.userSelected" type="is-dark" label="Show Activity" position="is-right" style="position:absolute; top:10em;left:4em;">
+       <a @click="$store.state.showingLogs = !$store.state.showingLogs">
+          <b-icon
+            class="floater is-show-extra"
+            pack="fa"
+            :icon="$store.state.showingLogs?'angle-left':'angle-right'"
+            size="is-medium"
+            type="is-light">
+          </b-icon>
+        </a>
+      </b-tooltip>
         <b-tooltip type="is-dark" label="Logout" style="position:absolute; bottom:3em;right:2.8em;">
         <a @click="signout">
         <b-icon
@@ -50,7 +61,7 @@
         </a>
         </b-tooltip>
     </div>
-    <div :class="isNavOn ? 'column is-11' : 'column is-12'" :style="isNavOn ? 'margin:0 auto;' : 'margin:0 auto'" >
+    <div :class="isNavOn ? 'column is-11' : 'column is-12'" :style="isNavOn ? 'margin:0 auto;' : 'margin:0 auto;'" >
         <div class="main_area">
           <router-view @selectedAccount="activateUser" @unSelectAccount="deactivateUser" v-if="isLoaded" :key="$route.fullPath"></router-view>
         </div>
@@ -75,7 +86,7 @@ export default {
       isNavOn:true,
       isLoaded:false,
       showData:{
-        userSelected:null,
+        userSelected:null
       }
     }
   },
@@ -112,7 +123,7 @@ export default {
   padding:0 !important;
 }
 .footere{
-  background:#121212 !important;
+  background:#141414 !important;
  // opacity: .7;
   width:100%;
   padding:0;
@@ -145,6 +156,10 @@ export default {
     top:7.3em;
     left:1.85em;
   }
+  &.is-show-extra{
+    top:9.6em;
+    left:1.6em;
+  }
 }
 
 .is-user{
@@ -174,6 +189,7 @@ export default {
   width: 100%;
   padding:0em;
   height:100%;
+  background:#141414;
 }
 ::-webkit-scrollbar {
     display: none;

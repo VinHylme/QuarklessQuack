@@ -233,30 +233,29 @@ namespace QuarklessLogic.Logic.ProxyLogic
 				if (connectionType != ConnectionType.Any)
 					baseUrl += $"&connectionType={connectionType.GetDescription()}";
 				#endregion
-
+				var proxyItem = new ProxyItem();
 				var jsonRespoonse = string.Empty;
-				ProxyItem proxyItem = new ProxyItem();
-				HttpWebRequest request = (HttpWebRequest)WebRequest.Create(baseUrl);
+				var request = (HttpWebRequest)WebRequest.Create(baseUrl);
 
-				using (HttpWebResponse response = (HttpWebResponse) await request.GetResponseAsync())
-				using (Stream stream = response.GetResponseStream())
-				using (StreamReader reader = new StreamReader(stream))
+				using (var response = (HttpWebResponse) await request.GetResponseAsync())
+				using (var stream = response.GetResponseStream())
+				using (var reader = new StreamReader(stream))
 				{
 					jsonRespoonse = reader.ReadToEnd();
 					proxyItem = JsonConvert.DeserializeObject<ProxyItem>(jsonRespoonse);
 				}
 
-				if (!string.IsNullOrEmpty(proxyItem?.Proxy) && !string.IsNullOrEmpty(proxyItem?.IP)) {
-
-					if(await TestProxy(proxyItem))
-					{
-						return new ProxyModel{
-							Address = proxyItem.IP,
-							Port = int.Parse(proxyItem.Port),
-							Region = proxyItem.Country,
-							Type = proxyItem.Type
-						};
-					}
+				if (string.IsNullOrEmpty(proxyItem?.Proxy) || string.IsNullOrEmpty(proxyItem?.IP))
+					return await RetrieveRandomProxy(get, post, cookies, referer, userAgent, port, city, state, country,
+						connectionType);
+				if(await TestProxy(proxyItem))
+				{
+					return new ProxyModel{
+						Address = proxyItem.IP,
+						Port = int.Parse(proxyItem.Port),
+						Region = proxyItem.Country,
+						Type = proxyItem.Type
+					};
 				}
 
 				return await RetrieveRandomProxy(get, post, cookies, referer, userAgent, port, city, state, country, connectionType);

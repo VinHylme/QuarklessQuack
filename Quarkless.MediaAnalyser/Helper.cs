@@ -7,12 +7,9 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Shipwreck.Phash;
 using Shipwreck.Phash.Bitmaps;
-using Shipwreck.Phash.Data;
-using System.Drawing.Drawing2D;
 using ImageProcessor.Imaging.Filters.EdgeDetection;
 using ImageProcessor.Imaging;
 using System.Threading;
@@ -42,72 +39,67 @@ namespace Quarkless.MediaAnalyser
 		}
 		public static bool ImageSizeCheckFromByte(this byte[] imageData, Size imSize)
 		{
-			if (imageData != null)
+			if (imageData == null) return false;
+			try
 			{
-				try
+				var bitmap = imageData.ByteToBitmap();
+				if (bitmap != null)
 				{
-					var bitmap = imageData.ByteToBitmap();
-					if (bitmap != null)
-					{
-						if(bitmap.Width > imSize.Width && bitmap.Height > imSize.Height)
-							return true;
-					}
+					if(bitmap.Width > imSize.Width && bitmap.Height > imSize.Height)
+						return true;
 				}
-				catch(Exception ee)
-				{
-					Console.WriteLine(ee.Message);
-					return false;
-				}
+			}
+			catch(Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+				return false;
 			}
 			return false;
 		}
 		public static IEnumerable<byte[]> SelectImageOnSize(this IEnumerable<byte[]> imageData, Size imSize)
 		{
-			List<byte[]> toreturn = new List<byte[]>();
+			var toreturn = new List<byte[]>();
 			foreach(var image in imageData)
 			{
-				if (image != null) {
-					try { 
+				if (image == null) continue;
+				try { 
 					var bitmapImage = image.ByteToBitmap();
 					if (bitmapImage != null) { 
 						if(bitmapImage.Width > imSize.Width && bitmapImage.Height > imSize.Height)
 							toreturn.Add(image);
-						}
 					}
-					catch(Exception ee)
-					{
-						Console.WriteLine(ee.Message);
-						continue;
-					}
+				}
+				catch(Exception ee)
+				{
+					Console.WriteLine(ee.Message);
 				}
 			}
 			return toreturn;
 		}
 		public static IEnumerable<byte[]> DuplicateImages(this IEnumerable<byte[]> images, double score = 0.90)
 		{
-			if (images.Count() <= 0) return null;
-			ImageHolder[] imageHolder = new ImageHolder[images.Count()];
+			var enumerable = images as byte[][] ?? images.ToArray();
+			if (!enumerable.Any()) return null;
+			var imageHolder = new ImageHolder[enumerable.Count()];
 			Parallel.For(0, imageHolder.Length, pos =>
 			{
-				imageHolder[pos].OriginalImageData = images.ElementAtOrDefault(pos);
-				imageHolder[pos].ReducedImageData = images.ElementAtOrDefault(pos)
+				imageHolder[pos].OriginalImageData = enumerable.ElementAtOrDefault(pos);
+				imageHolder[pos].ReducedImageData = enumerable.ElementAtOrDefault(pos)
 				.Constrain(new Size(400, 400))
 				.EntropyCrop(125)
 				.DetectEdges(new Laplacian3X3EdgeFilter(), true);
 			});
-			List<byte[]> results = new List<byte[]>();
-			for (int posX = 0; posX < imageHolder.Length; posX++)
+			var results = new List<byte[]>();
+			for (var posX = 0; posX < imageHolder.Length; posX++)
 			{
-				bool isDuplicate = false;
-				for (int posY = 1; posY < imageHolder.Length; posY++)
+				var isDuplicate = false;
+				for (var posY = 1; posY < imageHolder.Length; posY++)
 				{
-					if (posY != posX) { 
-						if (imageHolder[posX].ReducedImageData.ImageIsDuplicate(imageHolder[posY].ReducedImageData, score))
-						{
-							isDuplicate = true;
-							break;
-						}
-					}
+					if (posY == posX) continue;
+					if (!imageHolder[posX].ReducedImageData
+						.ImageIsDuplicate(imageHolder[posY].ReducedImageData, score)) continue;
+					isDuplicate = true;
+					break;
 				};
 				if (isDuplicate)
 				{
@@ -119,27 +111,27 @@ namespace Quarkless.MediaAnalyser
 
 		public static IEnumerable<byte[]> DistinctImages(this IEnumerable<byte[]> images, double score = 0.75)
 		{
-			if(images.Count()<=0) return null;
-			ImageHolder[] imageHolder = new ImageHolder[images.Count()];
+			var enumerable = images as byte[][] ?? images.ToArray();
+			if(!enumerable.Any()) return null;
+			var imageHolder = new ImageHolder[enumerable.Count()];
 			Parallel.For(0, imageHolder.Length, pos =>
 			{
-				imageHolder[pos].OriginalImageData = images.ElementAtOrDefault(pos);
-				imageHolder[pos].ReducedImageData = images.ElementAtOrDefault(pos)
+				imageHolder[pos].OriginalImageData = enumerable.ElementAtOrDefault(pos);
+				imageHolder[pos].ReducedImageData = enumerable.ElementAtOrDefault(pos)
 				.Constrain(new Size(200,200))
 				.EntropyCrop(180)
 				.DetectEdges(new Laplacian3X3EdgeFilter(),true);
 			});
-			List<byte[]> results = new List<byte[]>();
-			for(int posX = 0; posX < imageHolder.Length; posX++) 
+			var results = new List<byte[]>();
+			for(var posX = 0; posX < imageHolder.Length; posX++) 
 			{
-				bool isDuplicate = false;
-				for (int posY = 1; posY < imageHolder.Length; posY++)
+				var isDuplicate = false;
+				for (var posY = 1; posY < imageHolder.Length; posY++)
 				{
-					if (imageHolder[posX].ReducedImageData.ImageIsDuplicate(imageHolder[posY].ReducedImageData, score))
-					{
-						isDuplicate = true;
-						break;
-					}
+					if (!imageHolder[posX].ReducedImageData
+						.ImageIsDuplicate(imageHolder[posY].ReducedImageData, score)) continue;
+					isDuplicate = true;
+					break;
 				};
 				if (!isDuplicate)
 				{
@@ -151,29 +143,31 @@ namespace Quarkless.MediaAnalyser
 		public static IEnumerable<byte[]> RemoveDuplicateImages (this IEnumerable<byte[]> selfImages,
 			IEnumerable<byte[]> targetImages, double scorePercantage)
 		{
-			if(selfImages.Count()<=0) throw new Exception("self images cannot be empty");
-			if(targetImages.Count()<=0) throw new Exception("target images cannot be empty");
-			targetImages = targetImages.SelectImageOnSize(new Size(600,600));
+			var enumerable = selfImages as byte[][] ?? selfImages.ToArray();
+			if(!enumerable.Any()) throw new Exception("self images cannot be empty");
+			var byteses = targetImages as byte[][] ?? targetImages.ToArray();
+			if(!byteses.Any()) throw new Exception("target images cannot be empty");
+			targetImages = byteses.SelectImageOnSize(new Size(600,600));
 			//initialise
-			ImageHolder[] selfImageHolder = new ImageHolder[selfImages.Count()];
+			var selfImageHolder = new ImageHolder[enumerable.Count()];
 			Parallel.For(0, selfImageHolder.Length, pos =>
 			{
-				selfImageHolder[pos].OriginalImageData = selfImages.ElementAtOrDefault(pos);
-				selfImageHolder[pos].ReducedImageData = selfImages.ElementAtOrDefault(pos)
+				selfImageHolder[pos].OriginalImageData = enumerable.ElementAtOrDefault(pos);
+				selfImageHolder[pos].ReducedImageData = enumerable.ElementAtOrDefault(pos)
 					.Constrain(new Size(135, 135))
 					.EntropyCrop(180)
 					.DetectEdges(new Laplacian3X3EdgeFilter(), true);
 			});
 
-			ImageHolder[] targetImageHolder = new ImageHolder[targetImages.Count()];
+			var targetImageHolder = new ImageHolder[byteses.Count()];
 			Parallel.For(0,targetImageHolder.Length,pos=>{
-				targetImageHolder[pos].OriginalImageData = targetImages.ElementAtOrDefault(pos);
-				targetImageHolder[pos].ReducedImageData = targetImages.ElementAtOrDefault(pos)
+				targetImageHolder[pos].OriginalImageData = byteses.ElementAtOrDefault(pos);
+				targetImageHolder[pos].ReducedImageData = byteses.ElementAtOrDefault(pos)
 					.Constrain(new Size(135, 135))
 					.EntropyCrop(180)
 					.DetectEdges(new Laplacian3X3EdgeFilter(), true);
 			});
-			List<byte[]> filteredRes = new List<byte[]>();
+			var filteredRes = new List<byte[]>();
 
 			Parallel.ForEach(targetImageHolder, act => {
 				if (!act.ReducedImageData.DoesImageExist(selfImageHolder.Select(s => s.ReducedImageData), scorePercantage))
@@ -189,40 +183,37 @@ namespace Quarkless.MediaAnalyser
 			var imagebit = image.ByteToBitmap();
 			return (double)((double)imagebit.Width / (double) imagebit.Height);
 		}
-		private static float DistnaceCalculate(float a, float b)
+		private static float DistanceCalculate(float a, float b)
 		{
 			return Math.Abs(a - b);
 		}
 		public static double GetClosestAspectRatio(this byte[] image)
 		{
 			var imagebit = image.ByteToBitmap();
-			float aspect = (float) ((double) imagebit.Width / (double) imagebit.Height);
-			float[] AllowedAspectRatios = new float[] { 1.0f, 1.8f, 1.9f, 0.8f };
-			var dist = AllowedAspectRatios.Select(s=>DistnaceCalculate(aspect,s)).Min(x=>x);
-			return AllowedAspectRatios.ElementAt(AllowedAspectRatios.ToList().FindIndex(s=>DistnaceCalculate(aspect,s) == dist));
+			var aspect = (float) ((double) imagebit.Width / (double) imagebit.Height);
+			var allowedAspectRatios = new float[] { 1.0f, 1.8f, 1.9f, 0.8f };
+			var dist = allowedAspectRatios.Select(s=>DistanceCalculate(aspect,s)).Min(x=>x);
+			return allowedAspectRatios.ElementAt(allowedAspectRatios.ToList().FindIndex(s=>DistanceCalculate(aspect,s) == dist));
 		}
 		public static byte[] ResizeToClosestAspectRatio (this byte[] image)
 		{
 			var imageBitmap = image.ByteToBitmap();
-			int width = imageBitmap.Width;
-			int height = imageBitmap.Height;
-			float ogratio = (float) width / height;
-			float[] AllowedAspectRatios = new float[] {1.0f, 1.8f, 1.9f, 0.8f };
+			var width = imageBitmap.Width;
+			var height = imageBitmap.Height;
+			var ogratio = (float) width / height;
+			var AllowedAspectRatios = new float[] {1.0f, 1.8f, 1.9f, 0.8f };
 
 	
-			var lowestdistance = AllowedAspectRatios.ToList().Select(a =>
-			{
-				return DistnaceCalculate(ogratio,a);
-			}).Min(n=>n);
+			var lowestdistance = AllowedAspectRatios.ToList().Select(a => DistanceCalculate(ogratio,a)).Min(n=>n);
 
 			var closestRatio = AllowedAspectRatios.ElementAt(AllowedAspectRatios.ToList()
-				.FindIndex(s=> DistnaceCalculate(ogratio,s)==lowestdistance));
-			int newHeightc = (int) ((float) width / closestRatio);
-			return Filters.ResizeImage(image,ResizeMode.Stretch,new Size(width,newHeightc));//.ResizeImage(imageBitmap,width,newHeightc).BitmapToByte();
+				.FindIndex(s=> DistanceCalculate(ogratio,s)==lowestdistance));
+			var newHeightc = (int) ((float) width / closestRatio);
+			return image.ResizeImage(ResizeMode.Stretch,new Size(width,newHeightc));//.ResizeImage(imageBitmap,width,newHeightc).BitmapToByte();
 		}
 		public static IEnumerable<ImageHolder> Distinct(this ImageHolder[] imageHolders, ImageHolder[] ogholders, double threshHold)
 		{
-			List<ImageHolder> results =  new List<ImageHolder>();
+			var results =  new List<ImageHolder>();
 			if(imageHolders==null) throw new Exception("image cannot be null");
 			var sortTarget = imageHolders
 				.Select(s=>ImagePhash.ComputeDigest(s.ReducedImageData.ByteToBitmap().ToLuminanceImage())).ToList();
@@ -247,27 +238,24 @@ namespace Quarkless.MediaAnalyser
 			if(image == null) throw new Exception("image cannot be null");
 			var orginalHash = ImagePhash.ComputeDigest(image.ByteToBitmap().ToLuminanceImage());
 			if(orginalHash==null) return false;
-			bool res = false;
+			var res = false;
 			Parallel.ForEach(images, (curr, state)=>{
 				var bitmap = (Bitmap)curr.ByteToBitmap();
 				var Currenthash = ImagePhash.ComputeDigest(bitmap.ToLuminanceImage());
 				var score = ImagePhash.GetCrossCorrelation(Currenthash, orginalHash);
-				if (score > scorePercantage)
-				{
-					res = true;
-					state.Break();
-				}
+				if (!(score > scorePercantage)) return;
+				res = true;
+				state.Break();
 			});
 			return res;
 		}
 		public static byte[] DownloadMedias(this List<string> urls, int poz)
 		{
-			using (WebClient webClient = new WebClient())
+			using (var webClient = new WebClient())
 			{
 				try
 				{
-					if (poz < 0) { return null; }
-					return webClient.DownloadData(urls.ElementAtOrDefault(poz));
+					return poz < 0 ? null : webClient.DownloadData(urls.ElementAt(poz));
 				}
 				catch (Exception e)
 				{
@@ -278,12 +266,13 @@ namespace Quarkless.MediaAnalyser
 		}
 		public static byte[] DownloadMedia(this string url)
 		{
-			using (WebClient webClient = new WebClient())
+			using (var webClient = new WebClient())
 			{
 				try
 				{
 					webClient.Proxy = null;
-					webClient.Headers.Add("user-agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.2; .NET CLR 1.0.3705;)");
+					//webClient.Headers.Add("user-agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.2; .NET CLR 1.0.3705;)");
+					webClient.Headers.Add("User-Agent: Other"); 
 					return webClient.DownloadData(url);
 				}
 				catch (Exception e)
@@ -294,8 +283,8 @@ namespace Quarkless.MediaAnalyser
 		}
 		public static Bitmap cropAtRect(this Bitmap b, Rectangle r)
 		{
-			Bitmap nb = new Bitmap(r.Width, r.Height);
-			Graphics g = Graphics.FromImage(nb);
+			var nb = new Bitmap(r.Width, r.Height);
+			var g = Graphics.FromImage(nb);
 			g.DrawImage(b, -r.X, -r.Y);
 			return nb;
 		}
@@ -303,16 +292,16 @@ namespace Quarkless.MediaAnalyser
 		{
 			Bitmap original = null;
 			Bitmap temp = null;
-			List<byte[]> bundle = new List<byte[]>();
+			var bundle = new List<byte[]>();
 
 			var toImage = imageData.ByteToBitmap();
 			var width = toImage.Width;
 			//eg run
 			//image of 1280 x 720 -> 1280/3 = 426.66
-			int widthOfSquare = (int) Math.Truncate((float)width / (float)splitBy);
-			int startX = 0;
+			var widthOfSquare = (int) Math.Truncate((float)width / (float)splitBy);
+			var startX = 0;
 
-			for(int i = 0; i < splitBy; i++)
+			for(var i = 0; i < splitBy; i++)
 			{
 				try { 
 					original = imageData.ByteToBitmap();
@@ -324,10 +313,8 @@ namespace Quarkless.MediaAnalyser
 				}
 				finally
 				{
-					if(original!=null)
-						original.Dispose();
-					if(temp!=null)
-						temp.Dispose();
+					original?.Dispose();
+					temp?.Dispose();
 				}
 			}
 			return bundle;
@@ -350,7 +337,7 @@ namespace Quarkless.MediaAnalyser
 		}
 		public static byte[] BitmapToByte(this Bitmap bitmap)
 		{
-			using (MemoryStream ms = new MemoryStream())
+			using (var ms = new MemoryStream())
 			{
 				bitmap.Save(ms, ImageFormat.Jpeg);
 				ms.Close();
@@ -360,31 +347,31 @@ namespace Quarkless.MediaAnalyser
 		public static Dictionary<Color,int> GetColorPercentage(this Bitmap bmp)
 		{
 			if(bmp == null) throw new ArgumentNullException("null is not allowed");
-			BitmapData srcData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, bmp.PixelFormat);
-			Dictionary<Color, int> frequency = new Dictionary<Color, int>();
-			int bytesPerPixel = Image.GetPixelFormatSize(srcData.PixelFormat) / 8;
+			var srcData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, bmp.PixelFormat);
+			var frequency = new Dictionary<Color, int>();
+			var bytesPerPixel = Image.GetPixelFormatSize(srcData.PixelFormat) / 8;
 
-			int stride = srcData.Stride;
+			var stride = srcData.Stride;
 
-			IntPtr scan0 = srcData.Scan0;
+			var scan0 = srcData.Scan0;
 
-			long[] totals = new long[] { 0, 0, 0 };
+			var totals = new long[] { 0, 0, 0 };
 
-			int width = bmp.Width * bytesPerPixel;
-			int height = bmp.Height;
+			var width = bmp.Width * bytesPerPixel;
+			var height = bmp.Height;
 
 			unsafe
 			{
-				byte* p = (byte*)(void*)scan0;
+				var p = (byte*)(void*)scan0;
 
-				for (int y = 0; y < height; y++)
+				for (var y = 0; y < height; y++)
 				{
-					for (int x = 0; x < width; x += bytesPerPixel)
+					for (var x = 0; x < width; x += bytesPerPixel)
 					{
 						totals[0] += p[x + 0];
 						totals[1] += p[x + 1];
 						totals[2] += p[x + 2];
-						Color color = Color.FromArgb(p[x+0],p[x+1],p[x+2]);
+						var color = Color.FromArgb(p[x+0],p[x+1],p[x+2]);
 						if (frequency.ContainsKey(color))
 						{
 							frequency[color]++;
@@ -407,26 +394,26 @@ namespace Quarkless.MediaAnalyser
 				throw new ArgumentNullException("bmp");
 			}
 
-			BitmapData srcData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, bmp.PixelFormat);
+			var srcData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, bmp.PixelFormat);
 
-			int bytesPerPixel = Image.GetPixelFormatSize(srcData.PixelFormat) / 8;
+			var bytesPerPixel = Image.GetPixelFormatSize(srcData.PixelFormat) / 8;
 
-			int stride = srcData.Stride;
+			var stride = srcData.Stride;
 
-			IntPtr scan0 = srcData.Scan0;
+			var scan0 = srcData.Scan0;
 
-			long[] totals = new long[] { 0, 0, 0 };
+			var totals = new long[] { 0, 0, 0 };
 
-			int width = bmp.Width * bytesPerPixel;
-			int height = bmp.Height;
+			var width = bmp.Width * bytesPerPixel;
+			var height = bmp.Height;
 
 			unsafe
 			{
-				byte* p = (byte*)(void*)scan0;
+				var p = (byte*)(void*)scan0;
 
-				for (int y = 0; y < height; y++)
+				for (var y = 0; y < height; y++)
 				{
-					for (int x = 0; x < width; x += bytesPerPixel)
+					for (var x = 0; x < width; x += bytesPerPixel)
 					{
 						totals[0] += p[x + 0];
 						totals[1] += p[x + 1];
@@ -439,9 +426,9 @@ namespace Quarkless.MediaAnalyser
 
 			long pixelCount = bmp.Width * height;
 
-			int avgB = Convert.ToInt32(totals[0] / pixelCount);
-			int avgG = Convert.ToInt32(totals[1] / pixelCount);
-			int avgR = Convert.ToInt32(totals[2] / pixelCount);
+			var avgB = Convert.ToInt32(totals[0] / pixelCount);
+			var avgG = Convert.ToInt32(totals[1] / pixelCount);
+			var avgR = Convert.ToInt32(totals[2] / pixelCount);
 
 			bmp.UnlockBits(srcData);
 
@@ -449,7 +436,7 @@ namespace Quarkless.MediaAnalyser
 		}
 		public static IEnumerable<byte[]> ResizeManyToClosestAspectRatio(this IEnumerable<byte[]>images)
 		{
-			List<byte[]> resizedImages = new List<byte[]>();
+			var resizedImages = new List<byte[]>();
 			Parallel.ForEach(images, image =>
 			{
 				resizedImages.Add(image.ResizeToClosestAspectRatio());
@@ -458,7 +445,7 @@ namespace Quarkless.MediaAnalyser
 		}
 		public static byte[] MostSimilarImage(this Color color, List<byte[]> images)
 		{
-			List<Color> dom_colors = new List<Color>();
+			var dom_colors = new List<Color>();
 
 			images.ForEach(resizedImage =>
 			{
@@ -472,7 +459,7 @@ namespace Quarkless.MediaAnalyser
 		}
 		public static bool SimilarColors(this IEnumerable<Color> @freq, IEnumerable<Color> target, double threshhold = 0)
 		{
-			int contains = 0;
+			var contains = 0;
 			foreach (var tc in target)
 			{
 				var diffMin = freq.Select(x=>ColorDiff(x,tc)).Min(s=>s);
@@ -488,8 +475,8 @@ namespace Quarkless.MediaAnalyser
 		public static int ColorDiff(this Color c1, Color c2)
 		{
 			return (int)Math.Sqrt((c1.R - c2.R) * (c1.R - c2.R)
-								   + (c1.G - c2.G) * (c1.G - c2.G)
-								   + (c1.B - c2.B) * (c1.B - c2.B));
+				+ (c1.G - c2.G) * (c1.G - c2.G)
+				+ (c1.B - c2.B) * (c1.B - c2.B));
 		}
 		public static Bitmap ReduceBitmap(this Bitmap original, int reducedWidth, int reducedHeight)
 		{
@@ -504,29 +491,29 @@ namespace Quarkless.MediaAnalyser
 		}
 		public static IEnumerable<Bitmap> ReadImagesFromDirectory(string path, string pattern)
 		{
-			var images_ = Directory.EnumerateFiles(path, pattern);
-			foreach (var image_ in images_)
+			var images = Directory.EnumerateFiles(path, pattern);
+			foreach (var image in images)
 			{
-				var fil = File.ReadAllBytes(image_);
+				var fil = File.ReadAllBytes(image);
 				var meme = new MemoryStream(fil);
-				if (meme != null)
-					yield return new Bitmap(Bitmap.FromStream(meme));
+				yield return new Bitmap(Image.FromStream(meme));
 			}
 		}
 		public static byte[] GenerateVideoThumbnail(this byte[] video, int specificFrame = 5)
 		{
-			string path = GetFilePathByName("videosTempPath");
-			string outp = GetFilePathByName("imagesTempPath");
-			string engine_path = GetFilePathByName("enginePath");
-			string videoPath = string.Format(path + "video_{0}_{1}.mp4", Guid.NewGuid(), DateTime.UtcNow.ToLongDateString());
+			var path = GetFilePathByName("videosTempPath");
+			var outp = GetFilePathByName("imagesTempPath");
+			var engine_path = GetFilePathByName("enginePath");
+			var videoPath = string.Format(path + "video_{0}_{1}.mp4", Guid.NewGuid(), DateTime.UtcNow.ToLongDateString());
 			File.WriteAllBytes(videoPath, video);
 			try
 			{
-				MediaFile mediaFile = new MediaFile(videoPath);
+				var mediaFile = new MediaFile(videoPath);
 				var engine = new Engine(engine_path);
 				var meta = engine.GetMetaDataAsync(mediaFile).GetAwaiter().GetResult();
 				var opt = new ConversionOptions { Seek = TimeSpan.FromSeconds(specificFrame) };
-				var outputFile = new MediaFile((string.Format(@"{0}image-{1}_{2}.jpeg", outp, Guid.NewGuid(), DateTime.UtcNow.ToLongDateString())));
+				var outputFile = new MediaFile((
+					$@"{outp}image-{Guid.NewGuid()}_{DateTime.UtcNow.ToLongDateString()}.jpeg"));
 				engine.GetThumbnailAsync(mediaFile, outputFile, opt);
 
 				var image = File.ReadAllBytes(outputFile.FileInfo.FullName);
@@ -544,39 +531,37 @@ namespace Quarkless.MediaAnalyser
 		}
 		public static string IsVideoSimilar(this Color profileColor, byte[] video, double threshHold, int frameSkip = 5)
 		{
-			string path = GetFilePathByName("videosTempPath");
-			string outp = GetFilePathByName("imagesTempPath");
-			string engine_path = GetFilePathByName("enginePath");
-			string videoPath = string.Format(path + "video_{0}.mp4", Guid.NewGuid());
-			Color dom_color = new Color();
+			var path = GetFilePathByName("videosTempPath");
+			var outp = GetFilePathByName("imagesTempPath");
+			var engine_path = GetFilePathByName("enginePath");
+			var videoPath = string.Format(path + "video_{0}.mp4", Guid.NewGuid());
+			var dom_color = new Color();
 			File.WriteAllBytes(videoPath, video);
 			try
 			{
-				MediaFile mediaFile = new MediaFile(videoPath);
+				var mediaFile = new MediaFile(videoPath);
 				var engine = new Engine(engine_path);
 				var meta = engine.GetMetaDataAsync(mediaFile).GetAwaiter().GetResult();
 				var i = 0;
 				while (i < meta.Duration.Seconds)
 				{
 					var opt = new ConversionOptions { Seek = TimeSpan.FromSeconds(frameSkip) };
-					var outputFile = new MediaFile((string.Format(@"{0}image-{1}_{2}.jpeg", outp, i, Guid.NewGuid())));
+					var outputFile = new MediaFile(($@"{outp}image-{i}_{Guid.NewGuid()}.jpeg"));
 					engine.GetThumbnailAsync(mediaFile, outputFile, opt);
 					i++;
 				}
-				List<Bitmap> videoframes = ReadImagesFromDirectory(outp, "*.jpeg").ToList();
-				List<Color> video_colors_avg = new List<Color>();
-				if (videoframes != null)
-				{
-					videoframes.ForEach(im => video_colors_avg.Add(GetDominantColor(im)));
-					int r = 0, b = 0, g = 0;
-					video_colors_avg.ForEach(c => {
-						r += c.R;
-						b += c.B;
-						g += c.G;
-					});
-					int total = video_colors_avg.Count;
-					dom_color = Color.FromArgb(r / total, b / total, g / total);
-				}
+				var videoframes = ReadImagesFromDirectory(outp, "*.jpeg").ToList();
+				var video_colors_avg = new List<Color>();
+
+				videoframes.ForEach(im => video_colors_avg.Add(GetDominantColor(im)));
+				int r = 0, b = 0, g = 0;
+				video_colors_avg.ForEach(c => {
+					r += c.R;
+					b += c.B;
+					g += c.G;
+				});
+				var total = video_colors_avg.Count;
+				dom_color = Color.FromArgb(r / total, b / total, g / total);
 			}
 			catch (Exception ee)
 			{
@@ -600,8 +585,8 @@ namespace Quarkless.MediaAnalyser
 			try
 			{
 				if (string.IsNullOrEmpty(loc)) { 
-					string path = GetFilePathByName("videosTempPath");
-					string outp = GetFilePathByName("imagesTempPath");
+					var path = GetFilePathByName("videosTempPath");
+					var outp = GetFilePathByName("imagesTempPath");
 
 					Directory.EnumerateFiles(outp, "*.jpeg").ToList()
 						.ForEach(f => {
@@ -615,18 +600,18 @@ namespace Quarkless.MediaAnalyser
 
 					Directory.EnumerateFiles(path, "*.mp4").ToList()
 					.ForEach(f => {
-					FileInfo fileInfo = new FileInfo(f);
-						for (int tries = 0; IsFileLocked(fileInfo) && tries < retries; tries++)
+						var fileInfo = new FileInfo(f);
+						for (var tries = 0; IsFileLocked(fileInfo) && tries < retries; tries++)
 						{
 							Thread.Sleep(1000);
 						}
-					fileInfo.Delete();
+						fileInfo.Delete();
 					});	
 				}
 				else
 				{
-					FileInfo fileInfo = new FileInfo(loc);
-					for(int tries = 0; IsFileLocked(fileInfo) && tries < retries; tries++)
+					var fileInfo = new FileInfo(loc);
+					for(var tries = 0; IsFileLocked(fileInfo) && tries < retries; tries++)
 					{
 						Thread.Sleep(1000);
 					}
@@ -635,7 +620,7 @@ namespace Quarkless.MediaAnalyser
 			}
 			catch (IOException exception)
 			{
-				Console.WriteLine(string.Format("File locked: {0}", exception));
+				Console.WriteLine($"File locked: {exception}");
 			}
 		
 		}
@@ -657,8 +642,7 @@ namespace Quarkless.MediaAnalyser
 			}
 			finally
 			{
-				if (stream != null)
-					stream.Close();
+				stream?.Close();
 			}
 
 			//file is not locked
@@ -666,42 +650,41 @@ namespace Quarkless.MediaAnalyser
 		}
 		public static byte[] MostSimilarVideo(this Color profileColor, List<byte[]> videos, int frameSkip = 5)
 		{
-			string path = GetFilePathByName("videosTempPath");
-			string outp = GetFilePathByName("imagesTempPath");
-			string engine_path = GetFilePathByName("enginePath");
-			string videoPath = string.Format(path + "video_{0}_{1}.mp4", Guid.NewGuid(), DateTime.UtcNow.ToLongDateString());
-			List<Color> dom_colors = new List<Color>();
+			var path = GetFilePathByName("videosTempPath");
+			var outp = GetFilePathByName("imagesTempPath");
+			var engine_path = GetFilePathByName("enginePath");
+			var videoPath = string.Format(path + "video_{0}_{1}.mp4", Guid.NewGuid(), DateTime.UtcNow.ToLongDateString());
+			var dom_colors = new List<Color>();
 
 			foreach (var video in videos)
 			{
 				File.WriteAllBytes(videoPath, video);
 				try
 				{
-					MediaFile mediaFile = new MediaFile(videoPath);
+					var mediaFile = new MediaFile(videoPath);
 					var engine = new Engine(engine_path);
 					var meta = engine.GetMetaDataAsync(mediaFile).GetAwaiter().GetResult();
 					var i = 0;
 					while (i < meta.Duration.Seconds)
 					{
 						var opt = new ConversionOptions { Seek = TimeSpan.FromSeconds(frameSkip) };
-						var outputFile = new MediaFile((string.Format(@"{0}image-{1}_{2}_{3}.jpeg", outp, i, Guid.NewGuid(), DateTime.UtcNow.ToLongDateString())));
+						var outputFile = new MediaFile((
+							$@"{outp}image-{i}_{Guid.NewGuid()}_{DateTime.UtcNow.ToLongDateString()}.jpeg"));
 						engine.GetThumbnailAsync(mediaFile, outputFile, opt);
 						i++;
 					}
-					List<Bitmap> videoframes = ReadImagesFromDirectory(outp, "*.jpeg").ToList();
-					List<Color> video_colors_avg = new List<Color>();
-					if (videoframes != null)
-					{
-						videoframes.ForEach(im => video_colors_avg.Add(GetDominantColor(im)));
-						int r = 0, b = 0, g = 0;
-						video_colors_avg.ForEach(c => {
-							r += c.R;
-							b += c.B;
-							g += c.G;
-						});
-						int total = video_colors_avg.Count;
-						dom_colors.Add(Color.FromArgb(r / total, b / total, g / total));
-					}
+					var videoframes = ReadImagesFromDirectory(outp, "*.jpeg").ToList();
+					var video_colors_avg = new List<Color>();
+
+					videoframes.ForEach(im => video_colors_avg.Add(GetDominantColor(im)));
+					int r = 0, b = 0, g = 0;
+					video_colors_avg.ForEach(c => {
+						r += c.R;
+						b += c.B;
+						g += c.G;
+					});
+					int total = video_colors_avg.Count;
+					dom_colors.Add(Color.FromArgb(r / total, b / total, g / total));
 				}
 				catch (Exception ee)
 				{
@@ -711,8 +694,8 @@ namespace Quarkless.MediaAnalyser
 			}
 			var colorDiffs = dom_colors.Select(n => ColorDiff(n, profileColor)).Min(n => n);
 			var pos = dom_colors.FindIndex(n => ColorDiff(n, profileColor) == colorDiffs);
-			Directory.EnumerateFiles(outp, "*.jpeg").ToList().ForEach(f => File.Delete(f));
-			Directory.EnumerateFiles(path, "*.mp4").ToList().ForEach(f => File.Delete(f));
+			Directory.EnumerateFiles(outp, "*.jpeg").ToList().ForEach(File.Delete);
+			Directory.EnumerateFiles(path, "*.mp4").ToList().ForEach(File.Delete);
 			return videos.ElementAtOrDefault(pos);
 		}
 	}

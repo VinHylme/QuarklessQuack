@@ -1,78 +1,51 @@
 <template>
 <div class="timeline_layout">
   <div class="columns is-mobile is-gapless">
-    <div class="column is-0" style="background:#323232;">
-      <div class="media_container" style="text-align:center;">   
-        <b-tabs position="is-centered" type="is-toggle" v-model="activeTab">
-            <b-tab-item label="Upload Media"  icon="upload">
-            </b-tab-item>
-            <b-tab-item label="Reverse Search" pack="fas" icon="book-open">
-              <d-drop accept="image/x-png,image/jpeg, image/bmp" :isHidden="false" :isMulti="false" class="dropStyle" @readyUpload="onUpload"></d-drop>
-              <br>
-              <div class="uploadSearchResults">
-                 <b-notification v-if="uploadMethodData.isLoading" style="width:100%; height:100px; background:#323232;" :closable="false">
-                    <b-loading :is-full-page="false" :active.sync="uploadMethodData.isLoading" :can-cancel="false">
-                        <b-icon
-                          pack="fas"
-                          icon="circle-notch"
-                          size="is-large"
-                          custom-class="fa-spin">
-                        </b-icon>
-                    </b-loading>
-                </b-notification>
-                <div id="items" class="uploadSearchResults">
-                 <div v-for="(image,index) in uploadMethodData.searchMediaItems" :key="image+'_'+index" class="image_container zoomable dropitem" >
-                   <ImageItem v-if="image.url" :source="image.url" width="120px" height="120px" :isRounded="false"/>
-                   <div class="overlayTick">
-                      <span class="icon has-text-info">
-                        <i class="fas fa-lg fa-check-circle"></i>
-                      </span>
-                   </div>
-                  </div>
-                  </div>
-              </div>
-            </b-tab-item>
-            <b-tab-item label="Google" pack="fas" icon="google-drive">
-              
-            </b-tab-item>
-        </b-tabs>
+    <div :class="$store.state.showingLogs ?'column is-4':'column is-0'" style="background:#1f1f1f; color:white; display:inline-block;">
+        <p class="title" style="margin-left:9em; margin-top:2em; color:#d9d9d9; text-align:left;">Activity</p>
+      <div v-for="(timelineLog,index) in timelineLogs" :key="timelineLog+'_'+index" class="card-acticity-log">
+        <div class="card-activity-header">
+          <b-icon v-if="timelineLog.actionType === 8" icon="user-plus" pack="fas" type="is-success" size="is-default"/>
+          <b-icon v-if="timelineLog.actionType === 9" icon="user-minus" pack="fas" type="is-warning" size="is-default"/>
+          <b-icon v-if="timelineLog.actionType === 10" icon="heart" pack="fas" type="is-danger" size="is-default"/>
+          <b-icon v-if="timelineLog.actionType === 12" icon="thumbs-up" pack="fas" type="is-info" size="is-default"/>
+          <b-icon v-if="timelineLog.actionType === 1" icon="camera" pack="fas" type="is-twitter" size="is-default"/>
+        </div>
+        <div class="card-activity-content">
+          {{timelineLog.message}}
+        </div>
+        <div class="card-activity-footer">
+          <p>{{formatDate(timelineLog.dateAdded)}}</p>
+        </div>
       </div>
     </div>
-    <div class="column is-12">
+    <div :class="$store.state.showingLogs ?'column is-8':'column is-12'">
       <div class="timeline_container">
-        <vue-scheduler :events="this.$store.getters.UserTimeline" :event-display="eventDisplay"/>
+        <vue-scheduler @CreatePost="OnCreatePost" :events="this.$store.getters.UserTimeline" :event-display="eventDisplay"/>
         <div id="scheduler" class="overlay_timeline">
           <p class="subtitle is-5">Drop your media to schedule your post</p>     
         </div>
       </div>
     </div>
   </div>
-  <b-notification style="background-color:#121212; width:0; height:0;" :closable="false">
+  <b-notification style="background-color:transparent; width:0; height:0;" :closable="false">
       <b-loading :is-full-page="isFullPage" :active.sync="isLoading" :can-cancel="false"></b-loading>
   </b-notification>
 </div>  
 </template>
 
 <script>
-import moment from 'moment';
-import DropZone from '../Objects/DropZone';
-import ImageItem from '../Objects/ImageItem';
-import draggable from 'vuedraggable';
-import { Sortable, MultiDrag } from 'sortablejs';
 import Vue from 'vue';
-Sortable.mount(new MultiDrag());
+import moment from 'moment';
 export default {
-  components:{
-    'd-drop': DropZone,
-    'd-drag': draggable,
-    ImageItem
-  },
   data(){
     return {
       IsAdmin:false,
-      TimelineData:[],
+      timelineLogs:[],
       timer:'',
+      timerLog:'',
       isLoading: false,
+      isLoadingLogs: false,
       isFullPage: true,
       activeTab:0,
       profile:{},
@@ -88,158 +61,53 @@ export default {
     }
   },
   created(){
-      this.isLoading = true
-      this.$store.dispatch('GetUsersTimeline',this.$route.params.id).then(res=> { this.isLoading = false });
-      this.TimelineData = this.$store.getters.UserTimeline;
-      this.timer = setInterval(this.loadData, 15000)
+     
   },
-  mounted(){
+  beforeMount(){
       this.IsAdmin = this.$store.getters.UserRole == 'Admin';
       this.profile = this.$store.getters.UserProfile;
       this.$emit('selectedAccount',this.$route.params.id);
-      var vm = this;
-      this.$nextTick(() => {
-        let count = 0;
-        const sortable = Sortable.create(document.getElementById('items') , {
-          group:{
-            name:'items'
-          },
-          multiDrag: true,
-          selectedClass: "selected",
-          dragClass: "isDragOn",  // Class name for the dragging item
-          animation:100,
-          onSelect: function(evt) {
-            evt.item;
-          },
-          onDeselect: function(evt) {
-            evt.item;
-          },
-          onStart:function(evt){
-            evt.oldIndex;  // element index within parent
-            document.getElementById("scheduler").style.display = "block";
-          },
-          onEnd:function(evt){
-            var itemEl = evt.item;  // dragged HTMLElement
-            evt.to;    // target list
-            evt.from;  // previous list
-            evt.oldIndex;  // element's old index within old parent
-            evt.newIndex;  // element's new index within new parent
-            evt.oldDraggableIndex; // element's old index within old parent, only counting draggable elements
-            evt.newDraggableIndex; // element's new index within new parent, only counting draggable elements
-            evt.clone // the clone element
-            evt.pullMode;  // when item is in another sortable: `"clone"` if cloning, `true` if moving
-            document.getElementById("scheduler").style.display = "none";
-          },
-          onMove:function(/**Event*/evt, /**Event*/originalEvent){
-            var currentSearchItems = getValues(sortable);
-          }
-        });
-
-        const othersort = Sortable.create(document.getElementById('scheduler'), {
-          group: {
-            name: 'dropzone_',
-            put: ['items']
-          },
-          sort:false,
-          animation: 150,
-          dragoverBubble:false,
-          onAdd:function(evt){
-            tryToAdd(evt);
-          }
-        });
-        function tryToAdd(evt){
-          var currentListToUpload = getValues(othersort);          
-          if(currentListToUpload.length > 8){
-            Vue.prototype.$toast.open({
-                message: 'You can currently only upload upto 8 images or videos',
-                type: 'is-info'
-              });      
-              othersort.option("revert",true);
-              sortable.option("revert", true);
-          }
-          else{
-            vm.$emit('newPost', { Items: currentListToUpload, Context:evt }); 
-          }
-        }
-
-        this.$on('newPost', function(value) {
-          this.prePostData = value.Items;
-          this.handlePost(value.Context);
-        });
-
-        this.$on('failedPost', function(value){
-          othersort.option("revert", true);
-          sortable.option("revert", true);   
-        });
-        this.$on('successPost', function(data){
-          data.context.item.parentNode.removeChild(data.context.item);
-        });
-
-        document.getElementById("scheduler").style.display = "none";
-        function getValues(element){
-          var elementsFound = []
-          var childs = element.el.childNodes;
-          var i = 0;
-          for(i; i < childs.length; i++){
-            var child = childs[i];
-            if(child.firstChild!==undefined && child.firstChild.nodeName == "FIGURE"){
-              let arr = [...child.firstChild.children];
-              var j = 0;
-              for(j; j < arr.length; j++){
-                if(arr[j]!==undefined && arr[j].nodeName == "IMG"){
-                  elementsFound.push(arr[j].dataset.url);
-                }
-              }
-            }
-          }
-          return elementsFound;
-        }
+      this.isLoading = true;   
+      this.isLoadingLogs = true;
+      this.$store.dispatch('GetUsersTimeline',this.$route.params.id).then(res=> 
+      { 
+        this.isLoading = false;
+      }).catch(err=>{
+          this.isLoading = false;
       });
+      this.$store.dispatch('GetAllEventLogsForUser', 100).then(resp=>{
+          this.timelineLogs = this.$store.getters.UserTimelineLogForUser(this.$route.params.id);
+          this.isLoadingLogs = false;
+        }).catch(err=>{
+          this.isLoadingLogs = false;
+      });
+      this.timer = setInterval(this.loadData, 15000);
+      this.timerLog = setInterval(this.loadLogs,8000);
   },
-  watch:{
-    prePostChange(value){
-    }
+  mounted(){
+
+  },
+  computed:{
   },
   methods: {
-    handlePost(evt){
-      console.log(this.prePostData);
-      this.$emit('failedPost', { context: evt, response: true } );
-    },
-    selectMediaFromSearch(index){
-      if(this.uploadMethodData.searchMediaItems.reduce((a, c) => c.isSelected ? ++a : a, 0)<=8 || this.uploadMethodData.searchMediaItems[index].isSelected===true){
-        this.uploadMethodData.searchMediaItems[index].isSelected = !this.uploadMethodData.searchMediaItems[index].isSelected;
-      }
-      else{
-          Vue.prototype.$toast.open({
-            message: 'You can currently only upload upto 8 images or videos',
-            type: 'is-info'
+    formatDate(date) {
+     return moment(date).format('llll');
+  },
+    OnCreatePost(event){
+      this.$store.dispatch('CreatePost', event).then(resp=>{
+         Vue.prototype.$toast.open({
+            message: 'Post Successfuly Scheduled',
+            type: 'is-success'
           })
-      }
-    },
-     onUpload(e){
-      this.uploadMethodData.currentPage = 1;
-      const data = {instaId: this.profile.instagramAccountId, profileId: this.profile._id, formData:e.formData};
-      this.$store.dispatch('UploadFileForProfile',data).then(resp=>{
-        this.uploadMethodData.urls = resp.data.urls;
-        this.searchImage(this.uploadMethodData.urls);
+      }).catch(err=>{
+        Vue.prototype.$toast.open({
+            message: 'Oops looks like something went wrong: ' + err.message,
+            type: 'is-danger'
+          })
       })
     },
-    searchImage(data){
-      this.uploadMethodData.isLoading = true;
-      this.$store.dispatch('SimilarSearch',{urls:this.uploadMethodData.urls, limit:this.uploadMethodData.perPage, offset:this.uploadMethodData.currentPage}).then(
-        res=> {
-          this.uploadMethodData.searchMediaItems = []
-          res.data.medias.forEach((item=> this.uploadMethodData.searchMediaItems.push(
-          {
-            url:item.mediaUrl[0],
-            isSelected:false,
-            objectData:item
-          })));
-
-          this.uploadMethodData.isLoading = false;
-          this.uploadMethodData.finishedSearching = true;
-          this.uploadMethodData.originalSet = this.uploadMethodData.searchMediaItems;
-        }).catch(err=>{this.isLoading = false})
+    handlePost(evt){
+      this.$emit('failedPost', { context: evt, response: true } );
     },
     loadData(){
       this.$store.dispatch('GetUsersTimeline',this.$route.params.id).then(res=> 
@@ -247,6 +115,15 @@ export default {
         if(res){
           this.TimelineData = this.$store.getters.UserTimeline;
         }
+      });
+    },
+    loadLogs(){
+      this.isLoadingLogs = true;
+      this.$store.dispatch('GetAllEventLogsForUser', 100).then(resp=>{
+          this.timelineLogs = this.$store.getters.UserTimelineLogForUser(this.$route.params.id);
+          this.isLoadingLogs = false;
+        }).catch(err=>{
+          this.isLoadingLogs = false;
       });
     },
     eventDisplay(event) {
@@ -308,29 +185,6 @@ $v-cal-button-disabled-color	:#d0d0d0;
 $v-cal-button-disabled-cursor	:not-allowed;
 
 @import "../../../references/v-calendar-scheduler/scss/main";
-.media_container{
-  width:100% !important;
-  height:100vh !important;
-  background-color:#323232 !important;
-  padding-top:2em;
-  .b-tabs{
-    color:white;
-    .tabs{
-      color:white;
-      a{
-        background:#d9d9d9;
-      }
-      li{
-        &.is-active{
-          a{
-            background:#4CAF50;
-            border:none;
-          }
-        }
-      }
-    }
-  }
-}
 .timeline_container{
   overflow: auto;
   color: white;
@@ -349,6 +203,28 @@ html,body{
 }
 .dropStyle{
   margin-left:0em;
+}
+.card-acticity-log{
+  background:#292929;
+  padding:1em;
+  margin:1em;
+  margin-left:5em;
+  height:125px;
+  box-shadow: -0.1rem 0 .3rem rgba(0,0,0,.2);
+  border-radius: .7em;
+  .card-activity-header{
+    float:left;
+    margin:.5em;
+  }
+  .card-activity-footer{
+    float:right;
+    margin-top:2em;
+    font-size: 14px;
+    color:#b0b0b0;
+  }
+  .card-activity-content{
+    margin-left:4em;
+  }
 }
 .uploadSearchResults
 {
