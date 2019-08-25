@@ -1,10 +1,5 @@
-﻿using InstagramApiSharp.Classes;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using QuarklessContexts.Models.InstagramAccounts;
-using QuarklessContexts.Models.Proxies;
+﻿using QuarklessContexts.Models.Proxies;
 using QuarklessContexts.Models.Timeline;
-using QuarklessLogic.Logic.InstagramAccountLogic;
 using RestSharp;
 using RestSharp.Authenticators;
 using System;
@@ -17,17 +12,10 @@ namespace QuarklessLogic.Handlers.RestSharpClient
 	public class RestSharpClientManager : IRestSharpClientManager
 	{
 		private RestClient RestClient { get; set; }
-		private IInstagramAccountLogic _instagramAccountLogic;
 		private int Attempt {get; set; } = 0;
-		public RestSharpClientManager(IInstagramAccountLogic instagramAccountLogic)
-		{
-			RestClient = new RestClient();
-			_instagramAccountLogic = instagramAccountLogic;
-		}
 		public RestSharpClientManager()
 		{
-			RestClient = new RestClient();
-			RestClient.CookieContainer = new CookieContainer();
+			RestClient = new RestClient {CookieContainer = new CookieContainer()};
 		}
 		public void SetBaseUrl(string url)
 		{
@@ -104,28 +92,6 @@ namespace QuarklessLogic.Handlers.RestSharpClient
 					case HttpStatusCode.NotFound:
 					case HttpStatusCode.InternalServerError:
 					{
-						var captured = JObject.Parse(response.Content)["responseType"];
-						if (captured == null)
-							return null;
-						var respType = int.Parse(captured.ToString());
-						switch (respType)
-						{
-							case (int) ResponseType.ChallengeRequired:
-								_instagramAccountLogic.PartialUpdateInstagramAccount(userStore.OAccountId, userStore.OInstagramAccountUser,
-									new InstagramAccountModel
-									{
-										AgentState = (int)AgentState.Challenge
-									}).GetAwaiter().GetResult();
-								break;
-							case (int) ResponseType.RequestsLimit:
-							case (int) ResponseType.Spam:
-								_instagramAccountLogic.PartialUpdateInstagramAccount(userStore.OAccountId, userStore.OInstagramAccountUser,
-									new InstagramAccountModel
-									{
-										AgentState = (int)AgentState.Blocked
-									}).GetAwaiter().GetResult();
-								break;
-						}
 						break;
 					}
 				}

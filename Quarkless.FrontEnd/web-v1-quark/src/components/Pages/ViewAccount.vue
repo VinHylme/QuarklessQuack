@@ -10,6 +10,7 @@
           <b-icon v-if="timelineLog.actionType === 10" icon="heart" pack="fas" type="is-danger" size="is-default"/>
           <b-icon v-if="timelineLog.actionType === 12" icon="thumbs-up" pack="fas" type="is-info" size="is-default"/>
           <b-icon v-if="timelineLog.actionType === 1" icon="camera" pack="fas" type="is-twitter" size="is-default"/>
+          <b-icon v-if="timelineLog.actionType === 3" icon="comment" pack="fas" class="is-purple" size="is-default"/>
         </div>
         <div class="card-activity-content">
           {{timelineLog.message}}
@@ -218,7 +219,7 @@ html,body{
   }
   .card-activity-footer{
     float:right;
-    margin-top:2em;
+    margin-top:1em;
     font-size: 14px;
     color:#b0b0b0;
   }
@@ -251,6 +252,9 @@ html,body{
   img{
     border: 4px solid #13b94d !important;
   }
+}
+.is-purple{
+  color:#ff74dc;
 }
 .image_container{
   width:120px;

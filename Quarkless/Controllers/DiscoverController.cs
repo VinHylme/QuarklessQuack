@@ -1,10 +1,13 @@
-﻿using InstagramApiSharp.Classes.Models;
+﻿using System;
+using InstagramApiSharp.Classes.Models;
 using Microsoft.AspNetCore.Mvc;
 using QuarklessContexts.Contexts;
 using QuarklessContexts.Models.UserAuth.AuthTypes;
 using QuarklessLogic.Logic.DiscoverLogic;
 using QuarklessLogic.Logic.HashtagLogic;
 using System.Threading.Tasks;
+using QuarklessContexts.Enums;
+using QuarklessLogic.Logic.ResponseLogic;
 
 namespace Quarkless.Controllers
 {
@@ -19,333 +22,290 @@ namespace Quarkless.Controllers
 		private readonly IDiscoverLogic _discoverLogic;
 		private readonly IHashtagLogic _hashtagLogic;
 		private readonly IUserContext _userContext;
-		public DiscoverController(IUserContext userContext, IDiscoverLogic discoverLogic, IHashtagLogic hashtagLogic)
+		private readonly IResponseResolver _responseResolver;
+		public DiscoverController(IUserContext userContext, IDiscoverLogic discoverLogic,
+			IHashtagLogic hashtagLogic, IResponseResolver responseResolver)
 		{
 			_discoverLogic = discoverLogic;
 			_hashtagLogic = hashtagLogic;
 			_userContext = userContext;
+			_responseResolver = responseResolver;
 		}
 
 		[HttpGet]
 		[Route("api/discover/followingRecentActivityFeed/{limit}")]
 		public async Task<IActionResult> GetFollowingRecentActivityFeed(int limit = 1)
-		{			
-			if(_userContext.UserAccountExists)
+		{
+			if (!_userContext.UserAccountExists) return BadRequest("invalid");
+			var results = await _responseResolver
+				.WithResolverAsync(await _discoverLogic.GetFollowingRecentActivityFeed(limit), ActionType.None, "");
+			if (results.Succeeded)
 			{
-				var results = await _discoverLogic.GetFollowingRecentActivityFeed(limit);
-				if (results.Succeeded)
-				{
-					return Ok(results.Value);
-				}
-				return NotFound(results.Info);
+				return Ok(results.Value);
 			}
-			return BadRequest("invalid");
+			return NotFound(results.Info);
 		}
 		[HttpGet]
 		[Route("api/discover/SearchTopic/{topic}/{limit}")]
 		public async Task<IActionResult> SearchTopMediaByTopic(string topic, int limit = 1)
 		{
-			if (_userContext.UserAccountExists)
+			if (!_userContext.UserAccountExists) return BadRequest("invalid, empty id");
+			var results = await _responseResolver
+				.WithResolverAsync(await _hashtagLogic.GetTopHashtagMediaListAsync(topic,limit), ActionType.None, topic);
+			if (results.Succeeded)
 			{
-				var results = await _hashtagLogic.GetTopHashtagMediaListAsync(topic,limit);
-				if (results.Succeeded)
-				{
-					return Ok(results.Value);
-				}
-				return NotFound(results.Info);
+				return Ok(results.Value);
 			}
-			return BadRequest("invalid, empty id");
+			return NotFound(results.Info);
 		}
 
 		[HttpGet]
 		[Route("api/discover/ExplorerFeed/{limit}")]
 		public async Task<IActionResult> GetExploreFeedAsync(int limit = 1)
 		{
-			if(_userContext.UserAccountExists)
-			{
-				var results = await _discoverLogic.GetExploreFeedAsync(limit);
-				if (results.Succeeded) { 
-					return Ok(results.Value);
-				}
-				return NotFound(results.Info);
+			if (!_userContext.UserAccountExists) return BadRequest("invalid, empty id");
+			var results = await _responseResolver
+				.WithResolverAsync(await _discoverLogic.GetExploreFeedAsync(limit), ActionType.None, "");
+			if (results.Succeeded) { 
+				return Ok(results.Value);
 			}
-			return BadRequest("invalid, empty id");
+			return NotFound(results.Info);
 		}
 
 		[HttpGet]
 		[Route("api/discover/GetRecentActivityFeed/{limit}")]
 		public async Task<IActionResult> GetRecentActivityFeed(int limit = 1)
 		{
-			if (_userContext.UserAccountExists)
-			{
-				var res = await _discoverLogic.GetRecentActivityFeedAsync(limit);
-				if (res.Succeeded) { 
-					return Ok(res);
-				}
-				return NotFound(res.Info);
-
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty id");
+			var res = await _responseResolver
+				.WithResolverAsync(await _discoverLogic.GetRecentActivityFeedAsync(limit), ActionType.None, "");
+			if (res.Succeeded) { 
+				return Ok(res);
 			}
-			return BadRequest("Invalid, empty id");
+			return NotFound(res.Info);
 		}
 		
 		[HttpGet]
 		[Route("api/discover/GetLikedFeed/{limit}")]
 		public async Task<IActionResult> GetLikedFeed(int limit = 1)
 		{
-			if (_userContext.UserAccountExists)
-			{
-				var res = await _discoverLogic.GetLikedFeed(limit);
-				if (res.Succeeded) { 
-					return Ok(res.Value);
-				}
-				return NotFound(res.Info);
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
+			var res = await _responseResolver
+				.WithResolverAsync(await _discoverLogic.GetLikedFeed(limit), ActionType.None, "");
+			if (res.Succeeded) { 
+				return Ok(res.Value);
 			}
-			return BadRequest("Invalid, empty Id");
+			return NotFound(res.Info);
 		}
 
 		[HttpGet]
 		[Route("api/discover/GetTagFeed/{searchTag}/{limit}")]
 		public async Task<IActionResult> GetTagFeed(string searchTag = "", int limit = 1)
 		{
-			if (_userContext.UserAccountExists)
-			{
-				var res = await _discoverLogic.GetTagFeed(searchTag,limit);
-				if (res.Succeeded) { 
-					return Ok(res.Value);
-				}
-				return NotFound(res.Info);
-
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
+			var res = await _responseResolver
+				.WithResolverAsync(await _discoverLogic.GetTagFeed(searchTag,limit), ActionType.None, searchTag);
+			if (res.Succeeded) { 
+				return Ok(res.Value);
 			}
-			return BadRequest("Invalid, empty Id");
+			return NotFound(res.Info);
 		}
 
 		[HttpGet]
 		[Route("api/discover/GetUserTimelineFeed/{limit}")]
 		public async Task<IActionResult> GetUserTimelineFeed(int limit = 1)
 		{
-			if (_userContext.UserAccountExists)
-			{
-				var res = await _discoverLogic.GetUserTimelineFeed(limit);
-				if (res.Succeeded) { 
-					return Ok(res.Value);
-				}
-				return NotFound(res.Info);
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
+			var res = await _responseResolver
+				.WithResolverAsync(await _discoverLogic.GetUserTimelineFeed(limit), ActionType.None, "");
+			if (res.Succeeded) { 
+				return Ok(res.Value);
 			}
-			return BadRequest("Invalid, empty Id");
+			return NotFound(res.Info);
 		}
 
 		[HttpGet]
 		[Route("api/discover/GetChainingUser")]
 		public async Task<IActionResult> GetChainingUser()
 		{
-			if (_userContext.UserAccountExists)
-			{
-				var res = await _discoverLogic.GetChainingUser();
-				if (res.Succeeded) { 
-					return Ok(res.Value);
-				}
-				return NotFound(res.Info);
-
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
+			var res = await _responseResolver
+				.WithResolverAsync(await _discoverLogic.GetChainingUser(), ActionType.None, "");
+			if (res.Succeeded) { 
+				return Ok(res.Value);
 			}
-			return BadRequest("Invalid, empty Id");
+			return NotFound(res.Info);
 		}
 
 		[HttpPost]
 		[Route("api/discover/SyncContacts")]
 		public async Task<IActionResult> SyncContacts(InstaContact[] contacts)
 		{
-			if (_userContext.UserAccountExists)
-			{
-				var res = await _discoverLogic.SyncContacts(contacts);
-				if (res.Succeeded) { 
-					return Ok(res.Value);
-				}
-				return NotFound(res.Info);
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
+			var res = await _responseResolver.WithResolverAsync(await _discoverLogic.SyncContacts(contacts), ActionType.None, "");
+			if (res.Succeeded) { 
+				return Ok(res.Value);
 			}
-			return BadRequest("Invalid, empty Id");
+			return NotFound(res.Info);
 		}
 
 		[HttpGet]
 		[Route("api/discover/RecentSearches")]
 		public async Task<IActionResult> RecentSearches()
 		{
-			if (_userContext.UserAccountExists)
-			{
-				var res = await _discoverLogic.RecentSearches();
-				if(res.Succeeded)
-					return Ok(res.Value);
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
+			var res = await _responseResolver
+				.WithResolverAsync(await _discoverLogic.RecentSearches(), ActionType.None, "");
+			if(res.Succeeded)
+				return Ok(res.Value);
 
-				return NotFound(res.Info);
-			}
-			return BadRequest("Invalid, empty Id");
+			return NotFound(res.Info);
 		}
 		
 		[HttpGet]
 		[Route("api/discover/ClearRecentSearches")]
 		public async Task<IActionResult> ClearRecentSearches()
 		{
-			if (_userContext.UserAccountExists)
-			{
-				var res = await _discoverLogic.ClearRecentSearches();
-				if(res.Succeeded)
-					return Ok(res.Value);
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty id");
+			var res = await _responseResolver
+				.WithResolverAsync(await _discoverLogic.ClearRecentSearches(), ActionType.None, string.Empty);
+			if(res.Succeeded)
+				return Ok(res.Value);
 
-				return NotFound(res.Info);
-
-			}
-			return BadRequest("Invalid, empty id");
+			return NotFound(res.Info);
 		}
 		
 		[HttpGet]
 		[Route("api/discover/SuggestedSearches/{discoverySearchType}")]
 		public async Task<IActionResult> SuggestedSearches(int discoverySearchType = 1)
 		{
-			if (_userContext.UserAccountExists)
-			{
-				var res = await _discoverLogic.SuggestedSearches((InstagramApiSharp.Enums.InstaDiscoverSearchType) discoverySearchType);
-				if(res.Succeeded)
-					return Ok(res.Value);
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty id");
+			var res = await _responseResolver
+				.WithResolverAsync(
+					await _discoverLogic.SuggestedSearches((InstagramApiSharp.Enums.InstaDiscoverSearchType) discoverySearchType), 
+					ActionType.None, "");
+			if(res.Succeeded)
+				return Ok(res.Value);
 				
-				return NotFound(res.Info);
-			}
-			return BadRequest("Invalid, empty id");
+			return NotFound(res.Info);
 		}
 
 		[HttpGet]
 		[Route("api/discover/GetAllMediaByUsername/{searchUsername}")]
 		public async Task<IActionResult> GetAllMediaByUsername(string searchUsername)
 		{
-			if (_userContext.UserAccountExists)
-			{
-				var res = await _discoverLogic.GetAllMediaByUsername(searchUsername);
-				if(res.Succeeded)
-					return Ok(res.Value);
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty id");
+			var res = await _responseResolver
+				.WithResolverAsync(await _discoverLogic.GetAllMediaByUsername(searchUsername), ActionType.None, searchUsername);
+			if(res.Succeeded)
+				return Ok(res.Value);
 
-				return NotFound(res.Info);
-			}
-			return BadRequest("Invalid, empty id");
+			return NotFound(res.Info);
 		}
 
 		[HttpGet]
 		[Route("api/discover/SearchUser/{username}/{limit}")]
 		public async Task<IActionResult> SearchUser(string username, int limit = 1)
 		{
-			if(!string.IsNullOrEmpty(username) && _userContext.UserAccountExists)
-			{
-				var res = await _discoverLogic.SearchUser(username, limit);
-				if(res.Succeeded)
-					return Ok(res.Value);
-				return NotFound(res.Info);
-			}
-			return BadRequest("Invalid, empty Id");
+			if (string.IsNullOrEmpty(username) || !_userContext.UserAccountExists)
+				return BadRequest("Invalid, empty Id");
+			var res = await _responseResolver
+				.WithResolverAsync(await _discoverLogic.SearchUser(username, limit), ActionType.None, "");
+			if(res.Succeeded)
+				return Ok(res.Value);
+			return NotFound(res.Info);
 		}
 
 		[HttpGet]
 		[Route("api/discover/location/recent/{locationId}/{limit}")]
 		public async Task<IActionResult> GetRecentLocationFeed(long locationId, int limit = 1)
 		{
-			if (_userContext.UserAccountExists)
-			{
-				var res = await _discoverLogic.GetRecentLocationFeed(locationId, limit);
-				if (res.Succeeded)
-					return Ok(res.Value);
-				return NotFound(res.Info);
-			}
-			return BadRequest("Invalid, empty Id");
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
+			var res = await _responseResolver
+				.WithResolverAsync(await _discoverLogic.GetRecentLocationFeed(locationId, limit), ActionType.None, locationId.ToString());
+			if (res.Succeeded)
+				return Ok(res.Value);
+			return NotFound(res.Info);
 		}
 		[HttpGet]
 		[Route("api/discover/topical/{limit}/{clusterId=}")]
 		public async Task<IActionResult> GetTopicalExploreFeed([FromRoute]int limit, [FromRoute] string clusterId = null)
 		{
-			if (_userContext.UserAccountExists)
-			{
-				var res = await _discoverLogic.GetTopicalExploreFeed(limit,clusterId);
-				if(res.Succeeded)
-					return Ok(res.Value);
-				return NotFound(res.Info);
-			}
-			return BadRequest("Invalid, empty id");
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty id");
+			var res = await _responseResolver
+				.WithResolverAsync(await _discoverLogic.GetTopicalExploreFeed(limit,clusterId), ActionType.None, clusterId);
+			if(res.Succeeded)
+				return Ok(res.Value);
+			return NotFound(res.Info);
 		}
 		[HttpGet]
 		[Route("api/discover/location/top/{locationId}/{limit}")]
 		public async Task<IActionResult> GetTopLocationFeedsAsync(long locationId, int limit = 1)
 		{
-			if (_userContext.UserAccountExists)
-			{
-				var res = await _discoverLogic.GetTopLocationFeedsAsync(locationId, limit);
-				if (res.Succeeded)
-					return Ok(res.Value);
-				return NotFound(res.Info);
-			}
-			return BadRequest("Invalid, empty Id");
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
+			var res = await _responseResolver
+				.WithResolverAsync(await _discoverLogic.GetTopLocationFeedsAsync(locationId, limit), ActionType.None, locationId.ToString());
+			if (res.Succeeded)
+				return Ok(res.Value);
+			return NotFound(res.Info);
 		}
 		[HttpGet]
 		[Route("api/discover/location/search/{lat}/{lon}/{query}")]
 		public async Task<IActionResult> SearchLocation(double lat, double lon, string query)
 		{
-			if (_userContext.UserAccountExists)
-			{
-				var res = await _discoverLogic.SearchLocation(lat, lon, query);
-				if (res.Succeeded)
-					return Ok(res.Value);
-				return NotFound(res.Info);
-			}
-			return BadRequest("Invalid, empty Id");
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
+			var res = await _responseResolver
+				.WithResolverAsync(await _discoverLogic.SearchLocation(lat, lon, query), ActionType.None, query);
+			if (res.Succeeded)
+				return Ok(res.Value);
+			return NotFound(res.Info);
 		}
 
 		[HttpGet]
 		[Route("api/discover/location/places/{lat}/{lon}/{query}/{limit}")]
 		public async Task<IActionResult> SearchPlaces(double lat, double lon, string query = "", int limit = 1)
 		{
-			if (_userContext.UserAccountExists)
-			{
-				var res = await _discoverLogic.SearchPlaces(lat, lon, query,limit);
-				if (res.Succeeded)
-					return Ok(res.Value);
-				return NotFound(res.Info);
-			}
-			return BadRequest("Invalid, empty Id");
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
+			var res = await _responseResolver
+				.WithResolverAsync(await _discoverLogic.SearchPlaces(lat, lon, query,limit), ActionType.None, query);
+			if (res.Succeeded)
+				return Ok(res.Value);
+			return NotFound(res.Info);
 		}
 		[HttpGet]
 		[Route("api/discover/location/users/{lat}/{lon}/{username}/{limit}")]
 		public async Task<IActionResult> SearchUserByLocation(double lat, double lon, string username, int limit = 1)
 		{
-			if (_userContext.UserAccountExists)
-			{
-				var res = await _discoverLogic.SearchUserByLocation(lat, lon, username, limit);
-				if (res.Succeeded)
-					return Ok(res.Value);
-				return NotFound(res.Info);
-			}
-			return BadRequest("Invalid, empty Id");
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
+			var res = await _responseResolver
+				.WithResolverAsync(await _discoverLogic.SearchUserByLocation(lat, lon, username, limit), ActionType.None, username);
+			if (res.Succeeded)
+				return Ok(res.Value);
+			return NotFound(res.Info);
 		}
 
 		[HttpGet]
 		[Route("api/discover/location/info/{externalIdOrFacebookPlacesId}")]
 		public async Task<IActionResult> GetLocationInfoAsync(string externalIdOrFacebookPlacesId)
 		{
-			if (_userContext.UserAccountExists)
-			{
-				var res = await _discoverLogic.GetLocationInfoAsync(externalIdOrFacebookPlacesId);
-				if (res.Succeeded)
-					return Ok(res.Value);
-				return NotFound(res.Info);
-			}
-			return BadRequest("Invalid, empty Id");
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
+			var res = await _responseResolver
+				.WithResolverAsync(await _discoverLogic.GetLocationInfoAsync(externalIdOrFacebookPlacesId), ActionType.None, externalIdOrFacebookPlacesId);
+			if (res.Succeeded)
+				return Ok(res.Value);
+			return NotFound(res.Info);
 		}
 
 		[HttpGet]
 		[Route("api/discover/location/stories/{locationId}")]
 		public async Task<IActionResult> GetLocationStoriesAsync(long locationId)
 		{
-			if (_userContext.UserAccountExists)
-			{
-				var res = await _discoverLogic.GetLocationStoriesAsync(locationId);
-				if (res.Succeeded)
-					return Ok(res.Value);
-				return NotFound(res.Info);
-			}
-			return BadRequest("Invalid, empty Id");
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
+			var res = await _responseResolver
+				.WithResolverAsync(await _discoverLogic.GetLocationStoriesAsync(locationId), ActionType.None, locationId.ToString());
+			if (res.Succeeded)
+				return Ok(res.Value);
+			return NotFound(res.Info);
 		}
 
 	}

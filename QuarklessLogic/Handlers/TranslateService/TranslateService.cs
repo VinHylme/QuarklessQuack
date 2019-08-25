@@ -74,20 +74,11 @@ namespace QuarklessLogic.Handlers.TranslateService
 		static int pos = 0;
 		public void AddProxy(ProxyModel proxy)
 		{
-			if (proxy != null)
-			{
-				_restSharpClient.AddProxy(proxy);
-				string proxyLine = string.Empty;
-				if (string.IsNullOrEmpty(proxy.Username))
-				{
-					proxyLine = $"{proxy.Address}:{proxy.Port}";
-				}
-				else
-				{
-					proxyLine = $"{proxy.Username}:{proxy.Password}@{proxy.Address}:{proxy.Port}";
-				}
-				_seleniumClient.AddArguments($"--proxy-server={proxyLine}");
-			}
+			if (proxy == null) return;
+			_restSharpClient.AddProxy(proxy);
+			var proxyLine = string.Empty;
+			proxyLine = string.IsNullOrEmpty(proxy.Username) ? $"{proxy.Address}:{proxy.Port}" : $"{proxy.Username}:{proxy.Password}@{proxy.Address}:{proxy.Port}";
+			_seleniumClient.AddArguments($"--proxy-server={proxyLine}");
 		}
 		public IEnumerable<string> DetectLanguageYandex(params string[] texts)
 		{

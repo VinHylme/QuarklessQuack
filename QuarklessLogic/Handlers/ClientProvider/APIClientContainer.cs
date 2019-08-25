@@ -5,6 +5,7 @@ using QuarklessContexts.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using QuarklessContexts.Models.Proxies;
 
 namespace QuarklessLogic.Handlers.ClientProvider
 {
@@ -26,133 +27,42 @@ namespace QuarklessLogic.Handlers.ClientProvider
 			this.Context = _clientContext.Create(userId, instaId).GetAwaiter().GetResult();
 		}
 
-		public ContextContainer GetContext
-		{
-			get
-			{
-				return this.Context;
-			}
-		}
-		public InstaClient EmptyClient
-		{
-			get
-			{
-				return _clientContext.EmptyClient;
-			}
-		}
+		public ContextContainer GetContext => this.Context;
 
-		public IDiscoverProcessor Discover
-		{
-			get
-			{
-				return Context.ActionClient.DiscoverProcessor;
-			}
-		}
-		public ICollectionProcessor Collections
-		{
-			get
-			{
-				return Context.ActionClient.CollectionProcessor;
-			}
-		}
-		public IFeedProcessor Feeds
-		{
-			get
-			{
-				return Context.ActionClient.FeedProcessor;
-			}
-		}
-		public IMediaProcessor Media
-		{
-			get
-			{
-				return Context.ActionClient.MediaProcessor;
-			}
-		}
-		public IUserProcessor User
-		{
-			get
-			{
-				return Context.ActionClient.UserProcessor;
-			}
-		}
-		public IAccountProcessor Account
-		{
-			get
-			{
-				return Context.ActionClient.AccountProcessor;
-			}
-		}
-		public ILocationProcessor Location
-		{
-			get
-			{
-				return Context.ActionClient.LocationProcessor;
-			}
-		}
-		public ICommentProcessor Comment
-		{
-			get
-			{
-				return Context.ActionClient.CommentProcessor;
-			}
-		}
-		public IHashtagProcessor Hashtag
-		{
-			get
-			{
-				return Context.ActionClient.HashtagProcessor;
-			}
-		}
-		public IBusinessProcessor Business
-		{
-			get
-			{
-				return Context.ActionClient.BusinessProcessor;
-			}
-		}
-		public ILiveProcessor Live
-		{
-			get
-			{
-				return Context.ActionClient.LiveProcessor;
-			}
-		}
-		public IMessagingProcessor Messaging
-		{
-			get
-			{
-				return Context.ActionClient.MessagingProcessor;
-			}
-		}
-		public IWebProcessor Web
-		{
-			get
-			{
-				return Context.ActionClient.WebProcessor;
-			}
-		}
-		public IShoppingProcessor Shopping
-		{
-			get
-			{
-				return Context.ActionClient.ShoppingProcessor;
-			}
-		}
-		public IStoryProcessor Story
-		{
-			get
-			{
-				return Context.ActionClient.StoryProcessor;
-			}
-		}
-		public ITVProcessor TV
-		{
-			get
-			{
-				return Context.ActionClient.TVProcessor;
-			}
-		}
+		public InstaClient EmptyClient => _clientContext.EmptyClient;
 
+		public InstaClient EmpClientWithProxy (ProxyModel model) => _clientContext.EmptyClientWithProxy(model);
+
+		public IDiscoverProcessor Discover => Context.ActionClient.DiscoverProcessor;
+
+		public ICollectionProcessor Collections => Context.ActionClient.CollectionProcessor;
+
+		public IFeedProcessor Feeds => Context.ActionClient.FeedProcessor;
+
+		public IMediaProcessor Media => Context.ActionClient.MediaProcessor;
+
+		public IUserProcessor User => Context.ActionClient.UserProcessor;
+
+		public IAccountProcessor Account => Context.ActionClient.AccountProcessor;
+
+		public ILocationProcessor Location => Context.ActionClient.LocationProcessor;
+
+		public ICommentProcessor Comment => Context.ActionClient.CommentProcessor;
+
+		public IHashtagProcessor Hashtag => Context.ActionClient.HashtagProcessor;
+
+		public IBusinessProcessor Business => Context.ActionClient.BusinessProcessor;
+
+		public ILiveProcessor Live => Context.ActionClient.LiveProcessor;
+
+		public IMessagingProcessor Messaging => Context.ActionClient.MessagingProcessor;
+
+		public IWebProcessor Web => Context.ActionClient.WebProcessor;
+
+		public IShoppingProcessor Shopping => Context.ActionClient.ShoppingProcessor;
+
+		public IStoryProcessor Story => Context.ActionClient.StoryProcessor;
+
+		public ITVProcessor TV => Context.ActionClient.TVProcessor;
 	}
 }

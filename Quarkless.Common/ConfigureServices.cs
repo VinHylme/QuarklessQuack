@@ -69,7 +69,9 @@ using QuarklessRepositories.Repository.ServicesRepositories.TopicsRepository;
 using QuarklessRepositories.Repository.TimelineRepository;
 using QuarklessRepositories.RepositoryClientManager;
 using System;
+using QuarklessLogic.Handlers.EmailService;
 using QuarklessLogic.Logic.LibaryLogic;
+using QuarklessLogic.Logic.ResponseLogic;
 using QuarklessLogic.Logic.TimelineEventLogLogic;
 using QuarklessRepositories.RedisRepository.APILogger;
 using QuarklessRepositories.RedisRepository.LibraryCache;
@@ -108,6 +110,8 @@ namespace Quarkless.Common
 			services.AddTransient<ISearchingCache, SearchingCache>();
 			services.AddTransient<ILibraryLogic, LibraryLogic>();
 			services.AddTransient<ITimelineEventLogLogic, TimelineEventLogLogic>();
+			services.AddTransient<IEmailService, EmailService>();
+			services.AddTransient<IResponseResolver, ResponseResolver>();
 		}
 		public static void AddAuthHandlers(this IServiceCollection services, Accessors _accessors, AWSOptions aWSOptions)
 		{

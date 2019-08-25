@@ -6,6 +6,12 @@ using System;
 
 namespace QuarklessContexts.Models.InstagramAccounts
 {
+	public class ChallengeCodeRequestResponse
+	{
+		public string Verify { get; set;  }
+		public string Details { get; set; }
+		public InstaChallengeLoginInfo ChallangePath { get; set; }
+	}
 	public class InstagramAccountModel
 	{
 		[BsonId]
@@ -37,6 +43,7 @@ namespace QuarklessContexts.Models.InstagramAccounts
 		public DateTime? DateAdded { get; set; }
 		public Limits UserLimits { get; set; }
 		public bool? IsBusiness { get ;set; }
+		public ChallengeCodeRequestResponse ChallengeInfo { get; set; }
 
 	}
 }

@@ -100,6 +100,7 @@ namespace QuarklessContexts.Models.InstagramAccounts
 		public Limits UserLimits { get; set; }
 		public bool? IsBusiness { get; set ;}
 		public int? Type { get; set; } 
+		public ChallengeCodeRequestResponse ChallengeInfo { get; set; }
 
 	}
 }

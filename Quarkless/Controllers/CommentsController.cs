@@ -5,11 +5,10 @@ using Newtonsoft.Json;
 using QuarklessContexts.Contexts;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Models.Requests;
-using QuarklessContexts.Models.TimelineLoggingRepository;
 using QuarklessContexts.Models.UserAuth.AuthTypes;
 using QuarklessLogic.Logic.CommentLogic;
-using QuarklessLogic.Logic.TimelineEventLogLogic;
-
+using QuarklessLogic.Logic.ResponseLogic;
+using QuarklessContexts.Extensions;
 namespace Quarkless.Controllers
 {
     [ApiController]
@@ -22,13 +21,12 @@ namespace Quarkless.Controllers
     {
 		private readonly ICommentLogic _commentLogic;
 		private readonly IUserContext _userContext;
-		private readonly ITimelineEventLogLogic _timelineEventLogLogic;
-
-		public CommentsController(IUserContext userContext, ICommentLogic commentLogic, ITimelineEventLogLogic timelineEventLogLogic)
+		private readonly IResponseResolver _responseResolver;
+		public CommentsController(IUserContext userContext, ICommentLogic commentLogic, IResponseResolver responseResolver)
 		{
 			_commentLogic = commentLogic;
 			_userContext = userContext;
-			_timelineEventLogLogic = timelineEventLogLogic;
+			_responseResolver = responseResolver;
 		}
 
 		[HttpPost]
@@ -36,79 +34,68 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> BlockUserCommenting ([FromBody]List<long> userIds)
 		{
 			if (!_userContext.UserAccountExists || userIds == null) return BadRequest("invalid");
-			var results = await _commentLogic.BlockUserCommentingAsync(userIds.ToArray());
+			var results = await _responseResolver.WithResolverAsync(
+				await _commentLogic.BlockUserCommentingAsync(userIds.ToArray()), ActionType.None, userIds.ToJsonString());
+			
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);
 			}
 			return NotFound(results.Info);
 		}
+
 		[HttpPost]
 		[Route("api/comments/create/{mediaId}")]
 		public async Task<IActionResult> CommentMedia([FromRoute]string mediaId, [FromBody] CreateCommentRequest comment)
 		{
 			if (!_userContext.UserAccountExists || string.IsNullOrEmpty(comment.Text)) return BadRequest("invalid");
-			var results = await _commentLogic.CommentMediaAsync(mediaId,comment.Text);
+			var results = await _responseResolver.WithResolverAsync(
+				await _commentLogic.CommentMediaAsync(mediaId,comment.Text), ActionType.CreateCommentMedia, 
+				JsonConvert.SerializeObject(new { MediaId = mediaId, Comment = comment }));
 			if (results.Succeeded)
 			{
-				await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
-				{
-					ActionType = ActionType.CreateCommentMedia,
-					Message = $"Commented on {results.Value.User.UserName}'s Post ({mediaId}), Comment: {results.Value.Text} for: [{_userContext.CurrentUser}] Of [{_userContext.FocusInstaAccount}]",
-					Request =  JsonConvert.SerializeObject(new { MediaId = mediaId, Comment = comment}),
-					AccountID = _userContext.CurrentUser,
-					InstagramAccountID = _userContext.FocusInstaAccount,
-					Status = TimelineEventStatus.Success,
-					Response =  JsonConvert.SerializeObject(results.Value),
-					Level = 1
-				});
 				return Ok(results.Value);
 			}
-			await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
-			{
-				ActionType = ActionType.CreateCommentMedia,
-				Message = $"Failed to comment {results.Info.Message} for: [{_userContext.CurrentUser}] Of [{_userContext.FocusInstaAccount}]",
-				Request =  JsonConvert.SerializeObject(new { MediaId = mediaId, Comment = comment}),
-				AccountID = _userContext.CurrentUser,
-				InstagramAccountID = _userContext.FocusInstaAccount,
-				Status = TimelineEventStatus.Failed,
-				Response =  JsonConvert.SerializeObject(results?.Info),
-				Level = 2
-			});
 			return NotFound(results?.Info);
 		}
+
 		[HttpDelete]
 		[Route("api/comments/delete/{mediaId}/{commentId}")]
 		public async Task<IActionResult> DeleteComment([FromRoute]string mediaId, [FromRoute] string commentId)
 		{
 			if (!_userContext.UserAccountExists || string.IsNullOrEmpty(mediaId) || string.IsNullOrEmpty(commentId))
 				return BadRequest("invalid");
-			var results = await _commentLogic.DeleteCommentAsync(mediaId, commentId);
+			var results = await  _responseResolver.WithResolverAsync(
+				await _commentLogic.DeleteCommentAsync(mediaId, commentId),ActionType.None, commentId);
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);
 			}
 			return NotFound(results.Info);
 		}
+
 		[HttpDelete]
 		[Route("api/comments/delete/{mediaId}")]
 		public async Task<IActionResult> DeleteMultipleComments(string mediaId, [FromBody] List<string> commentIds)
 		{
 			if (!_userContext.UserAccountExists || commentIds == null || string.IsNullOrEmpty(mediaId))
 				return BadRequest("invalid");
-			var results = await _commentLogic.DeleteMultipleCommentsAsync(mediaId, commentIds.ToArray());
+			var results = await  _responseResolver.WithResolverAsync(
+				await _commentLogic.DeleteMultipleCommentsAsync(mediaId, commentIds.ToArray()),ActionType.None,commentIds.ToJsonString());
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);
 			}
 			return NotFound(results.Info);
 		}
+
 		[HttpPut]
 		[Route("api/comments/disable/{mediaId}")]
 		public async Task<IActionResult> DisableMediaComment([FromRoute]string mediaId)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
-			var results = await _commentLogic.DisableMediaCommentAsync(mediaId);
+			var results = await  _responseResolver.WithResolverAsync(
+				await _commentLogic.DisableMediaCommentAsync(mediaId),ActionType.None, mediaId);
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);
@@ -120,149 +107,148 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> EnableMediaComment([FromRoute]string mediaId)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
-			var results = await _commentLogic.EnableMediaCommentAsync(mediaId);
+			var results = await  _responseResolver.WithResolverAsync(
+				await _commentLogic.EnableMediaCommentAsync(mediaId),ActionType.None, mediaId);
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);
 			}
 			return NotFound(results.Info);
 		}
+
 		[HttpGet]
 		[Route("api/comments/blockedComments")]
 		public async Task<IActionResult> GetBlockedCommenters()
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
-			var results = await _commentLogic.GetBlockedCommentersAsync();
+			var results = await  _responseResolver.WithResolverAsync(
+				await _commentLogic.GetBlockedCommentersAsync(),ActionType.None, "");
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);
 			}
 			return NotFound(results.Info);
 		}
+
 		[HttpGet]
 		[Route("api/comments/mediaLikers/{mediaId}")]
 		public async Task<IActionResult> GetMediaCommentLikers(string mediaId)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
-			var results = await _commentLogic.GetMediaCommentLikersAsync(mediaId);
+			var results = await  _responseResolver.WithResolverAsync(
+				await _commentLogic.GetMediaCommentLikersAsync(mediaId), ActionType.None, mediaId);
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);
 			}
 			return NotFound(results.Info);
 		}
+
 		[HttpGet]
 		[Route("api/comments/media/{mediaId}/{limit}")]
 		public async Task<IActionResult> GetMediaComments(string mediaId, int limit=3)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
-			var results = await _commentLogic.GetMediaCommentsAsync(mediaId,limit);
+			var results = await  _responseResolver.WithResolverAsync(
+				await _commentLogic.GetMediaCommentsAsync(mediaId,limit),ActionType.None, mediaId);
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);
 			}
 			return NotFound(results.Info);
 		}
+
 		[HttpGet]
 		[Route("api/comments/mediaReplies/{userIds}")]
 		public async Task<IActionResult> GetMediaRepliesComments(string mediaId, string targetCommentId, int limit=3)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
-			var results = await _commentLogic.GetMediaRepliesCommentsAsync(mediaId,targetCommentId, limit);
+			var results = await  _responseResolver.WithResolverAsync(
+				await _commentLogic.GetMediaRepliesCommentsAsync(mediaId,targetCommentId, limit), ActionType.None, mediaId);
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);
 			}
 			return NotFound(results.Info);
 		}
+
 		[HttpPost]
 		[Route("api/comments/like/{commentId}")]
 		public async Task<IActionResult> LikeComment(string commentId)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
-			var results = await _commentLogic.LikeCommentAsync(commentId);
+			var results = await  _responseResolver.WithResolverAsync(
+				await _commentLogic.LikeCommentAsync(commentId),ActionType.LikeComment, commentId);
 			if (results.Succeeded)
 			{
-				await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
-				{
-					ActionType = ActionType.LikeComment,
-					Message = $"Liked Comment ({commentId}) for: [{_userContext.CurrentUser}] Of [{_userContext.FocusInstaAccount}]",
-					Request = commentId,
-					AccountID = _userContext.CurrentUser,
-					InstagramAccountID = _userContext.FocusInstaAccount,
-					Status = TimelineEventStatus.Success,
-					Response = JsonConvert.SerializeObject(results.Value),
-					Level = 1
-				});
 				return Ok(results.Value);
 			}
-			await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
-			{
-				ActionType = ActionType.LikeComment,
-				Message = $"Failed to like Comment ({commentId}) for: [{_userContext.CurrentUser}] Of [{_userContext.FocusInstaAccount}]",
-				Request = commentId,
-				AccountID = _userContext.CurrentUser,
-				InstagramAccountID = _userContext.FocusInstaAccount,
-				Status = TimelineEventStatus.Failed,
-				Response =  JsonConvert.SerializeObject(results?.Info),
-				Level = 2
-			});
 			return NotFound(results?.Info);
 		}
+
 		[HttpPost]
 		[Route("api/comments/reply/{mediaId}/{targetCommentId}")]
 		public async Task<IActionResult> ReplyCommentMedia([FromRoute]string mediaId, [FromRoute] string targetCommentId,[FromBody] string text)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
-			var results = await _commentLogic.ReplyCommentMediaAsync(mediaId, targetCommentId, text);
+			var results = await  _responseResolver.WithResolverAsync(
+				await _commentLogic.ReplyCommentMediaAsync(mediaId, targetCommentId, text), ActionType.CreateCommentMedia, targetCommentId);
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);
 			}
 			return NotFound(results.Info);
 		}
+		
 		[HttpPut]
 		[Route("api/comments/report/{mediaId}/{commentId}")]
 		public async Task<IActionResult> ReportComment([FromRoute]string mediaId, [FromRoute] string commentId)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
-			var results = await _commentLogic.ReportCommentAsync(mediaId,commentId);
+			var results = await  _responseResolver.WithResolverAsync(
+				await _commentLogic.ReportCommentAsync(mediaId,commentId), ActionType.None, commentId);
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);
 			}
 			return NotFound(results.Info);
 		}
+		
 		[HttpPut]
 		[Route("api/comments/translate/")]
 		public async Task<IActionResult> TranslateComments([FromBody]List<long> commentIds)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
-			var results = await _commentLogic.TranslateCommentsAsync(commentIds.ToArray());
+			var results = await  _responseResolver.WithResolverAsync(
+				await _commentLogic.TranslateCommentsAsync(commentIds.ToArray()), ActionType.None,commentIds.ToJsonString());
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);
 			}
 			return NotFound(results.Info);
 		}
+		
 		[HttpPut]
 		[Route("api/comments/unblock")]
 		public async Task<IActionResult> UnblockUserCommenting([FromBody]List<long> userIds)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
-			var results = await _commentLogic.UnblockUserCommentingAsync(userIds.ToArray());
+			var results = await _responseResolver.WithResolverAsync(
+				await _commentLogic.UnblockUserCommentingAsync(userIds.ToArray()),ActionType.None, userIds.ToJsonString());
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);
 			}
 			return NotFound(results.Info);
 		}
+		
 		[HttpPut]
 		[Route("api/comments/unlike/{commentId}")]
 		public async Task<IActionResult> UnlikeComment([FromRoute]string commentId)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
-			var results = await _commentLogic.UnlikeCommentAsync(commentId);
+			var results = await  _responseResolver.WithResolverAsync(
+				await _commentLogic.UnlikeCommentAsync(commentId), ActionType.UnlikeComment, commentId);
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);

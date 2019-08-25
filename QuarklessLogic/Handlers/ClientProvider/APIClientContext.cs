@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using QuarklessContexts.InstaClient;
 using QuarklessContexts.Models;
+using QuarklessContexts.Models.Proxies;
 
 namespace QuarklessLogic.Handlers.ClientProvider
 {
@@ -17,12 +18,9 @@ namespace QuarklessLogic.Handlers.ClientProvider
 			return await _clientContextProvider.Get(userId, instaId);
 		}
 
-		public InstaClient EmptyClient
-		{
-			get
-			{
-				return _clientContextProvider.InitialClientGenerate();
-			}
-		}
+		public InstaClient EmptyClient => _clientContextProvider.InitialClientGenerate();
+
+		public InstaClient EmptyClientWithProxy (ProxyModel model) =>
+			_clientContextProvider.InitialClientGenerateWithProxy(model);
 	}
 }

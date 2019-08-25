@@ -6,6 +6,11 @@ using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.ReportHandler;
 using System;
 using System.Threading.Tasks;
+using Bogus;
+using Bogus.DataSets;
+using QuarklessContexts.Extensions;
+using QuarklessContexts.Models.Proxies;
+using QuarklessLogic.Handlers.Util;
 
 namespace QuarklessLogic.Logic.InstaUserLogic
 {
@@ -13,11 +18,13 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 	{
 		private readonly IReportHandler _reportHandler;
 		private readonly IAPIClientContainer Client;
-
-		public InstaUserLogic(IAPIClientContainer clientContexter, IReportHandler reportHandler)
+		private readonly IUtilProviders _utilProviders;
+		public InstaUserLogic(IAPIClientContainer clientContexter, 
+			IReportHandler reportHandler, IUtilProviders utilProviders)
 		{
 			Client = clientContexter;
 			_reportHandler = reportHandler;
+			_utilProviders = utilProviders;
 			_reportHandler.SetupReportHandler("Logic/InstaUser");
 		}
 
@@ -34,13 +41,45 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 				return null;
 			}
 		}
-
-		public async Task<IResult<InstaAccountCreation>> CreateAccount(string username, string email, string password, string firstname)
+		public class Tempo
+		{
+			public Name.Gender Gender;
+			public string FirstName;
+			public string LastName;
+			public string Username;
+			public string Password;
+			public string UserAgent;
+			public string Email;
+			public IResult<InstaAccountCreation> InResult;
+		}
+		public async Task<Tempo> CreateAccount()
 		{
 			try
 			{
-				return await Client.EmptyClient.ReturnClient.CreateNewAccountAsync(username, password, email,
-					firstname);
+				var person = _utilProviders.GeneratePerson(emailProvider: "gmail.com");
+				//var proxy = new ProxyModel
+				//{
+				//	Address = "37.48.118.4",
+				//	Port = 13010,
+				//	NeedServerAuth = false
+				//};
+				//await _utilProviders.EmailService.CreateGmailEmail(proxy, person);
+				var res = await Client.EmptyClient.ReturnClient.CreateNewAccountAsync(person.Username, person.Password, person.Email,
+					person.FirstName);
+				if (res.Succeeded)
+				{
+					var s = await Client.GetContext.ActionClient.LoginAsync();
+				}
+				return new Tempo
+				{
+					Email = person.Email,
+					FirstName = person.FirstName,
+					Gender = person.Gender,
+					InResult = res,
+					Username = person.Username,
+					Password = person.Password,
+					LastName = person.LastName
+				};
 			}
 			catch (Exception e)
 			{
@@ -145,6 +184,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 				return null;
 			}
 		}
+		
 		public async Task<IResult<InstaFriendshipFullStatus>> BlockUser(long userId)
 		{
 			try

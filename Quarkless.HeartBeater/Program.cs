@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Quarkless.HeartBeater.Creator;
 
 namespace Quarkless.HeartBeater
 {
@@ -27,6 +28,7 @@ namespace Quarkless.HeartBeater
 			services.AddRepositories(accessors);
 			services.AddTransient<IInit,Init>();
 			services.AddTransient<ITopicBuilder, TopicBuilder>();
+			services.AddTransient<ICreator, Creator.Creator>();
 			services.AddLogging();
 			var servicePreacher = new ServiceReacher(services.BuildServiceProvider());
 			var settings = new Settings
@@ -42,6 +44,9 @@ namespace Quarkless.HeartBeater
 						break;
 					case "app2":
 						await servicePreacher.Get<IInit>().Populator(settings);
+						break;
+					case "app3":
+						await servicePreacher.Get<IInit>().Creator();
 						break;
 					default:
 						return;

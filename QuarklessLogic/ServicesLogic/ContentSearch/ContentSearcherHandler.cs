@@ -14,20 +14,23 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using QuarklessLogic.Logic.ResponseLogic;
 
 namespace QuarklessLogic.ServicesLogic.ContentSearch
 {
 	public class ContentSearcherHandler : IContentSearcherHandler
 	{
 		private IAPIClientContainer _container;
+		private readonly IResponseResolver _responseResolver;
 		private readonly IRestSharpClientManager _restSharpClient;
 		private readonly YandexImageSearch _yandexImageSearch;
-		public ContentSearcherHandler(IAPIClientContainer worker, ProxyModel proxy = null)
+		public ContentSearcherHandler(IAPIClientContainer worker, IResponseResolver responseResolver, ProxyModel proxy = null)
 		{
+			_container = worker;
+			_responseResolver = responseResolver;
 			_restSharpClient = new RestSharpClientManager();
 			_restSharpClient.AddProxy(proxy);
 			_yandexImageSearch = new YandexImageSearch(_restSharpClient);
-			_container = worker;
 		}
 		public void ChangeUser(IAPIClientContainer newUser)
 		{
@@ -35,95 +38,92 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 		}
 		public async Task<IEnumerable<TopicCategories>> GetBusinessCategories()
 		{
-			var cat = await _container.Business.GetCategoriesAsync();
-			List<TopicCategories> categories = new List<TopicCategories>();
-			if (cat.Succeeded)
+			var cat = await _responseResolver.WithClient(_container).WithResolverAsync(await _container.Business.GetCategoriesAsync());
+			var categories = new List<TopicCategories>();
+			if (!cat.Succeeded) return categories;
+			foreach(var ca in cat.Value)
 			{
-				foreach(var ca in cat.Value)
+				var subCategories = await _container.Business.GetSubCategoriesAsync(ca.CategoryId);
+				if (subCategories.Succeeded)
 				{
-					var subcat = await _container.Business.GetSubCategoriesAsync(ca.CategoryId);
-					if (subcat.Succeeded)
+					categories.Add(new TopicCategories
 					{
-						categories.Add(new TopicCategories
-						{
-							CategoryName = ca.CategoryName,
-							SubCategories = subcat.Value.Select(s=>s.CategoryName).ToList()
-						});
-					}
-					await Task.Delay(1000);
+						CategoryName = ca.CategoryName,
+						SubCategories = subCategories.Value.Select(s=>s.CategoryName).ToList()
+					});
 				}
+				await Task.Delay(1000);
 			}
 			return categories;
 		}
 		public async Task<IEnumerable<UserResponse<string>>> GetUserFollowingList(string username, int limit, string query = null)
 		{
-			var usersresp = await _container.User.GetUserFollowingAsync(username, PaginationParameters.MaxPagesToLoad(limit), query, InstagramApiSharp.Enums.InstaFollowingOrderType.DateFollowedEarliest);
-			if (usersresp.Succeeded)
+			var userResponse = await _responseResolver.WithClient(_container).WithResolverAsync
+				(await _container.User.GetUserFollowingAsync(username, 
+				PaginationParameters.MaxPagesToLoad(limit), query, 
+				InstagramApiSharp.Enums.InstaFollowingOrderType.DateFollowedEarliest));
+			if (!userResponse.Succeeded) return null;
+			var users = userResponse.Value;
+			return users.Select(_ => new UserResponse<string>
 			{
-				var users = usersresp.Value;
-				return users.Select(_ => new UserResponse<string>
-				{
-					Username = _.UserName,
-					FullName = _.FullName,
-					ProfilePicture = _.ProfilePicture,
-					UserId = _.Pk,
-					IsPrivate = _.IsPrivate,
-					IsVerified = _.IsVerified,
-				});
-			}
-			return null;
+				Username = _.UserName,
+				FullName = _.FullName,
+				ProfilePicture = _.ProfilePicture,
+				UserId = _.Pk,
+				IsPrivate = _.IsPrivate,
+				IsVerified = _.IsVerified,
+			});
 		}
 		public async Task<List<UserResponse<UserSuggestionDetails>>> GetSuggestedPeopleToFollow(int limit)
 		{
-			var res = await _container.User.GetSuggestionUsersAsync(PaginationParameters.MaxPagesToLoad(limit));
-			if (res.Succeeded)
+			var res = await _responseResolver.WithClient(_container).WithResolverAsync
+				(await _container.User.GetSuggestionUsersAsync(PaginationParameters.MaxPagesToLoad(limit)));
+			if (!res.Succeeded) return null;
+			var usersTotals = new List<UserResponse<UserSuggestionDetails>>();
+			var users = res.Value;
+			usersTotals.AddRange(users.NewSuggestedUsers.Select(_ => new UserResponse<UserSuggestionDetails>
 			{
-				List<UserResponse<UserSuggestionDetails>> usersTotals = new List<UserResponse<UserSuggestionDetails>>();
-				var users = res.Value;
-				usersTotals.AddRange(users.NewSuggestedUsers.Select(_ => new UserResponse<UserSuggestionDetails>
+				Object = new UserSuggestionDetails
 				{
-					Object = new UserSuggestionDetails
-					{
-						IsNewSuggestions = _.IsNewSuggestion,
-						Caption = _.Caption,
-						FollowText = _.FollowText,
-						Algorithm = _.Algorithm,
-						Value = _.Value
-					},
-					UserId = _.User.Pk,
-					Username = _.User.UserName,
-					FullName = _.User.FullName,
-					ProfilePicture = _.User.ProfilePicture,
-					IsPrivate = _.User.IsPrivate,
-					IsVerified = _.User.IsVerified
-				}));
-				usersTotals.AddRange(users.SuggestedUsers.Select(_ => new UserResponse<UserSuggestionDetails>
+					IsNewSuggestions = _.IsNewSuggestion,
+					Caption = _.Caption,
+					FollowText = _.FollowText,
+					Algorithm = _.Algorithm,
+					Value = _.Value
+				},
+				UserId = _.User.Pk,
+				Username = _.User.UserName,
+				FullName = _.User.FullName,
+				ProfilePicture = _.User.ProfilePicture,
+				IsPrivate = _.User.IsPrivate,
+				IsVerified = _.User.IsVerified
+			}));
+			usersTotals.AddRange(users.SuggestedUsers.Select(_ => new UserResponse<UserSuggestionDetails>
+			{
+				Object = new UserSuggestionDetails
 				{
-					Object = new UserSuggestionDetails
-					{
-						IsNewSuggestions = _.IsNewSuggestion,
-						Caption = _.Caption,
-						FollowText = _.FollowText,
-						Algorithm = _.Algorithm,
-						Value = _.Value
-					},
-					UserId = _.User.Pk,
-					Username = _.User.UserName,
-					FullName = _.User.FullName,
-					ProfilePicture = _.User.ProfilePicture,
-					IsPrivate = _.User.IsPrivate,
-					IsVerified = _.User.IsVerified
-				}));
-				return usersTotals;
-			}
-			return null;
+					IsNewSuggestions = _.IsNewSuggestion,
+					Caption = _.Caption,
+					FollowText = _.FollowText,
+					Algorithm = _.Algorithm,
+					Value = _.Value
+				},
+				UserId = _.User.Pk,
+				Username = _.User.UserName,
+				FullName = _.User.FullName,
+				ProfilePicture = _.User.ProfilePicture,
+				IsPrivate = _.User.IsPrivate,
+				IsVerified = _.User.IsVerified
+			}));
+			return usersTotals;
 		}
 		public async Task<List<UserResponse<string>>> SearchInstagramMediaLikers(string mediaId)
 		{
-			var userLikersRes = await _container.Media.GetMediaLikersAsync(mediaId);
-			if (userLikersRes.Succeeded)
+			var userLikerResult = await _responseResolver.WithClient(_container).WithResolverAsync
+				(await _container.Media.GetMediaLikersAsync(mediaId));
+			if (userLikerResult.Succeeded)
 			{
-				return userLikersRes.Value.Select(s => new UserResponse<string>
+				return userLikerResult.Value.Select(s => new UserResponse<string>
 				{
 					Object = mediaId,
 					UserId = s.Pk,
@@ -134,35 +134,28 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 					ProfilePicture = s.ProfilePicture + "||" + s.ProfilePictureId
 				}).ToList();
 			}
-			else { 
-				return null;
-			}
+
+			return null;
 		}
 		public async Task<List<UserResponse<InstaComment>>> SearchInstagramMediaCommenters(string mediaId, int limit)
 		{
 			try { 
-				var userCommentersRes = await _container.Comment.GetMediaCommentsAsync(mediaId, PaginationParameters.MaxPagesToLoad(limit));
-				if (userCommentersRes.Succeeded)
+				var userCommentResult = await _responseResolver.WithClient(_container).WithResolverAsync
+					(await _container.Comment.GetMediaCommentsAsync(mediaId, PaginationParameters.MaxPagesToLoad(limit)));
+				if (!userCommentResult.Succeeded) return null;
+				var results = userCommentResult.Value.Comments;
+				return results.Select(res => new UserResponse<InstaComment>
 				{
-					var results = userCommentersRes.Value.Comments;
-					List<UserResponse<InstaComment>> commentResp = new List<UserResponse<InstaComment>>();
-					foreach(var res in results)
-					{
-						commentResp.Add(new UserResponse<InstaComment>
-						{
-							Object = res,
-							MediaId = mediaId,
-							FullName = res.User.FullName,
-							IsPrivate = res.User.IsPrivate,
-							IsVerified = res.User.IsVerified,
-							ProfilePicture = res?.User?.ProfilePicture,
-							UserId = res.User.Pk,
-							Username = res.User.UserName
-						});
-					}
-					return commentResp;
-				}
-				return null;
+					Object = res,
+					MediaId = mediaId,
+					FullName = res.User.FullName,
+					IsPrivate = res.User.IsPrivate,
+					IsVerified = res.User.IsVerified,
+					ProfilePicture = res?.User?.ProfilePicture,
+					UserId = res.User.Pk,
+					Username = res.User.UserName
+				})
+				.ToList();
 			}
 			catch(Exception ee)
 			{
@@ -172,12 +165,9 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 		}	
 		public async Task<InstaFullUserInfo> SearchInstagramFullUserDetail(long userId)
 		{
-			var userDetailsResp = await _container.User.GetFullUserInfoAsync(userId);
-			if (userDetailsResp.Succeeded)
-			{
-				return userDetailsResp.Value;
-			}
-			return null;
+			var userDetailsResp = await _responseResolver.WithClient(_container).WithResolverAsync
+				(await _container.User.GetFullUserInfoAsync(userId));
+			return userDetailsResp.Succeeded ? userDetailsResp.Value : null;
 		}
 
 		public async Task<Media> SearchMediaDetailInstagram(List<string> topics, int limit, bool isRecent = false)
@@ -260,7 +250,8 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 		}
 		public async Task<Media> SearchUsersMediaDetailInstagram(string userName, int limit)
 		{
-			var medias = await _container.User.GetUserMediaAsync(userName, PaginationParameters.MaxPagesToLoad(limit));
+			var medias = await _responseResolver.WithClient(_container).WithResolverAsync
+				(await _container.User.GetUserMediaAsync(userName, PaginationParameters.MaxPagesToLoad(limit)));
 			if (medias.Succeeded)
 			{
 				return new Media
@@ -334,9 +325,10 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 		}
 		public async Task<Media> SearchTopLocationMediaDetailInstagram(Location location, int limit)
 		{
-			var locationres = await _container.Location.SearchPlacesAsync(location.City, PaginationParameters.MaxPagesToLoad(limit));
-			if (!locationres.Succeeded) return null;
-			var id = locationres.Value.Items.ElementAt(SecureRandom.Next(locationres.Value.Items.Count - 1)).Location.Pk;
+			var locationResult = await _responseResolver.WithClient(_container).WithResolverAsync
+				(await _container.Location.SearchPlacesAsync(location.City, PaginationParameters.MaxPagesToLoad(limit)));
+			if (!locationResult.Succeeded) return null;
+			var id = locationResult.Value.Items.ElementAt(SecureRandom.Next(locationResult.Value.Items.Count - 1)).Location.Pk;
 			var mediasRes = await _container.Location.GetTopLocationFeedsAsync(id,PaginationParameters.MaxPagesToLoad(limit));
 			if (mediasRes.Succeeded)
 			{
@@ -411,87 +403,88 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 		}
 		public async Task<Media> SearchRecentLocationMediaDetailInstagram(Location location, int limit)
 		{
-			var locationres = await _container.Location.SearchPlacesAsync(location.Coordinates.Latitude, location.Coordinates.Longitude, PaginationParameters.MaxPagesToLoad(limit));
-			if (locationres.Succeeded)
+			var locationResult = await _responseResolver.WithClient(_container).WithResolverAsync
+				(await _container.Location.SearchPlacesAsync(location.Coordinates.Latitude, 
+				location.Coordinates.Longitude, PaginationParameters.MaxPagesToLoad(limit)));
+			if (!locationResult.Succeeded) return null;
+			var id = locationResult.Value.Items.ElementAt(SecureRandom.Next(locationResult.Value.Items.Count - 1)).Location.Pk;
+			var mediasRes = await _container.Location.GetRecentLocationFeedsAsync(id, PaginationParameters.MaxPagesToLoad(limit));
+			if (mediasRes.Succeeded)
 			{
-				long id = locationres.Value.Items.ElementAt(SecureRandom.Next(locationres.Value.Items.Count - 1)).Location.Pk;
-				var mediasRes = await _container.Location.GetRecentLocationFeedsAsync(id, PaginationParameters.MaxPagesToLoad(limit));
-				if (mediasRes.Succeeded)
+				return new Media
 				{
-					return new Media
+					Medias = mediasRes.Value.Medias.Select(s =>
 					{
-						Medias = mediasRes.Value.Medias.Select(s =>
+						MediaResponse mediaDetail = new MediaResponse();
+						mediaDetail.LikesCount = s.LikesCount;
+						mediaDetail.MediaId = s.Pk;
+						mediaDetail.HasLikedBefore = s.HasLiked;
+						mediaDetail.HasAudio = s.HasAudio;
+						mediaDetail.IsCommentsDisabled = s.IsCommentsDisabled;
+						mediaDetail.Location = s?.Location;
+						mediaDetail.ViewCount = s.ViewCount;
+						mediaDetail.Caption = s?.Caption?.Text;
+						mediaDetail.Explore = s?.Explore;
+						mediaDetail.FilterType = s.FilterType;
+						mediaDetail.HasSeen = s.IsSeen;
+						mediaDetail.NumberOfQualities = s.NumberOfQualities;
+						mediaDetail.PhotosOfI = s.PhotoOfYou;
+						mediaDetail.PreviewComments = s?.PreviewComments;
+						mediaDetail.ProductTags = s?.ProductTags;
+						mediaDetail.ProductType = s.ProductType;
+						mediaDetail.TopLikers = s?.TopLikers;
+						mediaDetail.TakenAt = s.TakenAt;
+						mediaDetail.UserTags = s?.UserTags;
+						mediaDetail.IsFollowing = s?.User?.FriendshipStatus?.Following;
+						mediaDetail.CommentCount = s.CommentsCount;
+						mediaDetail.MediaFrom = MediaFrom.Instagram;
+						mediaDetail.MediaType = s.MediaType;
+						mediaDetail.User = new UserResponse
 						{
-							MediaResponse mediaDetail = new MediaResponse();
-							mediaDetail.LikesCount = s.LikesCount;
-							mediaDetail.MediaId = s.Pk;
-							mediaDetail.HasLikedBefore = s.HasLiked;
-							mediaDetail.HasAudio = s.HasAudio;
-							mediaDetail.IsCommentsDisabled = s.IsCommentsDisabled;
-							mediaDetail.Location = s?.Location;
-							mediaDetail.ViewCount = s.ViewCount;
-							mediaDetail.Caption = s?.Caption?.Text;
-							mediaDetail.Explore = s?.Explore;
-							mediaDetail.FilterType = s.FilterType;
-							mediaDetail.HasSeen = s.IsSeen;
-							mediaDetail.NumberOfQualities = s.NumberOfQualities;
-							mediaDetail.PhotosOfI = s.PhotoOfYou;
-							mediaDetail.PreviewComments = s?.PreviewComments;
-							mediaDetail.ProductTags = s?.ProductTags;
-							mediaDetail.ProductType = s.ProductType;
-							mediaDetail.TopLikers = s?.TopLikers;
-							mediaDetail.TakenAt = s.TakenAt;
-							mediaDetail.UserTags = s?.UserTags;
-							mediaDetail.IsFollowing = s?.User?.FriendshipStatus?.Following;
-							mediaDetail.CommentCount = s.CommentsCount;
-							mediaDetail.MediaFrom = MediaFrom.Instagram;
-							mediaDetail.MediaType = s.MediaType;
-							mediaDetail.User = new UserResponse
+							FullName = s.User.FullName,
+							IsPrivate = s.User.IsPrivate,
+							IsVerified = s.User.IsVerified,
+							ProfilePicture = s.User.ProfilePicture,
+							UserId = s.User.Pk,
+							Username = s.User.UserName
+						};
+						var totalurls = new List<string>();
+						if (s.MediaType == InstaMediaType.Image)
+						{
+							var im = s.Images.FirstOrDefault()?.Uri;
+							if (im != null)
+								totalurls.Add(im);
+						}
+						else if (s.MediaType == InstaMediaType.Video)
+						{
+							var iv = s.Videos.FirstOrDefault()?.Uri;
+							if (iv != null)
+								totalurls.Add(iv);
+						}
+						else if (s.MediaType == InstaMediaType.Carousel)
+						{
+							s.Carousel.ForEach(x =>
 							{
-								FullName = s.User.FullName,
-								IsPrivate = s.User.IsPrivate,
-								IsVerified = s.User.IsVerified,
-								ProfilePicture = s.User.ProfilePicture,
-								UserId = s.User.Pk,
-								Username = s.User.UserName
-							};
-							var totalurls = new List<string>();
-							if (s.MediaType == InstaMediaType.Image)
-							{
-								var im = s.Images.FirstOrDefault()?.Uri;
-								if (im != null)
-									totalurls.Add(im);
-							}
-							else if (s.MediaType == InstaMediaType.Video)
-							{
-								var iv = s.Videos.FirstOrDefault()?.Uri;
-								if (iv != null)
-									totalurls.Add(iv);
-							}
-							else if (s.MediaType == InstaMediaType.Carousel)
-							{
-								s.Carousel.ForEach(x =>
-								{
-									var videos = x.Videos.FirstOrDefault()?.Uri;
-									if (videos != null)
-										totalurls.Add(videos);
-									var images = x.Images.FirstOrDefault()?.Uri;
-									if (images != null)
-										totalurls.Add(images);
-								});
-							}
-							mediaDetail.MediaUrl = totalurls;
-							return mediaDetail;
-						}).ToList()
-					};
-				}
+								var videos = x.Videos.FirstOrDefault()?.Uri;
+								if (videos != null)
+									totalurls.Add(videos);
+								var images = x.Images.FirstOrDefault()?.Uri;
+								if (images != null)
+									totalurls.Add(images);
+							});
+						}
+						mediaDetail.MediaUrl = totalurls;
+						return mediaDetail;
+					}).ToList()
+				};
 			}
 			return null;
 		}
 		public async Task<Media> SearchUserFeedMediaDetailInstagram(string[] seenMedias = null, bool requestRefresh = false, int limit = 1)
 		{
 			Media medias = new Media();
-			var mediasResults = await _container.Feeds.GetUserTimelineFeedAsync(PaginationParameters.MaxPagesToLoad(limit), seenMedias, requestRefresh);
+			var mediasResults = await _responseResolver.WithClient(_container).WithResolverAsync
+				(await _container.Feeds.GetUserTimelineFeedAsync(PaginationParameters.MaxPagesToLoad(limit), seenMedias, requestRefresh));
 			if (mediasResults.Succeeded)
 			{
 				medias.Medias.AddRange(mediasResults.Value.Medias.Select(s =>
@@ -560,6 +553,7 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 			}
 			return medias;
 		}
+
 		#region Probably Old 
 		public async Task<Media> SearchMediaInstagram(List<string> topics, InstaMediaType mediaType, int limit)
 		{

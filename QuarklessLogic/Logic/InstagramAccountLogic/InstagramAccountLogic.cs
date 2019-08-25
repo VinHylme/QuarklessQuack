@@ -55,7 +55,8 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 					ProfilePicture = state.UserSession.LoggedInUser.ProfilePicture ?? state.UserSession.LoggedInUser.ProfilePicUrl,
 					UserBiography = null,
 					UserLimits = null,
-					Location = null
+					Location = null,
+					ChallengeInfo = null
 				};
 				var result = await _instagramAccountRepository.AddInstagramAccount(instamodel);
 				if(result!=null)
@@ -146,35 +147,33 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 					return redisRes;
 				}
 				var account = await _instagramAccountRepository.GetInstagramAccount(accountId, instagramAccountId);
-				if (account.Results != null)
-				{
-					var res = account.Results;
+				if (account.Results == null) return null;
+				var res = account.Results;
 
-					var shortInsta = new ShortInstagramAccountModel{
-						AccountId = res.AccountId,
-						AgentState = res.AgentState,
-						LastPurgeCycle = res.LastPurgeCycle,
-						FollowersCount = res.FollowersCount,
-						FollowingCount = res.FollowingCount,
-						Id = res._id,
-						TotalPostsCount = res.TotalPostsCount,
-						Username = res.Username,
-						DateAdded = res.DateAdded,
-						SleepTimeRemaining = res.SleepTimeRemaining,
-						Email = res.Email,
-						PhoneNumber = res.PhoneNumber,
-						FullName = res.FullName,
-						ProfilePicture = res.ProfilePicture,
-						UserBiography = res.UserBiography,
-						UserLimits = res.UserLimits,
-						IsBusiness = res.IsBusiness,
-						Location = res.Location,
-						Type = res.Type
-					};
-					await _instagramAccountRedis.SetInstagramAccountDetail(accountId, instagramAccountId, shortInsta);
-					return shortInsta;
-				}
-				return null;
+				var shortInst = new ShortInstagramAccountModel{
+					AccountId = res.AccountId,
+					AgentState = res.AgentState,
+					LastPurgeCycle = res.LastPurgeCycle,
+					FollowersCount = res.FollowersCount,
+					FollowingCount = res.FollowingCount,
+					Id = res._id,
+					TotalPostsCount = res.TotalPostsCount,
+					Username = res.Username,
+					DateAdded = res.DateAdded,
+					SleepTimeRemaining = res.SleepTimeRemaining,
+					Email = res.Email,
+					PhoneNumber = res.PhoneNumber,
+					FullName = res.FullName,
+					ProfilePicture = res.ProfilePicture,
+					UserBiography = res.UserBiography,
+					UserLimits = res.UserLimits,
+					IsBusiness = res.IsBusiness,
+					Location = res.Location,
+					Type = res.Type,
+					ChallengeInfo = res.ChallengeInfo
+				};
+				await _instagramAccountRedis.SetInstagramAccountDetail(accountId, instagramAccountId, shortInst);
+				return shortInst;
 			}
 			catch (Exception ee)
 			{
@@ -188,11 +187,7 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 			{
 				var account = await _instagramAccountRepository.GetInstagramAccount(accountId, instagramAccountId);
 
-				if (account.Results != null)
-				{
-					return account.Results;
-				}
-				return null;
+				return account.Results;
 			}
 			catch(Exception ee)
 			{
@@ -204,39 +199,33 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 			try
 			{
 				var redisGet = await _instagramAccountRedis.GetWorkerAccounts();
-				if (redisGet.Count() > 0)
+				if (redisGet.Any())
 				{
 					return redisGet;
 				}
 				var account = await _instagramAccountRepository.GetInstagramAccountsOfUser(accountId, type);
-				if(account.Results!= null)
+				return account.Results?.Select(res=>new ShortInstagramAccountModel
 				{
-					return account.Results.Select(res=>new ShortInstagramAccountModel
-					{
-						AccountId = res.AccountId,
-						AgentState = res.AgentState,
-						LastPurgeCycle = res.LastPurgeCycle,
-						FollowersCount = res.FollowersCount,
-						FollowingCount = res.FollowingCount,
-						Id = res._id,
-						TotalPostsCount = res.TotalPostsCount,
-						Username = res.Username,
-						DateAdded = res.DateAdded,
-						SleepTimeRemaining = res.SleepTimeRemaining,
-						Email = res.Email,
-						PhoneNumber = res.PhoneNumber,
-						FullName = res.FullName,
-						ProfilePicture = res.ProfilePicture,
-						UserBiography = res.UserBiography,
-						UserLimits = res.UserLimits,
-						IsBusiness = res.IsBusiness,
-						Location = res.Location
-					});
-				}
-				else
-				{
-					return null;
-				}
+					AccountId = res.AccountId,
+					AgentState = res.AgentState,
+					LastPurgeCycle = res.LastPurgeCycle,
+					FollowersCount = res.FollowersCount,
+					FollowingCount = res.FollowingCount,
+					Id = res._id,
+					TotalPostsCount = res.TotalPostsCount,
+					Username = res.Username,
+					DateAdded = res.DateAdded,
+					SleepTimeRemaining = res.SleepTimeRemaining,
+					Email = res.Email,
+					PhoneNumber = res.PhoneNumber,
+					FullName = res.FullName,
+					ProfilePicture = res.ProfilePicture,
+					UserBiography = res.UserBiography,
+					UserLimits = res.UserLimits,
+					IsBusiness = res.IsBusiness,
+					Location = res.Location,
+					ChallengeInfo = res.ChallengeInfo
+				});
 			}
 			catch (Exception ee)
 			{
@@ -245,7 +234,7 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 		}	
 		public async Task<long?> PartialUpdateInstagramAccount(string accountId, string instagramAccountId, InstagramAccountModel instagramAccountModel)
 		{
-			ShortInstagramAccountModel toshortmodel = new ShortInstagramAccountModel
+			var toshortmodel = new ShortInstagramAccountModel
 			{
 				AccountId = instagramAccountModel.AccountId,
 				AgentState = instagramAccountModel.AgentState,
@@ -265,7 +254,8 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 				UserLimits = instagramAccountModel.UserLimits,
 				IsBusiness = instagramAccountModel.IsBusiness,
 				Location = instagramAccountModel.Location,
-				Type = instagramAccountModel.Type
+				Type = instagramAccountModel.Type,
+				ChallengeInfo = instagramAccountModel.ChallengeInfo
 			};
 			if(!(await _instagramAccountRedis.AccountExists(accountId, instagramAccountId)))
 			{
@@ -289,7 +279,8 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 					TotalPostsCount = lastUpdatedDetails.TotalPostsCount,
 					UserBiography = lastUpdatedDetails.UserBiography,
 					UserLimits = lastUpdatedDetails.UserLimits,
-					Username = lastUpdatedDetails.Username
+					Username = lastUpdatedDetails.Username,
+					ChallengeInfo = lastUpdatedDetails.ChallengeInfo
 				});
 			}
 			await _instagramAccountRedis.SetInstagramAccountDetail(accountId,instagramAccountId,toshortmodel);
@@ -299,17 +290,14 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 		{
 			try
 			{
-				var redisfirst = await _instagramAccountRedis.GetInstagramAccountActiveDetail();
-				if (redisfirst.Count() > 0)
+				var redist = await _instagramAccountRedis.GetInstagramAccountActiveDetail();
+				var activeAgentInstagramAccounts = redist as ShortInstagramAccountModel[] ?? redist.ToArray();
+				if (activeAgentInstagramAccounts.Any())
 				{
-					return redisfirst;
+					return activeAgentInstagramAccounts;
 				}
 				var account = await _instagramAccountRepository.GetActiveAgentInstagramAccounts();
-				if (account != null)
-				{
-					return account;
-				}
-				return null;
+				return account;
 			}
 			catch (Exception ee)
 			{
@@ -323,12 +311,7 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 			try
 			{
 				var account = await _instagramAccountRepository.GetInstagramAccounts(type);
-				if (account != null)
-				{
-					return account;
-				}
-
-				return null;
+				return account;
 			}
 			catch (Exception ee)
 			{

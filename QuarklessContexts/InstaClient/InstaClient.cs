@@ -12,6 +12,7 @@ using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using InstagramApiSharp.Enums;
 
 namespace QuarklessContexts.InstaClient
 {
@@ -20,10 +21,6 @@ namespace QuarklessContexts.InstaClient
 		private IInstaApi _client;
 		private static RNGCryptoServiceProvider rngCsp = new RNGCryptoServiceProvider();
 		private string StateString { get; set; }
-		public InstaClient()
-		{
-			
-		}
 
 		public InstaClient Empty()
 		{
@@ -32,13 +29,23 @@ namespace QuarklessContexts.InstaClient
 			.UseLogger(new DebugLogger(LogLevel.All))
 			.SetRequestDelay(RequestDelay.FromSeconds(0, 2))
 			.Build();
-			_client.SetApiVersion(InstagramApiSharp.Enums.InstaApiVersionType.Version100);
+			_client.SetApiVersion(InstaApiVersionType.Version100);
 			return this;
 		}
-		public IInstaApi ReturnClient
+
+		public InstaClient Empty(ProxyModel proxy)
 		{
-			get { return _client;}
+			if(_client != null) return this;
+			_client = InstaApiBuilder.CreateBuilder()
+				.UseLogger(new DebugLogger(LogLevel.All))
+				.SetRequestDelay(RequestDelay.FromSeconds(0, 2))
+				.Build();
+			_client.SetApiVersion(InstaApiVersionType.Version100);
+			_client.UseHttpClientHandler(SetupProxy(proxy));
+			return this;
 		}
+		public IInstaApi ReturnClient => _client;
+
 		private HttpClientHandler SetupProxy(ProxyModel proxyModel)
 		{
 			var proxy = new WebProxy(Regex.Replace(proxyModel.Address,"[http://|https://]",""), proxyModel.Port)

@@ -15,7 +15,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using MoreLinq;
+using Quarkless.HeartBeater.Creator;
 using QuarklessContexts.Extensions;
+using QuarklessLogic.Logic.ResponseLogic;
 
 namespace Quarkless.HeartBeater.__Init__
 {
@@ -33,23 +35,27 @@ namespace Quarkless.HeartBeater.__Init__
 	}
 	public class Init : IInit
 	{
+		private readonly IResponseResolver _responseResolver;
 		private readonly IAPIClientContext _context;
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
 		private readonly IProfileLogic _profileLogic;
 		private readonly IProxyLogic _proxyLogic;
 		private readonly ITopicBuilder _topicBuilder;
 		private readonly IHeartbeatLogic _heartbeatLogic;
+		private readonly ICreator _creator;
 		private List<Assignments> Assignments { get; set; }
-		public Init(IInstagramAccountLogic instagramAccountLogic, IProfileLogic profileLogic, IProxyLogic proxyLogic,
+		public Init(IResponseResolver responseResolver, IInstagramAccountLogic instagramAccountLogic, IProfileLogic profileLogic, IProxyLogic proxyLogic,
 			IAPIClientContext context, IHeartbeatLogic heartbeatLogic,
-			ITopicBuilder topicBuilder)
+			ITopicBuilder topicBuilder, ICreator creator)
 		{
+			_responseResolver = responseResolver;
 			_instagramAccountLogic = instagramAccountLogic;
 			_profileLogic = profileLogic;
 			_proxyLogic = proxyLogic;
 			_heartbeatLogic = heartbeatLogic;
 			_context = context;
 			_topicBuilder = topicBuilder;
+			_creator = creator;
 			Assignments = new List<Assignments>();
 		}
 
@@ -62,6 +68,40 @@ namespace Quarkless.HeartBeater.__Init__
 		{
 			public List<TopicAss> TopicsAssigned { get ; set;  }
 			public IAPIClientContainer Worker { get; set; }
+		}
+
+		public async Task Creator()
+		{
+			var results = new List<Creator.Creator.Tempo>();
+			try
+			{
+				for (var x = 0; x < 1000; x++)
+				{
+					try
+					{
+						var proxy = new ProxyModel
+						{
+							Address = "37.48.118.4",
+							Port = 13010
+						};
+						var res = await _creator.CreateInstagramAccount(proxy);
+						if (res != null)
+							results.Add(res);
+
+						await Task.Delay(1200);
+					}
+					catch (Exception ee)
+					{
+						Console.WriteLine(ee.Message);
+					}
+				}
+				Console.WriteLine("wowe i finished");
+				results.ForEach(i=>Console.WriteLine($"{i.FirstName}:{i.Username}:{i.Password}"));
+			}
+			catch (Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+			}
 		}
 		public async Task Populator(Settings settings)
 		{
@@ -110,7 +150,7 @@ namespace Quarkless.HeartBeater.__Init__
 					}
 
 					var metadataBuilder =
-						new MetadataBuilder(Assignments, _context, _heartbeatLogic, _proxyLogic);
+						new MetadataBuilder(Assignments, _context, _heartbeatLogic, _proxyLogic, _responseResolver);
 					await metadataBuilder.PopulateCorpusData(populateAssignments, 2);
 				}
 				catch (Exception e)
@@ -187,7 +227,7 @@ namespace Quarkless.HeartBeater.__Init__
 				}
 				#endregion
 
-				var metadataBuilder = new MetadataBuilder(Assignments, _context, _heartbeatLogic,_proxyLogic);
+				var metadataBuilder = new MetadataBuilder(Assignments, _context, _heartbeatLogic, _proxyLogic, _responseResolver);
 
 				var buildBase = Task.Run(async () => await metadataBuilder.BuildBase(2));
 				Task.WaitAll(buildBase);
@@ -243,7 +283,6 @@ namespace Quarkless.HeartBeater.__Init__
 			watch.Stop();
 			Console.WriteLine($"Heartbeat ended : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
 		}
-
 		private async Task<List<RequestAccountModel>> GetActiveInstagramAccountRequests()
 		{
 			try

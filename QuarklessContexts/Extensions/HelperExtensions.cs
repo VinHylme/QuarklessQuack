@@ -15,6 +15,7 @@ namespace QuarklessContexts.Extensions
 {
 	public static class HelperExtensions
 	{
+		public static string ToJsonString<TInput>(this TInput input) => JsonConvert.SerializeObject(input);
 		public static List<CultureInfo> GetSupportedCultures()
 		{
 			CultureInfo[] culture = CultureInfo.GetCultures(CultureTypes.AllCultures);

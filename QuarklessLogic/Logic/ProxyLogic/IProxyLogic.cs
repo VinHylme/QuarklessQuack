@@ -12,6 +12,7 @@ namespace QuarklessLogic.Logic.ProxyLogic
 		bool AddProxies(List<ProxyModel> proxies);
 		Task<bool> TestProxy(ProxyItem proxy);
 		Task<IEnumerable<ProxyModel>> GetAllAssignedProxies();
+		Task<ProxyModel> TestProxyGrapper();
 		Task<ProxyModel> GetProxyAssignedTo(string accountId, string instagramAccountId);
 		Task<ProxyModel> RetrieveRandomProxy(bool? get = null, bool? post = null, bool? cookies = null, bool? referer = null,
 			bool? userAgent = null, int port = -1, string city = null, string state = null, string country = null,

@@ -418,7 +418,7 @@ namespace Quarkless.Services
 			//TODO : MAKE SURE ALL USERS ARE BUSINESS ACCOUNTS AND USERS OVER 100 FOLLOWERS BASE THEIR POSTING ON WHICH HOUR WAS MOST POPULAR
 			var numberOfWorkers = 0;
 			while (true) {
-				if (numberOfWorkers < 7) { 
+				if (numberOfWorkers < 5) { 
 					_ = Task.Run(async () => { 
 						var allActives = await _agentLogic.GetAllAccounts();
 						var shortInstagramAccountModels = allActives as ShortInstagramAccountModel[] ?? allActives.ToArray();
@@ -481,7 +481,7 @@ namespace Quarkless.Services
 									await _instagramAccountLogic.PartialUpdateInstagramAccount(_userStoreDetails.OAccountId, _userStoreDetails.OInstagramAccountUser,
 										new InstagramAccountModel
 										{
-											LastPurgeCycle = DateTime.UtcNow.AddHours(6)
+											LastPurgeCycle = DateTime.UtcNow.AddHours(33)
 										});
 								}			
 								else
@@ -558,9 +558,9 @@ namespace Quarkless.Services
 								var commentScheduleOptions = new CommentingActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1, 4)), CommentingActionType.Any);
 								var likecommentScheduleOptions = new LikeCommentActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(4)), LikeCommentActionType.Any);
 				
-								actionsContainerManager.AddAction(postAction, postScheduleOptions, 0.15);
+								actionsContainerManager.AddAction(postAction, postScheduleOptions, 0.10);
 								actionsContainerManager.AddAction(likeAction, likeScheduleOptions, 0.275);
-								actionsContainerManager.AddAction(followAction, followScheduleOptions, 0.15);
+								actionsContainerManager.AddAction(followAction, followScheduleOptions, 0.20);
 								actionsContainerManager.AddAction(commentAction, commentScheduleOptions, 0.15);
 								actionsContainerManager.AddAction(likeCommentAction, likecommentScheduleOptions, 0.275);
 								#endregion

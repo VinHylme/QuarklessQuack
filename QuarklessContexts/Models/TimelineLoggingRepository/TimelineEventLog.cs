@@ -17,7 +17,9 @@ namespace QuarklessContexts.Models.TimelineLoggingRepository
 		[Description("sucess")]
 		Success = 2,
 		[Description("feedback")]
-		FeedbackRequired = 3
+		FeedbackRequired = 3,
+		[Description("Internal Server Error")]
+		ServerError
 	}
 	public class TimelineEventLog
 	{
@@ -33,7 +35,6 @@ namespace QuarklessContexts.Models.TimelineLoggingRepository
 
 		[BsonRepresentation(BsonType.Int32)]
 		public ActionType ActionType { get; set; }
-
 		public string Message { get; set; }
 		public Exception Exception { get; set ; }
 		public string Request { get ; set;  }

@@ -47,6 +47,8 @@ namespace QuarklessContexts.Enums
 		[Description("actionchecker")]
 		MaintainAccount,
 		[Description("GetRecentActivityFeed")]
-		RecentActivityFeed
+		RecentActivityFeed,
+		[Description("refreshlogin")]
+		RefreshLogin
 	}
 }

@@ -10,6 +10,7 @@ using QuarklessLogic.Logic.ProfileLogic;
 using QuarklessLogic.Logic.ProxyLogic;
 using System;
 using System.Threading.Tasks;
+using QuarklessContexts.Models.Proxies;
 
 namespace QuarklessLogic.Handlers.ClientProvider
 {
@@ -48,6 +49,8 @@ namespace QuarklessLogic.Handlers.ClientProvider
 				return null;
 			}
 		}
+
+		public InstaClient InitialClientGenerateWithProxy(ProxyModel model) => this._instaClient.Empty(model);
 
 		private async Task<ContextContainer> GetClient(string accountId, string instagramAccountId)
 		{
@@ -105,7 +108,8 @@ namespace QuarklessLogic.Handlers.ClientProvider
 							UserBiography = instaAcc.UserBiography,
 							UserLimits = instaAcc.UserLimits,
 							Location = instaAcc.Location,
-							IsBusiness = instaAcc.IsBusiness
+							IsBusiness = instaAcc.IsBusiness,
+							ChallengeInfo = instaAcc.ChallengeInfo
 						},
 						Profile = profileOfInstaAcc,
 						Proxy = proxyOfInstaAcc

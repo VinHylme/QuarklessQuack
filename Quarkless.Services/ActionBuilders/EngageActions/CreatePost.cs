@@ -82,11 +82,11 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				switch (searchTypeSelected)
 				{
 					case (int)SearchType.Google:
-						var ran = new int[] { 0, 1};
-						var num = ran.ElementAt(SecureRandom.Next(ran.Length-1));
-						var selectedQuery = num == 0 ? MetaDataType.FetchMediaForSpecificUserGoogle : MetaDataType.FetchMediaForSepcificUserYandexQuery;
-						var gores = _heartbeatLogic.GetMetaData<Media>(selectedQuery,user.Profile.Topics.TopicFriendlyName, user.Profile.InstagramAccountId).GetAwaiter().GetResult();
-						selectedAction = selectedQuery;
+						//var ran = new int[] { 0, 1};
+						//var num = ran.ElementAt(SecureRandom.Next(ran.Length-1));
+						//var selectedQuery = num == 0 ? MetaDataType.FetchMediaForSpecificUserGoogle : MetaDataType.FetchMediaForSepcificUserYandexQuery;
+						var gores = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaForSpecificUserGoogle,user.Profile.Topics.TopicFriendlyName, user.Profile.InstagramAccountId).GetAwaiter().GetResult();
+						selectedAction = MetaDataType.FetchMediaForSpecificUserGoogle;
 						if (gores != null)
 							TotalResults = gores.ToList();
 						break;

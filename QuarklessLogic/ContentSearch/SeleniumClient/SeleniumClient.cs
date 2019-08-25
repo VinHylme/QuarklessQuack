@@ -33,6 +33,8 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 		{
 			//Driver = new ChromeDriver(_chromeService, _chromeOptions);
 		}
+
+		public IWebDriver Driver => new ChromeDriver(_chromeService, _chromeOptions);
 		public void ScrollPage(IWebDriver driver, int counter)
 		{
 			const string script =

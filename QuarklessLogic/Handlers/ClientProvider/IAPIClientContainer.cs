@@ -1,6 +1,7 @@
 ﻿using InstagramApiSharp.API.Processors;
 using QuarklessContexts.InstaClient;
 using QuarklessContexts.Models;
+using QuarklessContexts.Models.Proxies;
 
 namespace QuarklessLogic.Handlers.ClientProvider
 {
@@ -12,6 +13,7 @@ namespace QuarklessLogic.Handlers.ClientProvider
 		ICommentProcessor Comment { get; }
 		IDiscoverProcessor Discover { get; }
 		InstaClient EmptyClient { get; }
+		InstaClient EmpClientWithProxy(ProxyModel model);
 		IFeedProcessor Feeds { get; }
 		ContextContainer GetContext { get; }
 		IHashtagProcessor Hashtag { get; }

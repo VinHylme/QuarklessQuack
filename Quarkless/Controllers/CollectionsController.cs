@@ -4,6 +4,8 @@ using QuarklessContexts.Models.ApiModels;
 using QuarklessContexts.Models.UserAuth.AuthTypes;
 using QuarklessLogic.Logic.CollectionsLogic;
 using System.Threading.Tasks;
+using QuarklessContexts.Enums;
+using QuarklessLogic.Logic.ResponseLogic;
 
 namespace Quarkless.Controllers
 {
@@ -17,106 +19,98 @@ namespace Quarkless.Controllers
 	{
 		private readonly IUserContext _userContext;
 		private readonly ICollectionsLogic _collectionsLogic;
-		public CollectionsController(IUserContext userContext, ICollectionsLogic collectionsLogic)
+		private readonly IResponseResolver _responseResolver;
+		public CollectionsController(IUserContext userContext, ICollectionsLogic collectionsLogic, IResponseResolver responseResolver)
 		{
 			_collectionsLogic = collectionsLogic;
 			_userContext = userContext;
+			_responseResolver = responseResolver;
 		}
 
 		[HttpGet]
 		[Route("api/collections/{limit}")]
 		public async Task<IActionResult> GetCollections(int limit = 5)
 		{
-			if (_userContext.UserAccountExists)
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid ID");
+			var results = await _responseResolver.WithResolverAsync(
+				await _collectionsLogic.GetCollections(limit), ActionType.None, "");
+			if (results.Succeeded && results.Value.Items.Count > 0)
 			{
-				var results = await _collectionsLogic.GetCollections(limit);
-				if (results.Succeeded && results.Value.Items.Count > 0)
-				{
-					return Ok(results.Value);
-				}
-				return NotFound(results.Info);
+				return Ok(results.Value);
 			}
-			return BadRequest("Invalid ID");
+			return NotFound(results.Info);
 		}
 
 		[HttpGet]
 		[Route("api/collections/{collectionId}/{limit}")]
 		public async Task<IActionResult> GetCollection(long collectionId, int limit = 5)
 		{
-			if (_userContext.UserAccountExists)
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid ID");
+			var results = await _responseResolver.WithResolverAsync(
+				await _collectionsLogic.GetCollection(collectionId,limit), ActionType.None, collectionId.ToString());
+			if (results.Succeeded)
 			{
-				var results = await _collectionsLogic.GetCollection(collectionId,limit);
-				if (results.Succeeded)
-				{
-					return Ok(results.Value);
-				}
-				return NotFound(results.Info);
+				return Ok(results.Value);
 			}
-			return BadRequest("Invalid ID");
+			return NotFound(results.Info);
 		}
 
 		[HttpPost]
 		[Route("api/collections/create/{collectionName}")]
 		public async Task<IActionResult> CreateCollection([FromRoute]string collectionName)
 		{
-			if (_userContext.UserAccountExists && !string.IsNullOrEmpty(collectionName))
+			if (!_userContext.UserAccountExists || string.IsNullOrEmpty(collectionName))
+				return BadRequest("Invalid ID");
+			var res = await _responseResolver.WithResolverAsync(
+				await _collectionsLogic.CreateCollection(collectionName), ActionType.None, collectionName);
+			if (res.Succeeded)
 			{
-				var res = await _collectionsLogic.CreateCollection(collectionName);
-				if (res.Succeeded)
-				{
-					return Ok(res.Value);
-				}
-				return BadRequest(res.Info);
+				return Ok(res.Value);
 			}
-			return BadRequest("Invalid ID");
+			return BadRequest(res.Info);
 		}
 
 		[HttpPut]
 		[Route("api/collections/{collectionId}")]
 		public async Task<IActionResult> AddItemsCollection([FromRoute]long collectionId, [FromBody] AddItemsToCollectionsRequest addItemsToCollectionsRequest)
 		{
-			if (_userContext.UserAccountExists && addItemsToCollectionsRequest.MediaIds.Count>0)
+			if (!_userContext.UserAccountExists || addItemsToCollectionsRequest.MediaIds.Count <= 0)
+				return BadRequest("Invalid ID");
+			var res = await _responseResolver.WithResolverAsync(await _collectionsLogic.AddItemsCollection(collectionId, 
+				addItemsToCollectionsRequest.MediaIds.ToArray()), ActionType.None, collectionId.ToString());
+			if (res.Succeeded)
 			{
-				var res = await _collectionsLogic.AddItemsCollection(collectionId, addItemsToCollectionsRequest.MediaIds.ToArray());
-				if (res.Succeeded)
-				{
-					return Ok(res.Value);
-				}
-				return BadRequest(res.Info);
+				return Ok(res.Value);
 			}
-			return BadRequest("Invalid ID");
+			return BadRequest(res.Info);
 		}
 
 		[HttpPut]
 		[Route("api/collections/edit/{collectionId}")]
 		public async Task<IActionResult> EditCollections([FromRoute] long collectionId, [FromBody] EditCollectionRequest editCollection)
 		{
-			if (_userContext.UserAccountExists && editCollection!=null)
+			if (!_userContext.UserAccountExists || editCollection == null) return BadRequest("Invalid Request");
+			var res = await _responseResolver.WithResolverAsync(await _collectionsLogic.CreateCollection(collectionId,
+				editCollection.CollectionName,editCollection.PhotoCoverId), ActionType.None, collectionId.ToString());
+			if (res.Succeeded)
 			{
-				var res = await _collectionsLogic.CreateCollection(collectionId,editCollection.CollectionName,editCollection.PhotoCoverId);
-				if (res.Succeeded)
-				{
-					return Ok(res.Value);
-				}
-				return NotFound(res.Info);
+				return Ok(res.Value);
 			}
-			return BadRequest("Invalid Request");
+			return NotFound(res.Info);
 		}
 
 		[HttpDelete]
 		[Route("api/collections/delete/{collectionId}")]
 		public async Task<IActionResult> DeleteCollection(long collectionId)
 		{
-			if (_userContext.UserAccountExists)
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid ID");
+			var res = await _responseResolver.WithResolverAsync(
+				await _collectionsLogic.DeleteCollection(collectionId), ActionType.None, collectionId.ToString());
+			if (res.Succeeded)
 			{
-				var res = await _collectionsLogic.DeleteCollection(collectionId);
-				if (res.Succeeded)
-				{
-					return Ok(res.Value);
-				}
-				return NotFound(res.Info);
+				return Ok(res.Value);
 			}
-			return BadRequest("Invalid ID");
+			return NotFound(res.Info);
 		}
 	}
 }

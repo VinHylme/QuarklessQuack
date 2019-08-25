@@ -161,7 +161,8 @@ namespace QuarklessRepositories.InstagramAccountRepository
 				UserLimits = r.UserLimits,
 				IsBusiness = r.IsBusiness,
 				Location = r.Location,
-				Type = r.Type
+				Type = r.Type,
+				ChallengeInfo = r.ChallengeInfo
 			});
 		}
 
@@ -190,7 +191,8 @@ namespace QuarklessRepositories.InstagramAccountRepository
 				UserLimits = r.UserLimits,
 				IsBusiness = r.IsBusiness,
 				Location = r.Location,
-				Type = r.Type
+				Type = r.Type,
+				ChallengeInfo = r.ChallengeInfo
 			});
 		}
 
