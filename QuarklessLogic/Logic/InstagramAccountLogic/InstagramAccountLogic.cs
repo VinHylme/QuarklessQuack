@@ -1,5 +1,4 @@
 ﻿using InstagramApiSharp.Classes;
-using Quarkless.Extensions;
 using QuarklessContexts.Classes.Carriers;
 using QuarklessContexts.Models.InstagramAccounts;
 using QuarklessContexts.Models.Proxies;
@@ -11,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using QuarklessLogic.Handlers.ReportHandler;
 
 namespace QuarklessLogic.Logic.InstagramAccountLogic
 {
@@ -20,17 +20,20 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 		private readonly IProfileLogic _profileLogic;
 		private readonly IInstagramAccountRepository _instagramAccountRepository;
 		private readonly IInstagramAccountRedis _instagramAccountRedis;
+		private readonly IReportHandler _reportHandler;
 		public InstagramAccountLogic(IProxyLogic proxyLogic, IInstagramAccountRepository instagramAccountRepository, 
-			IInstagramAccountRedis instagramAccountRedis, IProfileLogic profileLogic)
+			IInstagramAccountRedis instagramAccountRedis, IProfileLogic profileLogic, IReportHandler reportHandler)
 		{
 			_profileLogic = profileLogic;
 			_proxyLogic = proxyLogic;
 			_instagramAccountRepository = instagramAccountRepository;
 			_instagramAccountRedis = instagramAccountRedis;
+			_reportHandler = reportHandler;
+			_reportHandler.SetupReportHandler("InstagramAccountLogic");
 		}
 		public async Task<ResultCarrier<AddInstagramAccountResponse>> AddInstagramAccount(string accountId, StateData state, AddInstagramAccountRequest addInstagram)
 		{
-			ResultCarrier<AddInstagramAccountResponse> @Result = new ResultCarrier<AddInstagramAccountResponse>();
+			var @Result = new ResultCarrier<AddInstagramAccountResponse>();
 			try {
 				var device = state.DeviceInfo.DeviceModel;
 				var instamodel = new InstagramAccountModel
@@ -118,6 +121,7 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 					Message = $"Exepction trying to add user: {addInstagram.Username}, error: {ee.Message}",
 					Exception = ee
 				};
+				_reportHandler.MakeReport(ee);
 				return Result;
 			}	
 		}
@@ -126,14 +130,11 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 			try
 			{
 				var state  = await _instagramAccountRepository.GetInstagramAccountStateData(accountId, InstagramAccountId);
-				if (state.Results != null)
-				{
-					return state.Results;
-				}
-				return null;
+				return state.Results ?? null;
 			}
 			catch(Exception ee)
 			{
+				_reportHandler.MakeReport(ee);
 				return null;
 			}
 		}
@@ -141,15 +142,14 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 		{
 			try
 			{
-				var redisRes = await _instagramAccountRedis.GetInstagramAccountDetail(accountId,instagramAccountId);
-				if (redisRes != null && redisRes.Recreate().Count>3 && redisRes.Id!=null)
-				{
-					return redisRes;
-				}
+				//var redisRes = await _instagramAccountRedis.GetInstagramAccountDetail(accountId,instagramAccountId);
+				//if (redisRes != null && redisRes.Recreate().Count>3 && redisRes.Id!=null)
+				//{
+				//	return redisRes;
+				//}
 				var account = await _instagramAccountRepository.GetInstagramAccount(accountId, instagramAccountId);
 				if (account.Results == null) return null;
 				var res = account.Results;
-
 				var shortInst = new ShortInstagramAccountModel{
 					AccountId = res.AccountId,
 					AgentState = res.AgentState,
@@ -172,12 +172,12 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 					Type = res.Type,
 					ChallengeInfo = res.ChallengeInfo
 				};
-				await _instagramAccountRedis.SetInstagramAccountDetail(accountId, instagramAccountId, shortInst);
+				//await _instagramAccountRedis.SetInstagramAccountDetail(accountId, instagramAccountId, shortInst);
 				return shortInst;
 			}
 			catch (Exception ee)
 			{
-				Console.WriteLine(ee.Message);
+				_reportHandler.MakeReport(ee);
 				return null;
 			}
 		}
@@ -191,6 +191,7 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 			}
 			catch(Exception ee)
 			{
+				_reportHandler.MakeReport(ee);
 				return null;
 			}
 		}
@@ -198,11 +199,11 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 		{
 			try
 			{
-				var redisGet = await _instagramAccountRedis.GetWorkerAccounts();
-				if (redisGet.Any())
-				{
-					return redisGet;
-				}
+				//var redisGet = await _instagramAccountRedis.GetWorkerAccounts();
+				//if (redisGet.Any())
+				//{
+				//	return redisGet;
+				//}
 				var account = await _instagramAccountRepository.GetInstagramAccountsOfUser(accountId, type);
 				return account.Results?.Select(res=>new ShortInstagramAccountModel
 				{
@@ -229,83 +230,85 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 			}
 			catch (Exception ee)
 			{
+				_reportHandler.MakeReport(ee);
 				return null;
 			}
 		}	
 		public async Task<long?> PartialUpdateInstagramAccount(string accountId, string instagramAccountId, InstagramAccountModel instagramAccountModel)
 		{
-			var toshortmodel = new ShortInstagramAccountModel
-			{
-				AccountId = instagramAccountModel.AccountId,
-				AgentState = instagramAccountModel.AgentState,
-				LastPurgeCycle = instagramAccountModel.LastPurgeCycle,
-				FollowersCount = instagramAccountModel.FollowersCount,
-				FollowingCount = instagramAccountModel.FollowingCount,
-				Id = instagramAccountModel._id,
-				TotalPostsCount = instagramAccountModel.TotalPostsCount,
-				Username = instagramAccountModel.Username,
-				DateAdded = instagramAccountModel.DateAdded,
-				SleepTimeRemaining = instagramAccountModel.SleepTimeRemaining,
-				Email = instagramAccountModel.Email,
-				PhoneNumber = instagramAccountModel.PhoneNumber,
-				FullName = instagramAccountModel.FullName,
-				ProfilePicture = instagramAccountModel.ProfilePicture,
-				UserBiography = instagramAccountModel.UserBiography,
-				UserLimits = instagramAccountModel.UserLimits,
-				IsBusiness = instagramAccountModel.IsBusiness,
-				Location = instagramAccountModel.Location,
-				Type = instagramAccountModel.Type,
-				ChallengeInfo = instagramAccountModel.ChallengeInfo
-			};
-			if(!(await _instagramAccountRedis.AccountExists(accountId, instagramAccountId)))
-			{
-				var lastUpdatedDetails = (await _instagramAccountRepository.GetInstagramAccount(accountId, instagramAccountId)).Results;
-				toshortmodel = toshortmodel.CreateNewObjectIgnoringNulls(new ShortInstagramAccountModel
-				{
-					AccountId = lastUpdatedDetails.AccountId,
-					SleepTimeRemaining = lastUpdatedDetails.SleepTimeRemaining,
-					AgentState = lastUpdatedDetails.AgentState,
-					DateAdded = lastUpdatedDetails.DateAdded,
-					Email = lastUpdatedDetails.Email,
-					FollowersCount = lastUpdatedDetails.FollowersCount,
-					FollowingCount = lastUpdatedDetails.FollowingCount,
-					FullName = lastUpdatedDetails.FullName,
-					Id = lastUpdatedDetails._id,
-					IsBusiness = lastUpdatedDetails.IsBusiness,
-					LastPurgeCycle = lastUpdatedDetails.LastPurgeCycle,
-					Location = lastUpdatedDetails.Location,
-					PhoneNumber = lastUpdatedDetails.PhoneNumber,
-					ProfilePicture = lastUpdatedDetails.ProfilePicture,
-					TotalPostsCount = lastUpdatedDetails.TotalPostsCount,
-					UserBiography = lastUpdatedDetails.UserBiography,
-					UserLimits = lastUpdatedDetails.UserLimits,
-					Username = lastUpdatedDetails.Username,
-					ChallengeInfo = lastUpdatedDetails.ChallengeInfo
-				});
-			}
-			await _instagramAccountRedis.SetInstagramAccountDetail(accountId,instagramAccountId,toshortmodel);
+			#region Redis
+			//var toshortmodel = new ShortInstagramAccountModel
+			//{
+			//	AccountId = instagramAccountModel.AccountId,
+			//	AgentState = instagramAccountModel.AgentState,
+			//	LastPurgeCycle = instagramAccountModel.LastPurgeCycle,
+			//	FollowersCount = instagramAccountModel.FollowersCount,
+			//	FollowingCount = instagramAccountModel.FollowingCount,
+			//	Id = instagramAccountModel._id,
+			//	TotalPostsCount = instagramAccountModel.TotalPostsCount,
+			//	Username = instagramAccountModel.Username,
+			//	DateAdded = instagramAccountModel.DateAdded,
+			//	SleepTimeRemaining = instagramAccountModel.SleepTimeRemaining,
+			//	Email = instagramAccountModel.Email,
+			//	PhoneNumber = instagramAccountModel.PhoneNumber,
+			//	FullName = instagramAccountModel.FullName,
+			//	ProfilePicture = instagramAccountModel.ProfilePicture,
+			//	UserBiography = instagramAccountModel.UserBiography,
+			//	UserLimits = instagramAccountModel.UserLimits,
+			//	IsBusiness = instagramAccountModel.IsBusiness,
+			//	Location = instagramAccountModel.Location,
+			//	Type = instagramAccountModel.Type,
+			//	ChallengeInfo = instagramAccountModel.ChallengeInfo
+			//};
+			//if(!(await _instagramAccountRedis.AccountExists(accountId, instagramAccountId)))
+			//{
+			//	var lastUpdatedDetails = (await _instagramAccountRepository.GetInstagramAccount(accountId, instagramAccountId)).Results;
+			//	toshortmodel = toshortmodel.CreateNewObjectIgnoringNulls(new ShortInstagramAccountModel
+			//	{
+			//		AccountId = lastUpdatedDetails.AccountId,
+			//		SleepTimeRemaining = lastUpdatedDetails.SleepTimeRemaining,
+			//		AgentState = lastUpdatedDetails.AgentState,
+			//		DateAdded = lastUpdatedDetails.DateAdded,
+			//		Email = lastUpdatedDetails.Email,
+			//		FollowersCount = lastUpdatedDetails.FollowersCount,
+			//		FollowingCount = lastUpdatedDetails.FollowingCount,
+			//		FullName = lastUpdatedDetails.FullName,
+			//		Id = lastUpdatedDetails._id,
+			//		IsBusiness = lastUpdatedDetails.IsBusiness,
+			//		LastPurgeCycle = lastUpdatedDetails.LastPurgeCycle,
+			//		Location = lastUpdatedDetails.Location,
+			//		PhoneNumber = lastUpdatedDetails.PhoneNumber,
+			//		ProfilePicture = lastUpdatedDetails.ProfilePicture,
+			//		TotalPostsCount = lastUpdatedDetails.TotalPostsCount,
+			//		UserBiography = lastUpdatedDetails.UserBiography,
+			//		UserLimits = lastUpdatedDetails.UserLimits,
+			//		Username = lastUpdatedDetails.Username,
+			//		ChallengeInfo = lastUpdatedDetails.ChallengeInfo
+			//	});
+			//}
+			//await _instagramAccountRedis.SetInstagramAccountDetail(accountId,instagramAccountId,toshortmodel);
+			#endregion
 			return await _instagramAccountRepository.PartialUpdateInstagramAccount(instagramAccountId, instagramAccountModel);
 		}
 		public async Task<IEnumerable<ShortInstagramAccountModel>> GetActiveAgentInstagramAccounts()
 		{
 			try
 			{
-				var redist = await _instagramAccountRedis.GetInstagramAccountActiveDetail();
-				var activeAgentInstagramAccounts = redist as ShortInstagramAccountModel[] ?? redist.ToArray();
-				if (activeAgentInstagramAccounts.Any())
-				{
-					return activeAgentInstagramAccounts;
-				}
+				//var redist = await _instagramAccountRedis.GetInstagramAccountActiveDetail();
+				//var activeAgentInstagramAccounts = redist as ShortInstagramAccountModel[] ?? redist.ToArray();
+				//if (activeAgentInstagramAccounts.Any())
+				//{
+				//	return activeAgentInstagramAccounts;
+				//}
 				var account = await _instagramAccountRepository.GetActiveAgentInstagramAccounts();
 				return account;
 			}
 			catch (Exception ee)
 			{
-				Console.WriteLine(ee.Message);
+				_reportHandler.MakeReport(ee);
 				return null;
 			}
 		}
-
 		public async Task<IEnumerable<ShortInstagramAccountModel>> GetInstagramAccounts(int type)
 		{
 			try
@@ -315,8 +318,20 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 			}
 			catch (Exception ee)
 			{
-				Console.WriteLine(ee.Message);
+				_reportHandler.MakeReport(ee);
 				return null;
+			}
+		}
+
+		public async Task EmptyChallengeInfo(string instagramAccountId)
+		{
+			try
+			{
+				await _instagramAccountRepository.EmptyChallengeInfo(instagramAccountId);
+			}
+			catch (Exception ee)
+			{
+				_reportHandler.MakeReport(ee);
 			}
 		}
 	}

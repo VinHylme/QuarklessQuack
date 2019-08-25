@@ -16,5 +16,6 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 		Task<InstagramAccountModel> GetInstagramAccount(string accountId, string instagramAccountId);
 		Task<long?> PartialUpdateInstagramAccount(string accountId,string instagramAccountId, InstagramAccountModel instagramAccountModel);
 		Task<StateData> GetInstagramAccountStateData(string accountId, string InstagramAccountId);
+		Task EmptyChallengeInfo(string instagramAccountId);
 	}
 }

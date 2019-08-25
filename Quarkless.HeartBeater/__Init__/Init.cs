@@ -287,7 +287,7 @@ namespace Quarkless.HeartBeater.__Init__
 		{
 			try
 			{
-				List<RequestAccountModel> Requests = new List<RequestAccountModel>();
+				var requests = new List<RequestAccountModel>();
 				var resp =  await _instagramAccountLogic.GetActiveAgentInstagramAccounts();
 				return resp.Select(p=>new RequestAccountModel
 				{
@@ -304,15 +304,16 @@ namespace Quarkless.HeartBeater.__Init__
 		}
 		private async Task<IEnumerable<ShortInstagramAccountModel>> GetAccounts(bool both, params string[] accounts)
 		{
-			List<ShortInstagramAccountModel> accs = new List<ShortInstagramAccountModel>();
+			var accs = new List<ShortInstagramAccountModel>();
 			foreach (var account in accounts)
 			{
 				var resp = await _instagramAccountLogic.GetInstagramAccountsOfUser(account, 1);
 				if (both)
 				{
 					var respa = await _instagramAccountLogic.GetInstagramAccountsOfUser(account, 0);
-					if(respa.Any())
-						accs.AddRange(respa);
+					var instagramAccountModels = respa as ShortInstagramAccountModel[] ?? respa.ToArray();
+					if(instagramAccountModels.Any())
+						accs.AddRange(instagramAccountModels);
 				}
 
 				var shortInstagramAccountModels = resp as ShortInstagramAccountModel[] ?? resp.ToArray();

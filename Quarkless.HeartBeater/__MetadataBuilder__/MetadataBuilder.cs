@@ -642,15 +642,11 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 								//	return null;
 								//}).Where(an => an!=null).ToList();
 								#endregion
-
-								if (suggested != null)
+								var totalcut = suggested.TakeAny(takeUserMediaAmount).ToList().CutObject(cutBy);
+								foreach(var s in totalcut)
 								{
-									var totalcut = suggested.TakeAny(takeUserMediaAmount).ToList().CutObject(cutBy);
-									foreach(var s in totalcut)
-									{
-										var filtered = s.Where(x => x.Username != worker.InstagramRequests.InstagramAccount.Username).ToList();
-										await _heartbeatLogic.AddMetaData(MetaDataType.FetchUsersViaPostCommented, worker.Topic.TopicFriendlyName,new __Meta__<List<UserResponse<InstaComment>>>(filtered));
-									}
+									var filtered = s.Where(x => x.Username != worker.InstagramRequests.InstagramAccount.Username).ToList();
+									await _heartbeatLogic.AddMetaData(MetaDataType.FetchUsersViaPostCommented, worker.Topic.TopicFriendlyName,new __Meta__<List<UserResponse<InstaComment>>>(filtered));
 								}
 							}
 							await Task.Delay(TimeSpan.FromSeconds(sleepTime));
@@ -767,18 +763,16 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 						foreach(var tuser in usertargetlist)
 						{
 							var fetchUsersMedia = await searcher.SearchUsersMediaDetailInstagram(tuser, limit);
-							if (fetchUsersMedia != null)
+							if (fetchUsersMedia == null) continue;
+							await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByUserTargetList, worker.Topic.TopicFriendlyName, user.Id, proxy: worker.Worker.GetContext.Proxy);
+							foreach(var s in fetchUsersMedia.CutObjects(cutBy))
 							{
-								await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByUserTargetList, worker.Topic.TopicFriendlyName, user.Id, proxy: worker.Worker.GetContext.Proxy);
-								foreach(var s in fetchUsersMedia.CutObjects(cutBy))
-								{
-									await _heartbeatLogic.AddMetaData(MetaDataType.FetchMediaByUserTargetList, worker.Topic.TopicFriendlyName,
-										new __Meta__<Media>(s), user.Id);
-								};
-							}
+								await _heartbeatLogic.AddMetaData(MetaDataType.FetchMediaByUserTargetList, worker.Topic.TopicFriendlyName,
+									new __Meta__<Media>(s), user.Id);
+							};
 
-						}			
-					}			
+						}
+					}
 				});
 			}
 			catch (Exception ee)
@@ -799,9 +793,9 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					var locationtargetlist = worker.InstagramRequests.Profile.LocationTargetList;
 					if (locationtargetlist != null && locationtargetlist.Count > 0)
 					{
-						foreach (var tloc in locationtargetlist)
+						foreach (var targetLocation in locationtargetlist)
 						{
-							var fetchUsersMedia = await searcher.SearchTopLocationMediaDetailInstagram(tloc, limit);
+							var fetchUsersMedia = await searcher.SearchTopLocationMediaDetailInstagram(targetLocation, limit);
 							if (fetchUsersMedia == null) continue;
 							await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByUserLocationTargetList, worker.Topic.TopicFriendlyName, user.Id, proxy: worker.Worker.GetContext.Proxy);
 							foreach(var s in fetchUsersMedia.CutObjects(cutBy))
@@ -827,7 +821,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			try
 			{
 				await _assignments.ParallelForEachAsync(async worker => {
-					ContentSearcherHandler searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
+					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
 					var user = worker.InstagramRequests.InstagramAccount;
 					var fetchUsersMedia = await searcher.SearchUsersMediaDetailInstagram(user.Username,limit);
 					if (fetchUsersMedia != null)
@@ -838,9 +832,9 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 							await _heartbeatLogic.AddMetaData(MetaDataType.FetchUserOwnProfile, worker.Topic.TopicFriendlyName,
 								new __Meta__<Media>(s),user.Id);
 						};
-						var user_ = fetchUsersMedia.Medias.FirstOrDefault();
-						if (user_ != null) { 
-							var details = await searcher.SearchInstagramFullUserDetail(user_.User.UserId);
+						var userFirst = fetchUsersMedia.Medias.FirstOrDefault();
+						if (userFirst != null) { 
+							var details = await searcher.SearchInstagramFullUserDetail(userFirst.User.UserId);
 							
 							await _logic.PartialUpdateInstagramAccount(user.AccountId, user.Id, new QuarklessContexts.Models.InstagramAccounts.InstagramAccountModel
 							{
@@ -886,7 +880,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			try
 			{
 				await _assignments.ParallelForEachAsync(async worker => {
-					ContentSearcherHandler searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
+					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
 					var user = worker.InstagramRequests.InstagramAccount;
 					searcher.ChangeUser(new APIClientContainer(_context,user.AccountId,user.Id));
 					var fetchUsersMedia = await searcher.SearchUserFeedMediaDetailInstagram(limit:limit);

@@ -15,6 +15,6 @@ namespace QuarklessRepositories.InstagramAccountRepository
 		Task<InstagramAccountModel> AddInstagramAccount(InstagramAccountModel instagramAccount);
 		Task<long?> PartialUpdateInstagramAccount(string instagramAccountId, InstagramAccountModel instagramAccountModel);
 		Task<ResultCarrier<StateData>> GetInstagramAccountStateData(string accountId, string instagramAccountId);
-
+		Task EmptyChallengeInfo(string instagramAccountId);
 	}
 }

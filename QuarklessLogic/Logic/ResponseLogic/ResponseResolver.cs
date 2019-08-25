@@ -51,6 +51,8 @@ namespace QuarklessLogic.Logic.ResponseLogic
 					return "Followed Hashtag, based on your profile";
 				case ActionType.FollowUser:
 					return "Followed User who happens to follow the similar topics as you";
+				case ActionType.UnFollowUser:
+					return "Unfollowed User who is not engaging with you";
 				case ActionType.LikeComment:
 					return "Liked user's comment";
 				case ActionType.LikePost:

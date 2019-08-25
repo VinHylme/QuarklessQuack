@@ -8,7 +8,7 @@ using System;
 using System.Threading.Tasks;
 using Bogus;
 using Bogus.DataSets;
-using QuarklessContexts.Extensions;
+using QuarklessContexts.Models.InstagramAccounts;
 using QuarklessContexts.Models.Proxies;
 using QuarklessLogic.Handlers.Util;
 
@@ -57,14 +57,14 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 			try
 			{
 				var person = _utilProviders.GeneratePerson(emailProvider: "gmail.com");
-				//var proxy = new ProxyModel
-				//{
-				//	Address = "37.48.118.4",
-				//	Port = 13010,
-				//	NeedServerAuth = false
-				//};
+				var proxy = new ProxyModel
+				{
+					Address = "37.48.118.4",
+					Port = 13010,
+					NeedServerAuth = false
+				};
 				//await _utilProviders.EmailService.CreateGmailEmail(proxy, person);
-				var res = await Client.EmptyClient.ReturnClient.CreateNewAccountAsync(person.Username, person.Password, person.Email,
+				var res = await Client.EmpClientWithProxy(proxy).ReturnClient.CreateNewAccountAsync(person.Username, person.Password, person.Email,
 					person.FirstName);
 				if (res.Succeeded)
 				{
@@ -172,11 +172,17 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 				return null;
 			}
 		}
-		public async Task<IResult<InstaLoginResult>> SubmitChallangeCode(string username, string password, InstaChallengeLoginInfo instaChallengeLoginInfo, string code)
+
+		public async Task<SubmitChallengeResponse> SubmitChallangeCode(string username, string password, InstaChallengeLoginInfo instaChallengeLoginInfo, string code)
 		{
 			try
 			{
-				return await Client.EmptyClient.SubmitChallangeCode(username, password, instaChallengeLoginInfo, code);
+				var res = await Client.EmptyClient.SubmitChallangeCode(username, password, instaChallengeLoginInfo, code);
+				return new SubmitChallengeResponse
+				{
+					Result = res,
+					InstagramId = Client?.GetContext?.InstagramAccount?.Id
+				};
 			}
 			catch (Exception ee)
 			{

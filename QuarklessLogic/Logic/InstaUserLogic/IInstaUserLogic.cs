@@ -2,6 +2,7 @@
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Models;
 using InstagramApiSharp.Enums;
+using QuarklessContexts.Models.InstagramAccounts;
 
 namespace QuarklessLogic.Logic.InstaUserLogic
 {
@@ -9,7 +10,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 	{
 		Task<InstaUserLogic.Tempo> CreateAccount();
 		InstaChallengeLoginInfo GetChallangeInfo();
-		Task<IResult<InstaLoginResult>> SubmitChallangeCode(string username, string password, InstaChallengeLoginInfo instaChallengeLoginInfo, string code);
+		Task<SubmitChallengeResponse> SubmitChallangeCode(string username, string password, InstaChallengeLoginInfo instaChallengeLoginInfo, string code);
 		Task<IResult<InstaChallengeRequireEmailVerify>> RequestVerifyCodeToEmailForChallengeRequireAsync(string username, string password);
 		Task<IResult<InstaChallengeRequireSMSVerify>> RequestVerifyCodeToSMSForChallengeRequireAsync(string username, string password);
 		Task<IResult<InstaChallengeRequireVerifyMethod>> GetChallengeRequireVerifyMethodAsync(string username, string password);

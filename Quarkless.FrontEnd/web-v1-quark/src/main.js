@@ -19,7 +19,7 @@ Vue.use(VueScheduler, {
   locale: 'en',
   minDate: null,
   maxDate: null,
-  timeRange: [new Date().getHours()-1, 23],
+  timeRange: [new Date().getHours(), 23],
   availableViews: ['week','day'],
   initialDate: new Date(),
   initialView: 'day',

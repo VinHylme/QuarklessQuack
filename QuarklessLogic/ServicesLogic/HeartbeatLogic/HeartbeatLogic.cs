@@ -47,7 +47,7 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 			//if typeof media
 			//else if
 			var dataToRemove = (await _heartbeatRepository.GetMetaData<T>(metaDataType,topic,userId));
-			var dto = dataToRemove.Where(_ => JsonConvert.SerializeObject(_.ObjectItem) == JsonConvert.SerializeObject(data.ObjectItem)).FirstOrDefault();
+			var dto = dataToRemove.FirstOrDefault(_ => JsonConvert.SerializeObject(_.ObjectItem) == JsonConvert.SerializeObject(data.ObjectItem));
 			if (dto!=null) { 
 				await _heartbeatRepository.DeleteMetaDataFromSet(metaDataType, topic, dto, userId);
 				await _heartbeatRepository.AddMetaData(metaDataType, topic, data, userId);

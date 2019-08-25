@@ -41,12 +41,10 @@ namespace Quarkless.Controllers
 			if(string.IsNullOrEmpty(_userContext.CurrentUser))
 				return BadRequest("Invalid Request");
 			var res = await _instaUserLogic.SubmitChallangeCode(model.Username, model.Password, model.ChallangeLoginInfo, code);
-			if (res.Succeeded)
-			{
-				return Ok(true);
-			}
-
-			return NotFound(res.Info);
+			if (!res.Result.Succeeded) return NotFound(res.Result.Info);
+			if (string.IsNullOrEmpty(res.InstagramId)) return Ok(true);
+			await _instagramAccountLogic.EmptyChallengeInfo(res.InstagramId);
+			return Ok(true);
 		}
 		[HttpPost]
 		[Route("api/insta/add")]
@@ -122,9 +120,7 @@ namespace Quarkless.Controllers
 				var instaDetails = await _instagramAccountLogic.GetInstagramAccount(_userContext.CurrentUser,instagramAccountId);
 				if (instaDetails == null || string.IsNullOrEmpty(instaDetails.Username))
 					return NotFound("Could not find account");
-				var loginRes = await _responseResolver
-					.WithResolverAsync(await _instaUserLogic.TryLogin(instaDetails.Username, instaDetails.Password), 
-						ActionType.RefreshLogin, instagramAccountId);
+				var loginRes = await _instaUserLogic.TryLogin(instaDetails.Username, instaDetails.Password);
 				if (loginRes == null) return Ok(false);
 				if (!loginRes.Succeeded) return NotFound(loginRes.Info);
 				var newState = JsonConvert.DeserializeObject<StateData>(await _instaUserLogic.GetStateDataFromString());

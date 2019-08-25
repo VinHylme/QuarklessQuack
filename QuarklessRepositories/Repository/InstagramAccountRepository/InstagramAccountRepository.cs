@@ -45,7 +45,7 @@ namespace QuarklessRepositories.InstagramAccountRepository
 		}
 		public async Task<ResultCarrier<InstagramAccountModel>> GetInstagramAccount(string accountId, string instagramAccountId)
 		{
-			ResultCarrier<InstagramAccountModel> Result = new ResultCarrier<InstagramAccountModel>();
+			var Result = new ResultCarrier<InstagramAccountModel>();
 			try
 			{
 				var builders = Builders<InstagramAccountModel>.Filter;
@@ -134,6 +134,13 @@ namespace QuarklessRepositories.InstagramAccountRepository
 				};
 				return Result;
 			}
+		}
+
+		public async Task EmptyChallengeInfo(string instagramAccountId)
+		{
+			var filter = Builders<InstagramAccountModel>.Filter.Eq("_id", instagramAccountId);
+			var updateDef = Builders<InstagramAccountModel>.Update.Set(o => o.ChallengeInfo, null);
+			await _context.InstagramAccounts.UpdateOneAsync(filter, updateDef);
 		}
 
 		public async Task<IEnumerable<ShortInstagramAccountModel>> GetActiveAgentInstagramAccounts()

@@ -701,13 +701,13 @@ export default {
   background: #242424;
   color:#d5d5d5;
   &:hover{
-    background:#323232;
+    background:#303030;
   }
 }
 .dropdown-item{
   color:#d5d5d5 !important;
   &:hover{
-    background:#444 !important;
+    background:#414141 !important;
     color:white !important;
   }
 }
@@ -961,13 +961,15 @@ input{
   background:#121212 !important;
   border:none !important;
   color:#d9d9d9 !important;
+  transition: background 0.5s ease;
   &:focus{
     color:#d9d9d9 !important;
     box-shadow: 0;
     border:none !important;
   }
   &:hover{
-    background:#212121 !important;
+    transition: all .2s ease-in-out;
+    background:#282828 !important;
   }
 }
 ::placeholder{
@@ -977,13 +979,15 @@ input{
   background:#121212 !important;
   border:none !important;
   color:#d9d9d9 !important;
+  transition: background 0.5s ease;
   &:focus{
     color:#d9d9d9 !important;
     box-shadow: 0;
     border:none !important;
   }
    &:hover{
-    background:#212121 !important;
+    transition: all .2s ease-in-out;
+    background:#282828 !important;
     &.is-tag{
       background:#333 !important;
     }
@@ -997,13 +1001,15 @@ select{
   background:#121212 !important;
   border:none !important;
   color:#d9d9d9 !important;
+  transition: background 0.5s ease;
   &:focus{
     color:#d9d9d9 !important;
     box-shadow: 0 !important;
     border:none !important;
   }
   &:hover{
-    background:#212121 !important;
+    transition: all .2s ease-in-out;
+    background:#282828 !important;
   }
   option{
     background:#212121 !important;
@@ -1029,9 +1035,11 @@ select{
 .input, .taginput .taginput-container.is-focusable, .textarea{
   background:#121212!important;;
   border:none;
+  transition: background 0.5s ease;
   color:#d9d9d9;
    &:hover{
-    background:#212121 !important;
+    transition: all .2s ease-in-out;
+    background:#282828 !important;
   }
 }
 $bg: #292929;

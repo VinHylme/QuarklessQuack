@@ -118,12 +118,13 @@ export default {
 </script>
 
 <style lang="scss">
+@import '../Style/darkTheme.scss';
 .column{
-  background:#141414;
+  background:$background;
   padding:0 !important;
 }
 .footere{
-  background:#141414 !important;
+  background:$background !important;
  // opacity: .7;
   width:100%;
   padding:0;
@@ -132,7 +133,7 @@ export default {
   p{
     text-align: center !important;
     padding:4em;
-    color:#d9d9d9;
+    color:$main_font_color;
   }
 }
 .floater{
@@ -144,7 +145,7 @@ export default {
   height:50px;
   transition: all .2s ease-in-out;
   &:hover{
-    color:#13b94d !important;
+    color:$highlight_color!important;
     cursor: pointer;
     transform: scale(1.2);
   }
@@ -172,7 +173,7 @@ export default {
   transition: all .2s ease-in-out;
     &:hover{
     transform: scale(1.2);
-    color:#13b94d !important;
+    color:$highlight_color !important;
     cursor: pointer;
   }
 }
@@ -181,7 +182,7 @@ export default {
   width:100% !important;
   height:100% !important;
   margin: 0 auto !important;
-  background-color:#141414;
+  background-color:$background;
   border-radius:0px;
   //padding-left:10em;
 }
@@ -189,7 +190,7 @@ export default {
   width: 100%;
   padding:0em;
   height:100%;
-  background:#141414;
+  background:$background;
 }
 ::-webkit-scrollbar {
     display: none;

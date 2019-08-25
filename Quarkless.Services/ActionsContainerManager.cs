@@ -188,7 +188,7 @@ namespace Quarkless.Services
 		}
 		public void UpdateActionState(CommitContainer action, ActionState actionState)
 		{
-			var find = working.Where(_ => _.ActionContainer == action).SingleOrDefault();
+			var find = working.SingleOrDefault(_ => _.ActionContainer == action);
 			if (find != null)
 				find.ActionState = actionState;
 		}
@@ -198,7 +198,7 @@ namespace Quarkless.Services
 			if(find!=null)
 				find.Object.Options.ExecutionTime = newDate;
 
-			var findc = working.Where(_ => _.ActionContainer.ActionType == actionType).SingleOrDefault();
+			var findc = working.SingleOrDefault(_ => _.ActionContainer.ActionType == actionType);
 			if (findc != null)
 				findc.ActionContainer.Options.ExecutionTime = newDate;
 		}
@@ -208,7 +208,7 @@ namespace Quarkless.Services
 			if (find != null)
 				find.Options.ExecutionTime = newDate;
 
-			var findc = working.Where(_ => _.ActionContainer == action).SingleOrDefault();
+			var findc = working.SingleOrDefault(_ => _.ActionContainer == action);
 			if (findc != null)
 				findc.ActionContainer.Options.ExecutionTime = newDate;
 		}

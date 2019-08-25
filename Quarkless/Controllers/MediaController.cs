@@ -87,7 +87,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists || string.IsNullOrEmpty(mediaId)) return BadRequest("invalid");
 			var results = await _responseResolver.WithResolverAsync(
-				await _mediaLogic.LikeMediaAsync(mediaId), ActionType.None, mediaId);
+				await _mediaLogic.LikeMediaAsync(mediaId), ActionType.LikePost, mediaId);
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);

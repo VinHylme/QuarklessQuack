@@ -71,9 +71,11 @@ $colors: (
 //$link-focus-border: $primary;
 @import "~bulma";
 @import "~buefy/src/scss/buefy";
+@import 'Style/darkTheme.scss';
+
 html,
 body{
-  background: #141414;
+  background: $background;
   height:100%;
   overflow-x: hidden !important;
 }

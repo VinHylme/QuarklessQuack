@@ -74,7 +74,7 @@
                         </b-tooltip>
                         </div>
                         <div class="control">
-                        <b-tooltip label="Delete this account" type="is-dark" position="is-top">
+                        <b-tooltip label="Remove this account" type="is-dark" position="is-top">
                             <a @click="ViewProfile" class="button is-light-dark">
                                 <b-icon pack="fas" icon="trash" >
                                 </b-icon>
@@ -122,8 +122,8 @@ props: {
               {name:"Not Started", index:0},
               {name:"Running", index:1},
               {name:"Stopped", index:2},
-              {name:"Sleeping", index:3},
-              {name:"Deep Sleeping",index:4},
+              {name:"Resting", index:3},
+              {name:"Sleeping",index:4},
               {name:"Blocked by instagram",index:5},
               {name:"Challange required",index:6},
               {name:"Awaiting from user",index:7}
@@ -132,6 +132,9 @@ props: {
   },
   mounted(){
       this.IsAdmin = this.$store.getters.UserRole == 'Admin';
+      if(this.agentState === 4){
+          this.$emit('OnConfirmUser', this.id);
+      }
   },
   methods:{
       ViewProfile(){
@@ -171,9 +174,9 @@ props: {
               case 2:
                   return "Stopped";
               case 3:
-                  return "Sleeping";
+                  return "Resting";
               case 4:
-                  return "Deep Sleeping";
+                  return "Sleeping";
               case 5:
                   return "Blocked by instagram";
               case 6:

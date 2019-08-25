@@ -3,10 +3,10 @@
   <a class="logoImage">
     <img src="../assets/logo_grow.svg" width="275" height="275">
   </a>
-  
+  <p class="title is-light">Quitic</p>
   <div class="modal-card">
         <section class="modal-card-body">
-            <h3 class="title has-text-centered">HashtagGrow</h3>
+            <h3 class="title has-text-centered">Login</h3>
             <div class="box long">
               <b-field>
                   <b-input v-model="username" type="text" placeholder="username"></b-input>
@@ -14,14 +14,14 @@
               <b-field>
                   <b-input v-model="password" type="password"  @keyup.enter.native="doLogin" placeholder="Password" minlength="6" password-reveal></b-input>
               </b-field>
-              <button type="submit" class="button is-large is-dark is-fullwidth"  @click="doLogin" :disabled="isActive">
+              <button type="submit" class="button is-large is-success is-fullwidth"  @click="doLogin" :disabled="isActive">
                   Login
               </button>
             </div>
         </section>
-    </div>
+  </div>
     <br>
-    <b-notification v-if="showNotification"
+    <b-notification v-if="showNotification" style="width:50%; margin:0 auto;"
       v-bind:type="isSucesss?'is-success':'is-danger'"
       aria-close-label="Close notification"
       role="alert">
@@ -66,12 +66,14 @@ export default {
 </script>
 
 <style lang="scss">
+@import '../Style/darkTheme.scss';
+
 body,html{
-  background-color:#121212!important;
+  background-color:$backround_back!important;
   margin: 0 auto;
 }
 .contain{
-  background:#121212;
+  background:$backround_back;
   text-align: center;
   width:100%;
   height:100%;
@@ -84,32 +86,37 @@ body,html{
     }
   }
   input{
-    background:#121212 !important;
+    background:$backround_back !important;
     border:none !important;
-    color:#d9d9d9 !important;
+    color:$main_font_color !important;
     &:focus{
-      color:#d9d9d9 !important;
+      color:$main_font_color !important;
       box-shadow: 0;
       border:none !important;
     }
     &:hover{
-      background:#212121 !important;
+      background:$input_hover !important;
     }
   }
   ::placeholder{
-    color:#d8d8d8 !important;
+    color:$input_placeholder !important;
   }
   label{
-    color:#d9d9d9;
+    color:$main_font_color;
   }
 }
 
 .long{
   width:100%;
 }
-
+.title{
+  &.is-light{
+    color:#d9d9d9;
+    font-size: 4vh;
+  }
+}
 .footer{
-  background:#121212 !important;
+  background:$backround_back !important;
   opacity: .7;
   width:100%;
   padding:0;
@@ -119,15 +126,16 @@ body,html{
   p{
     text-align: center !important;
     padding:4em;
-    color:#d9d9d9;
+    color:$main_font_color;
   }
 }
 .modal-card{
-  background-color:#242424;
+  background-color:$modal_background;
   padding:2em;
-  border-radius: 0.8em;
+  //border-radius: 0.8em;
   opacity: 0.95;
   margin: 0 auto !important;
+  //height:500px;
   box-shadow: 1px 5px 5px 5px rgba(0, 0, 0, 0.06);
   .modal-card-body{
     width: 100%;
@@ -135,17 +143,17 @@ body,html{
     margin: 0 auto;
     .box{
       padding:1em;
-      background-color:#242424;
+      background-color:$modal_background;
       border: none !important;
 
     }
-    background-color: #242424;
+    background-color: $modal_background;
     .title{
       font-size:3vh;
-      color:white;
+      color:$title;
     }
     h3{
-      color:white;
+      color:$title;
     }
   }
 }

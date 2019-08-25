@@ -61,7 +61,7 @@ namespace QuarklessContexts.Models.InstagramAccounts
 		DeepSleep = 4,
 		Blocked = 5,
 		Challenge = 6,
-		AwaitingActionFromUser = 7
+		AwaitingActionFromUser = 7,
 	}
 	public class Biography
 	{
