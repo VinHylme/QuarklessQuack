@@ -40,7 +40,10 @@ namespace Quarkless.HeartBeater
 				switch (args[0])
 				{
 					case "app1":
-						await servicePreacher.Get<IInit>().Endeavor(settings);
+						if (args.Length < 1) return;
+						int.TryParse(args[1], out var typeAction);
+						settings.ActionExecute = (ActionExecuteType) typeAction;
+ 						await servicePreacher.Get<IInit>().Endeavor(settings);
 						break;
 					case "app2":
 						await servicePreacher.Get<IInit>().Populator(settings);

@@ -69,14 +69,17 @@ export default {
 @import '../Style/darkTheme.scss';
 
 body,html{
-  background-color:$backround_back!important;
+ background-image: linear-gradient(to top, #a18cd1 0%, #fbc2eb 100%);
   margin: 0 auto;
 }
 .contain{
-  background:$backround_back;
+  background-image: url("../assets/9294.jpg");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-color:$backround_back;
   text-align: center;
   width:100%;
-  height:100%;
+  height:100vh;
   margin: 0 auto;
   .logoImage{
     margin: 0 auto;
@@ -111,12 +114,13 @@ body,html{
 }
 .title{
   &.is-light{
-    color:#d9d9d9;
+    color:white;
     font-size: 4vh;
+    text-shadow: 2px 2px rgba(163, 163, 163, 0.089);
   }
 }
 .footer{
-  background:$backround_back !important;
+  background:transparent !important;
   opacity: .7;
   width:100%;
   padding:0;
@@ -127,10 +131,12 @@ body,html{
     text-align: center !important;
     padding:4em;
     color:$main_font_color;
+    text-shadow: 2px 2px rgba(163, 163, 163, 0.096);
+
   }
 }
 .modal-card{
-  background-color:$modal_background;
+  background-color:white;
   padding:2em;
   //border-radius: 0.8em;
   opacity: 0.95;
@@ -138,19 +144,20 @@ body,html{
   //height:500px;
   box-shadow: 1px 5px 5px 5px rgba(0, 0, 0, 0.06);
   .modal-card-body{
+    border:0 !important;
     width: 100%;
     padding:0;
     margin: 0 auto;
     .box{
       padding:1em;
-      background-color:$modal_background;
+      background-color:white;
       border: none !important;
-
+      box-shadow: none;
     }
-    background-color: $modal_background;
+    background-color: white;
     .title{
       font-size:3vh;
-      color:$title;
+      color:#232323;
     }
     h3{
       color:$title;

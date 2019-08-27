@@ -13,10 +13,18 @@ namespace Quarkless.HeartBeater.__Init__
 			this.Username = username;
 		}
 	}
+
+	public enum ActionExecuteType
+	{
+		Base,
+		UserSelf,
+		Other,
+		TargetList
+	}
 	public class Settings 
 	{
+		public ActionExecuteType ActionExecute { get; set; }
 		public List<Account> Accounts {get; set; }
-		public TimeSpan FirstChamper { get; set; } = TimeSpan.FromMinutes(1);
 		public TimeSpan HeartBeat { get; set; } = TimeSpan.FromSeconds(260);
 		public Settings()
 		{

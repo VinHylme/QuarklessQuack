@@ -36,6 +36,7 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 		{
 			_container = newUser;
 		}
+		#region Business
 		public async Task<IEnumerable<TopicCategories>> GetBusinessCategories()
 		{
 			var cat = await _responseResolver.WithClient(_container).WithResolverAsync(await _container.Business.GetCategoriesAsync());
@@ -56,6 +57,8 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 			}
 			return categories;
 		}
+
+		#endregion
 		public async Task<IEnumerable<UserResponse<string>>> GetUserFollowingList(string username, int limit, string query = null)
 		{
 			var userResponse = await _responseResolver.WithClient(_container).WithResolverAsync
@@ -169,7 +172,6 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 				(await _container.User.GetFullUserInfoAsync(userId));
 			return userDetailsResp.Succeeded ? userDetailsResp.Value : null;
 		}
-
 		public async Task<Media> SearchMediaDetailInstagram(List<string> topics, int limit, bool isRecent = false)
 		{
 			var medias = new Media();
@@ -708,10 +710,10 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 		}
 		public SearchResponse<Media> SearchSimilarImagesViaGoogle(List<GroupImagesAlike> imagesAlikes, int limit, int offset = 0)
 		{
-			SearchResponse<Media> response = new SearchResponse<Media>();
+			var response = new SearchResponse<Media>();
 			try { 
 				foreach(var images in imagesAlikes) { 
-					SearchImageModel searchImage = new SearchImageModel
+					var searchImage = new SearchImageModel
 					{
 						no_download = true,
 						similar_images = images.Url,
@@ -719,7 +721,7 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 						offset = offset < limit ? offset : 0
 					};
 					var res = _restSharpClient.PostRequest("http://127.0.0.1:5000","searchImages",JsonConvert.SerializeObject(searchImage));
-					TempMedia responseValues = JsonConvert.DeserializeObject<TempMedia>(res.Content);
+					var responseValues = JsonConvert.DeserializeObject<TempMedia>(res.Content);
 					if (responseValues.MediasObject.Count <= 0)
 					{
 						response.StatusCode = ResponseCode.InternalServerError;

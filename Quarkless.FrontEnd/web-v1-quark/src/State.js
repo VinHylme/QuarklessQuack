@@ -303,7 +303,7 @@ export default new Vuex.Store({
     },
     SimilarSearch({commit},data){
       return new Promise((resolve,reject)=>{
-        QueryServices.SimilarImageSearch(data.urls,data.limit, data.offset).then(resp=>{
+        QueryServices.SimilarImageSearch(data.urls,data.limit, data.offset, data.moreAccurate).then(resp=>{
           resolve(resp);
         }).catch((err)=>reject(err));
       })

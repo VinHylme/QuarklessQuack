@@ -5,7 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Logic\BusinessLogic\" />
     <Folder Include="Logic\ShopLogic\" />
     <Folder Include="Logic\StoriesLogic\" />
   </ItemGroup>

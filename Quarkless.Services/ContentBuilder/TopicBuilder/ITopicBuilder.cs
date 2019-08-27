@@ -18,5 +18,6 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 		Task BuildTopics(IEnumerable<TopicCategories> topicCategories);
 		Task<QuarklessContexts.Models.Profiles.SubTopics> GetAllRelatedTopics(string topic);
 		Task Update(string selected, string subItem);
+		Task<IEnumerable<TopicsModel>> GetTopics();
 	}
 }

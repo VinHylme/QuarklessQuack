@@ -220,72 +220,74 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 		public async Task RefreshMetaData(MetaDataType metaDataType, string topic, string userId = null, ProxyModel proxy = null)
 		{
 			try {
-				var datas = (await GetMetaData<object>(metaDataType,topic,userId)).ToList();
-				if (datas.Count <= 0) return;
-				var by = new By { ActionType = 101, User = "Refreshed" };
-				var datass = new List<__Meta__<object>>();
-				foreach(var data in datas.DistinctBy(_=>_.ObjectItem).TakeAny(20))
-				{
-					if(data.SeenBy is null)
-					{
-						datass.Add(data);
-					}
-					else
-					{
-						if (!data.SeenBy.Any(sb => sb.User == by.User && sb.ActionType == by.ActionType))
-						{
-							datass.Add(data);
-						}
-					}
+				//var datas = (await GetMetaData<object>(metaDataType,topic,userId)).ToList();
+				//if (datas.Count <= 0) return;
+				//var by = new By { ActionType = 101, User = "Refreshed" };
+				//var datass = new List<__Meta__<object>>();
+				//foreach(var data in datas.DistinctBy(_=>_.ObjectItem).TakeAny(20))
+				//{
+				//	if(data.SeenBy is null)
+				//	{
+				//		datass.Add(data);
+				//	}
+				//	else
+				//	{
+				//		if (!data.SeenBy.Any(sb => sb.User == by.User && sb.ActionType == by.ActionType))
+				//		{
+				//			datass.Add(data);
+				//		}
+				//	}
 				
-				}
-				switch (metaDataType)
-				{
-					case MetaDataType.FetchMediaByTopic:
-					case MetaDataType.FetchMediaByTopicRecent:
-					{
-						//var mediasfe = await _mediaCorpusLogic.MediasCount(topic);
-						//if (mediasfe <= 80000)
-						//{
-						//	var totalMedias = new Media();
-						//	datass.ForEach(data => {
-						//		var medias = JsonConvert.DeserializeObject<Media>(JsonConvert.SerializeObject(data.ObjectItem));
-						//		totalMedias.Medias.AddRange(medias.Medias);
-						//	});
-						//	if(totalMedias.Medias.Count > 0)
-						//		PopulateCaption(totalMedias,topic);
-						//}
-						break;
-					}
-					case MetaDataType.FetchUsersViaPostCommented:
-					{
-						//var commentsfe = await _commentsLogic.CommentsCount(topic);
-						//if (commentsfe <= 80000)
-						//{
-						//	var totalComments = new List<UserResponse<InstaComment>>();
-						//	datass.ForEach(data => {
-						//		var comments = JsonConvert.DeserializeObject<List<UserResponse<InstaComment>>>(JsonConvert.SerializeObject(data.ObjectItem));
-						//		totalComments.AddRange(comments);
-						//	});
-						//	if(totalComments.Count > 0)
-						//		PopulateComments(totalComments, topic);
-						//}
-						break;
-					}
-				}
-				if(metaDataType == MetaDataType.FetchMediaByTopic || metaDataType == MetaDataType.FetchUsersViaPostCommented)
-				{
-					foreach (var t in datass)
-					{
-						t.SeenBy = new List<By>();
-					}
+				//}
+				//switch (metaDataType)
+				//{
+				//	case MetaDataType.FetchMediaByTopic:
+				//	case MetaDataType.FetchMediaByTopicRecent:
+				//	{
+				//		//var mediasfe = await _mediaCorpusLogic.MediasCount(topic);
+				//		//if (mediasfe <= 80000)
+				//		//{
+				//		//	var totalMedias = new Media();
+				//		//	datass.ForEach(data => {
+				//		//		var medias = JsonConvert.DeserializeObject<Media>(JsonConvert.SerializeObject(data.ObjectItem));
+				//		//		totalMedias.Medias.AddRange(medias.Medias);
+				//		//	});
+				//		//	if(totalMedias.Medias.Count > 0)
+				//		//		PopulateCaption(totalMedias,topic);
+				//		//}
+				//		break;
+				//	}
+				//	case MetaDataType.FetchUsersViaPostCommented:
+				//	{
+				//		//var commentsfe = await _commentsLogic.CommentsCount(topic);
+				//		//if (commentsfe <= 80000)
+				//		//{
+				//		//	var totalComments = new List<UserResponse<InstaComment>>();
+				//		//	datass.ForEach(data => {
+				//		//		var comments = JsonConvert.DeserializeObject<List<UserResponse<InstaComment>>>(JsonConvert.SerializeObject(data.ObjectItem));
+				//		//		totalComments.AddRange(comments);
+				//		//	});
+				//		//	if(totalComments.Count > 0)
+				//		//		PopulateComments(totalComments, topic);
+				//		//}
+				//		break;
+				//	}
+				//}
+				//if(metaDataType == MetaDataType.FetchMediaByTopic || metaDataType == MetaDataType.FetchUsersViaPostCommented)
+				//{
+				//	foreach (var t in datass)
+				//	{
+				//		t.SeenBy = new List<By>();
+				//	}
 
-					foreach (var datatran in datass)
-					{
-						datatran.SeenBy = new List<By> {new By {ActionType = 101, User = "Refreshed"}};
-					}
-				}
-				//await _heartbeatRepository.RefreshMetaData(metaDataType,topic,userId);
+				//	foreach (var datatran in datass)
+				//	{
+				//		datatran.SeenBy = new List<By> {new By {ActionType = 101, User = "Refreshed"}};
+				//	}
+				//}
+				
+				
+				await _heartbeatRepository.RefreshMetaData(metaDataType,topic,userId);
 			}
 			catch(Exception ee)
 			{

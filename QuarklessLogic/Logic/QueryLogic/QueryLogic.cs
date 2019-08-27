@@ -1,10 +1,8 @@
-﻿using QuarklessContexts.Enums;
-using QuarklessContexts.Extensions;
+﻿using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.QueryModels;
 using QuarklessContexts.Models.QueryModels.Settings;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
-using QuarklessLogic.ContentSearch;
 using QuarklessLogic.Handlers.RestSharpClient;
 using QuarklessLogic.Logic.HashtagLogic;
 using QuarklessLogic.ServicesLogic;
@@ -61,46 +59,101 @@ namespace QuarklessLogic.Logic.QueryLogic
 				return null;
 			}
 		}
-		public async Task<Media> SimilarImagesSearch(string userId, int limit = 1, int offset = 0, IEnumerable<string> urls = null)
+		
+		public async Task<Media> SimilarImagesSearch(string userId, int limit = 1, int offset = 0, IEnumerable<string> urls = null, bool moreAccurate = false)
 		{
-			if(urls == null || limit < 1) return null;
-			var strurl = urls.Select(_ => new GroupImagesAlike { TopicGroup = "any", Url = _ }).ToList();
-			int newLimit = limit;
-			if(offset==1) offset = 0;
-			if(offset > 0)
+			if(urls == null || (limit == 0)) return null;
+			var requestData = urls as string[] ?? urls.ToArray();
+			var strurl = requestData.Select(_ => new GroupImagesAlike { TopicGroup = "any", Url = _ }).ToList();
+			var newLimit = limit;
+			Media response;
+			if (newLimit == -1)
 			{
-				newLimit*=(offset);
-			}
+				var searchRequest = new SearchRequest
+				{
+					RequestData = requestData,
+					Limit = newLimit,
+					Offset = offset > 0 ? Math.Abs(newLimit - limit) : offset,
+				};
+				var cacheRes = await _searchingCache.GetSearchData(userId, searchRequest);
+				if (cacheRes != null)
+				{
+					response = cacheRes.ResponseData;
+					return response;
+				}
 
-			SearchRequest searchRequest = new SearchRequest
-			{
-				RequestData = urls,
-				Limit = newLimit,
-				Offset = offset > 0 ? Math.Abs(newLimit - limit) : offset,
-			};
-			Media response = null;
-			var cacheRes = await _searchingCache.GetSearchData(userId, searchRequest);
-			if (cacheRes!=null)
-			{
-				response = cacheRes.ResponseData;
-				return response;
-			}
-			var res = _contentSearcherHandler.SearchSimilarImagesViaGoogle(strurl, newLimit, offset > 0 ? Math.Abs(newLimit-limit) : offset);
-			if(res.StatusCode == QuarklessContexts.Models.ResponseModels.ResponseCode.Success)
-			{
-				response = res.Result;
-				searchRequest.ResponseData = response;
-				await _searchingCache.StoreSearchData(userId,searchRequest);
+				if (moreAccurate)
+				{
+					response = _contentSearcherHandler.SearchViaYandexBySimilarImages(strurl, 6, 0).Result;
+					response.Medias.Reverse();
+					searchRequest.ResponseData = response;
+					await _searchingCache.StoreSearchData(userId, searchRequest);
+				}
+				else
+				{
+					var res = _contentSearcherHandler.SearchSimilarImagesViaGoogle(strurl, 99);
+					if (res.StatusCode == QuarklessContexts.Models.ResponseModels.ResponseCode.Success)
+					{
+						response = res.Result;
+						searchRequest.ResponseData = response;
+						await _searchingCache.StoreSearchData(userId, searchRequest);
+					}
+					else
+					{
+						response = _contentSearcherHandler.SearchViaYandexBySimilarImages(strurl, 6, 0).Result;
+						response.Medias.Reverse();
+						searchRequest.ResponseData = response;
+						await _searchingCache.StoreSearchData(userId, searchRequest);
+					}
+				}
 			}
 			else
 			{
-				response = _contentSearcherHandler.SearchViaYandexBySimilarImages(strurl,1+offset,offset).Result;
-				response.Medias.Reverse();
-				//response.Medias = response.Medias.Take(limit).ToList();
-				searchRequest.ResponseData = response;
-				await _searchingCache.StoreSearchData(userId, searchRequest);
-			}
+				if (offset == 1) offset = 0;
+				if (offset > 0)
+				{
+					newLimit *= (offset);
+				}
 
+				var searchRequest = new SearchRequest
+				{
+					RequestData = requestData,
+					Limit = newLimit,
+					Offset = offset > 0 ? Math.Abs(newLimit - limit) : offset,
+				};
+				var cacheRes = await _searchingCache.GetSearchData(userId, searchRequest);
+				if (cacheRes != null)
+				{
+					response = cacheRes.ResponseData;
+					return response;
+				}
+
+				if (moreAccurate)
+				{
+					response = _contentSearcherHandler.SearchViaYandexBySimilarImages(strurl, 1 + offset, offset).Result;
+					response.Medias.Reverse();
+					searchRequest.ResponseData = response;
+					await _searchingCache.StoreSearchData(userId, searchRequest);
+				}
+				else
+				{
+					var res = _contentSearcherHandler.SearchSimilarImagesViaGoogle(strurl, newLimit,
+						offset > 0 ? Math.Abs(newLimit - limit) : offset);
+					if (res.StatusCode == QuarklessContexts.Models.ResponseModels.ResponseCode.Success)
+					{
+						response = res.Result;
+						searchRequest.ResponseData = response;
+						await _searchingCache.StoreSearchData(userId, searchRequest);
+					}
+					else
+					{
+						response = _contentSearcherHandler.SearchViaYandexBySimilarImages(strurl, 1 + offset, offset).Result;
+						response.Medias.Reverse();
+						searchRequest.ResponseData = response;
+						await _searchingCache.StoreSearchData(userId, searchRequest);
+					}
+				}
+			}
 
 			return response;
 		}
@@ -123,67 +176,57 @@ namespace QuarklessLogic.Logic.QueryLogic
 			int limit = 1, int pickRate = 20)
 		{
 			var res = (await _hashtagLogic.GetHashtagsByTopicAndLanguage(topic, language.ToUpper(), language.MapLanguages(),limit)).Shuffle().ToList();
-			Regex clean = new Regex(@"[^\w\d]");
-			if (res == null || res.Count <= 0) return null;
-			List<string> hashtags = new List<string>();
+			var clean = new Regex(@"[^\w\d]");
+			if (res.Count <= 0) return null;
+			var hashtags = new List<string>();
 			while (hashtags.Count < pickRate) { 
 				var chosenHashtags = new List<string>();
 				foreach(var hashtagres in res)
 				{
-					if(!string.IsNullOrEmpty(hashtagres.Language)){
-						var hlang = clean.Replace(hashtagres.Language.ToLower(),"");
-						var langpicked = clean.Replace(language.MapLanguages().ToLower(),"");
+					if (string.IsNullOrEmpty(hashtagres.Language)) continue;
+					var hlang = clean.Replace(hashtagres.Language.ToLower(),"");
+					var langpicked = clean.Replace(language.MapLanguages().ToLower(),"");
 
-						if(hlang == langpicked)
-							chosenHashtags.AddRange(hashtagres.Hashtags);
-					}
+					if(hlang == langpicked)
+						chosenHashtags.AddRange(hashtagres.Hashtags);
 				}
 				if (chosenHashtags.Count <= 0) continue;
 				var chosenHashtagsFiltered = chosenHashtags.Where(space => space.Count(oc => oc == ' ') <= 1);
-				if (!chosenHashtagsFiltered.Any()) return null;
-				hashtags.AddRange(chosenHashtagsFiltered.Where(s => s.Length >= 3 && s.Length <= 30));
+				var hashtagsFiltered = chosenHashtagsFiltered as string[] ?? chosenHashtagsFiltered.ToArray();
+				if (!hashtagsFiltered.Any()) return null;
+				hashtags.AddRange(hashtagsFiltered.Where(s => s.Length >= 3 && s.Length <= 30));
 			}
 			return hashtags.Take(pickRate);
 		}
 		public async Task<SubTopics> GetReleatedKeywords(string topicName)
 		{
 			var res = await _searchingCache.GetReleatedTopic(topicName);
-			if (res == null)
+			if (res != null) return res;
+			var hashtagsRes = await _hashtagLogic.SearchHashtagAsync(topicName);
+			if (!hashtagsRes.Succeeded)
 			{
-				var hashtagsRes = await _hashtagLogic.SearchHashtagAsync(topicName);
-				if (!hashtagsRes.Succeeded)
+				var releated = await _hashtagLogic.SearchReleatedHashtagAsync(topicName, 1);
+				if (!releated.Succeeded) return null;
+				SubTopics subTopics = new SubTopics
 				{
-					var releated = await _hashtagLogic.SearchReleatedHashtagAsync(topicName, 1);
-					if (releated.Succeeded)
-					{
-						SubTopics subTopics = new SubTopics
-						{
-							TopicName = topicName,
-							RelatedTopics = releated.Value.RelatedHashtags.Select(s => s.Name).ToList()
-						};
-						await _searchingCache.StoreRelatedTopics(subTopics);
-						return subTopics;
-					}
-					else
-					{
-						return null;
-					}
-				}
-				else
-				{
-					SubTopics subTopics = new SubTopics
-					{
-						TopicName = topicName,
-						RelatedTopics = hashtagsRes.Value.Select(s=>s.Name).ToList()
-					};
-					await _searchingCache.StoreRelatedTopics(subTopics);
-					return subTopics;
-				}
+					TopicName = topicName,
+					RelatedTopics = releated.Value.RelatedHashtags.Select(s => s.Name).ToList()
+				};
+				await _searchingCache.StoreRelatedTopics(subTopics);
+				return subTopics;
+
 			}
 			else
 			{
-				return res;
+				SubTopics subTopics = new SubTopics
+				{
+					TopicName = topicName,
+					RelatedTopics = hashtagsRes.Value.Select(s=>s.Name).ToList()
+				};
+				await _searchingCache.StoreRelatedTopics(subTopics);
+				return subTopics;
 			}
+
 		}
 	}
 }

@@ -262,7 +262,7 @@
                 <b-field v-if="finishedSearching" class="is-dark" label="Preview on what kind of posts you will see..."></b-field>
                 <div v-if="finishedSearching" class="searchResults" id="searchSection">
                   <div class="similarImages_Container">
-                    <div v-for="(image,index) in searchMediaItems" :key="image+'_'+index" class="image_container zoomable">
+                    <div v-for="(image,index) in displayableList" :key="image+'_'+index" :id="'image_of_'+index" class="image_container zoomable">
                         <!-- <img v-if="evaluateImage(image.url)" class="image zoomable" :src="image.url" alt=""> -->
                         <ImageItem
                         v-if="image.url"
@@ -389,8 +389,10 @@ export default {
       isDraggingChosenImages:false,
       trashZone: [],
       currentGroup: null,
-      perPage:30,
-      total:200,
+      currentPage:0,
+      currentHashPage:1,
+      perPage:15,
+      total:100,
       isRounded:false,
       rangeBefore:5,
       rangeAfter:5,
@@ -408,16 +410,15 @@ export default {
       currentlySelectedColor:{color:{red:0,green:0,blue:0, name:undefined}, id:0},
       searchMediaItems:[],
       urls:[],
-      currentPage: 1,
       finishedSearching:false,
       searchReleatedTopic:[],
       displayedReleatedTopic:[],
-      currentPage:1,
       toAddTopic:'',
       isTip1Active:false,
       isExpandedSubTopics:false,
       selectedTopic:[],
-      searchingTopics:false
+      searchingTopics:false,
+      displayableList:[]
     }
   },
   created(){
@@ -524,16 +525,16 @@ export default {
     nextset(){
       if(this.searchReleatedTopic.length!==0 || this.searchReleatedTopic!==undefined){
         const maxpagerelated = this.searchReleatedTopic.length / this.perPage;
-        if(maxpagerelated > this.currentPage){
-            this.currentPage++;
-            this.displayedReleatedTopic = this.filterReleatedTopics.slice((this.currentPage-1)*this.perPage,this.currentPage*this.perPage);
+        if(maxpagerelated > this.currentHashPage){
+            this.currentHashPage++;
+            this.displayedReleatedTopic = this.filterReleatedTopics.slice((this.currentHashPage-1)*this.perPage,this.currentHashPage*this.perPage);
         }
       }
     },
     prevset(){
-      if(this.currentPage > 1){
-        this.currentPage--;
-        this.displayedReleatedTopic = this.filterReleatedTopics.slice((this.currentPage-1)*this.perPage,this.currentPage*this.perPage);
+      if(this.currentHashPage > 1){
+        this.currentHashPage--;
+        this.displayedReleatedTopic = this.filterReleatedTopics.slice((this.currentHashPage-1)*this.perPage,this.currentHashPage*this.perPage);
       }
     },
     searchReleatedTopics(e){
@@ -542,17 +543,13 @@ export default {
         this.displayedReleatedTopic = []
         this.$store.dispatch('ReleatedTopics', {instaId: this.profile.instagramAccountId, topic:e}).then(resp=>{
           resp.data.relatedTopics.forEach((item)=>this.searchReleatedTopic.push(item))
-          this.displayedReleatedTopic = this.filterReleatedTopics.slice((this.currentPage-1)*this.perPage,this.currentPage*this.perPage);
+          this.displayedReleatedTopic = this.filterReleatedTopics.slice((this.currentHashPage-1)*this.perPage,this.currentHashPage*this.perPage);
         })
       }
       //this.$store.dispatch('ReleatedTopics',)
     },
     scrollBehavior: function (to) {
-      if (to.hash) {
-        return {
-          selector: to.hash
-        }
-      }
+       window.scrollTo(0,0);
     },
     evaluateImage(emage){
       if(new RegExp('(.*?)(.jpg|.png|.svg)').test(emage))
@@ -562,9 +559,19 @@ export default {
     },
     updatePage(e){
       this.currentPage = e;
-      this.searchMediaItems = []
+      this.displayableList = [];
+      var millisecondsToWait = 250;
+      let _this = this;
+      this.isLoading = true;
+      setTimeout(function() {
+        _this.NextLoad();
+      }, millisecondsToWait);
+    },
+    NextLoad(){
+      let currentSet = this.currentPage * this.perPage;
+      this.displayableList = this.searchMediaItems.slice(currentSet, currentSet + this.perPage)
       this.scrollBehavior("#searchSection")
-      this.searchImage();
+      this.isLoading = false;
     },
     onUpload(e){
       this.currentPage = 1;
@@ -576,10 +583,12 @@ export default {
     },
     searchImage(data){
       this.isLoading = true;
-      this.$store.dispatch('SimilarSearch',{urls:this.urls, limit:this.perPage/2, offset:this.currentPage}).then(
+      this.$store.dispatch('SimilarSearch',{urls:this.urls, limit:-1, offset:0}).then(
         res=> {
           this.searchMediaItems = []
           res.data.medias.forEach((item=> this.searchMediaItems.push({url:item.mediaUrl[0]})));
+          let currentSet = this.currentPage * this.perPage;
+          this.displayableList = this.searchMediaItems.slice(currentSet, currentSet + this.perPage)
           this.isLoading = false;
           this.finishedSearching = true;
         }).catch(err=>{this.isLoading = false})

@@ -5,7 +5,7 @@
         <Nav @onHide="changeState"></Nav>
     </div>
     <div v-else>
-      <b-tooltip type="is-dark" label="Show Panel" position="is-right">
+      <b-tooltip type="is-dark" label="Show Panel" position="is-right" style="position:absolute; top:2em;left:4em;">
         <a @click="changeState">
         <b-icon
           class="floater"
@@ -16,7 +16,7 @@
         </b-icon>
         </a>
       </b-tooltip>
-      <b-tooltip type="is-dark" label="Go to Dashboard" position="is-right">
+      <b-tooltip type="is-dark" label="Go to Dashboard" position="is-right" style="position:absolute; top:5em;left:4em;">
         <router-link to="/manage">
         <b-icon
           class="floater is-house"
@@ -48,6 +48,17 @@
             type="is-light">
           </b-icon>
         </a>
+        </b-tooltip>
+        <b-tooltip type="is-dark" label="Settings ❤️ coming soon ❤️" position="is-right" style="position:absolute; bottom:2em;left:4em;">
+        <a class="">
+          <b-icon
+            class="is-setting is-disabled"
+            pack="fas"
+            icon="cog"
+            size="is-default"
+            type="is-light">
+          </b-icon>
+        </a>
       </b-tooltip>
         <b-tooltip type="is-dark" label="Logout" style="position:absolute; bottom:3em;right:2.8em;">
         <a @click="signout">
@@ -59,7 +70,7 @@
           type="is-light">
         </b-icon>
         </a>
-        </b-tooltip>
+      </b-tooltip>
     </div>
     <div :class="isNavOn ? 'column is-11' : 'column is-12'" :style="isNavOn ? 'margin:0 auto;' : 'margin:0 auto;'" >
         <div class="main_area">
@@ -148,6 +159,10 @@ export default {
     color:$highlight_color!important;
     cursor: pointer;
     transform: scale(1.2);
+    &.is-disabled{
+      color:#696969;
+      opacity:0.4;
+    }
   }
   &.is-house{
     top:4.5em;
@@ -162,7 +177,17 @@ export default {
     left:1.6em;
   }
 }
-
+.is-setting{
+    z-index: 99999;
+    position:fixed !important;
+    bottom:1.15em;    
+    left:1.7em;
+    font-size: 17px;
+    &.is-disabled{
+      color:#696969;
+      opacity:0.4;
+    }
+  }
 .is-user{
   z-index: 99999;
   position:fixed !important;

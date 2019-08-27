@@ -85,7 +85,6 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 					catch(Exception e)
 					{
 						Console.WriteLine(e.Message);
-						continue;
 					} 
 				}
 
@@ -289,11 +288,15 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 		{
 			return _topicServicesLogic.GetAllTopicCategories();
 		}
-		public async Task<QuarklessContexts.Models.Profiles.SubTopics> GetAllRelatedTopics(string topic)
+		public async Task<SubTopics> GetAllRelatedTopics(string topic)
 		{
 			return await _topicServicesLogic.GetAllRelatedTopics(topic);
 		}
 
+		public async Task<IEnumerable<TopicsModel>> GetTopics()
+		{
+			return await _topicServicesLogic.GetTopics();
+		}
 		public async Task Update(string selected, string subItem)
 		{
 			await _mediaCorpusLogic.UpdateTopicName(selected, subItem);

@@ -84,7 +84,7 @@ namespace QuarklessRepositories.RedisRepository.SearchCache
 			try
 			{
 				RedisKey key = $"ReleatedTopics:{subTopics.TopicName}";
-				await _redis.Database(2).SetAdd(key,RedisKeys.HashtagGrowKeys.SearchSession, JsonConvert.SerializeObject(subTopics),TimeSpan.FromDays(9999));
+				await _redis.Database(2).SetAdd(key,RedisKeys.HashtagGrowKeys.SearchSession, JsonConvert.SerializeObject(subTopics),TimeSpan.FromDays(600));
 			}
 			catch(Exception e)
 			{

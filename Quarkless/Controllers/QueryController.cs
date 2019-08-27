@@ -67,12 +67,12 @@ namespace Quarkless.Controllers
 			return Ok(_queryLogic.AutoCompleteSearchPlaces(query,radius));
 		}
 		[HttpPut]
-		[Route("api/query/search/similar/{limit}/{offset=0}")]
-		public async Task<IActionResult> SimilarSearch([FromBody] IEnumerable<string> urls, [FromRoute] int limit, [FromRoute] int offset = 0)
+		[Route("api/query/search/similar/{limit}/{offset=0}/{moreAccurate}")]
+		public async Task<IActionResult> SimilarSearch([FromBody] IEnumerable<string> urls, [FromRoute] int limit, [FromRoute] int offset = 0, [FromRoute] bool moreAccurate = false)
 		{
 			if(string.IsNullOrEmpty(_userContext.CurrentUser))
 				return BadRequest("Invalid Request");
-			return Ok(await _queryLogic.SimilarImagesSearch(_userContext.CurrentUser, limit, offset, urls));
+			return Ok(await _queryLogic.SimilarImagesSearch(_userContext.CurrentUser, limit, offset, urls,moreAccurate));
 		}
 	}
 }

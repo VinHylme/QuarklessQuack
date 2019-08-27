@@ -4,7 +4,6 @@ using QuarklessRepositories.RedisRepository.SearchCache;
 using QuarklessRepositories.Repository.CorpusRepositories.Topic;
 using QuarklessRepositories.Repository.ServicesRepositories.TopicsRepository;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using SubTopics = QuarklessContexts.Models.ServicesModels.DatabaseModels.SubTopics;
 

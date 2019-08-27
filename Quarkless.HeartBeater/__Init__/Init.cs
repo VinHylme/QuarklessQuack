@@ -109,25 +109,29 @@ namespace Quarkless.HeartBeater.__Init__
 			{
 				try
 				{
-					var workers = (await GetAccounts(true, settings.Accounts.Select(_ => _.Username).ToArray())).ToList();
+					var workers = (await GetAccounts(false, settings.Accounts.Select(_ => _.Username).ToArray())).ToList();
 					var subcategories = (await _topicBuilder.GetAllTopicCategories()).Select(x => x.SubCategories)
 						.SquashMe().Distinct();
+					var total = (await _topicBuilder.GetTopics())
+						.Select(s => s.SubTopics)
+						.SquashMe()
+						.Distinct();
 					var topics = new List<TopicAss>();
-					foreach (var subItem in subcategories)
+					foreach (var subItem in total)
 					{
-						var item = await _topicBuilder.GetAllRelatedTopics(subItem);
-						if (item.RelatedTopics.Count <= 0) continue;
-						var low = item.RelatedTopics.Select(op => new
+						//var item = await _topicBuilder.GetAllRelatedTopics(subItem);
+						if (subItem.RelatedTopics.Count <= 0) continue;
+						var low = subItem.RelatedTopics.Select(op => new
 						{
-							Similarity = op.Similarity(subItem),
+							Similarity = op.Similarity(subItem.Topic),
 							Item = op
-						}).OrderByDescending(_=>_.Similarity).Take(10).ToList();
+						}).OrderBy(_=>_.Similarity).Take(10).ToList();
 						var selected = low.ElementAt(SecureRandom.Next(low.Count()));
 						//await _topicBuilder.Update(selected, subItem);
 						topics.Add(new TopicAss
 						{
 							Searchable = selected.Item,
-							FriendlyName = subItem
+							FriendlyName = subItem.Topic
 						});
 					}
 					
@@ -160,6 +164,7 @@ namespace Quarkless.HeartBeater.__Init__
 				await Task.Delay(TimeSpan.FromMinutes(5));
 			}
 		}
+
 		public async Task Endeavor(Settings settings)
 		{
 			Console.WriteLine("Heartbeat started");
@@ -228,53 +233,59 @@ namespace Quarkless.HeartBeater.__Init__
 				#endregion
 
 				var metadataBuilder = new MetadataBuilder(Assignments, _context, _heartbeatLogic, _proxyLogic, _responseResolver);
-
-				var buildBase = Task.Run(async () => await metadataBuilder.BuildBase(2));
-				Task.WaitAll(buildBase);
-
-				var liker = Task.Run(async () =>
-					await metadataBuilder.BuildUserFromLikers(takeMediaAmount: 10, takeUserMediaAmount: 300));
-
-				var commenter = Task.Run(async () =>
-					await metadataBuilder.BuildUsersFromCommenters(takeMediaAmount: 10, takeUserMediaAmount: 300));
-
-				#region Other
-				var googleImages = Task.Run(async () => await metadataBuilder.BuildGoogleImages(20));
-				var yandexImages = Task.Run(async () => await metadataBuilder.BuildYandexImages());
-
-				var profileRefresh = Task.Run(async () => await metadataBuilder.BuildUsersOwnMedias(_instagramAccountLogic));
-				var feedRefresh = await Task.Run(async () => await metadataBuilder.BuildUsersFeed()).ContinueWith(async x=> 
+				
+				switch (settings.ActionExecute)
 				{
-					await metadataBuilder.BuildUsersFollowSuggestions(2);
-					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchUsersFeed, MetaDataType.FetchCommentsViaUserFeed, true);
-				});
-				var followingList = Task.Run(async () => await metadataBuilder.BuildUserFollowList());
-				var userTargetList = Task.Run(async () => await metadataBuilder.BuildUsersTargetListMedia())
-					.ContinueWith(async x=>
-				{
-					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserTargetList, MetaDataType.FetchCommentsViaUserTargetList, true, 2, takeMediaAmount: 10, takeuserAmount: 200);
-				});
+					case ActionExecuteType.Base:
+						var buildBase = Task.Run(async () => await metadataBuilder.BuildBase(5));
+						Task.WaitAll(buildBase);
 
-				var locTargetList = Task.Run(async () => await metadataBuilder.BuildLocationTargetListMedia())
-					.ContinueWith(async s =>
-				{
-					await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserLocationTargetList, MetaDataType.FetchCommentsViaLocationTargetList, true, 2, takeMediaAmount:10, takeuserAmount:200);
-				}); 
-				#endregion
+						var liker = Task.Run(async () =>
+							await metadataBuilder.BuildUserFromLikers(takeMediaAmount: 20, takeUserMediaAmount: 400));
+						var commenter = Task.Run(async () =>
+							await metadataBuilder.BuildUsersFromCommenters(takeMediaAmount: 20, takeUserMediaAmount: 400));
 
-				Task.WaitAll(liker, commenter);
-				var mediaLiker = metadataBuilder.BuildMediaFromUsersLikers(takeMediaAmount: 10, takeUserMediaAmount: 30);
-				var mediaCommenter = metadataBuilder.BuildMediaFromUsersCommenters(takeMediaAmount: 10, takeUserMediaAmount: 30);
-				Task.WaitAll(mediaLiker, mediaCommenter);
-				var commentMediaLiker = metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByLikers, 
-					MetaDataType.FetchCommentsViaPostsLiked, limit: 2, takeMediaAmount: 10, takeuserAmount: 200);
-				var commentMediaCommenter = metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByCommenters, 
-					MetaDataType.FetchCommentsViaPostCommented, limit: 2, takeMediaAmount: 10, takeuserAmount: 200);
+						Task.WaitAll(liker, commenter);
+						var mediaLiker = metadataBuilder.BuildMediaFromUsersLikers(takeMediaAmount: 20, takeUserMediaAmount: 50);
+						var mediaCommenter = metadataBuilder.BuildMediaFromUsersCommenters(takeMediaAmount: 20, takeUserMediaAmount: 50);
 
+						Task.WaitAll(mediaLiker, mediaCommenter);
+						var commentMediaLiker = metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByLikers, 
+							MetaDataType.FetchCommentsViaPostsLiked, limit: 2, takeMediaAmount: 20, takeuserAmount: 400);
+						var commentMediaCommenter = metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByCommenters, 
+							MetaDataType.FetchCommentsViaPostCommented, limit: 2, takeMediaAmount: 20, takeuserAmount: 400);
 
-				Task.WaitAll(buildBase, googleImages, yandexImages, profileRefresh, 
-					feedRefresh, userTargetList, locTargetList, followingList,
-					commentMediaLiker, commentMediaCommenter);
+						Task.WaitAll(commentMediaLiker, commentMediaCommenter);
+						break;
+					case ActionExecuteType.Other:
+						var googleImages = Task.Run(async () => await metadataBuilder.BuildGoogleImages(20));
+						var yandexImages = Task.Run(async () => await metadataBuilder.BuildYandexImages());
+						Task.WaitAll(googleImages, yandexImages);
+						break;
+					case ActionExecuteType.UserSelf:
+						var profileRefresh = Task.Run(async () => await metadataBuilder.BuildUsersOwnMedias(_instagramAccountLogic));
+						var followingList = Task.Run(async () => await metadataBuilder.BuildUserFollowList());
+						var feedRefresh = await Task.Run(async () => await metadataBuilder.BuildUsersFeed()).ContinueWith(async x=> 
+						{
+							await metadataBuilder.BuildUsersFollowSuggestions(2);
+							await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchUsersFeed, MetaDataType.FetchCommentsViaUserFeed, true);
+						});
+						Task.WaitAll(profileRefresh, followingList, feedRefresh);
+						break;
+					case ActionExecuteType.TargetList:
+						var userTargetList = Task.Run(async () => await metadataBuilder.BuildUsersTargetListMedia())
+							.ContinueWith(async x=>
+							{
+								await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserTargetList, MetaDataType.FetchCommentsViaUserTargetList, true, 2, takeMediaAmount: 10, takeuserAmount: 200);
+							});
+						var locTargetList = Task.Run(async () => await metadataBuilder.BuildLocationTargetListMedia())
+							.ContinueWith(async s =>
+							{
+								await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserLocationTargetList, MetaDataType.FetchCommentsViaLocationTargetList, true, 2, takeMediaAmount:10, takeuserAmount:200);
+							});
+						Task.WaitAll(userTargetList, locTargetList);
+						break;
+				}
 			}
 			catch(Exception ee)
 			{

@@ -71,7 +71,7 @@ namespace Quarkless.Services
 			}
 			
 			hashtagsToUse.AddRange(selections.Take(SecureRandom.Next(24 , 27)).Select(s=> $"#{s}"));
-			var caption_ = GenerateText(topicSelect.TopicFriendlyName, language.ToUpper(), 1, SecureRandom.Next(2, 4), SecureRandom.Next(14, 25)).Split(',')[0];
+			var caption_ = GenerateText(topicSelect.TopicFriendlyName, language.ToUpper(), 1, SecureRandom.Next(1, 5), SecureRandom.Next(4, 25)).Split(',')[0];
 
 			return new MediaInfo
 			{
@@ -82,7 +82,7 @@ namespace Quarkless.Services
 		}
 		public string GenerateComment(string topic, string language)
 		{
-			var comment = GenerateText(topic, language.ToUpper(), 0 , SecureRandom.Next(40) ,SecureRandom.Next(10,14)).Split(',')[0];
+			var comment = GenerateText(topic, language.ToUpper(), 0 , SecureRandom.Next(4) ,SecureRandom.Next(4,5)).Split(',')[0];
 			return comment;
 		}
 

@@ -481,7 +481,7 @@ namespace Quarkless.Services
 									await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser,
 										new InstagramAccountModel
 										{
-											LastPurgeCycle = DateTime.UtcNow.AddHours(33)
+											LastPurgeCycle = DateTime.UtcNow.AddDays(2)
 										});
 								}			
 								else
