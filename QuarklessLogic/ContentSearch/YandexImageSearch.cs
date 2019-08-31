@@ -24,7 +24,7 @@ namespace QuarklessLogic.ContentSearch
 	}
 	public class SearchItem
 	{
-		[JsonProperty("serpitem")]
+		[JsonProperty("serpitem", NullValueHandling=NullValueHandling.Ignore)]
 		public SerpItem SerpItem { get; set; }
 	}
 	public class SerpItem
@@ -44,34 +44,34 @@ namespace QuarklessLogic.ContentSearch
 		[JsonProperty("thumb")]
 		public Thumb Thumb { get; set; }
 
-		[JsonProperty("snippet")]
+		[JsonProperty("snippet", NullValueHandling=NullValueHandling.Ignore)]
 		public Snippet Snippet { get; set; }
 
-		[JsonProperty("detail_url")]
+		[JsonProperty("detail_url", NullValueHandling=NullValueHandling.Ignore)]
 		public string Detail_Url { get; set; }
 
-		[JsonProperty("img_href")]
+		[JsonProperty("img_href", NullValueHandling=NullValueHandling.Ignore)]
 		public string Img_href { get; set; }
 
-		[JsonProperty("useProxy")]
+		[JsonProperty("useProxy", NullValueHandling=NullValueHandling.Ignore)]
 		public bool UseProxy { get; set; }
 
-		[JsonProperty("pos")]
+		[JsonProperty("pos", NullValueHandling=NullValueHandling.Ignore)]
 		public int Pos { get; set; }
 
-		[JsonProperty("id")]
+		[JsonProperty("id", NullValueHandling=NullValueHandling.Ignore)]
 		public string ID { get; set; }
 
-		[JsonProperty("rimId")]
+		[JsonProperty("rimId", NullValueHandling=NullValueHandling.Ignore)]
 		public string RimID { get; set; }
 
-		[JsonProperty("docid")]
+		[JsonProperty("docid", NullValueHandling=NullValueHandling.Ignore)]
 		public string DocID { get; set; }
 
-		[JsonProperty("greenUrlCounterPath")]
+		[JsonProperty("greenUrlCounterPath", NullValueHandling=NullValueHandling.Ignore)]
 		public string GreenUrlCounterPath { get; set; }
 
-		[JsonProperty("counterPath")]
+		[JsonProperty("counterPath", NullValueHandling=NullValueHandling.Ignore)]
 		public string CounterPath { get; set; }
 	}
 	public class Thumb

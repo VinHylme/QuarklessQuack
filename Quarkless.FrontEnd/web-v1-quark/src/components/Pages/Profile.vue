@@ -114,7 +114,11 @@
                       </div>
                     </div>
                 </div>
-                <div v-if="searchReleatedTopic.length>0">
+                <div v-if="searchReleatedTopic.length>0 || isSearchingRelated">
+                  <b-notification :closable="false" v-if="isSearchingRelated" style="background:transparent; text-align:center; color:#d9d9d9;">
+                      ...loading
+                      <b-loading :is-full-page="false" :active.sync="isSearchingRelated" :can-cancel="true"></b-loading>
+                  </b-notification>
                   <b-field position="is-centered" class="is-dark is-small" label="Releated topics "></b-field>
                   <div class="box subtopics_container" style="background:#121212;">
                     <div v-for="(subTopic,index) in displayedReleatedTopic" :key="subTopic+'_'+index" class="field is-grouped is-grouped-multiline" style="padding:0.4em;">
@@ -244,6 +248,11 @@
                 </a>
             </div>
            <div ref="content" class="card-content" style="background:#1f1f1f; text-align:center;">
+            <b-tooltip label="Search will be slightly slower, but you will get more accurate results"
+                type="is-danger"
+                position="is-top">
+                  <b-switch :rounded="false" :outlined="true" type="is-warning" style="margin-left:0em; color:#d9d9d9;" v-model="isMoreAccurate">More Accurate Results?</b-switch>
+            </b-tooltip>
             <div class="box" style="background:#1f1f1f; color:white;">
               <div class="box" style="background:#292929; border:none;">            
                 <b-field class="is-dark" label="Here you can tell our agent what types images you would like to have on your profile"></b-field>
@@ -271,7 +280,7 @@
                         :isRounded="false"
                         />
                         <div class="overlay"></div>
-                        <a class="button is-success is-rounded is-overlayed" style="color:whitesmoke" @click="addImageToList(index)">Add</a>
+                        <a class="button is-success is-rounded is-overlayed" style="color:whitesmoke" @click="addImageToList(image)">Add</a>
                     </div>
                   </div>     
               </div>
@@ -301,7 +310,7 @@
                 draggable=".dropitem" group="firstgroup" class="similarImages_Container">
                   <div class="dropitem" style="z-index:2 !important;" v-for="(image,index) in imagesAlikeList" :key="'dropitem-imageOf-'+index">
                     <b-tooltip label="You can delete me by dragging me" type="is-danger">
-                      <img class="image zoomable" style="z-index:2;" :id="'dropitem-imageOf-'+index" :src="image.url" alt="my images">
+                      <img class="image-figure zoomable" style="z-index:2;" :id="'dropitem-imageOf-'+index" :src="image.url" alt="my images">
                     </b-tooltip>
                   </div> 
               </draggable>
@@ -320,7 +329,7 @@
           </b-step-item>
           <b-step-item label="Additional" :clickable="true" icon="atom">
             <b-field label="Additional Settings" class="is-dark"></b-field>
-            <div class="box" style="background:#1f1f1f; width:60%; margin:0 auto;">
+            <div class="box box-style">
                <b-field label="Specific Sites" size="is-small" class="is-dark is-small">
                     <b-taginput
                         :before-adding="evaluateSiteTags"
@@ -340,7 +349,21 @@
                   </b-select>
                 </b-field>
                 <br>
-                 <b-dropdown v-if="$store.state.role==='Admin'"
+                <div class="box box-style is-darker-bg">
+                  <p class="subtitle is-light">Post Settings</p>
+                      <b-field grouped>
+                        <b-tooltip type="is-twitter" label="Enabling this will allow the agent to post on your behalf.">
+                          <b-switch class="is-light" style="padding-left:2em;" :outlined="true" type="is-info" v-model="profile.additionalConfigurations.enableAutoPosting">Enable Auto Posting</b-switch>
+                        </b-tooltip>
+                        <b-tooltip type="is-twitter" label="Enabling this feature will allow the agent to repost from other instagram accounts (based on your profile)">
+                          <b-switch v-if="profile.additionalConfigurations.enableAutoPosting" style="padding-left:2em;" class="is-light" :outlined="true" type="is-info" v-model="profile.additionalConfigurations.allowRepost">Allow Reposting</b-switch>
+                        </b-tooltip>
+                        <b-tooltip type="is-twitter" label="Enabling this feature will let the agent create their own caption based on your profile, alternatively you can turn this off and write your own captions">
+                          <b-switch v-if="profile.additionalConfigurations.enableAutoPosting" style="padding-left:2em;" class="is-light" :outlined="true" type="is-info" v-model="profile.additionalConfigurations.autoGenerateCaption">Auto generate caption based on profile</b-switch>
+                        </b-tooltip>
+                      </b-field>
+                </div>
+                 <!-- <b-dropdown style="text-align:center; margin:0 auto;" v-if="$store.state.role==='Admin'"
                     v-model="profile.additionalConfigurations.searchTypes"
                     multiple
                     aria-role="list">
@@ -351,7 +374,7 @@
                     <b-dropdown-item v-for="(sType, index) in config.searchTypes" :key="index" :value="index" aria-role="listitem">
                         <span>{{sType}}</span>
                     </b-dropdown-item>
-                </b-dropdown>
+                </b-dropdown> -->
             </div>
           </b-step-item>
       </b-steps>
@@ -418,7 +441,9 @@ export default {
       isExpandedSubTopics:false,
       selectedTopic:[],
       searchingTopics:false,
-      displayableList:[]
+      displayableList:[],
+      isMoreAccurate:false,
+      isSearchingRelated:false
     }
   },
   created(){
@@ -472,6 +497,21 @@ export default {
   methods:{
     saveProfile(){
       this.savingProfile = true;
+      let contains = false;
+      this.config.topics.forEach((topic)=>{
+        if(topic.subCategories.includes(this.profile.topics.topicFriendlyName)){
+          contains = true;
+        }
+      });
+
+      if(!contains)
+      {
+         Vue.prototype.$toast.open({
+            message: 'Oops, looks like the topic' +' ~' + this.profile.topics.topicFriendlyName + '~ '+ 'you have entered does not exist',
+            type: 'is-danger'
+        })
+        return;
+      }
       if(this.profile!==undefined || this.profile!==null || this.profile){
          this.$store.dispatch('UpdateProfile', this.profile).then(resp=>{
            this.savingProfile = false;
@@ -488,8 +528,9 @@ export default {
          })
       }
     },
-    addImageToList(index){
-      let imageUrl = this.searchMediaItems[index].url;
+    addImageToList(image){
+      let filtered = this.searchMediaItems.filter((item)=>item.url == image.url);
+      let imageUrl = filtered[0].url
       this.profile.theme.imagesLike.push({topicGroup:this.profile.topics.topicFriendlyName, url:imageUrl});
     },
     showSubTopicReleated(item, index){
@@ -537,13 +578,22 @@ export default {
         this.displayedReleatedTopic = this.filterReleatedTopics.slice((this.currentHashPage-1)*this.perPage,this.currentHashPage*this.perPage);
       }
     },
+    fixedEncodeURIComponent(str){
+      return encodeURIComponent(str).replace(/[!'()*]/g, (c) => {
+        return '%' + c.charCodeAt(0).toString(16)
+      })
+    },
     searchReleatedTopics(e){
       if(e!==null){
+        this.isSearchingRelated = true;
         this.searchReleatedTopic = []
         this.displayedReleatedTopic = []
-        this.$store.dispatch('ReleatedTopics', {instaId: this.profile.instagramAccountId, topic:e}).then(resp=>{
+        this.$store.dispatch('ReleatedTopics', {instaId: this.profile.instagramAccountId, topic:e.replace("/", "%28")}).then(resp=>{
           resp.data.relatedTopics.forEach((item)=>this.searchReleatedTopic.push(item))
           this.displayedReleatedTopic = this.filterReleatedTopics.slice((this.currentHashPage-1)*this.perPage,this.currentHashPage*this.perPage);
+          this.isSearchingRelated = false;
+        }).catch(err=>{
+          this.isSearchingRelated = false;
         })
       }
       //this.$store.dispatch('ReleatedTopics',)
@@ -583,12 +633,19 @@ export default {
     },
     searchImage(data){
       this.isLoading = true;
-      this.$store.dispatch('SimilarSearch',{urls:this.urls, limit:-1, offset:0}).then(
+      this.$store.dispatch('SimilarSearch',{urls:this.urls, limit:-1, offset:0, moreAccurate:this.isMoreAccurate}).then(
         res=> {
-          this.searchMediaItems = []
+          this.searchMediaItems = []  
+          this.displayableList = [];
+          this.currentPage = 0;
           res.data.medias.forEach((item=> this.searchMediaItems.push({url:item.mediaUrl[0]})));
-          let currentSet = this.currentPage * this.perPage;
-          this.displayableList = this.searchMediaItems.slice(currentSet, currentSet + this.perPage)
+          var millisecondsToWait = 250;
+              let _this = this;
+              this.isLoading = true;
+              setTimeout(function() {
+                _this.NextLoad();
+          }, millisecondsToWait);
+
           this.isLoading = false;
           this.finishedSearching = true;
         }).catch(err=>{this.isLoading = false})
@@ -647,7 +704,21 @@ export default {
 </script>
 
 <style lang="scss">
-
+.box-style{
+  background:#1f1f1f; 
+  width:60%;
+  margin:0 auto;
+  &.is-darker-bg{
+    width:78%;
+    background:#121212;
+  }
+  .subtitle{
+    text-align: center;
+  }
+  .is-light{
+      color:#d9d9d9;
+  }
+}
 .dropOptions_Container{
   position: fixed; /* Stay in place */
   z-index: 4; /* Sit on top */
@@ -770,7 +841,7 @@ export default {
   opacity: 0;
   transition: opacity .35s ease;
 }
-.image{
+.image-figure{
   width: 100%;
   padding:1em;
   border-radius: 0.5em;
@@ -899,7 +970,7 @@ export default {
   }
 }
 .dropdown-menu{
-    opacity: .9;
+    opacity: 1;
     border-radius: 1em;
     border:none;
     margin-top:.5em;
@@ -910,11 +981,11 @@ export default {
             color:#d9d9d9 !important;
             &:hover{
                 background:#232323;
-                opacity: .8;
+                opacity: 1;
             }
             &.is-hovered{
                 background:#232323;
-                opacity: .8;
+                opacity: 1;
             }
         }
     }

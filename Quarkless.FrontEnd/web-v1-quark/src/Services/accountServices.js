@@ -2,7 +2,22 @@ import Api from './Api'
 import axios from 'axios';
 export default {
   Login(params){
-    return Api(false).post('/auth/loginaccount', params)
+    return Api(false).post('auth/loginaccount', params)
+  },
+  ResendConfirm(username){
+    return Api(false).put('auth/resendConfirmation/'+username);
+  },
+  ChangeProfilePicture(instagramAccountId, formData){
+    return axios.put('http://localhost:51518/api/account/changepp/', formData.formData, {
+      headers:{
+        'Content-Type': 'multipart/form-data',
+        'Authorization': 'Bearer '+  axios.defaults.headers.common['Authorization'],
+        'FocusInstaAccount' : instagramAccountId 
+      }
+    })
+  },
+  ChangeBiography(instagramAccountId, biography){
+    return Api(true, instagramAccountId).put('account/changeBio', {Biography: biography.text});
   },
   GetInstagramAccountsForUser(params){
     return Api(true).get('insta/' + params.accountId)

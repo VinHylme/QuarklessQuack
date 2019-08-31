@@ -27,6 +27,14 @@ const router = new Router({
                requiresAuth: true
            }
        },
+        {
+        name:'Messaging',
+        path:'/messaging/',
+        component:LazyLoad('Messaging'),
+        meta:{
+            requiresAuth:true
+        }
+        },
        {
            name:"library",
            path:"/library/:id",

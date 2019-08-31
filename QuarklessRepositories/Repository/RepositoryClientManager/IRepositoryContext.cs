@@ -34,6 +34,10 @@ namespace QuarklessRepositories.RepositoryClientManager
 		IMongoCollection<HashtagsModel> Hashtags { get; }
 		IMongoCollection<UserBiographyModel> UserBiography { get; }
 		IMongoCollection<JobDto> Timeline { get; }
+		IMongoCollection<MediasLib> MediaLibrary { get; }
+		IMongoCollection<HashtagsLib> HashtagLibrary { get; }
+		IMongoCollection<CaptionsLib> CaptionLibrary { get; }
+		IMongoCollection<MessagesLib> MessagesLibrary { get; }
 
 	}
 }

@@ -28,7 +28,7 @@ namespace QuarklessRepositories.Repository.TimelineRepository
 			{
 				var userId = $"{timelineEvent.AccountID}";
 				await _redisClient.SetAdd(userId, RedisKeys.HashtagGrowKeys.TimelineLog,
-					JsonConvert.SerializeObject(timelineEvent), TimeSpan.FromDays(2));
+					JsonConvert.SerializeObject(timelineEvent), TimeSpan.FromHours(4));
 				//await _context.TimelineLogger.InsertOneAsync(timelineEvent);
 			}
 			catch(Exception ee)

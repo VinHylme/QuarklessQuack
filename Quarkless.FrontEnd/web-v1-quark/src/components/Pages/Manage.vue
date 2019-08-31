@@ -1,9 +1,9 @@
 <template>
 <div class="ccontainer">
         <div :style="!isNavOn?'margin-left:5.5em;':''">
-                <div class="accounts_container">
+                <div class="accounts_container" >
                         <div v-for="(acc,index) in InstagramAccounts" :key="index">
-                                <InstaCard @OnConfirmUser="ConfirmUser" @ChangeState="StateChanged" @RefreshState="NotifyRefresh" @ViewLibrary="GetLibrary" @ViewProfile="GetProfile" :id="acc.id" :username="acc.username" :agentState="acc.agentState" 
+                                <InstaCard @onChangeBiography="onChangeBiography" @onChangeProfilePicture="onChangeProfilePic" @OnConfirmUser="ConfirmUser" @ChangeState="StateChanged" @RefreshState="NotifyRefresh" @ViewLibrary="GetLibrary" @ViewProfile="GetProfile" :id="acc.id" :username="acc.username" :agentState="acc.agentState" 
                                 :name="acc.fullName" :profilePicture="acc.profilePicture" :biography="acc.userBiography"
                                 :userFollowers="acc.followersCount" :userFollowing="acc.followingCount" :totalPost="acc.totalPostsCount" :IsProfileButtonDisabled="IsProfileButtonDisabled"/>
                         </div>
@@ -15,7 +15,7 @@
                 </div>
         </div>
         <b-modal :active.sync="isAccountLinkModalOpened" has-modal-card>
-                <div class="modal-card" style="width: 100%; height:35vw; padding:0;">
+                <div class="modal-card is-custom" style="width: 100%; height:35vw; padding:0;">
                     <header class="modal-card-head">
                         <p class="modal-card-title">Link your Instagram Account</p>
                     </header>
@@ -55,7 +55,7 @@
                 </div>
         </b-modal>
         <b-modal :active.sync="needToVerify">
-                <div class="modal-card" style="width: 90%; height:25vw; padding:0; z-index:99999;">
+                <div class="modal-card is-custom" style="width: 90%; height:25vw; padding:0; z-index:99999;">
                         <header class="modal-card-head">
                                 <p class="modal-card-title">Verify your Instagram Account</p>
                          </header>
@@ -88,6 +88,7 @@
 <script>
 import Vue from 'vue';
 import InstaCard from "../Objects/InstaAccountCard";
+import { EventBusing } from "../../EventBusing";
 export default {
         name:"manage",
         components:{
@@ -118,12 +119,56 @@ export default {
                 this.isNavOn = this.$store.getters.MenuState === 'true';
                 this.InstagramAccounts = this.$store.getters.GetInstagramAccounts;
                 if(this.$store.getters.UserProfiles!==undefined)
-                        this.IsProfileButtonDisabled=false;          
-        },
+                        this.IsProfileButtonDisabled=false;       
+                        
+                        EventBusing.$on('onFocusBio', (id)=>{
+                                EventBusing.$emit('cancel-other-focused');
+                                EventBusing.$emit('focus-main', id);
+                        })
+                },
         computed:{
 
         },
         methods:{
+                clickOutside(){
+                        EventBusing.$emit('clickedOutside')
+                },
+                onChangeBiography(data){
+                        this.$store.dispatch('ChangeBiography', {instagramAccountId: data.id, biography: data.biography}).then(resp=>{
+                                  Vue.prototype.$toast.open({
+                                        message: "Successfully Changed Profile Biography",
+                                        type: 'is-success',
+                                        position:'is-top',
+                                        duration:4000
+                                });
+                                EventBusing.$emit("doneUpdatingBiography")
+                        }).catch(err=>{
+                                Vue.prototype.$toast.open({
+                                        message: "Could not Update your biography at this time",
+                                        type: 'is-danger',
+                                        position:'is-top',
+                                        duration:4000
+                                })
+                                 EventBusing.$emit("doneUpdatingBiography")
+                        })
+                },
+                onChangeProfilePic(data){
+                        this.$store.dispatch('ChangeProfilePicture', {instagramAccountId: data.id, image: data.image}).then(resp=>{
+                                 Vue.prototype.$toast.open({
+                                        message: "Successfully Changed Profile Picture",
+                                        type: 'is-success',
+                                        position:'is-top',
+                                        duration:4000
+                                });
+                        }).catch(err=>{
+                                Vue.prototype.$toast.open({
+                                        message: "Could not Change profile picture at this time",
+                                        type: 'is-danger',
+                                        position:'is-top',
+                                        duration:4000
+                                })
+                        })
+                },
                 SendVerifyCode(){
                         if(this.code){
                                 this.isSendingVerifyCode = true;
@@ -235,6 +280,14 @@ export default {
 
 <style lang="scss">
 @import '../../Style/darkTheme.scss';
+.modal-card{
+  background-color:$modal_background;
+
+}
+.modal-card .modal-card-body{
+     background-color:$modal_background;
+     
+}
 .modal-card-body{
         background:$modal_body;
         color:$main_font_color;
@@ -268,6 +321,7 @@ export default {
         flex-flow: row wrap;
         align-items: center;
 }
+
 .card {
         &.is-hover{
                 margin-left:0.4em;

@@ -3,8 +3,6 @@ using System.Text;
 using WDict = System.Collections.Generic.Dictionary<string, uint>;
 using TDict = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, uint>>;
 using System.Linq;
-using System;
-using System.Security.Cryptography;
 using System.Globalization;
 
 namespace QuarklessContexts.Extensions
@@ -19,13 +17,13 @@ namespace QuarklessContexts.Extensions
 		}
 		public static TDict BuildTDict(string s, int size)
 		{
-			TDict t = new TDict();
-			string prev = "";
-			foreach (string word in Chunk(s, size))
+			var t = new TDict();
+			var prev = "";
+			foreach (var word in Chunk(s, size))
 			{
 				if (t.ContainsKey(prev))
 				{
-					WDict w = t[prev];
+					var w = t[prev];
 					if (w.ContainsKey(word))
 						w[word] += 1;
 					else
@@ -58,8 +56,8 @@ namespace QuarklessContexts.Extensions
 		public static string BuildString(TDict t, int len, bool exact)
 		{
 			string last;
-			List<string> ucStr = new List<string>();
-			StringBuilder sb = new StringBuilder();
+			var ucStr = new List<string>();
+			var sb = new StringBuilder();
 
 			foreach (string word in t.Keys.Skip(1))
 			{
@@ -73,31 +71,23 @@ namespace QuarklessContexts.Extensions
 			last = sb.ToString();
 			sb.Append(" ");
 
-			WDict w = new WDict();
+			var w = new WDict();
 
 			for (uint i = 0; i < len; ++i)
 			{
-				if (t.ContainsKey(last))
-					w = t[last];
-				else
-					w = t[""];
+				w = t.ContainsKey(last) ? t[last] : t[""];
 
 				last = MarkovHelper.Choose(w);
 				sb.Append(last.Split(' ').Last()).Append(" ");
 			}
 
-			if (!exact)
+			if (exact) return sb.ToString();
+			while (last.Last() != '.')
 			{
-				while (last.Last() != '.')
-				{
-					if (t.ContainsKey(last))
-						w = t[last];
-					else
-						w = t[""];
+				w = t.ContainsKey(last) ? t[last] : t[""];
 
-					last = MarkovHelper.Choose(w);
-					sb.Append(last.Split(' ').Last()).Append(" ");
-				}
+				last = MarkovHelper.Choose(w);
+				sb.Append(last.Split(' ').Last()).Append(" ");
 			}
 
 			return sb.ToString();
@@ -105,7 +95,7 @@ namespace QuarklessContexts.Extensions
 
 		private static string Choose(WDict w)
 		{
-			long total = w.Sum(t => t.Value);
+			var total = w.Sum(t => t.Value);
 
 			while (true)
 			{

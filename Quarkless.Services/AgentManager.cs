@@ -508,7 +508,7 @@ namespace Quarkless.Services
 												await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser,
 													new InstagramAccountModel
 													{
-														LastPurgeCycle = DateTime.UtcNow.AddHours(6)
+														LastPurgeCycle = DateTime.UtcNow.AddDays(2)
 													});
 											}
 										}
@@ -554,11 +554,11 @@ namespace Quarkless.Services
 								var commentScheduleOptions = new CommentingActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1, 4)), CommentingActionType.Any);
 								var likecommentScheduleOptions = new LikeCommentActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(4)), LikeCommentActionType.Any);
 				
-								actionsContainerManager.AddAction(postAction, postScheduleOptions, 0.05);
-								actionsContainerManager.AddAction(likeAction, likeScheduleOptions, 0.275);
-								actionsContainerManager.AddAction(followAction, followScheduleOptions, 0.25);
+								actionsContainerManager.AddAction(postAction, postScheduleOptions, 0.10);
+								actionsContainerManager.AddAction(likeAction, likeScheduleOptions, 0.25);
+								actionsContainerManager.AddAction(followAction, followScheduleOptions, 0.20);
 								actionsContainerManager.AddAction(commentAction, commentScheduleOptions, 0.15);
-								actionsContainerManager.AddAction(likeCommentAction, likecommentScheduleOptions, 0.275);
+								actionsContainerManager.AddAction(likeCommentAction, likecommentScheduleOptions, 0.25);
 								#endregion
 								#region Agent State
 								if (shortInstagram == null) return;

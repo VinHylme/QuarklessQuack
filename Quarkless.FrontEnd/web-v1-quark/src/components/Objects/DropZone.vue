@@ -2,8 +2,8 @@
 <div class="container_dropzone">
  <section>
         <b-field>
-            <b-upload :style="isHidden ? styleObject : '' " @input="onChange" v-model="dropFiles" :multiple="isMulti" :accept="acceptFile" @drop="droped" drag-drop>
-                <section class="section">
+            <b-upload :style="isHidden ? [styleObject, styleSize] : [styleSize] " @input="onChange" v-model="dropFiles" :multiple="isMulti" :accept="acceptFile" @drop="droped" drag-drop>
+                <section v-if="!isHidden" class="section">
                     <div class="content has-text-centered">
                         <p>
                             <b-icon
@@ -14,6 +14,7 @@
                         <p>Drop your files here or click to upload</p>
                     </div>
                 </section>
+                <section v-else style="width:100%; padding:2em;"></section>
             </b-upload>
         </b-field>
 
@@ -38,22 +39,34 @@ export default {
     props:{
         isMulti:Boolean,
         acceptFile:String,
-        isHidden:false
+        isHidden:false,
+        swidth:String,
+        sheight:String
     },
    data() {
     return {
         dropFiles: [],
+        styleSize:{
+            width:this.swidth + '!important',
+            height:this.sheight +'!important',
+        },
         styleObject:{
             margin: "0 auto",
             padding:0,
-            width:"250px",
-            height:"250px",
             position:"absolute",
             top:0,
             left:0,
+            right:0,
+            bottom:0,
             opacity:0,
         }
     }
+  },
+  created(){
+      if(this.swidth === undefined||this.swidth === null){
+          this.swidth = "250px";
+          this.sheight = "250px";
+      }
   },
   methods: {
     uuidv4() 

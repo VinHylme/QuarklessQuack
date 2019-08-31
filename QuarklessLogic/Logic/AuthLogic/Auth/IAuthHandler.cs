@@ -17,6 +17,7 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 		Task<ResultCarrier<RespondToAuthChallengeResponse>> SetNewPassword(NewPasswordRequest Newrequest);
 		Task<ResultCarrier<SignUpResponse>> Register(RegisterAccountModel registerAccount);
 		Task<ResultCarrier<GetUserResponse>> GetUser(string accessToken);
+		Task<ResultCarrier<CodeDeliveryDetailsType>> ResendConfirmationCode(string userName);
 		Task<ResultCarrier<ConfirmSignUpResponse>> ConfirmSignUp(EmailConfirmationModel emailConfirmationModel);
 		Task<ResultCarrier<AdminAddUserToGroupResponse>> AddUserToGroup(string groupName, string username);
 		ResultCarrier<CognitoUser> GetUserById(string userId);

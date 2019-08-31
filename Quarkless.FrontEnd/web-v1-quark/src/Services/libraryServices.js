@@ -1,31 +1,65 @@
 import Api from './Api'
 
 export default {
-  GetSavedCaptions(accountId, instagramId){
-    return Api(true).get('library/savedCaptions/' + accountId + '/' + instagramId)
+  GetSavedCaptions(accountId){
+    return Api(true).get('library/savedCaptions/' + accountId)
   },
-  GetSavedMedias(accountId, instagramId){
-    return Api(true).get('library/savedMedias/' + accountId + '/' + instagramId)
+  GetSavedMedias(accountId){
+    return Api(true).get('library/savedMedias/' + accountId)
   },
-  GetSavedHashtags(accountId, instagramId){
-    return Api(true).get('library/savedHashtags/' + accountId + '/' + instagramId)
+  GetSavedHashtags(accountId){
+    return Api(true).get('library/savedHashtags/' + accountId)
   },
-  SetSavedCaptions(accountId, instagramId, data){
-    return Api(true).post('library/savedCaptions/' + accountId + '/' + instagramId, data)
+  GetSavedMessages(accountId){
+    return Api(true).get('library/savedMessages/' + accountId)
   },
-  SetSavedMedias(accountId, instagramId, data){
-    return Api(true).post('library/savedMedias/' + accountId + '/' + instagramId, data)
+
+  GetSavedCaptionsForUser(instagramAccountId){
+    return Api(true).get('library/savedCaptionsForUser/' + instagramAccountId)
   },
-  SetSavedHashtags(accountId, instagramId, data){
-    return Api(true).post('library/savedHashtags/' + accountId + '/' + instagramId, data)
+  GetSavedMediasForUser(instagramAccountId){
+    return Api(true).get('library/savedMediasForUser/' + instagramAccountId)
   },
-  DeleteSavedCaptions(accountId, instagramId, data){
-    return Api(true).put('library/savedCaptions/' + accountId + '/' + instagramId, data)
+  GetSavedHashtagsForUser(instagramAccountId){
+    return Api(true).get('library/savedHashtagsForUser/' + instagramAccountId)
   },
-  DeleteSavedMedias(accountId, instagramId, data){
-    return Api(true).put('library/savedMedias/' + accountId + '/' + instagramId, data)
+  GetSavedMessagesForUser(instagramAccountId){
+    return Api(true).get('library/savedMessagesForUser/' + instagramAccountId)
   },
-  DeleteSavedHashtags(accountId, instagramId, data){
-    return Api(true).put('library/savedHashtags/' + accountId + '/' + instagramId, data)
+
+  SetSavedCaptions(data){
+    return Api(true).post('library/savedCaptions',data)
   },
+  SetSavedMedias(data){
+    return Api(true).post('library/savedMedias', data)
+  },
+  SetSavedHashtags(data){
+    return Api(true).post('library/savedHashtags', data)
+  },
+  SetSavedMessages(data){
+    return Api(true).post('library/savedMessages', data)
+  },
+
+  UpdateSavedCaption(data){
+    return Api(true).put('library/savedCaptions', data)
+  },
+  UpdateSavedHashtags(data){
+    return Api(true).put('library/savedHashtags', data)
+  },
+  UpdateSavedMessages(data){
+    return Api(true).put('library/savedMessages', data)
+  },
+  
+  DeleteSavedCaptions(data){
+    return Api(true).put('library/delete/savedCaptions', data)
+  },
+  DeleteSavedMedias(data){
+    return Api(true).put('library/delete/savedMedias', data)
+  },
+  DeleteSavedHashtags(data){
+    return Api(true).put('library/delete/savedHashtags', data)
+  },
+  DeleteSavedMessages(data){
+    return Api(true).put('library/delete/savedMessages', data)
+  }
 }

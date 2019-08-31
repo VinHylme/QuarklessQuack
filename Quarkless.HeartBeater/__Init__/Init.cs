@@ -110,8 +110,13 @@ namespace Quarkless.HeartBeater.__Init__
 				try
 				{
 					var workers = (await GetAccounts(false, settings.Accounts.Select(_ => _.Username).ToArray())).ToList();
-					var subcategories = (await _topicBuilder.GetAllTopicCategories()).Select(x => x.SubCategories)
-						.SquashMe().Distinct();
+					_topicBuilder.Init(new UserStoreDetails
+					{
+						OAccountId = workers.FirstOrDefault()?.AccountId,
+						OInstagramAccountUser = workers.FirstOrDefault()?.Id
+					});
+					await _topicBuilder.BuildTopics((await _topicBuilder.GetAllTopicCategories())
+						.DistinctBy(x=>x.CategoryName).Where(sub=>sub.CategoryName.Contains("&")||sub.CategoryName.Contains("/")).Skip(1));
 					var total = (await _topicBuilder.GetTopics())
 						.Select(s => s.SubTopics)
 						.SquashMe()
@@ -155,6 +160,8 @@ namespace Quarkless.HeartBeater.__Init__
 
 					var metadataBuilder =
 						new MetadataBuilder(Assignments, _context, _heartbeatLogic, _proxyLogic, _responseResolver);
+					
+					//var currentBusinessCategories = await metadataBuilder.BuildTopicTypes();
 					await metadataBuilder.PopulateCorpusData(populateAssignments, 2);
 				}
 				catch (Exception e)
@@ -174,7 +181,7 @@ namespace Quarkless.HeartBeater.__Init__
 			{ 
 				#region Initialise
 				var workers = await GetAccounts(false,settings.Accounts.Select(_ => _.Username).ToArray());
-				var requester = await GetActiveInstagramAccountRequests();
+				var requester = await GetActiveInstagramAccountRequests(settings.ActionExecute);
 				var shortInstagramAccountModels = workers as ShortInstagramAccountModel[] ?? workers.ToArray();
 				var ratio = (double) shortInstagramAccountModels.Count() / requester.Count;
 
@@ -233,7 +240,8 @@ namespace Quarkless.HeartBeater.__Init__
 				#endregion
 
 				var metadataBuilder = new MetadataBuilder(Assignments, _context, _heartbeatLogic, _proxyLogic, _responseResolver);
-				
+				//var currentBusinessCategories = await metadataBuilder.BuildTopicTypes();
+				//await _topicBuilder.AddTopicCategories(currentBusinessCategories);
 				switch (settings.ActionExecute)
 				{
 					case ActionExecuteType.Base:
@@ -259,7 +267,7 @@ namespace Quarkless.HeartBeater.__Init__
 						break;
 					case ActionExecuteType.Other:
 						var googleImages = Task.Run(async () => await metadataBuilder.BuildGoogleImages(20));
-						var yandexImages = Task.Run(async () => await metadataBuilder.BuildYandexImages());
+						var yandexImages = Task.Run(async () => await metadataBuilder.BuildYandexImages(takeTopicAmount:1));
 						Task.WaitAll(googleImages, yandexImages);
 						break;
 					case ActionExecuteType.UserSelf:
@@ -294,12 +302,11 @@ namespace Quarkless.HeartBeater.__Init__
 			watch.Stop();
 			Console.WriteLine($"Heartbeat ended : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
 		}
-		private async Task<List<RequestAccountModel>> GetActiveInstagramAccountRequests()
+		private async Task<List<RequestAccountModel>> GetActiveInstagramAccountRequests(ActionExecuteType type)
 		{
 			try
 			{
-				var requests = new List<RequestAccountModel>();
-				var resp =  await _instagramAccountLogic.GetActiveAgentInstagramAccounts();
+				var resp =  await _instagramAccountLogic.GetActiveAgentInstagramAccounts((int)type);
 				return resp.Select(p=>new RequestAccountModel
 				{
 					InstagramAccount = p,

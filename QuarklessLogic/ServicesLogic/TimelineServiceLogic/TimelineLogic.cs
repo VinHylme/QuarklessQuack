@@ -6,12 +6,11 @@ using QuarklessContexts.Models.MediaModels;
 using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.Handlers.RequestBuilder.RequestBuilder;
 using QuarklessLogic.QueueLogic.Services;
-using QuarklessRepositories.RedisRepository.TimelineJobRedis;
-using QuarklessRepositories.Repository.TimelineRepository;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using MoreLinq;
 
 namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 {
@@ -272,7 +271,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 				EnqueueTime = s.EnqueueTime,
 				ItemId = s.ItemId,
 				TargetId = Regex.Match(s.Url.Split('/').Last(), @"\d+").Value
-			});
+			}).Distinct();
 		}
 		public IEnumerable<ResultBase<TimelineItem>> GetAllEventsForUser(string userName, DateTime startDate, DateTime? endDate = null,
 		string instaId = null, int limit = 1000, TimelineDateType timelineDateType = TimelineDateType.Backwards)

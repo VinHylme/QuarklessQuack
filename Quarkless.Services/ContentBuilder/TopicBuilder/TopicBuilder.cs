@@ -59,27 +59,26 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 				var subtopics = new List<SubTopics>();
 				foreach(var subCategory in topic.SubCategories)
 				{
-					try { 
-						var subTopics_ = new QuarklessContexts.Models.Profiles.SubTopics();
-						subTopics_.TopicName = subCategory;
-						subTopics_.RelatedTopics = new List<string>();
-						var hashres = await _aPIClientContainer.Hashtag.SearchHashtagAsync(subCategory);
-						if (hashres.Succeeded)
+					try {
+						var topics = new SubTopics {TopicName = subCategory, RelatedTopics = new List<string>()};
+						var makeSearchableCategory = Regex.Replace(subCategory, @"[^\w\d]", "");
+						var hashtagResults = await _aPIClientContainer.Hashtag.SearchHashtagAsync(makeSearchableCategory);
+						if (hashtagResults.Succeeded)
 						{
-							subTopics_.RelatedTopics.AddRange(hashres.Value.Where(s=>s.NonViolating).Select(c=>c.Name));
-							foreach(var hashr in hashres.Value.Take(20))
+							topics.RelatedTopics.AddRange(hashtagResults.Value.Where(s=>s.NonViolating).Select(c=>c.Name));
+							foreach(var hashtag in hashtagResults.Value.Take(20))
 							{
-								var sectionRes = await _aPIClientContainer.Hashtag.GetHashtagsSectionsAsync(hashr.Name, PaginationParameters.MaxPagesToLoad(1));
+								var sectionRes = await _aPIClientContainer.Hashtag.GetHashtagsSectionsAsync(hashtag.Name, PaginationParameters.MaxPagesToLoad(1));
 								if (!sectionRes.Succeeded) continue;
-								subTopics_.RelatedTopics.AddRange(sectionRes.Value.RelatedHashtags.Select(sx=>sx.Name));
+								topics.RelatedTopics.AddRange(sectionRes.Value.RelatedHashtags.Select(sx=>sx.Name));
 								await Task.Delay(700);
 							}
 						}
-						await _topicServicesLogic.AddRelated(subTopics_);
+						await _topicServicesLogic.AddRelated(topics);
 						subtopics.Add(new SubTopics
 						{
-							TopicName = subTopics_.TopicName,
-							RelatedTopics =  subTopics_.RelatedTopics
+							TopicName = topics.TopicName,
+							RelatedTopics =  topics.RelatedTopics
 						});
 					}
 					catch(Exception e)

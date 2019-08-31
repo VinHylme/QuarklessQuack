@@ -8,16 +8,38 @@ namespace QuarklessContexts.Models.Library
 {
 	public class HashtagsLib
 	{
+		[BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
+		[BsonId]
+		public string _id { get; set; }
+		[BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
 		public string InstagramAccountId { get; set; }
+		public string AccountId { get; set;  }
 		public string GroupName { get; set;  }
-		public List<string> Hashtag;
+		public List<string> Hashtag { get; set; }
 		public DateTime DateAdded { get; set;  }
 	}
 	public class CaptionsLib
 	{
+		[BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
+		[BsonId]
+		public string _id { get; set; }
+		[BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
 		public string InstagramAccountId { get; set; }
+		public string AccountId { get; set;  }
 		public string GroupName { get; set; }
-		public string Caption;
+		public string Caption { get; set; }
+		public DateTime DateAdded { get; set;  }
+	}
+	public class MessagesLib
+	{
+		[BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
+		[BsonId]
+		public string _id { get; set; }
+		[BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
+		public string InstagramAccountId { get; set; }
+		public string AccountId { get; set;  }
+		public string GroupName { get; set; }
+		public string Message { get; set; }
 		public DateTime DateAdded { get; set;  }
 	}
 	public enum MediaSelectionType
@@ -29,25 +51,19 @@ namespace QuarklessContexts.Models.Library
 		[Description("carousel")]
 		Carousel = 2
 	}
+
 	public class MediasLib
 	{
+		[BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
+		[BsonId]
+		public string _id { get; set; }
+		[BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
 		public string InstagramAccountId { get; set; }
+		public string AccountId { get; set;  }
 		public string GroupName { get; set; }
 		public MediaSelectionType MediaType { get; set;  }
 		public DateTime DateAdded { get; set;  }
 		public string MediaBytes { get; set;  }
 		public string MediaUrl { get; set;  }
-	}
-	public class LibraryModel
-	{
-		[BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
-		[BsonId]
-		public string _id { get; set; }
-		public string AccountId { get; set;  }
-		[BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
-		public string InstagramAccountId {get; set;}
-		public HashtagsLib SavedHashtags { get; set; }
-		public CaptionsLib SavedCaptions { get; set; }
-		public MediasLib SavedMedias { get; set; }
 	}
 }

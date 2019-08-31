@@ -279,13 +279,14 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					};
 					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
 					var imalike = worker.InstagramRequests.Profile.Theme.ImagesLike;
+					if (imalike == null) return;
 					var res = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaForSpecificUserYandex, worker.Topic.TopicFriendlyName, worker.InstagramRequests.InstagramAccount.Id);
 
 					var by = new By { ActionType = 0, User = worker.InstagramRequests.InstagramAccount.Id };
 					var meta_S = res as __Meta__<Media>[] ?? res.ToArray();
 					if (!meta_S.Any() || meta_S.Where(x => x != null).All(s => !s.SeenBy.Any(sb => sb.User == by.User && sb.ActionType == by.ActionType)))
 					{
-						var filter = imalike.TakeAny(1).Where(s => s.TopicGroup == worker.Topic.TopicFriendlyName);
+						var filter = imalike.Where(s => s.TopicGroup.ToLower() == worker.Topic.TopicFriendlyName.ToLower());
 						var groupImagesAlikes = filter as GroupImagesAlike[] ?? filter.ToArray();
 						var yan = searcher.SearchViaYandexBySimilarImages(groupImagesAlikes.TakeAny(takeTopicAmount).ToList(),limit);
 
@@ -831,34 +832,39 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 						var userFirst = fetchUsersMedia.Medias.FirstOrDefault();
 						if (userFirst != null) { 
 							var details = await searcher.SearchInstagramFullUserDetail(userFirst.User.UserId);
-							
-							await _logic.PartialUpdateInstagramAccount(user.AccountId, user.Id, new QuarklessContexts.Models.InstagramAccounts.InstagramAccountModel
-							{
-								FollowersCount = details.UserDetail.FollowerCount,
-								FollowingCount = details.UserDetail.FollowingCount,
-								TotalPostsCount = details.UserDetail.MediaCount,
-								Email = details.UserDetail.PublicEmail,
-								ProfilePicture = details.UserDetail.ProfilePicture ?? details.UserDetail.ProfilePicUrl,
-								FullName = details.UserDetail.FullName,
-								UserBiography = new QuarklessContexts.Models.InstagramAccounts.Biography
+							await _logic.PartialUpdateInstagramAccount(user.AccountId, user.Id,
+								new QuarklessContexts.Models.InstagramAccounts.InstagramAccountModel
 								{
-									Text = details.UserDetail.BiographyWithEntities.Text,
-									Hashtags = details.UserDetail.BiographyWithEntities.Entities.Select(_=>_.Hashtag.Name).ToList()
-								},
-								IsBusiness =  details.UserDetail.IsBusiness,
-								Location = new Location
-								{
-									Address = details.UserDetail.AddressStreet,
-									City = details.UserDetail.CityName,
-									Coordinates = new Coordinates
+									FollowersCount = details.UserDetail.FollowerCount,
+									FollowingCount = details.UserDetail.FollowingCount,
+									TotalPostsCount = details.UserDetail.MediaCount,
+									Email = details.UserDetail.PublicEmail,
+									ProfilePicture =
+										details.UserDetail.ProfilePicture ?? details.UserDetail.ProfilePicUrl,
+									FullName = details.UserDetail.FullName,
+									UserBiography = new QuarklessContexts.Models.InstagramAccounts.Biography
 									{
-										Latitude = details.UserDetail.Latitude,
-										Longitude = details.UserDetail.Longitude
+										Text = details.UserDetail.BiographyWithEntities.Text,
+										Hashtags = details.UserDetail.BiographyWithEntities.Entities
+											.Select(_ => _.Hashtag.Name).ToList()
 									},
-									PostCode = details.UserDetail.ZipCode
-								},
-								PhoneNumber = details.UserDetail.PublicPhoneCountryCode + (!string.IsNullOrEmpty(details.UserDetail.PublicPhoneNumber) ? details.UserDetail.PublicPhoneNumber : details.UserDetail.ContactPhoneNumber)
-							});
+									IsBusiness = details.UserDetail.IsBusiness,
+									Location = new Location
+									{
+										Address = details.UserDetail.AddressStreet,
+										City = details.UserDetail.CityName,
+										Coordinates = new Coordinates
+										{
+											Latitude = details.UserDetail.Latitude,
+											Longitude = details.UserDetail.Longitude
+										},
+										PostCode = details.UserDetail.ZipCode
+									},
+									PhoneNumber = details.UserDetail.PublicPhoneCountryCode +
+									              (!string.IsNullOrEmpty(details.UserDetail.PublicPhoneNumber)
+										              ? details.UserDetail.PublicPhoneNumber
+										              : details.UserDetail.ContactPhoneNumber)
+								});
 						}
 					}
 				});

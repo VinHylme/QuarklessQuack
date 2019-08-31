@@ -22,48 +22,48 @@ namespace QuarklessRepositories.InstagramAccountRepository
 
 		public async Task<ResultCarrier<IEnumerable<InstagramAccountModel>>> GetInstagramAccountsOfUser(string userId, int type)
 		{
-			ResultCarrier<IEnumerable<InstagramAccountModel>> Result = new ResultCarrier<IEnumerable<InstagramAccountModel>>();
+			var result = new ResultCarrier<IEnumerable<InstagramAccountModel>>();
 			try
 			{
 				var builder = Builders<InstagramAccountModel>.Filter;
 				var filter = builder.Eq("AccountId",userId) & builder.Eq("Type",type);
 
 				var accounts = await _context.InstagramAccounts.FindAsync(filter);
-				Result.IsSuccesful = true;
-				Result.Results = accounts.ToList();
-				return Result;
+				result.IsSuccesful = true;
+				result.Results = accounts.ToList();
+				return result;
 			}
 			catch (Exception ee)
 			{
-				Result.Info = new ErrorResponse
+				result.Info = new ErrorResponse
 				{
 					Exception = ee,
 					Message = $"Failed to get instagram accounts for user: {userId}, error: {ee.Message}"
 				};
-				return Result;
+				return result;
 			}
 		}
 		public async Task<ResultCarrier<InstagramAccountModel>> GetInstagramAccount(string accountId, string instagramAccountId)
 		{
-			var Result = new ResultCarrier<InstagramAccountModel>();
+			var result = new ResultCarrier<InstagramAccountModel>();
 			try
 			{
 				var builders = Builders<InstagramAccountModel>.Filter;
 
 				var filter = builders.Eq("AccountId", accountId) & builders.Eq("_id",ObjectId.Parse(instagramAccountId));
 				var accounts = await _context.InstagramAccounts.FindAsync(filter);
-				Result.IsSuccesful = true;
-				Result.Results = accounts.FirstOrDefault();
-				return Result;
+				result.IsSuccesful = true;
+				result.Results = accounts.FirstOrDefault();
+				return result;
 			}
 			catch (Exception ee)
 			{
-				Result.Info = new ErrorResponse
+				result.Info = new ErrorResponse
 				{
 					Exception = ee,
 					Message = $"Failed to get instagram accounts for user: {accountId} for account {instagramAccountId}, error: {ee.Message}"
 				};
-				return Result;
+				return result;
 			}
 		}
 		public async Task<InstagramAccountModel> AddInstagramAccount(InstagramAccountModel instagramAccount)
@@ -88,15 +88,11 @@ namespace QuarklessRepositories.InstagramAccountRepository
 		{
 			try { 
 				var filter = Builders<InstagramAccountModel>.Filter.Eq("_id", instagramAccountId);
-				var updList = new List<UpdateDefinition<InstagramAccountModel>>();
 
 				var updates = Builders<InstagramAccountModel>.Update;
-				var IgnoreNullValues = instagramAccountModel.Recreate();
+				var ignoreNullValues = instagramAccountModel.Recreate();
 
-				foreach(var valuesToTake in IgnoreNullValues)
-				{
-					updList.Add(updates.Set(valuesToTake.Key, valuesToTake.Value));
-				}
+				var updList = ignoreNullValues.Select(valuesToTake => updates.Set(valuesToTake.Key, valuesToTake.Value)).ToList();
 
 				var finalUpdateCommand = Builders<InstagramAccountModel>.Update.Combine(updList);
 				var result = await _context.InstagramAccounts.UpdateOneAsync(filter, finalUpdateCommand);
@@ -143,12 +139,17 @@ namespace QuarklessRepositories.InstagramAccountRepository
 			await _context.InstagramAccounts.UpdateOneAsync(filter, updateDef);
 		}
 
-		public async Task<IEnumerable<ShortInstagramAccountModel>> GetActiveAgentInstagramAccounts()
+		public async Task<IEnumerable<ShortInstagramAccountModel>> GetActiveAgentInstagramAccounts(int actionExType = -1)
 		{
-			var builders = Builders<InstagramAccountModel>.Filter;
-			var filter = builders.Eq(_=>_.AgentState, (int) AgentState.Running) & builders.Eq(_=>_.Type, 0);
-			var res = await _context.InstagramAccounts.FindAsync(filter);
-			return res.ToList().Select(r => new ShortInstagramAccountModel
+			IAsyncCursor<InstagramAccountModel> results;
+			if(actionExType == 1)
+				results = await _context.InstagramAccounts.FindAsync(_=>(_.AgentState == (int) AgentState.Running 
+							|| _.AgentState == (int) AgentState.Sleeping) && _.Type == 0);
+			else
+			{
+				results = await _context.InstagramAccounts.FindAsync(_=>_.AgentState == (int) AgentState.Running && _.Type == 0);
+			}
+			return results.ToList().Select(r => new ShortInstagramAccountModel
 			{
 				AccountId = r.AccountId,
 				AgentState = r.AgentState,

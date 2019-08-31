@@ -33,13 +33,11 @@ namespace Quarkless.Controllers
 			IList<string> results = new List<string>();
 			foreach (var file in Request.Form.Files)
 			{
-				if (file.Length > 0)
-				{
-					string keyName = $"{_userContext.CurrentUser}:{instagramAccountId}:{profileId}:{file.Name}";
-					var res = await _s3BucketLogic.UploadStreamFile(file.OpenReadStream(), keyName: keyName);
-					if (string.IsNullOrEmpty(res)) return BadRequest("Something went wrong");
-					results.Add(res);
-				}
+				if (file.Length <= 0) continue;
+				var keyName = $"{_userContext.CurrentUser}:{instagramAccountId}:{profileId}:{file.Name}";
+				var res = await _s3BucketLogic.UploadStreamFile(file.OpenReadStream(), keyName: keyName);
+				if (string.IsNullOrEmpty(res)) return BadRequest("Something went wrong");
+				results.Add(res);
 			}
 			return Ok(new { Urls = results });
 		}

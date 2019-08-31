@@ -7,7 +7,7 @@ import LibraryServices from './Services/libraryServices';
 import Axios from 'axios';
 import decoder from 'jwt-decode';
 import moment from 'moment';
-
+import helper from './helpers';
 Vue.use(Vuex);
 export default new Vuex.Store({
   state:{
@@ -15,7 +15,12 @@ export default new Vuex.Store({
     AccountData:{
       InstagramAccounts:[],
       Profiles:[],
-      Library:[],
+      Library:{
+        MediaLibrary:[],
+        CaptionLibrary:[],
+        HashtagLibrary:[],
+        MessagesLibrary:[]
+      },
       TimelineData:[],
       TimelineLogData:[],
       ProfileConfg:{}
@@ -143,25 +148,39 @@ export default new Vuex.Store({
 
     },
     set_saved_medias(state, data){
-      state.AccountData.Library.push(data.request);
+      if(data.request !== undefined || data.request !== null){
+        var index = 0;
+        for(index; index < data.request.length; index++)
+        {
+          state.AccountData.Library.MediaLibrary.push(data.request[index])
+        }
+      }
     },
     failed_to_set_saved_medias(state, data){
 
     },
     get_saved_medias(state, data){
-      state.AccountData.Library = data.response.data.data;
+      state.AccountData.Library.MediaLibrary = data.response.data.data;
+    },
+    get_saved_medias_for_user(state, data){
+      if(data.response.data.data !== undefined || data.response.data.data !== null){
+        var index = 0;
+        for(index; index < data.response.data.data.length; index++){
+          //state.AccountData.Library.push()
+        }
+      }
     },
     failed_to_get_saved_medias(state){
       state.AccountData.Library = null;
     },
     delete_saved_medias(state, data){
       let position = -1;
-      state.AccountData.Library.forEach((item,index) => 
+      state.AccountData.Library.MediaLibrary.forEach((item,index) => 
       {
-        if(item.groupName === data.request.data.groupName)
+        if(item._id === data.request._id)
           position = index;
       });
-      state.AccountData.Library.splice(position,1);
+      state.AccountData.Library.MediaLibrary.splice(position,1);
     },
     failed_to_delete_saved_medias(state){
       state.AccountData.Library = null;
@@ -174,6 +193,86 @@ export default new Vuex.Store({
     failed_to_retrieve_event_logs(state)
     {
       state.AccountData.TimelineLogData = []
+    },
+    async update_profile_picture(state, data){
+      await helper.readFile(data.image.requestData[0]).then(res=>{
+        state.AccountData.InstagramAccounts.filter((item)=>{
+          if(item.id == data.instagramAccountId)
+            item.profilePicture = res
+        })
+      })
+    },
+    update_biography(state, data){
+      state.AccountData.InstagramAccounts.filter((item)=>{
+        if(item.id == data.instagramAccountId)
+          item.userBiography = data.request.biography
+      })
+    },
+    set_saved_hashtags(state, data){
+      if(data.request !== undefined || data.request !== null){
+        state.AccountData.Library.HashtagLibrary.push(data.request)      
+      }
+    },
+    failed_to_set_saved_hashtags(state, data){
+
+    },
+    set_saved_caption(state, data){
+      if(data.request !== undefined || data.request !== null){
+        state.AccountData.Library.CaptionLibrary.push(data.request)      
+      }
+    },
+    failed_to_set_saved_caption(state, data){
+
+    },
+    get_saved_caption(state, data){
+      state.AccountData.Library.CaptionLibrary = data.response.data.data;
+    },
+    get_saved_hashtags(state, data){
+      state.AccountData.Library.HashtagLibrary = data.response.data.data;
+    },
+    failed_to_get_saved_hashtags(state){
+      state.AccountData.Library.HashtagLibrary = [];
+    },
+    failed_to_get_saved_caption(state){
+      state.AccountData.Library.CaptionLibrary = [];
+    },
+    delete_saved_caption(state, data){
+      let position = -1;
+      state.AccountData.Library.CaptionLibrary.forEach((item,index)=>{
+        if(item._id == data.request._id){
+          position = index;
+        }
+      });
+      state.AccountData.Library.CaptionLibrary.splice(position,1);
+    },
+    delete_saved_hashtags(state, data){
+      let position = -1;
+      state.AccountData.Library.HashtagLibrary.forEach((item,index)=>{
+        if(item._id == data.request._id){
+          position = index;
+        }
+      });
+      state.AccountData.Library.HashtagLibrary.splice(position,1);
+    },
+    delete_saved_message(state, data){
+      let position = -1;
+      state.AccountData.Library.MessagesLibrary.forEach((item,index)=>{
+        if(item._id == data.request._id){
+          position = index;
+        }
+      });
+      state.AccountData.Library.MessagesLibrary.splice(position,1);
+    },
+    get_saved_messages(state, data){
+      state.AccountData.Library.MessagesLibrary = data.response.data.data;
+    },
+    failed_to_get_saved_message(state){
+      state.AccountData.Library.MessagesLibrary = [];
+    },
+    set_saved_message(state, data){
+      if(data.request !== undefined || data.request !== null){
+        state.AccountData.Library.MessagesLibrary.push(data.request)      
+      }
     }
   },
   getters: {
@@ -189,10 +288,18 @@ export default new Vuex.Store({
     },
     UserProfiles: state => {return state.AccountData.Profiles},
     UserLibraries: state => {return state.AccountData.Library},
-    UserLibrary: state => (instagramAccountId) => {
-      let datar = state.AccountData.Library.filter(item=>item.instagramAccountId === instagramAccountId);
-      return datar;
+    UserMediaLibrary: state => (instagramAccountId) => {
+      return state.AccountData.Library.MediaLibrary.filter(item=>item.instagramAccountId === instagramAccountId);
     },
+    UserCaptionLibrary: state => (instagramAccountId) => {
+      return state.AccountData.Library.CaptionLibrary.filter(item=>item.instagramAccountId === instagramAccountId);
+    },
+    UserHashtagsLibrary: state => (instagramAccountId) => {
+      return state.AccountData.Library.HashtagLibrary.filter(item=>item.instagramAccountId === instagramAccountId);
+    },
+    UserMessageLibrary: state => (instagramAccountId) => {
+      return state.AccountData.Library.MessagesLibrary.filter(item=>item.instagramAccountId === instagramAccountId);
+    },  
     UserProfile: state => (instaId) => 
     {
       let profile = state.AccountData.Profiles[state.AccountData.Profiles.findIndex(_=>_.instagramAccountId ==instaId)];
@@ -242,21 +349,145 @@ export default new Vuex.Store({
         })
       })
     },
-    SetSavedMedias({commit}, data){
+   
+    SetSavedMedias({commit}, medias){
       return new Promise((resolve, reject)=>{
-        LibraryServices.SetSavedMedias(data.accountId, data.instagramAccountId, data.data).then(resp=>{
-          commit('set_saved_medias', {request: data.data, response: resp});
+        LibraryServices.SetSavedMedias(medias).then(resp=>{
+          commit('set_saved_medias', {request: medias, response: resp});
           resolve(resp);
         }).catch((err)=>{
-          commit('failed_to_set_saved_medias', { request: data, error: err })
+          commit('failed_to_set_saved_medias', { request: medias, error: err })
+          reject(err);
+        })
+      })
+    }, 
+    //#region SavedCaptions
+    SetSavedCaption({commit}, caption){
+      return new Promise((resolve, reject)=>{
+        LibraryServices.SetSavedCaptions(caption).then(resp=>{
+          commit('set_saved_caption', {request: caption, response: resp});
+          resolve(resp);
+        }).catch((err)=>{
+          commit('failed_to_set_saved_caption', { request: caption, error: err })
           reject(err);
         })
       })
     },
-    GetSavedMedias({commit}, data){
+    UpdateSavedCaption({commit}, caption){
       return new Promise((resolve, reject)=>{
-        LibraryServices.GetSavedMedias(data.accountId, data.instagramAccountId).then(resp=>{
-          commit('get_saved_medias', {request: data, response: resp});
+        LibraryServices.UpdateSavedCaption(caption).then(resp=>{
+          //commit('update_saved_caption', {request: caption, response: resp});
+          resolve(resp);
+        }).catch((err)=>{
+          //commit('failed_to_update_saved_caption', { request: caption, error: err })
+          reject(err);
+        })
+      })
+    },
+    //#endregion
+    SetSavedHashtags({commit}, hashtags){
+      return new Promise((resolve, reject)=>{
+        LibraryServices.SetSavedHashtags(hashtags).then(resp=>{
+          commit('set_saved_hashtags', {request: hashtags, response: resp});
+          resolve(resp);
+        }).catch((err)=>{
+          commit('failed_to_set_saved_hashtags', { request: hashtags, error: err })
+          reject(err);
+        })
+      })
+    },
+    UpdateSavedHashtags({commit}, hashtags){
+      return new Promise((resolve, reject)=>{
+        LibraryServices.UpdateSavedHashtags(hashtags).then(resp=>{
+          //commit('update_saved_caption', {request: caption, response: resp});
+          resolve(resp);
+        }).catch((err)=>{
+          //commit('failed_to_update_saved_caption', { request: caption, error: err })
+          reject(err);
+        })
+      })
+    },
+    DeleteSavedHashtags({commit}, hashtags){
+      return new Promise((resolve, reject)=>{
+        LibraryServices.DeleteSavedHashtags(hashtags).then(resp=>{
+          commit('delete_saved_hashtags', {request: hashtags, response: resp});
+          resolve(resp);
+        }).catch((err)=>{
+          //commit('failed_to_update_saved_caption', { request: caption, error: err })
+          reject(err);
+        })
+      })
+    },
+    SetSavedMessages({commit}, message){
+      return new Promise((resolve, reject)=>{
+        LibraryServices.SetSavedMessages(message).then(resp=>{
+          commit('set_saved_message', {request: message, response: resp});
+          resolve(resp);
+        }).catch((err)=>{
+          //commit('failed_to_set_saved_messages', { request: message, error: err })
+          reject(err);
+        })
+      })
+    },
+    UpdateSavedMessages({commit}, message){
+      return new Promise((resolve, reject)=>{
+        LibraryServices.UpdateSavedMessages(message).then(resp=>{
+          //commit('update_saved_caption', {request: caption, response: resp});
+          resolve(resp);
+        }).catch((err)=>{
+          //commit('failed_to_update_saved_caption', { request: caption, error: err })
+          reject(err);
+        })
+      })
+    },
+    DeleteSavedMessages({commit}, message){
+      return new Promise((resolve, reject)=>{
+        LibraryServices.DeleteSavedMessages(message).then(resp=>{
+          commit('delete_saved_message', {request: message, response: resp});
+          resolve(resp);
+        }).catch((err)=>{
+          //commit('failed_to_update_saved_caption', { request: caption, error: err })
+          reject(err);
+        })
+      })
+    },
+    GetSavedMessages({commit}, accountId){
+      return new Promise((resolve, reject)=>{
+        LibraryServices.GetSavedMessages(accountId).then(resp=>{
+          commit('get_saved_messages', {request: accountId, response: resp});
+          resolve(resp);
+        }).catch((err)=>{
+          commit('failed_to_get_saved_message')
+          reject(err);
+        })
+      })
+    },
+    GetSavedHashtags({commit}, accountId){
+      return new Promise((resolve, reject)=>{
+        LibraryServices.GetSavedHashtags(accountId).then(resp=>{
+          commit('get_saved_hashtags', {request: accountId, response: resp});
+          resolve(resp);
+        }).catch((err)=>{
+          commit('failed_to_get_saved_hashtags')
+          reject(err);
+        })
+      })
+    },
+    DeleteSavedCaption({commit}, caption){
+      return new Promise((resolve, reject)=>{
+        LibraryServices.DeleteSavedCaptions(caption).then(resp=>{
+          commit('delete_saved_caption', {request: caption, response: resp});
+          resolve(resp);
+        }).catch((err)=>{
+          //commit('failed_to_update_saved_caption', { request: caption, error: err })
+          reject(err);
+        })
+      })
+    },
+    GetSavedMedias({commit}, accountId){
+      return new Promise((resolve, reject)=>{
+        LibraryServices.GetSavedMedias(accountId).then(resp=>{
+          commit('get_saved_medias', {request: accountId, response: resp});
           resolve(resp);
         }).catch((err)=>{
           commit('failed_to_get_saved_medias')
@@ -264,10 +495,32 @@ export default new Vuex.Store({
         })
       })
     },
-    DeleteSavedMedia({commit}, data){
+    GetSavedCaption({commit}, accountId){
       return new Promise((resolve, reject)=>{
-        LibraryServices.DeleteSavedMedias(data.accountId, data.instagramAccountId, data.data).then(resp=>{
-          commit('delete_saved_medias', {request: data, response: resp});
+        LibraryServices.GetSavedCaptions(accountId).then(resp=>{
+          commit('get_saved_caption', {request: accountId, response: resp});
+          resolve(resp);
+        }).catch((err)=>{
+          commit('failed_to_get_saved_caption')
+          reject(err);
+        })
+      })
+    },
+    GetSavedMediasForUser({commit}, instagramAccountId){
+      return new Promise((resolve, reject)=>{
+        LibraryServices.GetSavedMediasForUser(instagramAccountId).then(resp=>{
+          commit('get_saved_medias_for_user', {request: instagramAccountId, response: resp});
+          resolve(resp);
+        }).catch((err)=>{
+          commit('failed_to_get_saved_medias_for_user')
+          reject(err);
+        })
+      })
+    },
+    DeleteSavedMedia({commit}, media){
+      return new Promise((resolve, reject)=>{
+        LibraryServices.DeleteSavedMedias(media).then(resp=>{
+          commit('delete_saved_medias', {request: media, response: resp});
           resolve(resp);
         }).catch((err)=>{
           commit('failed_to_delete_saved_medias')
@@ -299,6 +552,22 @@ export default new Vuex.Store({
           commit('profile_uploaded_files',data);
           resolve(resp);
         }).catch((err)=>reject(err))
+      })
+    },
+    ChangeBiography({commit}, data){
+      return new Promise((resolve, reject)=>{
+        AccountServices.ChangeBiography(data.instagramAccountId, data.biography).then(resp=>{
+          commit('update_biography', {request: data, response: resp.data})
+          resolve(resp);
+        }).catch((err)=>reject(err));
+      });
+    },
+    ChangeProfilePicture({commit}, data){
+      return new Promise((resolve,reject)=>{
+        AccountServices.ChangeProfilePicture(data.instagramAccountId, data.image).then(resp=>{
+          commit('update_profile_picture', data);
+          resolve(resp);
+        }).catch((err)=> reject(err))
       })
     },
     SimilarSearch({commit},data){
@@ -439,6 +708,13 @@ export default new Vuex.Store({
           }
           reject(err);
         })
+      })
+    },
+    resendConfirmation({commit}, username){
+      return new Promise((resolve, reject)=>{
+        AccountServices.ResendConfirm(username).then(resp=>{
+          resolve(resp);
+        }).catch(err=>reject(err))
       })
     },
     async login({commit}, user){

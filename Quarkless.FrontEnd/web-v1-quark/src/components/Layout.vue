@@ -27,7 +27,18 @@
         </b-icon>
         </router-link>
       </b-tooltip>
-      <b-tooltip v-if="showData.userSelected" type="is-dark" label="Media Library" position="is-right" style="position:absolute; top:8em;left:4em;">
+       <b-tooltip type="is-dark" label="Messaging" position="is-right" style="position:absolute; top:8em;left:4em;">
+        <router-link to="/messaging/">
+        <b-icon
+          class="floater is-messaging"
+          pack="fa"
+          icon="inbox"
+          size="is-default"
+          type="is-light">
+        </b-icon>
+        </router-link>
+      </b-tooltip>
+      <b-tooltip v-if="showData.userSelected" type="is-dark" label="Media Library" position="is-right" style="position:absolute; top:10em;left:4em;">
         <router-link :to="'/library/'+showData.userSelected">
         <b-icon
           class="floater is-library"
@@ -79,7 +90,7 @@
     </div>
   </div>
   <div class="footere">
-    <p class="subtitle is-8">Copyright © 2019 HashtagGrow; All rights have been reserved</p>
+    <p class="subtitle is-8">Copyright © 2019 Quitic; All rights have been reserved</p>
   </div>
 </div>
 </template>
@@ -103,13 +114,20 @@ export default {
   },
   mounted(){
     this.$store.dispatch('AccountDetails', {"userId":this.$store.state.user}).then(s=>{
-          this.$store.dispatch('GetProfiles', this.$store.state.user).then(c=>{
-            this.isLoaded = true;
-          })
+      this.$store.dispatch('GetProfiles', this.$store.state.user).then(c=>{
+        this.isLoaded = true;
+      })
     });
     this.isNavOn = this.$store.getters.MenuState === 'true'
+    this.loadLibraryData();
   },
   methods:{
+    async loadLibraryData(){
+      await this.$store.dispatch('GetSavedCaption', this.$store.getters.User);
+      await this.$store.dispatch('GetSavedHashtags', this.$store.getters.User);
+      await this.$store.dispatch('GetSavedMessages', this.$store.getters.User);
+      await this.$store.dispatch('GetSavedMedias', this.$store.getters.User);
+    },
     deactivateUser(){
       this.showData.userSelected  = null;
     },
@@ -168,12 +186,16 @@ export default {
     top:4.5em;
     left:1.85em;
   }
+  &.is-messaging{
+    top:7em;
+    left:1.85em;
+  }
   &.is-library{
-    top:7.3em;
+    top:9.3em;
     left:1.85em;
   }
   &.is-show-extra{
-    top:9.6em;
+    top:11.6em;
     left:1.6em;
   }
 }
@@ -218,6 +240,9 @@ export default {
   background:$background;
 }
 ::-webkit-scrollbar {
-    display: none;
+   display: none;
+  // background: #232323; 
+  // width:6px;
+  //opacity: 0;
 }
 </style>

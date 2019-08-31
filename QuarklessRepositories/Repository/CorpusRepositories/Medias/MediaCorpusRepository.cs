@@ -81,7 +81,7 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 				}
 				else
 				{
-					filters = builders.Eq(_ => _.Topic, topic) & (builders.Eq(_ => _.Language, language) | builders.Eq(_ => _.Language, mapedLang));
+					filters = builders.Eq(_ => _.Topic, topic) & (builders.Eq(_ => _.Language.ToLower(), language) | builders.Eq(_ => _.Language.ToLower(), mapedLang));
 				}
 				var options = new FindOptions<MediaCorpus, MediaCorpus>();
 				if (limit != -1)

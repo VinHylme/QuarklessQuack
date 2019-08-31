@@ -5,7 +5,7 @@
   </a>
   <p class="title is-light">Quitic</p>
   <div class="modal-card">
-        <section class="modal-card-body">
+        <section v-if="!verificationNeeded" class="modal-card-body">
             <h3 class="title has-text-centered">Login</h3>
             <div class="box long">
               <b-field>
@@ -19,46 +19,94 @@
               </button>
             </div>
         </section>
+        <section v-else class="modal-card-body">
+          <h3 class="title has-text-centered">Confirm Account</h3>
+          <div class="box long">
+            <b-field>
+              <b-input v-model="confirmationCode" placeholder="your confirmation code"></b-input>
+            </b-field>
+            <div class="buttons has-addons is-centered">
+              <a @click="verificationNeeded=false" class="button">Back to login</a>
+              <a class="button">Confirm Account</a>
+              <a @click="resendConfirmation" class="button">Resend Confirmation Code</a>
+            </div>
+          </div>
+        </section>
   </div>
-    <br>
-    <b-notification v-if="showNotification" style="width:50%; margin:0 auto;"
-      v-bind:type="isSucesss?'is-success':'is-danger'"
-      aria-close-label="Close notification"
-      role="alert">
-      {{alert_text}}
-    </b-notification>
     <div class="footer">
-      <p class="subtitle is-8">Copyright © 2019 HashtagGrow; All rights have been reserved</p>
+      <p class="subtitle is-8">Copyright © 2019 Quitic; All rights have been reserved</p>
     </div>
 </div>
 </template>
 
 <script>
+import Vue from 'vue';
+
 export default {
   name:"MainLoginPage",
   data(){
     return {
+      confirmationCode:'',
       username:'',
       password:'',
-      alert_text:'',
-      showNotification:false,
       isSucesss:false,
-      isActive :false
+      isActive :false,
+      verificationNeeded:false
     }
   },
   methods:{
+    resendConfirmation(){
+      this.$store.dispatch('resendConfirmation',this.username).then(resp=>{
+        console.log(resp.data);
+         Vue.prototype.$toast.open({
+            message: 'Your confirmation code has been resend to ' + resp.data,
+            type: 'is-info',
+            position:'is-top',
+            duration:6000,
+            queue:false
+          });
+      }).catch(err=>{
+         Vue.prototype.$toast.open({
+            message: err.response.data.message,
+            type: 'is-danger',
+            position:'is-bottom',
+            duration:6000,
+            queue:false
+          });
+      })
+    },
     doLogin(){
       this.isActive = true;
       this.$store.dispatch('login',{Username:this.username, Password:this.password}).then(res=>{
         this.isSucesss = true;
-        this.showNotification = true;
         this.alert_text = "Welcome back " + this.username;
+        Vue.prototype.$toast.open({
+            message: 'Welcome back ' + this.username,
+            type: 'is-success',
+            position:'is-top',
+            duration:2000
+          })
         this.isActive = false;
         window.location.reload();
       }).catch(err=>{
-        this.showNotification = true;
-        this.alert_text =  "Failed to login, please try again.";
         this.isActive = false;
+        if(err.response.status === 401){
+          this.verificationNeeded = true;
+          Vue.prototype.$toast.open({
+            message: 'Please confirm your account by entering the confirmation code.',
+            type: 'is-info',
+            position:'is-top',
+            duration:6000
+          });
+        } 
+        else{
+         Vue.prototype.$toast.open({
+            message: 'Failed to login, please check your account details',
+            type: 'is-danger',
+            position:'is-bottom',
+            duration:6000
+          })
+        }
       })
     }
   }
@@ -69,11 +117,11 @@ export default {
 @import '../Style/darkTheme.scss';
 
 body,html{
- background-image: linear-gradient(to top, #a18cd1 0%, #fbc2eb 100%);
   margin: 0 auto;
+  background: $backround_back;
 }
 .contain{
-  background-image: url("../assets/9294.jpg");
+  //background-image: url("../assets/9294.jpg");
   background-size: cover;
   background-repeat: no-repeat;
   background-color:$backround_back;
@@ -136,7 +184,7 @@ body,html{
   }
 }
 .modal-card{
-  background-color:white;
+  background-color:#303030;
   padding:2em;
   //border-radius: 0.8em;
   opacity: 0.95;
@@ -150,14 +198,14 @@ body,html{
     margin: 0 auto;
     .box{
       padding:1em;
-      background-color:white;
+      background-color:transparent;
       border: none !important;
       box-shadow: none;
     }
-    background-color: white;
+    background-color: transparent;
     .title{
       font-size:3vh;
-      color:#232323;
+      color:#d9d9d9;
     }
     h3{
       color:$title;

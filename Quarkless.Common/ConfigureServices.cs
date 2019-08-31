@@ -76,6 +76,7 @@ using QuarklessLogic.Logic.ResponseLogic;
 using QuarklessLogic.Logic.TimelineEventLogLogic;
 using QuarklessRepositories.RedisRepository.APILogger;
 using QuarklessRepositories.RedisRepository.LibraryCache;
+using QuarklessRepositories.Repository.LibraryRepository;
 
 namespace Quarkless.Common
 {
@@ -212,6 +213,7 @@ namespace Quarkless.Common
 			services.AddTransient<IMediaCorpusCache, MediaCorpusCache>();
 			services.AddTransient<ITimelineJobRepository,TimelineJobRepository>();
 			services.AddTransient<ITopicCategoryRepository, TopicCategoryRepository>();
+			services.AddTransient<ILibraryRepository, LibraryRepository>();
 			services.AddTransient<ILibraryCache, LibraryCache>();
 			services.AddTransient<IAPILogCache, APILogCache>();
 			services.Configure<RedisOptions>(o =>

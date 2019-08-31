@@ -12,6 +12,7 @@ using QuarklessContexts.Models.ResponseModels;
 
 namespace QuarklessLogic.ContentSearch.SeleniumClient
 {
+
 	public class SeleniumClient : ISeleniumClient
 	{
 		//internal IWebDriver Driver { get; set; }
@@ -229,26 +230,26 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 				{
 					break;
 				}
-				else
-				{
-					foreach(var serpString in results)
-					{
-						try
-						{
-							total.Add(JsonConvert.DeserializeObject<SerpItem>(serpString));
-						}
-						catch
-						{
-							Console.WriteLine("could not convert serp object");
-						}
-					}
-					if(total.Count>0)
-						total.RemoveAt(0); //remove the duplicate
 
-					var nextPageUrl = driver.FindElement(By.ClassName("more__button")).GetAttribute("href");
-					Thread.Sleep(1000);
-					driver.Navigate().GoToUrl(nextPageUrl);
+				foreach(var serpString in results)
+				{
+					try
+					{
+						total.Add(JsonConvert.DeserializeObject<SerpItem>(serpString));
+					}
+					catch
+					{
+						var tryagainSerpString = serpString + "}}";
+						total.Add(JsonConvert.DeserializeObject<SerpItem>(tryagainSerpString));
+						//Console.WriteLine("could not convert serp object");
+					}
 				}
+				if(total.Count>0)
+					total.RemoveAt(0); //remove the duplicate
+
+				var nextPageUrl = driver.FindElement(By.ClassName("more__button")).GetAttribute("href");
+				Thread.Sleep(1000);
+				driver.Navigate().GoToUrl(nextPageUrl);
 			}
 			return total;
 		}

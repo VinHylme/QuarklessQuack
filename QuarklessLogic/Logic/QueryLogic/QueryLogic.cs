@@ -161,7 +161,7 @@ namespace QuarklessLogic.Logic.QueryLogic
 		{
 			return new ProfileConfiguration
 			{
-				Topics = (await _topicServicesLogic.GetAllTopicCategories()).DistinctBy(item=>item.CategoryName),
+				Topics = (await _topicServicesLogic.GetAllTopicCategories()).DistinctBy(item=>item.CategoryName).OrderBy(item=>item.CategoryName),
 				ColorsAllowed = Enum.GetValues(typeof(ColorType)).Cast<ColorType>().Select(v=>v.GetDescription()),
 				ImageTypes = Enum.GetValues(typeof(ImageType)).Cast<ImageType>().Select(v=>v.GetDescription()),
 				Orientations = Enum.GetValues(typeof(Orientation)).Cast<Orientation>().Select(v=>v.GetDescription()),
@@ -198,35 +198,62 @@ namespace QuarklessLogic.Logic.QueryLogic
 			}
 			return hashtags.Take(pickRate);
 		}
-		public async Task<SubTopics> GetReleatedKeywords(string topicName)
+
+		public async Task<SubTopics> GetRelatedKeywords(string topicName)
 		{
 			var res = await _searchingCache.GetReleatedTopic(topicName);
-			if (res != null) return res;
-			var hashtagsRes = await _hashtagLogic.SearchHashtagAsync(topicName);
+			if (res != null && res.RelatedTopics.Count>0) return res;
+
+			if (topicName.Contains('('))
+			{
+				var iterative = topicName.Split('(');
+				var totalRes = new SubTopics {TopicName = topicName, RelatedTopics = new List<string>()};
+				foreach (var topic in iterative)
+				{
+					var filtered = Regex.Replace(topic.ToLower(), "[^0-9a-zA-Z]+", "");
+					var search = await _hashtagLogic.SearchHashtagAsync(filtered);
+					if (!search.Succeeded)
+					{
+						var sRel = await _hashtagLogic.SearchReleatedHashtagAsync(topic, 1);
+						if (!sRel.Succeeded) return null;
+						totalRes.RelatedTopics.AddRange(sRel.Value.RelatedHashtags.Select(x=>x.Name));
+					}
+					else
+					{
+						totalRes.RelatedTopics.AddRange(search.Value.Select(x=>x.Name));
+					}
+				}
+				if(totalRes.RelatedTopics.Count > 0)
+					await _searchingCache.StoreRelatedTopics(totalRes);
+				return totalRes;
+			}
+			var cleanedTopic = Regex.Replace(topicName.ToLower(), "[^0-9a-zA-Z]+", "");
+			var hashtagsRes = await _hashtagLogic.SearchHashtagAsync(cleanedTopic);
 			if (!hashtagsRes.Succeeded)
 			{
-				var releated = await _hashtagLogic.SearchReleatedHashtagAsync(topicName, 1);
-				if (!releated.Succeeded) return null;
-				SubTopics subTopics = new SubTopics
+				var related = await _hashtagLogic.SearchReleatedHashtagAsync(cleanedTopic, 1);
+				if (!related.Succeeded) return null;
+				var subTopics = new SubTopics
 				{
 					TopicName = topicName,
-					RelatedTopics = releated.Value.RelatedHashtags.Select(s => s.Name).ToList()
+					RelatedTopics = related.Value.RelatedHashtags.Select(s => s.Name).ToList()
 				};
-				await _searchingCache.StoreRelatedTopics(subTopics);
+				if(subTopics.RelatedTopics.Count > 0)
+					await _searchingCache.StoreRelatedTopics(subTopics);
 				return subTopics;
 
 			}
 			else
 			{
-				SubTopics subTopics = new SubTopics
+				var subTopics = new SubTopics
 				{
 					TopicName = topicName,
 					RelatedTopics = hashtagsRes.Value.Select(s=>s.Name).ToList()
 				};
-				await _searchingCache.StoreRelatedTopics(subTopics);
+				if(subTopics.RelatedTopics.Count > 0)
+					await _searchingCache.StoreRelatedTopics(subTopics);
 				return subTopics;
 			}
-
 		}
 	}
 }

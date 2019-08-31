@@ -27,13 +27,10 @@ namespace QuarklessRepositories.RepositoryClientManager
 		public RepositoryContext(IOptions<Settings> options)
 		{
 			var client = new MongoClient(options.Value.ConnectionString);
-			if (client != null)
-			{
-				_clientDatabase = client.GetDatabase(options.Value.MainDatabase);
-				_controlDatabase = client.GetDatabase(options.Value.ControlDatabase);
-				_contentDatabase = client.GetDatabase(options.Value.ContentDatabase);
-				_schedulerDatabase = client.GetDatabase(options.Value.SchedulerDatabase);
-			}
+			_clientDatabase = client.GetDatabase(options.Value.MainDatabase);
+			_controlDatabase = client.GetDatabase(options.Value.ControlDatabase);
+			_contentDatabase = client.GetDatabase(options.Value.ContentDatabase);
+			_schedulerDatabase = client.GetDatabase(options.Value.SchedulerDatabase);
 		}
 
 		public IMongoCollection<TopicsModel> Topics => _contentDatabase.GetCollection<TopicsModel>("Topics");
@@ -52,6 +49,14 @@ namespace QuarklessRepositories.RepositoryClientManager
 		public IMongoCollection<HashtagsModel> Hashtags => _contentDatabase.GetCollection<HashtagsModel>("CHashtags");
 		public IMongoCollection<UserBiographyModel> UserBiography => _contentDatabase.GetCollection<UserBiographyModel>("BiographyDetail");
 		public IMongoCollection<JobDto> Timeline => _schedulerDatabase.GetCollection<JobDto>("Timeline.jobGraph");
+		public IMongoCollection<MediasLib> MediaLibrary =>
+			_clientDatabase.GetCollection<MediasLib>("UsersMediasLibrary");
+		public IMongoCollection<HashtagsLib> HashtagLibrary =>
+			_clientDatabase.GetCollection<HashtagsLib>("UsersHashtagsLibrary");
+		public IMongoCollection<CaptionsLib> CaptionLibrary =>
+			_clientDatabase.GetCollection<CaptionsLib>("UsersCaptionsLibrary");
+		public IMongoCollection<MessagesLib> MessagesLibrary=>
+			_clientDatabase.GetCollection<MessagesLib>("UsersMessagesLibrary");
 		public IMongoCollection<CommentCorpus> CorpusComments => _contentDatabase.GetCollection<CommentCorpus>("CComments");
 		public IMongoCollection<MediaCorpus> CorpusMedia => _contentDatabase.GetCollection<MediaCorpus>("CMedias");
 		public IMongoCollection<TopicCategories> TopicCategories => _contentDatabase.GetCollection<TopicCategories>("CTopic");

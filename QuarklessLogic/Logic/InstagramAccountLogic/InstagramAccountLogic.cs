@@ -78,7 +78,10 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 						{
 							ImageType = 0,
 							IsTumblry = false,
-							SearchTypes = new List<int> { 0, 1, 2 }
+							SearchTypes = new List<int> { 0, 1, 2 },
+							EnableAutoPosting = true,
+							AutoGenerateCaption = true,
+							AllowRepost = true
 						},
 						AutoGenerateTopics = false,
 						Language = "English",
@@ -290,7 +293,7 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 			#endregion
 			return await _instagramAccountRepository.PartialUpdateInstagramAccount(instagramAccountId, instagramAccountModel);
 		}
-		public async Task<IEnumerable<ShortInstagramAccountModel>> GetActiveAgentInstagramAccounts()
+		public async Task<IEnumerable<ShortInstagramAccountModel>> GetActiveAgentInstagramAccounts(int actionExType = -1)
 		{
 			try
 			{
@@ -300,7 +303,7 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 				//{
 				//	return activeAgentInstagramAccounts;
 				//}
-				var account = await _instagramAccountRepository.GetActiveAgentInstagramAccounts();
+				var account = await _instagramAccountRepository.GetActiveAgentInstagramAccounts(actionExType);
 				return account;
 			}
 			catch (Exception ee)

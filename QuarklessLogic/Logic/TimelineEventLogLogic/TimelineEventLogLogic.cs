@@ -21,7 +21,10 @@ namespace QuarklessLogic.Logic.TimelineEventLogLogic
 
 		public async Task<IEnumerable<TimelineEventLog>> GetLogsForUser(string accountId, int limit)
 		{
-			var res = (await _timelineLoggingRepository.GetLogsForUser(accountId)).Where(p=>p.Level == 1).OrderByDescending(_=>_.DateAdded).Take(limit);
+			var res = (await _timelineLoggingRepository.GetLogsForUser(accountId))
+				.Where(p=>p.Level == 1)
+				.OrderByDescending(_=>_.DateAdded)
+				.Take(limit);
 			return res;
 		}
 

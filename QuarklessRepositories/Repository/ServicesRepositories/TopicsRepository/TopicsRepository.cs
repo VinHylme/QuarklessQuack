@@ -2,7 +2,6 @@
 using QuarklessRepositories.RepositoryClientManager;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using MongoDB.Driver;
 namespace QuarklessRepositories.Repository.ServicesRepositories.TopicsRepository
@@ -19,17 +18,14 @@ namespace QuarklessRepositories.Repository.ServicesRepositories.TopicsRepository
 		{
 			try
 			{
-				var res = await _context.Topics.ReplaceOneAsync<TopicsModel>(_ => _.TopicName == topics.TopicName,
+				var res = await _context.Topics.ReplaceOneAsync(
+					_ => _.TopicName == topics.TopicName && _.SubTopics.Count <= 0,
 					topics,
 					new UpdateOptions
 					{
 						IsUpsert = true
 					});
-				if (res.IsAcknowledged)
-				{
-					return true;
-				}
-				return false;
+				return res.IsAcknowledged;
 			}
 			catch (Exception e)
 			{

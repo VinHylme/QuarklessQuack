@@ -1,16 +1,18 @@
-﻿using InstagramApiSharp.Classes.Models;
+﻿using System;
+using System.IO;
+using System.Linq;
+using InstagramApiSharp.Classes.Models;
 using InstagramApiSharp.Enums;
 using Microsoft.AspNetCore.Mvc;
 using QuarklessContexts.Contexts;
 using QuarklessContexts.Models.UserAuth.AuthTypes;
 using QuarklessLogic.Logic.InstaUserLogic;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Extensions;
-using QuarklessContexts.Models.TimelineLoggingRepository;
+using QuarklessContexts.Models.Requests;
+using QuarklessLogic.Logic.InstaAccountOptionsLogic;
 using QuarklessLogic.Logic.ResponseLogic;
-using QuarklessLogic.Logic.TimelineEventLogLogic;
 
 namespace Quarkless.Controllers
 {
@@ -25,11 +27,69 @@ namespace Quarkless.Controllers
 		private readonly IUserContext _userContext;
 		private readonly IInstaUserLogic _instaUserLogic;
 		private readonly IResponseResolver _responseResolver;
-		public InstaUserController(IUserContext userContext, IInstaUserLogic instaUserLogic, IResponseResolver responseResolver)
+		private readonly IInstaAccountOptionsLogic _instaAccountOptions;
+		public InstaUserController(IUserContext userContext, 
+			IInstaUserLogic instaUserLogic,
+			IInstaAccountOptionsLogic instaAccountOptions,
+			IResponseResolver responseResolver)
 		{
 			_userContext = userContext;
 			_instaUserLogic = instaUserLogic;
+			_instaAccountOptions = instaAccountOptions;
 			_responseResolver = responseResolver;
+		}
+
+		[HttpPut]
+		[Route("api/account/changeBio")]
+		public async Task<IActionResult> ChangeBiography(ChangeBiographyRequest biographyRequest)
+		{
+			if (!_userContext.UserAccountExists && string.IsNullOrEmpty(biographyRequest.Biography)) return BadRequest("Invalid Request");
+			try
+			{
+				var results = await _responseResolver.WithResolverAsync(
+					await _instaAccountOptions.SetBiographyAsync(biographyRequest.Biography), ActionType.CreateBiography, biographyRequest.ToJsonString());
+				if (results.Succeeded)
+				{
+					return Ok(results.Value);
+				}
+				return BadRequest(results.Info);
+			}
+			catch (Exception ee)
+			{
+				return BadRequest("Failed" + ee.Message);
+			}
+		}
+		[HttpPut]
+		[Route("api/account/changepp")]
+		public async Task<IActionResult> ChangeProfilePicture()
+		{
+			if (!_userContext.UserAccountExists)
+				return BadRequest("Invalid Request");
+			try
+			{
+				if (Request.Form.Files == null || Request.Form.Files.Count <= 0) return BadRequest("No files");
+				var file = Request.Form.Files.FirstOrDefault();
+				if (file == null) return BadRequest("No File attached");
+				using (var ms = new MemoryStream())
+				{
+					file.CopyTo(ms);
+					var bytes = ms.ToArray();
+
+					var results = await _responseResolver.WithResolverAsync(
+						await _instaAccountOptions.ChangeProfilePictureAsync(bytes),
+						ActionType.ChangeProfilePicture, file.FileName);
+					if (results.Succeeded)
+					{
+						return Ok(results.Value);
+					}
+
+					return BadRequest(results.Info);
+				}
+			}
+			catch (Exception ee)
+			{
+				return BadRequest(ee.Message);
+			}
 		}
 
 		[HttpPost]

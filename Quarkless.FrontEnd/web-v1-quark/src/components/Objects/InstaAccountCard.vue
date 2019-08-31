@@ -4,8 +4,11 @@
             <div class="media">
                 <div class="media-left">
                     <figure class="image is-96x96">
-                    <img class="is-rounded"  v-if="profilePicture!==null" v-bind:src="profilePicture" alt="Placeholder image">
-                    <img class="is-rounded"  v-else src="https://alumni.crg.eu/sites/default/files/default_images/default-picture_0_0.png" alt="default image"> 
+                    <b-tooltip label="Change Profile Picture" position="is-right" type="is-info">
+                        <d-drop :isHidden="true" accept="image/*" :isMulti="true" swidth="80px" sheight="80px" @readyUpload="onUpload"/>
+                        <img class="is-rounded"  v-if="profilePicture!==null" v-bind:src="profilePicture" alt="Placeholder image">
+                        <img class="is-rounded"  v-else src="https://alumni.crg.eu/sites/default/files/default_images/default-picture_0_0.png" alt="default image">
+                    </b-tooltip>
                     </figure>
                 </div>
                 <div class="media-content">
@@ -84,23 +87,31 @@
                     </div>
                 </div>
                 <br>
-                <p v-if="biography!==null">
-                    {{biography.text}}
-                </p>
-                <p v-else>Not populated the biography yet</p>           
+                    <textarea @focus="onFocusBio" v-if="biography!==null" v-model="biography.text" rows="10" class="textarea is-biography-input" placeholder="Your biography"></textarea>
+                    <p v-else>Not populated the biography yet</p>      
+     
         </div>
     </div>
-      <footer class="card-footer">
-            <router-link :to="'/view/'+id" class="card-footer-item"> 
+      <footer :class="IsAmendingAccount ? 'card-footer is-info' : 'card-footer is-green'">
+            <router-link v-if="!IsAmendingAccount" :to="'/view/'+id" class="card-footer-item"> 
                 <b-tooltip label="Manage this account" type="is-dark" size="is-large" position="is-right">
                     <b-icon pack="fas" icon="bolt" size="is-medium"></b-icon>
                 </b-tooltip>
             </router-link>
+            <a v-else class="card-footer-item" @click="saveBiography">
+                <b-tooltip label="Save Changes" type="is-dark" size="is-large" position="is-right">
+                   <b-icon v-if="!IsLoading" pack="fas" icon="bong" size="is-medium"></b-icon>
+                   <b-icon v-else pack="fas" icon="sync-alt" custom-class="fa-spin"> </b-icon>
+                </b-tooltip>
+            </a>
     </footer> 
     </div>
 </template>
 
 <script>
+import DropZone from '../Objects/DropZone';
+import { EventBusing } from "../../EventBusing";
+
 export default {
 name:"InstaAccountCard",
 props: {
@@ -115,9 +126,14 @@ props: {
     totalPost:Number,
     IsProfileButtonDisabled:Boolean
   },
+  components:{
+      'd-drop':DropZone
+  },
   data(){
       return {
+          IsLoading:false,
           IsAdmin:false,
+          IsAmendingAccount:false,
           AgentOptions:[
               {name:"Not Started", index:0},
               {name:"Running", index:1},
@@ -135,8 +151,37 @@ props: {
       if(this.agentState === 4){
           this.$emit('OnConfirmUser', this.id);
       }
+      let _self = this;
+      EventBusing.$on('doneUpdatingBiography',()=>{
+          _self.onFinishedUpdate();
+      });
+      EventBusing.$on('clickedOutside',()=>{
+          _self.onFinishedUpdate();
+      });
+      EventBusing.$on('cancel-other-focused',()=>{
+          _self.onFinishedUpdate();
+      });
+      EventBusing.$on('focus-main', (id)=>{
+          if(id == this.id){
+              this.IsAmendingAccount = true;
+          }
+      })
   },
   methods:{
+      onFocusBio(){
+          EventBusing.$emit('onFocusBio', this.id);
+      },
+      onFinishedUpdate(){
+        this.IsAmendingAccount = false;
+        this.IsLoading = false;
+      },          
+      saveBiography(){
+          this.IsLoading = true;
+          this.$emit("onChangeBiography", {biography: this.biography, id:this.id});
+      },
+      onUpload(e){
+          this.$emit("onChangeProfilePicture", {image:e, id:this.id});
+      },
       ViewProfile(){
           this.$emit("ViewProfile", this.id);
       },
@@ -191,6 +236,21 @@ props: {
 
 <style lang="scss" scoped>
 
+.is-biography-input{
+    overflow-y: scroll !important;
+    resize: none;
+    width:100%;
+    height:99px !important;
+    color:#d9d9d9;
+    font-size: 14px;
+    border:none;
+    padding:.15em;
+    margin:0;
+    background:#292929 !important;
+    &:hover{
+        background:#323232 !important;
+    }
+}
 .card{
     margin-left:0.4em;
     margin-top:1em;
@@ -246,19 +306,29 @@ select{
 img{
     &:hover{
         cursor: pointer;
+        opacity: 1 !important;
     }
 }
 .card-content{
+    margin:0;
+
     padding-top:2em;
     text-align: left;
     height:200px;
     width: 100%;
+
 }
 .card-footer{
     height:100px;
+    width:100%;
     border: none;
     font-weight: bold;
-    background-color:#13b94d;
+    &.is-green{
+        background-color:#13b94d;
+    }
+    &.is-info{
+        background-color:#1792da;
+    }
     .card-footer-item{
         font-size: 20px;
         border: none;

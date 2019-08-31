@@ -49,6 +49,8 @@ namespace QuarklessContexts.Enums
 		[Description("GetRecentActivityFeed")]
 		RecentActivityFeed,
 		[Description("refreshlogin")]
-		RefreshLogin
+		RefreshLogin,
+		[Description("changedProfilePicture")]
+		ChangeProfilePicture
 	}
 }

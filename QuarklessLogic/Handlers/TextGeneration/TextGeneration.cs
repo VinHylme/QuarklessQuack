@@ -9,6 +9,7 @@ using System.Linq;
 using QuarklessRepositories.Repository.CorpusRepositories.Medias;
 using MongoDB.Driver;
 using System.Threading.Tasks;
+using MoreLinq;
 using QuarklessLogic.ServicesLogic.CorpusLogic;
 
 namespace QuarklessLogic.Handlers.TextGeneration
@@ -37,23 +38,23 @@ namespace QuarklessLogic.Handlers.TextGeneration
 			switch (type)
 			{
 				case 0:
-					var data = await _commentCorpusLogic.GetComments(topic, language.ToUpper(), language.MapLanguages(),50000);
-					if (data != null)
-					{
-						var choice = Regex.Replace(string.Join(',', data.Select(sa => sa.Comment)), @"\s+", " ").TrimEnd(' ');
-						var t = MarkovHelper.BuildTDict(choice, size);
-						return MarkovHelper.BuildString(t, limit, true).TrimEnd(' ');
-					}
-					return null;
+					var data = (await _commentCorpusLogic
+						.GetComments(topic, language.ToLower(), language.MapLanguages().ToLower(),50000))
+						.DistinctBy(x=>x.Comment);
+					if (data == null) return null;
+
+					var dataComment = Regex.Replace(string.Join(',', data.Select(sa => sa.Comment)), @"\s+", " ").TrimEnd(' ');
+					var dCommentDict = MarkovHelper.BuildTDict(dataComment, size);
+					return MarkovHelper.BuildString(dCommentDict, limit, true).TrimEnd(' ');
 				case 1:
-					var metaMedia = await _mediaCorpusLogic.GetMedias(topic, language.ToUpper(),language.MapLanguages(),50000);
-					if (metaMedia != null)
-					{
-						string choice = Regex.Replace(string.Join(',', metaMedia.Select(sa => sa.Caption)), @"\s+", " ").TrimEnd(' ');
-						TDict t = MarkovHelper.BuildTDict(choice, size);
-						return MarkovHelper.BuildString(t, limit, true).TrimEnd(' ');
-					}
-					return null;
+					var metaMedia = (await _mediaCorpusLogic
+						.GetMedias(topic, language.ToLower(), language.MapLanguages().ToLower(), 50000))
+						.DistinctBy(x => x.Caption);
+
+					if (metaMedia == null) return null;
+					var dataMedia = Regex.Replace(string.Join(',', metaMedia.Select(sa => sa.Caption)), @"\s+", " ").TrimEnd(' ');
+					var dMediaDict = MarkovHelper.BuildTDict(dataMedia, size);
+					return MarkovHelper.BuildString(dMediaDict, limit, true).TrimEnd(' ');
 				case 2:
 					break;
 			}

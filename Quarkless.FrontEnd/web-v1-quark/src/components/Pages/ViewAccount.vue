@@ -11,6 +11,7 @@
           <b-icon v-if="timelineLog.actionType === 12" icon="thumbs-up" pack="fas" type="is-info" size="is-default"/>
           <b-icon v-if="timelineLog.actionType === 1" icon="camera" pack="fas" type="is-twitter" size="is-default"/>
           <b-icon v-if="timelineLog.actionType === 3" icon="comment" pack="fas" class="is-purple" size="is-default"/>
+          <b-icon v-if="timelineLog.actionType === 5" icon="book" pack="fas" class="is-gold" size="is-default"></b-icon>
         </div>
         <div class="card-activity-content">
           {{timelineLog.message}}
@@ -193,7 +194,7 @@ $v-cal-button-disabled-cursor	:not-allowed;
   height:100% !important;
   background-color: #242424;
   ::-webkit-scrollbar {
-      display: none;
+     display: none;
   }
 }
 html,body{
@@ -255,6 +256,9 @@ html,body{
 }
 .is-purple{
   color:#ff74dc;
+}
+.is-gold{
+  color:gold;
 }
 .image_container{
   width:120px;

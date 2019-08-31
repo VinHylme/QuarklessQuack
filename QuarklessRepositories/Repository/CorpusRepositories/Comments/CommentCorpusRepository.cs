@@ -77,7 +77,7 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Comments
 				}
 				else
 				{
-					filters = builders.Eq(_ => _.Topic, topic) & (builders.Eq(_ => _.Language, language) | builders.Eq(_ => _.Language, mapedLang));
+					filters = builders.Eq(_ => _.Topic, topic) & (builders.Eq(_ => _.Language.ToLower(), language) | builders.Eq(_ => _.Language.ToLower(), mapedLang));
 				}
 				var options = new FindOptions<CommentCorpus, CommentCorpus>();
 				if (limit != -1)

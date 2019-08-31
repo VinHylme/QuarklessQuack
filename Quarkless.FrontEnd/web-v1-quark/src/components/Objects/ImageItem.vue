@@ -1,10 +1,10 @@
 <template>
-  <figure @click="click" v-lazyload class="image__wrapper">
+  <figure @click="click" v-lazyload class="image-figure__wrapper">
     <ImageSpinner
-      class="image__spinner"
+      class="image-figure__spinner"
     />
     <img
-      :class="['image__item']"
+      :class="['image-figure__item']"
       :data-url="source"
       :style="[size]"
       alt="random image"
@@ -53,7 +53,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
-.image {
+.image-figure {
   &__wrapper {
     display: flex;
     justify-content: center;
@@ -61,7 +61,7 @@ export default {
     border-radius: 4px;
 
     &.loaded {
-      .image {
+      .image-figure {
         &__item {
           visibility: visible;
           opacity: 1;

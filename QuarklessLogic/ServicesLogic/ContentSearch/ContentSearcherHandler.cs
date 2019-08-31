@@ -53,7 +53,7 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 						SubCategories = subCategories.Value.Select(s=>s.CategoryName).ToList()
 					});
 				}
-				await Task.Delay(1000);
+				await Task.Delay(450);
 			}
 			return categories;
 		}
@@ -754,6 +754,7 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 		public SearchResponse<Media> SearchViaYandexBySimilarImages(List<GroupImagesAlike> imagesSimilarUrls, int limit, int offset = 0)
 		{
 			var images = _yandexImageSearch.SearchRelatedImagesREST(imagesSimilarUrls, limit, offset);
+			images.Result.Medias = images?.Result?.Medias?.Distinct().ToList();
 			return images;
 		}
 		public SearchResponse<Media> SearchViaYandex(YandexSearchQuery yandexSearchQuery, int limit)

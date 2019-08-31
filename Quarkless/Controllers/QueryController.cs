@@ -37,7 +37,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists && string.IsNullOrEmpty(topic))
 				return BadRequest("Invalid Request");
-			return Ok(await _queryLogic.GetReleatedKeywords(topic));
+			return Ok(await _queryLogic.GetRelatedKeywords(topic));
 		}
 
 		[HttpGet]

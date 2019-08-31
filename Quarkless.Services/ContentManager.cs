@@ -10,6 +10,7 @@ using QuarklessLogic.Handlers.TextGeneration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Quarkless.Services
@@ -70,19 +71,47 @@ namespace Quarkless.Services
 					selections.AddRange(hashes);
 			}
 			
-			hashtagsToUse.AddRange(selections.Take(SecureRandom.Next(24 , 27)).Select(s=> $"#{s}"));
-			var caption_ = GenerateText(topicSelect.TopicFriendlyName, language.ToUpper(), 1, SecureRandom.Next(1, 5), SecureRandom.Next(4, 25)).Split(',')[0];
+			hashtagsToUse.AddRange(selections.Take(SecureRandom.Next(24 , 28)).Select(s=> $"#{s}"));
+			string captionOfFinal;
+			try
+			{
+				captionOfFinal = GenerateText(topicSelect.TopicFriendlyName, language.ToUpper(), 1,
+					SecureRandom.Next(1, 5), SecureRandom.Next(4, 5)).Split(',')[0];
+				if(string.IsNullOrEmpty(captionOfFinal))
+					captionOfFinal = new string(Emojies.TakeAny(SecureRandom.Next(8)).ToArray());
+			}
+			catch
+			{
+				captionOfFinal = new string(Emojies.TakeAny(SecureRandom.Next(8)).ToArray());
+				// ignored
+			}
 
 			return new MediaInfo
 			{
-				Caption = caption_,
+				Caption = captionOfFinal,
 				Credit = credit,
 				Hashtags = hashtagsToUse
 			};
 		}
+
+		private const string Emojies = @"😄😃😀😊☺😉😍😘😚😗😙😜😝😛😳😁😔😌😒😞😣😢😂😭😪😥😰😅😓😩😫😨😱😠😡😤😖😆😋😷😎😴😵😲😟😦😧😈👿😮😬😐😕😯😶😇😏😑👲👳👮👷💂👶👦👧👨👩👴👵👱👼👸👹👺💀👽💩";
 		public string GenerateComment(string topic, string language)
 		{
-			var comment = GenerateText(topic, language.ToUpper(), 0 , SecureRandom.Next(4) ,SecureRandom.Next(4,5)).Split(',')[0];
+			string comment;
+			try
+			{
+				comment = GenerateText(topic, language.ToUpper(), 0, SecureRandom.Next(4), SecureRandom.Next(4, 5))
+					.Split(',')[0];
+				if (string.IsNullOrEmpty(comment))
+				{
+					comment = new string(Emojies.TakeAny(SecureRandom.Next(5)).ToArray());
+				}
+			}
+			catch
+			{
+				comment = new string(Emojies.TakeAny(SecureRandom.Next(5)).ToArray());
+			}
+
 			return comment;
 		}
 

@@ -374,6 +374,16 @@ namespace QuarklessLogic.Logic.InstaAccountOptionsLogic
 		{
 			try
 			{
+				if(_Client.GetContext.InstagramAccount.UserBiography.Text == bio) 
+					return new Result<InstaBiography>(true, 
+						new InstaBiography()
+						{
+							Status = "Done",
+							User = new InstaBiographyUser
+							{
+								Biography = bio
+							}
+						});
 				return await _Client.Account.SetBiographyAsync(bio);
 			}
 			catch (Exception ee)
