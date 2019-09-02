@@ -187,20 +187,41 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					var likeActionTypeSelected = LikeCommentActionType.ByTopic;
 					if(likeActionOptions != null && likeActionOptions.LikeActionType == LikeCommentActionType.Any)
 					{
-						var likeActionsChances = new List<Chance<LikeCommentActionType>>
-						{
-							new Chance<LikeCommentActionType>{Object = LikeCommentActionType.ByTopic, Probability = 0.20},
-							new Chance<LikeCommentActionType>{Object = LikeCommentActionType.ByUserFeed, Probability = 0.20},
-							new Chance<LikeCommentActionType>{Object = LikeCommentActionType.ByLikers, Probability = 0.20},
-							new Chance<LikeCommentActionType>{Object = LikeCommentActionType.ByCommenters, Probability = 0.20},
-						};
+						var likeActionsChances = new List<Chance<LikeCommentActionType>>();
+						var focusLocal = user.Profile.AdditionalConfigurations.FocusLocalMore;
+
 						if (user.Profile.UserTargetList != null) 
 							if(user.Profile.UserTargetList.Count > 0)
-								likeActionsChances.Add(new Chance<LikeCommentActionType> { Object = LikeCommentActionType.ByUserTarget, Probability = 0.10 });
+								likeActionsChances.Add(new Chance<LikeCommentActionType> { Object = LikeCommentActionType.ByUserTarget, 
+									Probability = focusLocal ? 0.25 : 0.10 });
 							
 						if(user.Profile.LocationTargetList != null)
 							if(user.Profile.LocationTargetList.Count > 0)
-								likeActionsChances.Add(new Chance<LikeCommentActionType> { Object = LikeCommentActionType.ByLocation, Probability = 0.10 });
+								likeActionsChances.Add(new Chance<LikeCommentActionType> { Object = LikeCommentActionType.ByLocation, 
+									Probability = focusLocal ? 0.60 : 0.10 });
+							else
+							{
+								focusLocal = false;
+							}
+						else
+						{
+							focusLocal = false;
+						}
+
+						likeActionsChances.AddRange(new List<Chance<LikeCommentActionType>>
+						{
+							new Chance<LikeCommentActionType>{Object = LikeCommentActionType.ByTopic, 
+								Probability = focusLocal ? 0.05 : 0.20},
+							new Chance<LikeCommentActionType>{Object = LikeCommentActionType.ByUserFeed, 
+								Probability =  focusLocal ? 0.10 : 0.20},
+							new Chance<LikeCommentActionType>{Object = LikeCommentActionType.ByLikers, 
+								Probability =  focusLocal ? 0.10 : 0.20},
+							new Chance<LikeCommentActionType>{Object = LikeCommentActionType.ByCommenters, 
+								Probability = focusLocal ? 0.10 : 0.20},
+						});
+
+
+						likeActionTypeSelected = SecureRandom.ProbabilityRoll(likeActionsChances);
 					}
 					else
 					{

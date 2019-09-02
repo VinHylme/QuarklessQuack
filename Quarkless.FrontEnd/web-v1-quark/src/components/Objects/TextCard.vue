@@ -20,6 +20,9 @@
             :has-counter="false"
             v-model="messageArray">
           </b-taginput>
+          <b-field v-if="link" label="Link">
+            <input class="input" type="text" v-model="link" placeholder="e.g. www.mycoolwebsite.com">
+          </b-field>
         </div>
         <div class="card-text-footer" v-if="allowDelete || allowEdit">
           <a v-if="allowDelete" class="footer-item" @click="onClickDelete">
@@ -44,6 +47,7 @@ export default {
     icon:String,
     date:String,
     message:String,
+    link:String,
     messageArray:Array,
     allowDelete:Boolean,
     allowEdit:Boolean
@@ -66,7 +70,7 @@ export default {
       this.$emit('click-delete', this.data);
     },
     onClickEdit(){
-      this.$emit('click-edit', {originalData: this.data, message: this.isArray? this.messageArray : this.message});
+      this.$emit('click-edit', {originalData: this.data, message: this.isArray? this.messageArray : this.message, link:this.link});
     },
     evaluateTags(hashtag){
       if(hashtag.length<2) return false;
@@ -153,6 +157,18 @@ input{
     }
   }
   .card-text-content{
+    label{
+      text-align: left;
+      margin-left:.1em;
+      color:#d9d9d9;
+    }
+    .input{
+      border:none;
+      border-radius: 0;
+      &::placeholder{
+        color:#d0d0d0;
+      }
+    }
     padding:0.4em; 
     .subtitle{
       &.light{

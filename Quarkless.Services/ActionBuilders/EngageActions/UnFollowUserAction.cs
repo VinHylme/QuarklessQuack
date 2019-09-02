@@ -98,24 +98,22 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					for (var i = 0; i < unFollowStrategySettings.NumberOfUnfollows; i++)
 					{
 						var nominate = meta_S.ElementAtOrDefault(i);
-						if (nominate != null)
+						if (nominate == null) continue;
+						nominate.SeenBy.Add(@by);
+						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFollowingList, user.Profile.Topics.TopicFriendlyName, nominate).GetAwaiter().GetResult();
+						var restModel = new RestModel
 						{
-							nominate.SeenBy.Add(@by);
-							_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFollowingList, user.Profile.Topics.TopicFriendlyName, nominate).GetAwaiter().GetResult();
-							var restModel = new RestModel
-							{
-								BaseUrl = string.Format(UrlConstants.UnfollowUser, nominate.ObjectItem.FirstOrDefault()?.UserId),
-								RequestType = RequestType.POST,
-								JsonBody = null,
-								User = user
-							};
-							events_.Add(new TimelineEventModel
-							{
-								ActionName = $"UnfollowUser_{unFollowStrategySettings.UnFollowStrategy.ToString()}",
-								Data = restModel,
-								ExecutionTime = followActionOptions.ExecutionTime.AddSeconds(i*unFollowStrategySettings.OffsetPerAction.TotalSeconds)
-							});
-						}
+							BaseUrl = string.Format(UrlConstants.UnfollowUser, nominate.ObjectItem.FirstOrDefault()?.UserId),
+							RequestType = RequestType.POST,
+							JsonBody = null,
+							User = user
+						};
+						events_.Add(new TimelineEventModel
+						{
+							ActionName = $"UnfollowUser_{unFollowStrategySettings.UnFollowStrategy.ToString()}",
+							Data = restModel,
+							ExecutionTime = followActionOptions.ExecutionTime.AddSeconds(i*unFollowStrategySettings.OffsetPerAction.TotalSeconds)
+						});
 					}
 					results.IsSuccesful = true;
 					results.Results = events_;

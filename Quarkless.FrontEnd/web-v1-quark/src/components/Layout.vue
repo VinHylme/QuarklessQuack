@@ -28,7 +28,7 @@
         </router-link>
       </b-tooltip>
        <b-tooltip type="is-dark" label="Messaging" position="is-right" style="position:absolute; top:8em;left:4em;">
-        <router-link to="/messaging/">
+        <router-link to="/messaging">
         <b-icon
           class="floater is-messaging"
           pack="fa"
@@ -104,6 +104,7 @@ export default {
   },
   data(){
     return {
+      timer:'',
       isProfileButtonDisabled:false,
       isNavOn:true,
       isLoaded:false,
@@ -120,6 +121,7 @@ export default {
     });
     this.isNavOn = this.$store.getters.MenuState === 'true'
     this.loadLibraryData();
+    this.timer = setInterval(this.loadLibraryData, 15000);
   },
   methods:{
     async loadLibraryData(){

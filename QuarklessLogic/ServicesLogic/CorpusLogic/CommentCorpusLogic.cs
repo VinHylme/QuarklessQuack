@@ -33,6 +33,8 @@ namespace QuarklessLogic.ServicesLogic.CorpusLogic
 			return await _commentCorpusRepository.GetComments(topic, lang, mappedLang, limit);
 		}
 
+		public async Task UpdateAllCommentsLanguagesToLower() => await _commentCorpusRepository.UpdateAllCommentsLanguagesToLower();
+
 		public async Task<long> CommentsCount(string topic) => await _commentCorpusRepository.GetCommentsCount(topic);
 		
 

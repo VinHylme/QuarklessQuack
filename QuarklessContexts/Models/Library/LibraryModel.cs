@@ -30,6 +30,14 @@ namespace QuarklessContexts.Models.Library
 		public string Caption { get; set; }
 		public DateTime DateAdded { get; set;  }
 	}
+	public class MessageEntity
+	{
+		public string Message { get; set; }
+		public string Link { get; set; }
+		public string MediaBytes { get; set; }
+		public string ProfileIdShare { get; set; }
+		public string MediaIdShare { get; set; }
+	}
 	public class MessagesLib
 	{
 		[BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]
@@ -39,7 +47,8 @@ namespace QuarklessContexts.Models.Library
 		public string InstagramAccountId { get; set; }
 		public string AccountId { get; set;  }
 		public string GroupName { get; set; }
-		public string Message { get; set; }
+		public MessageEntity Entity { get; set; }
+		public int Type { get; set; }
 		public DateTime DateAdded { get; set;  }
 	}
 	public enum MediaSelectionType

@@ -26,6 +26,12 @@ namespace QuarklessLogic.Handlers.RequestBuilder.Consts
 		public const string FollowUser = ApiPath + "instaUser/followUser/{0}";
 		public const string UnfollowUser = ApiPath + "instaUser/unFollowUser/{0}";
 		public const string LikeMedia = ApiPath + "media/like/{0}";
+		public const string SendDirectMessageText = ApiPath + "messaging/text";
+		public const string SendDirectMessageLink = ApiPath + "messaging/link";
+		public const string SendDirectMessagePhoto = ApiPath + "messaging/photo";
+		public const string SendDirectMessageVideo = ApiPath + "messaging/video";
+		public const string SendDirectMessageProfile = ApiPath + "messaging/profile";
+
 		#endregion
 		public static string GetBasePath
 		{

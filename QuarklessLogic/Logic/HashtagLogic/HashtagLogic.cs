@@ -125,5 +125,7 @@ namespace QuarklessLogic.Logic.HashtagLogic
 				return null;
 			}
 		}
+
+		public async Task UpdateAllMediasLanguagesToLower() => await _hashtagsRepository.UpdateAllMediasLanguagesToLower();
 	}
 }

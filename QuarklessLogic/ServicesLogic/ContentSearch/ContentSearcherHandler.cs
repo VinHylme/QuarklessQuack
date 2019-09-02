@@ -59,6 +59,26 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 		}
 
 		#endregion
+
+		public async Task<IEnumerable<UserResponse<string>>> GetUsersFollowersList(string username, int limit,
+			string query = null, bool mutualFirst = true)
+		{
+			var userResponse = await _responseResolver
+				.WithClient(_container)
+				.WithResolverAsync(await _container.User.GetUserFollowersAsync(username,
+					PaginationParameters.MaxPagesToLoad(limit),query, mutualFirst));
+			if (!userResponse.Succeeded) return null;
+			var users = userResponse.Value;
+			return users.Select(_ => new UserResponse<string>
+			{
+				Username = _.UserName,
+				FullName = _.FullName,
+				ProfilePicture = _.ProfilePicture,
+				UserId = _.Pk,
+				IsPrivate = _.IsPrivate,
+				IsVerified = _.IsVerified,
+			});
+		}
 		public async Task<IEnumerable<UserResponse<string>>> GetUserFollowingList(string username, int limit, string query = null)
 		{
 			var userResponse = await _responseResolver.WithClient(_container).WithResolverAsync
@@ -655,6 +675,8 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 			return mediaresp;
 		}
 		#endregion
+		
+		#region External Search
 		public struct TempMedia
 		{
 			public struct Medias
@@ -761,5 +783,6 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 		{
 			return _yandexImageSearch.SearchQueryREST(yandexSearchQuery,limit);
 		}
+		#endregion
 	}
 }

@@ -1,6 +1,8 @@
 ﻿
+using System.Collections.Generic;
 using Newtonsoft.Json;
 using QuarklessContexts.Models.InstagramAccounts;
+using QuarklessContexts.Models.Library;
 using QuarklessContexts.Models.Profiles;
 
 namespace QuarklessContexts.Models.Timeline
@@ -9,8 +11,12 @@ namespace QuarklessContexts.Models.Timeline
 	{
 		[JsonIgnore]
 		public ProfileModel Profile { get; set; }
+
 		[JsonIgnore]
 		public ShortInstagramAccountModel shortInstagram { get; set; }
+
+		[JsonIgnore]
+		public IEnumerable<MessagesLib> MessagesTemplates { get; set;  }
 
 		public string OAccountId { get; set; }
 		public string OAccessToken { get; set; }

@@ -22,7 +22,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		FollowBasedOnLikers = 1,
 		FollowBasedOnCommenters = 2,
 		FollowBasedOnTopic = 3,
-		FollowBasedOnLocation = 4 
+		FollowBasedOnLocation = 4,
+		FollowBasedOnSuggestions = 5
 	}
 	public class FollowUserAction : IActionCommit
 	{
@@ -109,6 +110,25 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostCommented, user.Profile.Topics.TopicFriendlyName, @select).GetAwaiter().GetResult();
 			return @select.ObjectItem.ElementAtOrDefault(@select.ObjectItem.Count)?.UserId ?? 0;
 		}
+		private long FollowBasedOnSuggestions()
+		{
+			var by = new By
+			{
+				ActionType = (int)ActionType.FollowUser,
+				User = user.Profile.InstagramAccountId
+			};
+			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<UserSuggestionDetails>>>(MetaDataType.FetchUsersFollowSuggestions, user.Profile.Topics.TopicFriendlyName, user.Profile.InstagramAccountId)
+				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
+				.Where(s => s.ObjectItem.Count > 0);
+
+			var meta_S = fetchMedias as __Meta__<List<UserResponse<UserSuggestionDetails>>>[] ?? fetchMedias.ToArray();
+			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
+			if (@select == null) return 0;
+			@select.SeenBy.Add(@by);
+
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFollowSuggestions, user.Profile.Topics.TopicFriendlyName, @select).GetAwaiter().GetResult();
+			return @select.ObjectItem.ElementAtOrDefault(@select.ObjectItem.Count)?.UserId ?? 0;
+		}
 		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
 			Console.WriteLine($"Follow Action Started: {user.OAccountId}, {user.OInstagramAccountUsername}, {user.OInstagramAccountUser}");
@@ -130,17 +150,71 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			{
 				long nominatedFollower = 0;
 				//todo add Location?
+				var followActionsChances = new List<Chance<FollowActionType>>();
 				if (followActionOptions != null && followActionOptions.FollowActionType == FollowActionType.Any)
 				{
-					var followActionsChances = new List<Chance<FollowActionType>>
-					{
-						new Chance<FollowActionType>{Object = FollowActionType.FollowBasedOnCommenters, Probability = 0.25},
-						new Chance<FollowActionType>{Object = FollowActionType.FollowBasedOnLikers, Probability = 0.40},
-						new Chance<FollowActionType>{Object = FollowActionType.FollowBasedOnTopic, Probability = 0.15}
-					};
 					if (user.Profile.LocationTargetList != null)
+					{
 						if (user.Profile.LocationTargetList.Count > 0)
-							followActionsChances.Add(new Chance<FollowActionType> { Object = FollowActionType.FollowBasedOnLocation, Probability = 0.20 });
+						{
+							followActionsChances.AddRange(new List<Chance<FollowActionType>>
+							{
+								new Chance<FollowActionType>
+								{
+									Object = FollowActionType.FollowBasedOnCommenters, 
+									Probability = 0.20
+								},
+								new Chance<FollowActionType>
+								{
+									Object = FollowActionType.FollowBasedOnLocation, 
+									Probability = user.Profile.AdditionalConfigurations.FocusLocalMore ? 0.40 : 0.15
+								},
+								new Chance<FollowActionType>
+								{
+									Object = FollowActionType.FollowBasedOnLikers, 
+									Probability = user.Profile.AdditionalConfigurations.FocusLocalMore ? 0.15 : 0.40
+								},
+								new Chance<FollowActionType>
+								{
+									Object = FollowActionType.FollowBasedOnTopic, 
+									Probability = 0.5
+								},
+								new Chance<FollowActionType>
+								{
+									Object = FollowActionType.FollowBasedOnSuggestions,
+									Probability = 0.20
+								}
+							});
+						}
+						else
+						{
+							followActionsChances.AddRange(new List<Chance<FollowActionType>>
+							{
+								new Chance<FollowActionType>
+								{
+									Object = FollowActionType.FollowBasedOnCommenters, 
+									Probability = 0.25
+								},
+								new Chance<FollowActionType>
+								{
+									Object = FollowActionType.FollowBasedOnLikers, 
+									Probability = 0.40
+								},
+								new Chance<FollowActionType>
+								{
+									Object = FollowActionType.FollowBasedOnTopic, 
+									Probability = 0.15
+								},
+								new Chance<FollowActionType>
+								{
+									Object = FollowActionType.FollowBasedOnSuggestions,
+									Probability = 0.20
+								}
+							});
+						}
+					}
+
+					followActionTypeSelected = SecureRandom.ProbabilityRoll(followActionsChances);
 				}
 				else
 				{
@@ -159,6 +233,9 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						break;
 					case FollowActionType.FollowBasedOnLocation:
 						nominatedFollower = FollowBasedOnLocation();
+						break;
+					case FollowActionType.FollowBasedOnSuggestions:
+						nominatedFollower = FollowBasedOnSuggestions();
 						break;
 				}
 				if (nominatedFollower == 0){

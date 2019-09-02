@@ -35,6 +35,8 @@ namespace Quarkless.Services
 					return ActionType.UnFollowUser;
 				case nameof(LikeCommentAction):
 					return ActionType.LikeComment;
+				case nameof(DirectMessagingAction):
+					return ActionType.SendDirectMessage;
 			}
 			return null;
 		}
@@ -134,17 +136,13 @@ namespace Quarkless.Services
 		}
 		public bool HasMetTimeLimit()
 		{
-			DateTime dateNow = DateTime.UtcNow;
+			var dateNow = DateTime.UtcNow;
 			foreach(var actio in actions)
 			{
-				if (actio.Object.Remaining != null)
-				{
-					if (dateNow > actio.Object.Remaining.Value)
-					{
-						actio.Object.Remaining = null;
-						return true;
-					}
-				}
+				if (actio.Object.Remaining == null) continue;
+				if (dateNow <= actio.Object.Remaining.Value) continue;
+				actio.Object.Remaining = null;
+				return true;
 			}
 			return false;
 		}
@@ -155,13 +153,11 @@ namespace Quarkless.Services
 		}
 		public void TriggerAction(ActionType action, DateTime time)
 		{
-			var lm = actions.Where(ac=>ac.Object.ActionType == action).FirstOrDefault().Object.Remaining = time;
+			var lm = actions.FirstOrDefault(ac => ac.Object.ActionType == action).Object.Remaining = time;
 		}
 		public IEnumerable<TimelineEventModel> GetFinishedActions()
 		{
-			if(finishedActions.Count>0)
-				return finishedActions.Dequeue();
-			return null;
+			return finishedActions.Count>0 ? finishedActions.Dequeue() : null;
 		}		
 		public Range FindActionLimit(CommitContainer actionContainer)
 		{
@@ -183,6 +179,8 @@ namespace Quarkless.Services
 					return LikeActionOptions.TimeFrameSeconds;
 				case ActionType.LikeComment:
 					return LikeCommentActionOptions.TimeFrameSeconds;
+				case ActionType.SendDirectMessage:
+					return SendDirectMessageActionOptions.TimeFrameSeconds;
 			}
 			return null;
 		}
@@ -221,14 +219,12 @@ namespace Quarkless.Services
 		public void UpdateStrategy(ActionType actionType, IStrategySettings newStrategySettings)
 		{
 			var find = actions.Find(_ => _.Object.ActionType == actionType);
-			if (find != null)
-				find.Object.Action.IncludeStrategy(newStrategySettings);
+			find?.Object.Action.IncludeStrategy(newStrategySettings);
 		}
 		public void UpdateUser(ActionType actionType, UserStoreDetails newUserDetails)
 		{
 			var find = actions.Find(_ => _.Object.ActionType == actionType);
-			if (find != null)
-				find.Object.Action.IncludeUser(newUserDetails);
+			find?.Object.Action.IncludeUser(newUserDetails);
 		}
 	}
 }

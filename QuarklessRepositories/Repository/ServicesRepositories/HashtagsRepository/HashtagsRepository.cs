@@ -116,5 +116,15 @@ namespace QuarklessRepositories.Repository.ServicesRepositories.HashtagsReposito
 				return null;
 			}
 		}
+
+		public async Task UpdateAllMediasLanguagesToLower()
+		{
+			var res = (await _context.Hashtags.DistinctAsync(_ => _.Language, _ => true)).ToList();
+			foreach (var lang in res)
+			{			
+				var updateDef = Builders<HashtagsModel>.Update.Set(o => o.Language, lang.ToLower().Replace(" ",""));
+				await _context.Hashtags.UpdateManyAsync(_ => _.Language == lang, updateDef);
+			}
+		}
 	}
 }

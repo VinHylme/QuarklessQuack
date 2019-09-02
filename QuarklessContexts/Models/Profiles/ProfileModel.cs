@@ -60,8 +60,11 @@ namespace QuarklessContexts.Models.Profiles
 		public string PostSize { get; set; }
 		public List<int> SearchTypes {get; set; }
 		public bool EnableAutoPosting { get; set; }
+		public bool EnableAutoDirectMessaging { get; set; }
 		public bool AllowRepost { get; set; }
 		public bool AutoGenerateCaption { get; set; }
+		public bool FocusLocalMore { get; set; }
+
 		public AdditionalConfigurations()
 		{
 			Sites = new List<string>();

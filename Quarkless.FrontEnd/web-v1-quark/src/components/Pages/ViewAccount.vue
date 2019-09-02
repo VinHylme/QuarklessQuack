@@ -12,6 +12,7 @@
           <b-icon v-if="timelineLog.actionType === 1" icon="camera" pack="fas" type="is-twitter" size="is-default"/>
           <b-icon v-if="timelineLog.actionType === 3" icon="comment" pack="fas" class="is-purple" size="is-default"/>
           <b-icon v-if="timelineLog.actionType === 5" icon="book" pack="fas" class="is-gold" size="is-default"></b-icon>
+          <b-icon v-if="timelineLog.actionType === 20" icon="inbox" pack="fas" class="is-success" size="is-default"></b-icon>
         </div>
         <div class="card-activity-content">
           {{timelineLog.message}}

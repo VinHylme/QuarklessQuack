@@ -6,7 +6,6 @@ using QuarklessContexts.Classes.Carriers;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models;
-using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessContexts.Models.Timeline;
@@ -159,17 +158,68 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						var likeActionTypeSelected = LikeActionType.LikeByTopic;
 						if (likeActionOptions != null && likeActionOptions.LikeActionType == LikeActionType.Any)
 						{
-							var likeActionsChances = new List<Chance<LikeActionType>>
-							{
-								new Chance<LikeActionType>{Object = LikeActionType.LikeByTopic, Probability = 0.10},
-								new Chance<LikeActionType>{Object = LikeActionType.LikeFromUsersFeed, Probability = 0.30},
-								new Chance<LikeActionType>{Object = LikeActionType.LikeUsersMediaByCommenters, Probability = 0.15},
-								new Chance<LikeActionType>{Object = LikeActionType.LikeUsersMediaByLikers, Probability = 0.29},
-							};
+							var likeActionsChances = new List<Chance<LikeActionType>>();
 
 							if (user.Profile.LocationTargetList != null)
-								if(user.Profile.LocationTargetList.Count > 0)
-									likeActionsChances.Add(new Chance<LikeActionType> { Object = LikeActionType.LikeUsersMediaByLocation, Probability = 0.16 });
+							{
+								if (user.Profile.LocationTargetList.Count > 0)
+								{
+									likeActionsChances.AddRange(new List<Chance<LikeActionType>>
+									{
+										new Chance<LikeActionType>
+										{
+											Object = LikeActionType.LikeByTopic, 
+											Probability = 0.10
+										},
+										new Chance<LikeActionType>
+										{
+											Object = LikeActionType.LikeFromUsersFeed, 
+											Probability = user.Profile.AdditionalConfigurations.FocusLocalMore ? 0.15 : 0.30
+										},
+										new Chance<LikeActionType>
+										{
+											Object = LikeActionType.LikeUsersMediaByCommenters, 
+											Probability = 0.15
+										},
+										new Chance<LikeActionType>
+										{
+											Object = LikeActionType.LikeUsersMediaByLikers, 
+											Probability = 0.30
+										},
+										new Chance<LikeActionType>
+										{
+											Object = LikeActionType.LikeUsersMediaByLocation, 
+											Probability = user.Profile.AdditionalConfigurations.FocusLocalMore ? 0.30 : 0.15
+										}
+									});
+								}
+								else
+								{
+									likeActionsChances.AddRange(new List<Chance<LikeActionType>>
+									{
+										new Chance<LikeActionType>
+										{
+											Object = LikeActionType.LikeByTopic, 
+											Probability = 0.20
+										},
+										new Chance<LikeActionType>
+										{
+											Object = LikeActionType.LikeFromUsersFeed, 
+											Probability = 0.30
+										},
+										new Chance<LikeActionType>
+										{
+											Object = LikeActionType.LikeUsersMediaByCommenters, 
+											Probability = 0.20
+										},
+										new Chance<LikeActionType>
+										{
+											Object = LikeActionType.LikeUsersMediaByLikers, 
+											Probability = 0.30
+										},
+									});
+								}
+							}
 
 							likeActionTypeSelected = SecureRandom.ProbabilityRoll(likeActionsChances);
 						}

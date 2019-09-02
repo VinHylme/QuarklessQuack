@@ -783,6 +783,12 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 						foreach (var targetLocation in profileLocationTargetList)
 						{
 							var fetchUsersMedia = await searcher.SearchTopLocationMediaDetailInstagram(targetLocation, limit);
+							var recentUserMedia =
+								await searcher.SearchRecentLocationMediaDetailInstagram(targetLocation, limit);
+							if (recentUserMedia != null && recentUserMedia.Medias.Count > 0)
+							{
+								fetchUsersMedia.Medias.AddRange(recentUserMedia.Medias);
+							}
 							if (fetchUsersMedia == null) continue;
 							await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByUserLocationTargetList, worker.Topic.TopicFriendlyName, user.Id, proxy: worker.Worker.GetContext.Proxy);
 							foreach(var s in fetchUsersMedia.CutObjects(cutBy))
@@ -795,7 +801,6 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 								await _heartbeatLogic.AddMetaData(MetaDataType.FetchMediaByUserLocationTargetList, worker.Topic.TopicFriendlyName,
 									new __Meta__<Media>(s), user.Id);
 							};
-
 						}
 					}
 				});
@@ -937,6 +942,34 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			}
 			Console.WriteLine($"Ended - BuildUserUnfollowList : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
 		}
+		public async Task BuildUserFollowerList(int limit = 3, int cutBy = 1)
+		{
+			Console.WriteLine("Began - BuildUserFollowerList");
+			var watch = System.Diagnostics.Stopwatch.StartNew();
+			try
+			{
+				await _assignments.ParallelForEachAsync(async worker => {
+					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
+					var user = worker.InstagramRequests.InstagramAccount;
+					var fetchUsersMedia = await searcher.GetUsersFollowersList(user.Username, limit);
+					if (fetchUsersMedia != null)
+					{
+						//await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersFollowerList, worker.Topic.TopicFriendlyName, user.Id, proxy: worker.Worker.GetContext.Proxy);
+						foreach(var s in fetchUsersMedia.ToList().CutObject(cutBy))
+						{
+							await _heartbeatLogic.AddMetaData(MetaDataType.FetchUsersFollowerList, worker.Topic.TopicFriendlyName,
+								new __Meta__<List<UserResponse<string>>>(s), user.Id);
+						};
+					}
+				});
+			}
+			catch (Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+			}
+			Console.WriteLine($"Ended - BuildUserFollowerList : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+		}
+
 		public async Task BuildUsersFollowSuggestions(int limit = 1, int cutObjectBy = 1)
 		{
 			Console.WriteLine("Began - BuildUsersFollowSuggestions");
@@ -951,7 +984,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					searcher.ChangeUser(worker.Worker);
 					if (fetchUsersMedia != null)
 					{
-						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersFollowSuggestions, worker.Topic.TopicFriendlyName, user.Id, proxy: worker.Worker.GetContext.Proxy);
+						//await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersFollowSuggestions, worker.Topic.TopicFriendlyName, user.Id, proxy: worker.Worker.GetContext.Proxy);
 						foreach(var s in fetchUsersMedia.ToList().CutObject(cutObjectBy))
 						{
 							await _heartbeatLogic.AddMetaData(MetaDataType.FetchUsersFollowSuggestions, worker.Topic.TopicFriendlyName,

@@ -175,6 +175,14 @@
                   @typing="performAutoCompletePlacesSearch">
               </b-taginput>
             </b-field>
+             <div class="box box-style is-darker-bg" v-if="profile.locationTargetList!==null && profile.locationTargetList.length > 0">
+                  <p class="subtitle is-light">Location Additional Settings</p>
+                    <b-field grouped>
+                      <b-tooltip multilined type="is-twitter" label="Enabling this will let the agent know to focus on engaging with users localy to the location you set. and focus less on topic based engagment">
+                        <b-switch class="is-light" style="padding-left:2em;" :outlined="true" type="is-info" v-model="profile.additionalConfigurations.focusLocalMore">Focus Primarily On Location Targeting</b-switch>
+                      </b-tooltip>
+                    </b-field>
+                </div>
             </div>
           </b-step-item>
           <b-step-item label="Theme" :clickable="true" icon="palette">
@@ -352,13 +360,13 @@
                 <div class="box box-style is-darker-bg">
                   <p class="subtitle is-light">Post Settings</p>
                       <b-field grouped>
-                        <b-tooltip type="is-twitter" label="Enabling this will allow the agent to post on your behalf.">
+                        <b-tooltip multilined type="is-twitter" label="Enabling this will allow the agent to post on your behalf.">
                           <b-switch class="is-light" style="padding-left:2em;" :outlined="true" type="is-info" v-model="profile.additionalConfigurations.enableAutoPosting">Enable Auto Posting</b-switch>
                         </b-tooltip>
-                        <b-tooltip type="is-twitter" label="Enabling this feature will allow the agent to repost from other instagram accounts (based on your profile)">
+                        <b-tooltip multilined type="is-twitter" label="Enabling this feature will allow the agent to repost from other instagram accounts (based on your profile)">
                           <b-switch v-if="profile.additionalConfigurations.enableAutoPosting" style="padding-left:2em;" class="is-light" :outlined="true" type="is-info" v-model="profile.additionalConfigurations.allowRepost">Allow Reposting</b-switch>
                         </b-tooltip>
-                        <b-tooltip type="is-twitter" label="Enabling this feature will let the agent create their own caption based on your profile, alternatively you can turn this off and write your own captions">
+                        <b-tooltip multilined type="is-twitter" label="Enabling this feature will let the agent create their own caption based on your profile, alternatively you can turn this off and write your own captions">
                           <b-switch v-if="profile.additionalConfigurations.enableAutoPosting" style="padding-left:2em;" class="is-light" :outlined="true" type="is-info" v-model="profile.additionalConfigurations.autoGenerateCaption">Auto generate caption based on profile</b-switch>
                         </b-tooltip>
                       </b-field>

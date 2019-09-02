@@ -38,12 +38,15 @@ namespace QuarklessContexts.Extensions
 			).ToList();
 		}
 
+		public static string OnlyWords(this string @string)
+		{
+			return Regex.Replace(@string, "[^a-zA-Z]", "").ToLower();
+		}
 		public static bool ContainsWebAddress(this string target)
 		{
 			var regex = new Regex(@"(http|www|.*?\.)\S*");
 			return regex.IsMatch(target);
 		}
-
 		public static bool ContainsMentions(this string target) => new Regex(@"@\S*").IsMatch(target);
 		public static bool ContainsHashtags(this string target) => new Regex(@"#\S*").IsMatch(target);
 		public static bool ContainsPhoneNumber(this string target) => new Regex(@"\d{7,}").IsMatch(target);
@@ -51,9 +54,7 @@ namespace QuarklessContexts.Extensions
 		{
 			if (string.IsNullOrEmpty(s))
 			{
-				if (string.IsNullOrEmpty(t))
-					return 0;
-				return t.Length;
+				return string.IsNullOrEmpty(t) ? 0 : t.Length;
 			}
 
 			if (string.IsNullOrEmpty(t))

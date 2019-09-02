@@ -115,8 +115,8 @@ namespace Quarkless.HeartBeater.__Init__
 						OAccountId = workers.FirstOrDefault()?.AccountId,
 						OInstagramAccountUser = workers.FirstOrDefault()?.Id
 					});
-					await _topicBuilder.BuildTopics((await _topicBuilder.GetAllTopicCategories())
-						.DistinctBy(x=>x.CategoryName).Where(sub=>sub.CategoryName.Contains("&")||sub.CategoryName.Contains("/")).Skip(1));
+					//await _topicBuilder.BuildTopics((await _topicBuilder.GetAllTopicCategories())
+					//	.DistinctBy(x=>x.CategoryName).Where(sub=>sub.CategoryName.Contains("&")||sub.CategoryName.Contains("/")).Skip(1));
 					var total = (await _topicBuilder.GetTopics())
 						.Select(s => s.SubTopics)
 						.SquashMe()
@@ -273,12 +273,13 @@ namespace Quarkless.HeartBeater.__Init__
 					case ActionExecuteType.UserSelf:
 						var profileRefresh = Task.Run(async () => await metadataBuilder.BuildUsersOwnMedias(_instagramAccountLogic));
 						var followingList = Task.Run(async () => await metadataBuilder.BuildUserFollowList());
+						var followerList = Task.Run(async () => await metadataBuilder.BuildUserFollowerList());
 						var feedRefresh = await Task.Run(async () => await metadataBuilder.BuildUsersFeed()).ContinueWith(async x=> 
 						{
 							await metadataBuilder.BuildUsersFollowSuggestions(2);
 							await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchUsersFeed, MetaDataType.FetchCommentsViaUserFeed, true);
 						});
-						Task.WaitAll(profileRefresh, followingList, feedRefresh);
+						Task.WaitAll(profileRefresh, followerList, followingList, feedRefresh);
 						break;
 					case ActionExecuteType.TargetList:
 						var userTargetList = Task.Run(async () => await metadataBuilder.BuildUsersTargetListMedia())

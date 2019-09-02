@@ -14,6 +14,7 @@ namespace QuarklessContexts.Models.ServicesModels.HeartbeatModels
 		FetchUserOwnProfile,
 		FetchUsersFollowingList,
 		FetchUsersFollowSuggestions,
+		FetchUsersFollowerList,
 
 		FetchUsersFeed,
 		FetchMediaByTopic,

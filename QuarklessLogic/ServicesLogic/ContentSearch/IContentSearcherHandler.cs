@@ -10,6 +10,8 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 {
 	public interface IContentSearcherHandler
 	{
+		Task<IEnumerable<UserResponse<string>>> GetUsersFollowersList(string username, int limit,
+			string query = null, bool mutualFirst = true);
 		Task<List<UserResponse<UserSuggestionDetails>>> GetSuggestedPeopleToFollow(int limit);
 		Task<IEnumerable<UserResponse<string>>> GetUserFollowingList(string username, int limit, string query = null);
 		Task<InstaFullUserInfo> SearchInstagramFullUserDetail(long userId);

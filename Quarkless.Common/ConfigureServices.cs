@@ -72,6 +72,7 @@ using System;
 using QuarklessLogic.Handlers.EmailService;
 using QuarklessLogic.Logic.BusinessLogic;
 using QuarklessLogic.Logic.LibaryLogic;
+using QuarklessLogic.Logic.MessagingLogic;
 using QuarklessLogic.Logic.ResponseLogic;
 using QuarklessLogic.Logic.TimelineEventLogLogic;
 using QuarklessRepositories.RedisRepository.APILogger;
@@ -115,6 +116,7 @@ namespace Quarkless.Common
 			services.AddTransient<IEmailService, EmailService>();
 			services.AddTransient<IResponseResolver, ResponseResolver>();
 			services.AddTransient<IBusinessLogic, BusinessLogic>();
+			services.AddTransient<IMessagingLogic, MessagingLogic>();
 		}
 		public static void AddAuthHandlers(this IServiceCollection services, Accessors _accessors, AWSOptions aWSOptions)
 		{

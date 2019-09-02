@@ -5,6 +5,7 @@ using QuarklessRepositories.RedisRepository.RedisClient;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using QuarklessContexts.Extensions;
 
 namespace QuarklessRepositories.RedisRepository.HeartBeaterRedis
 {
@@ -22,11 +23,11 @@ namespace QuarklessRepositories.RedisRepository.HeartBeaterRedis
 			{
 				if (userId != null)
 				{
-					contains = await _redis.Database(0).SetMemberExists(metaDataType.ToString() + ":" + topic + ":" + userId, RedisKeys.HashtagGrowKeys.MetaData, data);
+					contains = await _redis.Database(0).SetMemberExists(metaDataType.ToString() + ":" + topic.OnlyWords() + ":" + userId, RedisKeys.HashtagGrowKeys.MetaData, data);
 				}
 				else
 				{
-					contains = await _redis.Database(0).SetMemberExists(metaDataType.ToString() + ":" + topic, RedisKeys.HashtagGrowKeys.MetaData, data);
+					contains = await _redis.Database(0).SetMemberExists(metaDataType.ToString() + ":" + topic.OnlyWords(), RedisKeys.HashtagGrowKeys.MetaData, data);
 				}
 			});
 			return contains;
@@ -36,10 +37,10 @@ namespace QuarklessRepositories.RedisRepository.HeartBeaterRedis
 			await WithExceptionLogAsync(async () => {
 				if (userId != null)
 				{
-					await _redis.Database(0).SetAdd(metaDataType.ToString() + ":" + topic + ":"+ userId, RedisKeys.HashtagGrowKeys.MetaData, JsonConvert.SerializeObject(data), TimeSpan.FromHours(4));
+					await _redis.Database(0).SetAdd(metaDataType.ToString() + ":" + topic.OnlyWords() + ":"+ userId, RedisKeys.HashtagGrowKeys.MetaData, JsonConvert.SerializeObject(data), TimeSpan.FromHours(4));
 				}
 				else { 
-					await _redis.Database(0).SetAdd(metaDataType.ToString() + ":" + topic, RedisKeys.HashtagGrowKeys.MetaData, JsonConvert.SerializeObject(data), TimeSpan.FromHours(4));
+					await _redis.Database(0).SetAdd(metaDataType.ToString() + ":" + topic.OnlyWords(), RedisKeys.HashtagGrowKeys.MetaData, JsonConvert.SerializeObject(data), TimeSpan.FromHours(4));
 				}
 			});
 		}
@@ -48,11 +49,11 @@ namespace QuarklessRepositories.RedisRepository.HeartBeaterRedis
 			await WithExceptionLogAsync(async () => {
 				if (userId == null)
 				{
-					await _redis.Database(0).SetRemove(metaDataType.ToString() + ":" + topic, RedisKeys.HashtagGrowKeys.MetaData, JsonConvert.SerializeObject(dataToDelete));
+					await _redis.Database(0).SetRemove(metaDataType.ToString() + ":" + topic.OnlyWords(), RedisKeys.HashtagGrowKeys.MetaData, JsonConvert.SerializeObject(dataToDelete));
 				}
 				else
 				{
-					await _redis.Database(0).SetRemove(metaDataType.ToString() + ":" + topic + ":" + userId, RedisKeys.HashtagGrowKeys.MetaData, JsonConvert.SerializeObject(dataToDelete));
+					await _redis.Database(0).SetRemove(metaDataType.ToString() + ":" + topic.OnlyWords() + ":" + userId, RedisKeys.HashtagGrowKeys.MetaData, JsonConvert.SerializeObject(dataToDelete));
 				}
 			});
 		}
@@ -60,10 +61,10 @@ namespace QuarklessRepositories.RedisRepository.HeartBeaterRedis
 		{
 			await WithExceptionLogAsync(async () => {
 				if (userId == null) { 
-					await _redis.Database(0).DeleteKey(metaDataType.ToString() + ":" + topic, RedisKeys.HashtagGrowKeys.MetaData);
+					await _redis.Database(0).DeleteKey(metaDataType.ToString() + ":" + topic.OnlyWords(), RedisKeys.HashtagGrowKeys.MetaData);
 				}else
 				{
-					await _redis.Database(0).DeleteKey(metaDataType.ToString()+":"+topic+":"+userId,RedisKeys.HashtagGrowKeys.MetaData);
+					await _redis.Database(0).DeleteKey(metaDataType.ToString()+":"+topic.OnlyWords()+":"+userId,RedisKeys.HashtagGrowKeys.MetaData);
 				}
 			});
 		}
@@ -73,10 +74,10 @@ namespace QuarklessRepositories.RedisRepository.HeartBeaterRedis
 			await WithExceptionLogAsync(async () => {
 				if (userId != null)
 				{
-					response = await _redis.Database(0).GetMembers<__Meta__<T>>(metaDataType.ToString() + ":" + topic +":"+userId, RedisKeys.HashtagGrowKeys.MetaData);
+					response = await _redis.Database(0).GetMembers<__Meta__<T>>(metaDataType.ToString() + ":" + topic.OnlyWords() +":"+userId, RedisKeys.HashtagGrowKeys.MetaData);
 				}
 				else { 
-					response = await _redis.Database(0).GetMembers<__Meta__<T>>(metaDataType.ToString() + ":" + topic, RedisKeys.HashtagGrowKeys.MetaData);
+					response = await _redis.Database(0).GetMembers<__Meta__<T>>(metaDataType.ToString() + ":" + topic.OnlyWords(), RedisKeys.HashtagGrowKeys.MetaData);
 				}
 			});
 			return response;
@@ -85,7 +86,7 @@ namespace QuarklessRepositories.RedisRepository.HeartBeaterRedis
 		{
 			__Meta__<Media> media = null;
 			await WithExceptionLogAsync(async () => {
-				media = JsonConvert.DeserializeObject<__Meta__<Media>>(await _redis.Database(0).StringGet(metaDataType.ToString() + ":" + topic, RedisKeys.HashtagGrowKeys.MetaData));
+				media = JsonConvert.DeserializeObject<__Meta__<Media>>(await _redis.Database(0).StringGet(metaDataType.ToString() + ":" + topic.OnlyWords(), RedisKeys.HashtagGrowKeys.MetaData));
 			});
 
 			return media;
@@ -94,7 +95,7 @@ namespace QuarklessRepositories.RedisRepository.HeartBeaterRedis
 		{
 			__Meta__<List<UserResponse<string>>> response = null;
 			await WithExceptionLogAsync(async() => {
-				response = JsonConvert.DeserializeObject<__Meta__<List<UserResponse<string>>>>(await _redis.Database(0).StringGet(metaDataType.ToString() + ":" + topic, RedisKeys.HashtagGrowKeys.MetaData));
+				response = JsonConvert.DeserializeObject<__Meta__<List<UserResponse<string>>>>(await _redis.Database(0).StringGet(metaDataType.ToString() + ":" + topic.OnlyWords(), RedisKeys.HashtagGrowKeys.MetaData));
 			});
 			return response;
 		}

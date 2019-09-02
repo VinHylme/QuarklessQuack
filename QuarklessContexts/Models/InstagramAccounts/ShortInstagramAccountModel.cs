@@ -13,6 +13,9 @@ namespace QuarklessContexts.Models.InstagramAccounts
 		public long CreatePostLimit { get; set; }
 
 		[BsonRepresentation(BsonType.Int32)]
+		public long SendMessageLimit { get; set; }
+
+		[BsonRepresentation(BsonType.Int32)]
 		public long CreateCommentLimit { get; set; }
 
 		[BsonRepresentation(BsonType.Int32)]
@@ -31,6 +34,9 @@ namespace QuarklessContexts.Models.InstagramAccounts
 	{
 		[BsonRepresentation(BsonType.Int32)]
 		public long CreatePostLimit { get; set; }
+
+		[BsonRepresentation(BsonType.Int32)]
+		public long SendMessageLimit { get; set; }
 
 		[BsonRepresentation(BsonType.Int32)]
 		public long CreateCommentLimit { get; set; }

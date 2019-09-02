@@ -42,7 +42,10 @@ namespace QuarklessLogic.Handlers.TextGeneration
 						.GetComments(topic, language.ToLower(), language.MapLanguages().ToLower(),50000))
 						.DistinctBy(x=>x.Comment);
 					if (data == null) return null;
-
+					//data = data.Where(x => !x.Comment.ContainsHashtags()
+					//	&& !x.Comment.ContainsMentions()
+					//	&& !x.Comment.ContainsPhoneNumber()
+					//	&& !x.Comment.ContainsWebAddress());
 					var dataComment = Regex.Replace(string.Join(',', data.Select(sa => sa.Comment)), @"\s+", " ").TrimEnd(' ');
 					var dCommentDict = MarkovHelper.BuildTDict(dataComment, size);
 					return MarkovHelper.BuildString(dCommentDict, limit, true).TrimEnd(' ');
@@ -50,8 +53,11 @@ namespace QuarklessLogic.Handlers.TextGeneration
 					var metaMedia = (await _mediaCorpusLogic
 						.GetMedias(topic, language.ToLower(), language.MapLanguages().ToLower(), 50000))
 						.DistinctBy(x => x.Caption);
-
-					if (metaMedia == null) return null;
+					//metaMedia = metaMedia.Where(x => !x.Caption.ContainsHashtags()
+					//	&& !x.Caption.ContainsMentions()
+					//	&& !x.Caption.ContainsPhoneNumber()
+					//	&& !x.Caption.ContainsWebAddress());
+					//
 					var dataMedia = Regex.Replace(string.Join(',', metaMedia.Select(sa => sa.Caption)), @"\s+", " ").TrimEnd(' ');
 					var dMediaDict = MarkovHelper.BuildTDict(dataMedia, size);
 					return MarkovHelper.BuildString(dMediaDict, limit, true).TrimEnd(' ');

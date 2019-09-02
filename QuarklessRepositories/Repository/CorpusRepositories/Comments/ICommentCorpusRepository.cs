@@ -12,5 +12,6 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Comments
 		Task<IEnumerable<CommentCorpus>> GetComments(string topic, string language = null, string mapedLang = null, int limit = -1);
 		Task<bool> RemoveComments(IEnumerable<string> comment_ids);
 		Task<long> GetCommentsCount(string topic);
+		Task UpdateAllCommentsLanguagesToLower();
 	}
 }

@@ -35,6 +35,15 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Comments
 				return false;
 			}
 		}
+		public async Task UpdateAllCommentsLanguagesToLower()
+		{
+			var res = (await _context.CorpusComments.DistinctAsync(_ => _.Language, _ => true)).ToList();
+			foreach (var lang in res)
+			{			
+				var updateDef = Builders<CommentCorpus>.Update.Set(o => o.Language, lang.ToLower().Replace(" ",""));
+				await _context.CorpusComments.UpdateManyAsync(_ => _.Language == lang, updateDef);
+			}
+		}
 		public async Task<IEnumerable<CommentCorpus>> GetComments(IEnumerable<FilterDefinition<CommentCorpus>> searchRepository = null, int limit = -1)
 		{
 			try
@@ -68,7 +77,7 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Comments
 		{
 			try
 			{
-				List<FilterDefinition<CommentCorpus>> filterList = new List<FilterDefinition<CommentCorpus>>();
+				var filterList = new List<FilterDefinition<CommentCorpus>>();
 				var builders = Builders<CommentCorpus>.Filter;
 				FilterDefinition<CommentCorpus> filters;
 				if (string.IsNullOrEmpty(language) && string.IsNullOrEmpty(mapedLang))
@@ -77,7 +86,7 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Comments
 				}
 				else
 				{
-					filters = builders.Eq(_ => _.Topic, topic) & (builders.Eq(_ => _.Language.ToLower(), language) | builders.Eq(_ => _.Language.ToLower(), mapedLang));
+					filters = builders.Eq(_ => _.Topic, topic) & (builders.Eq(_ => _.Language, language) | builders.Eq(_ => _.Language, mapedLang));
 				}
 				var options = new FindOptions<CommentCorpus, CommentCorpus>();
 				if (limit != -1)

@@ -19,7 +19,7 @@
                     <header class="modal-card-head">
                         <p class="modal-card-title">Link your Instagram Account</p>
                     </header>
-                    <section class="modal-card-body" style="padding:3em;">
+                    <section class="modal-card-body" style="padding-top:1em; padding-left:2em; padding-right:2em;">
                         <b-field label="Username">
                             <b-input
                                 type="text"
@@ -39,9 +39,11 @@
                             </b-input>
                         </b-field>
                         <br>
-                        <br>
                         <b-message title="Account Linking" type="is-danger" has-icon aria-close-label="Close message">
                         Please enter your Instagram Credentials, your password is encrypted and not seen by anyone
+                        </b-message>
+                        <b-message title="For best experience" type="is-info" has-icon aria-close-label="Close message">
+                        Please ensure your account is at least 2 weeks old, Instagram spam detection system targets new accounts more than older ones.
                         </b-message>
                     </section>
                     <footer class="modal-card-foot">
@@ -294,6 +296,12 @@ export default {
         label{
                 color:$main_font_color;
                 text-align: left;
+        }
+        .input{
+                color:$main_font_color !important;
+                &::placeholder{
+                        color:$main_font_color;
+                }
         }
         .control-label{
                 &:hover{

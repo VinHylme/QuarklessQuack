@@ -29,6 +29,9 @@ namespace QuarklessLogic.ServicesLogic.CorpusLogic
 		{
 			await _mediaCorpusRepository.UpdateTopicName(topic, newTopic);
 		}
+
+		public async Task UpdateAllMediasLanguagesToLower() => await _mediaCorpusRepository.UpdateAllMediasLanguagesToLower();
+
 		public async Task<IEnumerable<MediaCorpus>> GetMedias(string topic, string lang, string langmapped, int limit)
 		{
 			//var medias = await _mediaCorpusCache.GetMedias(topic, langmapped, limit);

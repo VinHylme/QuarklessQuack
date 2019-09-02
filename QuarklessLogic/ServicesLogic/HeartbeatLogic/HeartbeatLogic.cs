@@ -33,6 +33,9 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 			_mediaCorpusLogic = media;
 			_heartbeatRepository = heartbeatRepository;
 			_utilProviders = utilProviders;
+			//_mediaCorpusLogic.UpdateAllMediasLanguagesToLower();
+			//_commentsLogic.UpdateAllCommentsLanguagesToLower();
+			//_hashtagLogic.UpdateAllMediasLanguagesToLower();
 		}
 		public async Task AddMetaData<T>(MetaDataType metaDataType, string topic, __Meta__<T> data, string userId = null)
 		{
@@ -118,8 +121,8 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 				var detections = _utilProviders.TranslateService.DetectLanguageYandex(words.ToArray()).ToList();
 				for (var i = 0; i < detections.Count; i++)
 				{
-					filtered[i].Media.Language = detections[i];
-					filtered[i].Tags.Language = detections[i];
+					filtered[i].Media.Language = detections[i].ToLower().Replace(" ", "");
+					filtered[i].Tags.Language = detections[i].ToLower().Replace(" ", "");
 				}
 			}
 
@@ -188,7 +191,7 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 
 				for (var i = 0; i < detections.Count; i++)
 				{
-					filteredComments[i].Language = detections[i];
+					filteredComments[i].Language = detections[i].ToLower().Replace(" ", "");
 				}
 
 				var mostFrequentLang = string.Empty;
@@ -220,6 +223,8 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 		public async Task RefreshMetaData(MetaDataType metaDataType, string topic, string userId = null, ProxyModel proxy = null)
 		{
 			try {
+
+				#region Old
 				//var datas = (await GetMetaData<object>(metaDataType,topic,userId)).ToList();
 				//if (datas.Count <= 0) return;
 				//var by = new By { ActionType = 101, User = "Refreshed" };
@@ -285,9 +290,9 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 				//		datatran.SeenBy = new List<By> {new By {ActionType = 101, User = "Refreshed"}};
 				//	}
 				//}
-				
-				
-				await _heartbeatRepository.RefreshMetaData(metaDataType,topic,userId);
+				#endregion
+
+				await _heartbeatRepository.RefreshMetaData(metaDataType, topic, userId);
 			}
 			catch(Exception ee)
 			{

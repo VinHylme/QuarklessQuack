@@ -12,5 +12,6 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 		Task<IEnumerable<MediaCorpus>> GetMedias(string topic, string language = null,string mapedLang = null, int limit = -1);
 		Task<long> GetMediasCount(string topic);
 		Task UpdateTopicName(string topic, string newTopic);
+		Task UpdateAllMediasLanguagesToLower();
 	}
 }

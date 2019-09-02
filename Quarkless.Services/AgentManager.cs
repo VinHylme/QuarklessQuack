@@ -21,6 +21,7 @@ using QuarklessLogic.ServicesLogic.AgentLogic;
 using System.Collections.Async;
 using QuarklessContexts.Models.UserAuth.AuthTypes;
 using QuarklessContexts.Enums;
+using QuarklessLogic.Logic.LibaryLogic;
 
 namespace Quarkless.Services
 {
@@ -53,8 +54,9 @@ namespace Quarkless.Services
 		private readonly IAuthHandler _authHandler;
 		private readonly IHeartbeatLogic _heartbeatLogic;
 		private readonly IAgentLogic _agentLogic;
+		private readonly ILibraryLogic _libraryLogic;
 		public AgentManager(IInstagramAccountLogic instagramAccountLogic, IProfileLogic profileLogic ,IContentManager contentManager,
-			ITimelineLogic timelineLogic,IHeartbeatLogic heartbeatLogic, IAuthHandler authHandler, IAgentLogic agentLogic)
+			ITimelineLogic timelineLogic,IHeartbeatLogic heartbeatLogic, IAuthHandler authHandler, IAgentLogic agentLogic, ILibraryLogic libraryLogic)
 		{
 			_agentLogic = agentLogic;
 			_heartbeatLogic = heartbeatLogic;
@@ -63,6 +65,7 @@ namespace Quarkless.Services
 			_profileLogic = profileLogic;
 			_contentManager = contentManager;
 			_authHandler = authHandler;
+			_libraryLogic = libraryLogic;
 		}
 
 		private AddEventResponse AddToTimeline(TimelineEventModel events, Limits limits)
@@ -86,6 +89,22 @@ namespace Quarkless.Services
 								DailyLimitReached = true
 							};
 						case ActionType.CreatePost when completedActionsHourly.Count >= limits.HourlyLimits.CreatePostLimit:
+							return new AddEventResponse
+							{
+								Event = events,
+								ContainsErrors = false,
+								HasCompleted = false,
+								DailyLimitReached = true
+							};
+						case ActionType.SendDirectMessage when completedActionsDaily.Count >= limits.DailyLimits.SendMessageLimit:
+							return new AddEventResponse
+							{
+								Event = events,
+								ContainsErrors = false,
+								HasCompleted = false,
+								DailyLimitReached = true
+							};
+						case ActionType.SendDirectMessage when completedActionsHourly.Count >= limits.HourlyLimits.SendMessageLimit:
 							return new AddEventResponse
 							{
 								Event = events,
@@ -117,21 +136,14 @@ namespace Quarkless.Services
 								HasCompleted = false,
 								DailyLimitReached = true
 							};
-						case ActionType.LikePost:
-						{
-							if (completedActionsHourly.Count >= limits.HourlyLimits.LikePostLimit)
+						case ActionType.LikePost when completedActionsHourly.Count >= limits.HourlyLimits.LikePostLimit:
+							return new AddEventResponse
 							{
-								new AddEventResponse
-								{
-									Event = events,
-									ContainsErrors = false,
-									HasCompleted = false,
-									HourlyLimitReached = true
-								};
-							}
-
-							break;
-						}
+								Event = events,
+								ContainsErrors = false,
+								HasCompleted = false,
+								HourlyLimitReached = true
+							};
 						case ActionType.LikeComment when completedActionsDaily.Count >= limits.DailyLimits.LikeCommentLimit:
 							return new AddEventResponse
 							{
@@ -171,7 +183,7 @@ namespace Quarkless.Services
 				{
 					HasCompleted = true,
 					Event = events
-				};					
+				};
 			}
 			catch (Exception ee)
 			{
@@ -391,6 +403,9 @@ namespace Quarkless.Services
 					case null:
 						sft = _timelineLogic.GetScheduledEventsForUserByDate(accountId, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
 						break;
+					case ActionType.SendDirectMessage:
+						sft = _timelineLogic.GetScheduledEventsForUserForActionByDate(accountId, actionName.Value.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
+						break;
 					case ActionType.CreatePost:
 						sft = _timelineLogic.GetScheduledEventsForUserForActionByDate(accountId, actionName.Value.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
 						break;
@@ -474,6 +489,8 @@ namespace Quarkless.Services
 								if (profile == null) return;
 								userStoreDetails.shortInstagram = shortInstagram;
 								userStoreDetails.Profile = profile;
+								userStoreDetails.MessagesTemplates =
+									await _libraryLogic.GetSavedMessagesForUser(shortInstagram.Id);
 								var nextAvaliableDate = PickAGoodTime(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser);
 								#region Unfollow Section
 								if (shortInstagram.LastPurgeCycle == null)
@@ -481,7 +498,7 @@ namespace Quarkless.Services
 									await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser,
 										new InstagramAccountModel
 										{
-											LastPurgeCycle = DateTime.UtcNow.AddDays(2)
+											LastPurgeCycle = DateTime.UtcNow.AddHours(SecureRandom.Next(12,25))
 										});
 								}			
 								else
@@ -494,8 +511,9 @@ namespace Quarkless.Services
 												.IncludeStrategy(new UnFollowStrategySettings
 												{
 													UnFollowStrategy = UnFollowStrategyType.LeastEngagingN,
-													NumberOfUnfollows = (int)(shortInstagram.FollowingCount.Value * 0.65),
-													OffsetPerAction = TimeSpan.FromSeconds(20)
+													NumberOfUnfollows = (int)(shortInstagram.FollowingCount.Value * 0.25),
+													OffsetPerAction = TimeSpan.FromSeconds(SecureRandom.Next(UnfollowActionOptions.TimeFrameSeconds.Min,
+														UnfollowActionOptions.TimeFrameSeconds.Max))
 												})
 												.IncludeUser(userStoreDetails)
 												.Push(new UnfollowActionOptions(nextAvaliableDate.AddSeconds(UnfollowActionOptions.TimeFrameSeconds.Max)));
@@ -508,7 +526,7 @@ namespace Quarkless.Services
 												await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser,
 													new InstagramAccountModel
 													{
-														LastPurgeCycle = DateTime.UtcNow.AddDays(2)
+														LastPurgeCycle = DateTime.UtcNow.AddHours(SecureRandom.Next(12,25))
 													});
 											}
 										}
@@ -546,19 +564,23 @@ namespace Quarkless.Services
 								var likeCommentAction = ActionsManager.Begin.Commit(ActionType.LikeComment, _contentManager, _heartbeatLogic)
 									.IncludeStrategy(new LikeStrategySettings())
 									.IncludeUser(userStoreDetails);
-
+								var sendMessageAction = ActionsManager.Begin.Commit(ActionType.SendDirectMessage, _contentManager, _heartbeatLogic)
+									.IncludeUser(userStoreDetails);
 								//Initial Execution
 								var likeScheduleOptions = new LikeActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1, 4)), LikeActionType.Any);
 								var postScheduleOptions = new PostActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1, 5))) { ImageFetchLimit = 20 };
 								var followScheduleOptions = new FollowActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1, 4)), FollowActionType.Any);
 								var commentScheduleOptions = new CommentingActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1, 4)), CommentingActionType.Any);
 								var likecommentScheduleOptions = new LikeCommentActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(4)), LikeCommentActionType.Any);
-				
-								actionsContainerManager.AddAction(postAction, postScheduleOptions, 0.10);
+								var sendMessageScheduleoptions = new SendDirectMessageActionOptions(nextAvaliableDate.AddMinutes(SecureRandom.Next(1,5)), MessagingReachType.Any, 1);
+								
+								actionsContainerManager.AddAction(sendMessageAction, sendMessageScheduleoptions, 0.05);
+								actionsContainerManager.AddAction(postAction, postScheduleOptions, 0.05);
 								actionsContainerManager.AddAction(likeAction, likeScheduleOptions, 0.25);
 								actionsContainerManager.AddAction(followAction, followScheduleOptions, 0.20);
 								actionsContainerManager.AddAction(commentAction, commentScheduleOptions, 0.15);
 								actionsContainerManager.AddAction(likeCommentAction, likecommentScheduleOptions, 0.25);
+								
 								#endregion
 								#region Agent State
 								if (shortInstagram == null) return;
@@ -710,6 +732,7 @@ namespace Quarkless.Services
 					{
 						DailyLimits = new DailyActions
 						{
+							SendMessageLimit = 200,
 							CreateCommentLimit = 500,
 							CreatePostLimit = 24,
 							FollowPeopleLimit = 225,
@@ -719,6 +742,7 @@ namespace Quarkless.Services
 						},
 						HourlyLimits = new HourlyActions
 						{
+							SendMessageLimit = 12,
 							CreatePostLimit = 5,
 							CreateCommentLimit = 55,
 							FollowPeopleLimit = 55,
@@ -732,6 +756,7 @@ namespace Quarkless.Services
 					{
 						DailyLimits = new DailyActions
 						{
+							SendMessageLimit = 24,
 							CreateCommentLimit = 100,
 							CreatePostLimit = 8,
 							FollowPeopleLimit = 80,
@@ -741,6 +766,7 @@ namespace Quarkless.Services
 						},
 						HourlyLimits = new HourlyActions
 						{
+							SendMessageLimit = 3,
 							CreatePostLimit = 2,
 							CreateCommentLimit = 30,
 							FollowPeopleLimit = 30,
@@ -754,6 +780,7 @@ namespace Quarkless.Services
 					{
 						DailyLimits = new DailyActions
 						{
+							SendMessageLimit = 185,
 							CreateCommentLimit = 499,
 							CreatePostLimit = 23,
 							FollowPeopleLimit = 220,
@@ -763,6 +790,7 @@ namespace Quarkless.Services
 						},
 						HourlyLimits = new HourlyActions
 						{
+							SendMessageLimit = 10,
 							CreatePostLimit = 4,
 							CreateCommentLimit = 53,
 							FollowPeopleLimit = 53,
@@ -776,6 +804,7 @@ namespace Quarkless.Services
 					{
 						DailyLimits = new DailyActions
 						{
+							SendMessageLimit = 0,
 							CreateCommentLimit = 0,
 							CreatePostLimit = 0,
 							FollowPeopleLimit = 0,
@@ -785,6 +814,7 @@ namespace Quarkless.Services
 						},
 						HourlyLimits = new HourlyActions
 						{
+							SendMessageLimit = 0,
 							CreatePostLimit = 0,
 							CreateCommentLimit = 0,
 							FollowPeopleLimit = 0,
@@ -798,6 +828,7 @@ namespace Quarkless.Services
 					{
 						DailyLimits = new DailyActions
 						{
+							SendMessageLimit = 125,
 							CreateCommentLimit = 280,
 							CreatePostLimit = 15,
 							FollowPeopleLimit = 125,
@@ -807,6 +838,7 @@ namespace Quarkless.Services
 						},
 						HourlyLimits = new HourlyActions
 						{
+							SendMessageLimit = 7,
 							CreatePostLimit = 3,
 							CreateCommentLimit = 42,
 							FollowPeopleLimit = 42,
@@ -820,6 +852,7 @@ namespace Quarkless.Services
 					{
 						DailyLimits = new DailyActions
 						{
+							SendMessageLimit = 10,
 							CreateCommentLimit = 60,
 							CreatePostLimit = 4,
 							FollowPeopleLimit = 40,
@@ -829,6 +862,7 @@ namespace Quarkless.Services
 						},
 						HourlyLimits = new HourlyActions
 						{
+							SendMessageLimit = 1,
 							CreatePostLimit = 1,
 							CreateCommentLimit = 15,
 							FollowPeopleLimit = 15,

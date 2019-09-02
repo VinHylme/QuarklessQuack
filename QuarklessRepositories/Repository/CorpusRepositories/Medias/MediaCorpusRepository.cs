@@ -3,6 +3,7 @@ using QuarklessContexts.Models.ServicesModels.Corpus;
 using QuarklessRepositories.RepositoryClientManager;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
@@ -68,11 +69,20 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 			await _context.Hashtags.UpdateManyAsync(o => o.Topic == topic, updateDef3);
 		}
 
+		public async Task UpdateAllMediasLanguagesToLower()
+		{
+			var res = (await _context.CorpusMedia.DistinctAsync(_ => _.Language, _ => true)).ToList();
+			foreach (var lang in res)
+			{			
+				var updateDef = Builders<MediaCorpus>.Update.Set(o => o.Language, lang.ToLower().Replace(" ",""));
+				await _context.CorpusMedia.UpdateManyAsync(_ => _.Language == lang, updateDef);
+			}
+		}
 		public async Task<IEnumerable<MediaCorpus>> GetMedias(string topic, string language = null ,string mapedLang = null, int limit = -1)
 		{
 			try
 			{
-				List<FilterDefinition<MediaCorpus>> filterList = new List<FilterDefinition<MediaCorpus>>();
+				var filterList = new List<FilterDefinition<MediaCorpus>>();
 				var builders = Builders<MediaCorpus>.Filter;
 				FilterDefinition<MediaCorpus> filters;
 				if(string.IsNullOrEmpty(language) && string.IsNullOrEmpty(mapedLang))
@@ -81,7 +91,8 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 				}
 				else
 				{
-					filters = builders.Eq(_ => _.Topic, topic) & (builders.Eq(_ => _.Language.ToLower(), language) | builders.Eq(_ => _.Language.ToLower(), mapedLang));
+
+					filters = builders.Eq(_ => _.Topic, topic) & (builders.Eq(_ => _.Language, language) | builders.Eq(_ => _.Language, mapedLang));
 				}
 				var options = new FindOptions<MediaCorpus, MediaCorpus>();
 				if (limit != -1)

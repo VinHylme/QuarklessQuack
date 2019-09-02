@@ -52,7 +52,7 @@
                   <b-tab-item label="Saved Messages" icon-pack="fas" icon="inbox">
                     <div class="cap_container">
                        <div v-for="(message,index) in messageLibrary.items" :key="index">
-                        <TextCard width="600px" :rows="8" :isArray="false" :data="message" :allowDelete="true" :allowEdit="true" @click-delete="onClickDeleteMessage" @click-edit="onClickEditMessage" icon="envelope-open" :date="formatedDate(message.dateAdded)" :message="message.message"/>
+                        <TextCard width="600px" :rows="8" :isArray="false" :data="message" :allowDelete="true" :allowEdit="true" @click-delete="onClickDeleteMessage" @click-edit="onClickEditMessage" icon="envelope-open" :date="formatedDate(message.dateAdded)" :link="message.entity.link" :message="messageFormat(message.entity)"/>
                       </div>
                     </div>
                   </b-tab-item>
@@ -115,19 +115,25 @@
             </div>
             <div class="cap_sec" ref="message_section" style="padding-top:1em;" v-else-if="selectedSection === 3">
               <b-field label="Add Message">
-                <textarea type="is-light" style="resize:none;" maxlength="10000" rows="18" v-model="messageObject.message" class="textarea side" placeholder="e.g. This right here is my saved caption"></textarea>
+                <textarea type="is-light" style="resize:none;" maxlength="10000" rows="15" v-model="messageObject.entity.message" class="textarea side" placeholder="e.g. This right here is my saved caption"></textarea>
               </b-field>
+              <b-switch v-model="messageObject.includelink"  size="is-default" style="margin-left:-12em;">Include a link? </b-switch>
+              <br>
+              <b-field v-if="messageObject.includelink" label="Link">
+                <input class="input" type="text" v-model="messageObject.entity.link" placeholder="e.g. www.mycoolwebsite.com">
+              </b-field>
+              <br>
               <div class="emoji-container"> 
-                <Emoji class="emj_item" set="messanger" emoji="heart" :size="24" @click="emojiFallback" :tooltip="true"/>
-                <Emoji class="emj_item"  set="facebook" emoji="heart_eyes" :size="24" @click="emojiFallback" />
-                <Emoji class="emj_item"  set="facebook" emoji="kissing_heart" :size="24" @click="emojiFallback" /> 
-                <Emoji class="emj_item"  set="facebook" emoji="grin" :size="24" @click="emojiFallback" /> 
-                <Emoji class="emj_item"  set="facebook" emoji="sob" :size="24" @click="emojiFallback"/> 
-                <Emoji class="emj_item"  set="facebook" emoji="sweat_smile" :size="24" @click="emojiFallback" /> 
-                <Emoji class="emj_item"  set="facebook" emoji="scream" :size="24" @click="emojiFallback" /> 
-                <Emoji class="emj_item"  set="facebook" emoji="stuck_out_tongue" :size="24" @click="emojiFallback" /> 
-                <Emoji class="emj_item"  set="facebook" emoji="thumbsup" :size="24" @click="emojiFallback" /> 
-                <Emoji class="emj_item"  set="facebook" emoji="sunglasses" :size="24" @click="emojiFallback"/> 
+                <Emoji class="emj_item" set="messanger" emoji="heart" :size="24" @click="emojiFallbackMSG" :tooltip="true"/>
+                <Emoji class="emj_item"  set="facebook" emoji="heart_eyes" :size="24" @click="emojiFallbackMSG" />
+                <Emoji class="emj_item"  set="facebook" emoji="kissing_heart" :size="24" @click="emojiFallbackMSG" /> 
+                <Emoji class="emj_item"  set="facebook" emoji="grin" :size="24" @click="emojiFallbackMSG" /> 
+                <Emoji class="emj_item"  set="facebook" emoji="sob" :size="24" @click="emojiFallbackMSG"/> 
+                <Emoji class="emj_item"  set="facebook" emoji="sweat_smile" :size="24" @click="emojiFallbackMSG" /> 
+                <Emoji class="emj_item"  set="facebook" emoji="scream" :size="24" @click="emojiFallbackMSG" /> 
+                <Emoji class="emj_item"  set="facebook" emoji="stuck_out_tongue" :size="24" @click="emojiFallbackMSG" /> 
+                <Emoji class="emj_item"  set="facebook" emoji="thumbsup" :size="24" @click="emojiFallbackMSG" /> 
+                <Emoji class="emj_item"  set="facebook" emoji="sunglasses" :size="24" @click="emojiFallbackMSG"/> 
               </div>
               <br>
               <a class="button is-info" @click="addMessage">Save Message</a>
@@ -175,7 +181,15 @@ export default {
         items:[]
       },
       messageObject:{
-        message:''
+        entity:{
+          message:'',
+          link:'',
+          mediaBytes:'',
+          profileIdShare:'',
+          mediaIdShare:''
+        },
+        includelink:false,
+        type:0
       },
       uploadedMedia:{
         items:[]
@@ -191,10 +205,9 @@ export default {
       }
     }
   },
-  mounted(){
+  beforeMount(){
     this.$emit('unSelectAccount');
     this.loadData();
-  
   },
   computed:{
     filterMedia(){
@@ -206,6 +219,9 @@ export default {
     }
   },
   methods:{
+    messageFormat(entity){
+      return entity.message + '\n';
+    },
     loadData(){
       this.captionLibrary.items = this.$store.getters.UserCaptionLibrary(this.$route.params.id);
       if(this.captionLibrary.items === undefined || this.captionLibrary.items === null){
@@ -229,7 +245,7 @@ export default {
       };
       
       this.mediaLibrary.items = this.$store.getters.UserMediaLibrary(this.$route.params.id);
-      if(this.mediaLibrary.items === undefined || this.mediaLibrary.items === null){
+      if(this.mediaLibrary.items === undefined || this.mediaLibrary.items === null || this.mediaLibrary.items.length<=0){
         this.isLoading = true;
         this.$store.dispatch('GetSavedMedias', this.$store.getters.User).then(resp=>{
           this.mediaLibrary.items = this.$store.getters.UserMediaLibrary(this.$route.params.id);
@@ -259,6 +275,9 @@ export default {
     },
     emojiFallback(emoji){
       this.captionObject.caption+=emoji.native;
+    },
+    emojiFallbackMSG(emoji){
+      this.messageObject.entity.message += emoji.native;
     },
     formatedDate(e){
       return moment(e).format("YYYY-MM-DD HH:mm:ss");
@@ -324,7 +343,17 @@ export default {
       })
     },
     addMessage(){
-      if(this.messageObject.message === ''){
+      if(this.messageObject.includelink){
+        this.messageObject.type = 1;
+        if(this.messageObject.entity.link === ''){
+           Vue.prototype.$toast.open({
+            message: 'Sorry, please populate the link field first.',
+            type: 'is-danger'
+          });
+          return;
+        }
+      }
+      if(this.messageObject.entity.message === ''){
          Vue.prototype.$toast.open({
             message: 'Sorry, please populate the message field first.',
             type: 'is-danger'
@@ -335,7 +364,8 @@ export default {
         instagramAccountId: this.$route.params.id,
         accountId: this.$store.getters.User,
         groupName: this.uuidv4(),
-        message: this.messageObject.message,
+        entity: this.messageObject.entity,
+        type: this.messageObject.type,
         dateAdded: new Date()
       };
       this.$store.dispatch('SetSavedMessages', messageData).then(resp=>{
@@ -407,8 +437,10 @@ export default {
       })
     },
     onClickEditMessage(e){
-      if(e.message!==undefined && e.message!= '' && e.message!==e.originalData.message){
-        e.originalData.message = e.message;
+      console.log(e);
+      if(e.message!==undefined && e.message!= '' && e.message!==e.originalData.entity.message){
+        e.originalData.entity.message = e.message;
+        e.originalData.entity.link = e.link;
         this.$store.dispatch('UpdateSavedMessages', e.originalData).then(resp=>{
           Vue.prototype.$toast.open({
             message: 'Updated!',
@@ -588,11 +620,11 @@ export default {
       //height: 250px;
       color:#fefefe;
       border:none;
-      background:#232323;
+      background:#323232 !important;
     }
     input{
       color:#fefefe;
-      background:#232323;
+      background:#323232 !important;
     }
   }
 }
@@ -601,6 +633,15 @@ export default {
   label{
     font-size:14px;
     color:#d9d9d9;
+  }
+  .input{
+    border-radius: 0;
+    background:#323232 !important;
+    border:none;
+    color:#d9d9d9 !important;
+    &::placeholder{
+      color:#d0d0d0;
+    }
   }
   .textarea{
     border:none;
