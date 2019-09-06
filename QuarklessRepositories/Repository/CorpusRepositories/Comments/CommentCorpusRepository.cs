@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MoreLinq;
+using QuarklessContexts.Extensions;
 
 namespace QuarklessRepositories.Repository.CorpusRepositories.Comments
 {
@@ -35,12 +37,38 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Comments
 				return false;
 			}
 		}
+
+		public async Task Clean()
+		{
+			try
+			{
+				const string mediaCorpusFilePath =
+					@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\Datas\new_data\RAWcomments.csv";
+
+				var res = await _context.CorpusComments.FindAsync(_=>true, 
+					new FindOptions<CommentCorpus, CommentCorpus>()
+					{
+						BatchSize = 1000
+					});
+				while (res.MoveNext())
+				{
+					var currentBatch = res.Current
+						.Where(x => !x.Comment.ContainsAnyFromCommentsAndCaptionCorpus())
+						.DistinctBy(_ => _.Comment);
+					currentBatch.ToDataTable().WriteToCsvFile(mediaCorpusFilePath);
+				}
+			}
+			catch (Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+			}
+		}
 		public async Task UpdateAllCommentsLanguagesToLower()
 		{
 			var res = (await _context.CorpusComments.DistinctAsync(_ => _.Language, _ => true)).ToList();
 			foreach (var lang in res)
-			{			
-				var updateDef = Builders<CommentCorpus>.Update.Set(o => o.Language, lang.ToLower().Replace(" ",""));
+			{
+				var updateDef = Builders<CommentCorpus>.Update.Set(o => o.Language, lang.ToLower());
 				await _context.CorpusComments.UpdateManyAsync(_ => _.Language == lang, updateDef);
 			}
 		}
@@ -73,20 +101,20 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Comments
 				return null;
 			}
 		}
-		public async Task<IEnumerable<CommentCorpus>> GetComments(string topic, string language = null, string mapedLang = null, int limit = -1)
+		public async Task<IEnumerable<CommentCorpus>> GetComments(string topic, string language = null,  int limit = -1)
 		{
 			try
 			{
 				var filterList = new List<FilterDefinition<CommentCorpus>>();
 				var builders = Builders<CommentCorpus>.Filter;
 				FilterDefinition<CommentCorpus> filters;
-				if (string.IsNullOrEmpty(language) && string.IsNullOrEmpty(mapedLang))
+				if (string.IsNullOrEmpty(language))
 				{
 					filters = builders.Eq(_ => _.Topic, topic);
 				}
 				else
 				{
-					filters = builders.Eq(_ => _.Topic, topic) & (builders.Eq(_ => _.Language, language) | builders.Eq(_ => _.Language, mapedLang));
+					filters = builders.Eq(_ => _.Topic, topic) & (builders.Eq(_ => _.Language, language));
 				}
 				var options = new FindOptions<CommentCorpus, CommentCorpus>();
 				if (limit != -1)

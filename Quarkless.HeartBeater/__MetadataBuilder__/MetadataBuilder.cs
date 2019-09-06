@@ -14,6 +14,7 @@ using System;
 using System.Collections.Async;
 using System.Collections.Generic;
 using System.Linq;
+using MoreLinq;
 using System.Threading.Tasks;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.Proxies;
@@ -379,24 +380,37 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 								await searcher.SearchMediaDetailInstagram(new List<string> {topic.Searchable}, mediaLimit, true);
 							if (recentMedias != null)
 								mediaByTopics.Medias.AddRange(recentMedias.Medias);
+							
 							_heartbeatLogic.PopulateCaption(mediaByTopics, topic.FriendlyName);
 
 							var filtered = mediaByTopics.Medias.Where(_ =>
-								!_.IsCommentsDisabled && _.MediaFrom == MediaFrom.Instagram && _.MediaId != null);
-							var mostComments = filtered.OrderByDescending(_ => _.CommentCount).Take(5);
-
-							var selectRandomMediaToFetchComments = mostComments.TakeAny(1).SingleOrDefault();
-							if (selectRandomMediaToFetchComments != null)
+								!_.IsCommentsDisabled && _.MediaFrom == MediaFrom.Instagram && !_.HasSeen && _.MediaId != null);
+							var mostComments = filtered.OrderByDescending(_ => _.CommentCount).Take(5).ToList();
+							foreach (var comment in mostComments)
 							{
 								var comments =
 									await searcher.SearchInstagramMediaCommenters(
-										selectRandomMediaToFetchComments.MediaId,
+										comment.MediaId,
 										2);
 								if (comments != null)
 								{
 									_heartbeatLogic.PopulateComments(comments, topic.FriendlyName);
 								}
+
+								await Task.Delay(SecureRandom.Next(100, 800));
 							}
+							//var selectRandomMediaToFetchComments = mostComments.TakeAny(1).SingleOrDefault();
+							//if (selectRandomMediaToFetchComments != null)
+							//{
+							//	var comments =
+							//		await searcher.SearchInstagramMediaCommenters(
+							//			selectRandomMediaToFetchComments.MediaId,
+							//			2);
+							//	if (comments != null)
+							//	{
+							//		_heartbeatLogic.PopulateComments(comments, topic.FriendlyName);
+							//	}
+							//}
 							innerWatch.Stop();
 							Console.WriteLine(
 								$"Ended For Topic Of: {topic.FriendlyName}, Took {TimeSpan.FromMilliseconds(innerWatch.ElapsedMilliseconds).TotalSeconds}s");

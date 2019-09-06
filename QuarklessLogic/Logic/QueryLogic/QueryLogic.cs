@@ -15,6 +15,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using MoreLinq.Extensions;
+using Quarkless.Interfacing;
 
 namespace QuarklessLogic.Logic.QueryLogic
 {
@@ -27,7 +28,7 @@ namespace QuarklessLogic.Logic.QueryLogic
 		private readonly IHashtagLogic _hashtagLogic;
 
 		public QueryLogic(IRestSharpClientManager restSharpClientManager, IContentSearcherHandler contentSearcherHandler,
-			ISearchingCache searchingCache, ITopicServicesLogic topicServicesLogic, IHashtagLogic hashtagLogic)
+			ISearchingCache searchingCache, ITopicServicesLogic topicServicesLogic, IHashtagLogic hashtagLogic): base()
 		{
 			_hashtagLogic = hashtagLogic;
 			_searchingCache = searchingCache;
@@ -37,6 +38,7 @@ namespace QuarklessLogic.Logic.QueryLogic
 		}
 		public object SearchPlaces(string query)
 		{
+
 			try
 			{
 				var results = _restSharpClientManager.GetRequest("https://maps.googleapis.com/maps/api/place/textsearch/json?query=" + query + "&key=AIzaSyD9hK0Uc_QZ-ejA6cXKrEdCJAOmerEsp0s",null);
@@ -161,7 +163,7 @@ namespace QuarklessLogic.Logic.QueryLogic
 		{
 			return new ProfileConfiguration
 			{
-				Topics = (await _topicServicesLogic.GetAllTopicCategories()).DistinctBy(item=>item.CategoryName).OrderBy(item=>item.CategoryName),
+				Topics = (await _topicServicesLogic.GetAllTopicCategories()).OrderBy(item=>item.CategoryName),
 				ColorsAllowed = Enum.GetValues(typeof(ColorType)).Cast<ColorType>().Select(v=>v.GetDescription()),
 				ImageTypes = Enum.GetValues(typeof(ImageType)).Cast<ImageType>().Select(v=>v.GetDescription()),
 				Orientations = Enum.GetValues(typeof(Orientation)).Cast<Orientation>().Select(v=>v.GetDescription()),
@@ -175,7 +177,7 @@ namespace QuarklessLogic.Logic.QueryLogic
 		public async Task<IEnumerable<string>> BuildHashtags(string topic, string subcategory, string language,
 			int limit = 1, int pickRate = 20)
 		{
-			var res = (await _hashtagLogic.GetHashtagsByTopicAndLanguage(topic, language.ToUpper(), language.MapLanguages(),limit)).Shuffle().ToList();
+			var res = (await _hashtagLogic.GetHashtagsByTopicAndLanguage(topic.OnlyWords(), language.ToUpper().OnlyWords(), language.MapLanguages().OnlyWords(),limit)).Shuffle().ToList();
 			var clean = new Regex(@"[^\w\d]");
 			if (res.Count <= 0) return null;
 			var hashtags = new List<string>();

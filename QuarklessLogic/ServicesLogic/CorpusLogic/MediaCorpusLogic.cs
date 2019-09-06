@@ -1,10 +1,7 @@
 ﻿using QuarklessContexts.Models.ServicesModels.Corpus;
 using QuarklessRepositories.RedisRepository.CorpusCache.MediaCorpusCache;
 using QuarklessRepositories.Repository.CorpusRepositories.Medias;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace QuarklessLogic.ServicesLogic.CorpusLogic
@@ -31,14 +28,14 @@ namespace QuarklessLogic.ServicesLogic.CorpusLogic
 		}
 
 		public async Task UpdateAllMediasLanguagesToLower() => await _mediaCorpusRepository.UpdateAllMediasLanguagesToLower();
-
-		public async Task<IEnumerable<MediaCorpus>> GetMedias(string topic, string lang, string langmapped, int limit)
+		public async Task CleanCorpus() => await _mediaCorpusRepository.Clean();
+		public async Task<IEnumerable<MediaCorpus>> GetMedias(string topic, string lang, int limit)
 		{
 			//var medias = await _mediaCorpusCache.GetMedias(topic, langmapped, limit);
 			//var mediaCorpora = medias as MediaCorpus[] ?? medias.ToArray();
 			//if (mediaCorpora.Any())
 			//	return mediaCorpora;
-			return await _mediaCorpusRepository.GetMedias(topic, lang, langmapped, limit);
+			return await _mediaCorpusRepository.GetMedias(topic, lang, limit);
 		}
 
 		public async Task<long> MediasCount(string topic) => await _mediaCorpusRepository.GetMediasCount(topic);

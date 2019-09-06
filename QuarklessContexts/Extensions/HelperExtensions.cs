@@ -42,12 +42,21 @@ namespace QuarklessContexts.Extensions
 		{
 			return Regex.Replace(@string, "[^a-zA-Z]", "").ToLower();
 		}
+
+		public static bool ContainsAnyFromCommentsAndCaptionCorpus(this string target)
+		{
+			return string.IsNullOrEmpty(target) 
+			       || target.ContainsMentions() 
+			       || target.ContainsHashtags() 
+			       || target.ContainsPhoneNumber() 
+			       || target.ContainsWebAddress();
+		}
 		public static bool ContainsWebAddress(this string target)
 		{
 			var regex = new Regex(@"(http|www|.*?\.)\S*");
 			return regex.IsMatch(target);
 		}
-		public static bool ContainsMentions(this string target) => new Regex(@"@\S*").IsMatch(target);
+		public static bool ContainsMentions(this string target) => new Regex(@"@\S*|_{4}").IsMatch(target);
 		public static bool ContainsHashtags(this string target) => new Regex(@"#\S*").IsMatch(target);
 		public static bool ContainsPhoneNumber(this string target) => new Regex(@"\d{7,}").IsMatch(target);
 		public static int Similarity(this string s, string t)
@@ -246,7 +255,7 @@ namespace QuarklessContexts.Extensions
 		}
 		public static void WriteToCsvFile(this DataTable dataTable, string filePath)
 		{
-			StringBuilder fileContent = new StringBuilder();
+			var fileContent = new StringBuilder();
 
 			foreach (var col in dataTable.Columns)
 			{
@@ -264,7 +273,7 @@ namespace QuarklessContexts.Extensions
 
 				fileContent.Replace(",", System.Environment.NewLine, fileContent.Length - 1, 1);
 			}
-			var lines = fileContent.ToString().Split(Environment.NewLine).ToList();
+			var lines = fileContent.ToString().Split(Environment.NewLine).Where(x=>!string.IsNullOrEmpty(x)).ToList();
 			if (File.Exists(filePath))
 			{
 				lines.RemoveAt(0);

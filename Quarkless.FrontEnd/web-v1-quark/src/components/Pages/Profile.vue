@@ -6,17 +6,17 @@
           <b-step-item label="Profile" :clickable="true" icon="account-plus">
             <section class="box container is-profile">
                <b-field grouped>
-                  <b-field class="name" label="Profile Name" :type="!canEdit ?'is-success' : 'is-primary'" >
+                  <b-field expanded class="name" label="Profile Name" :type="!canEdit ?'is-success' : 'is-primary'" >
                     <b-input v-model="profile.name" maxlength="30" size="is-medium" :disabled="!canEdit"></b-input>
                   </b-field>
-                  <b-field class="descr" label="Profile Description" :type="!canEdit ?'is-success' : 'is-primary'" >
+                  <b-field extended class="descr" label="Profile Description" :type="!canEdit ?'is-success' : 'is-primary'" >
                     <b-input v-model="profile.description" maxlength="100" size="is-medium" :disabled="!canEdit"></b-input>
                   </b-field>
-                  <b-field class="lang" label="Profile Language" :type="!canEdit ?'is-success' : 'is-primary'" >
+                  <!-- <b-field class="lang" label="Profile Language" :type="!canEdit ?'is-success' : 'is-primary'" >
                      <b-select :disabled="!canEdit" v-model="profile.language" size="is-medium">
                       <option v-for="(lang,index) in config.languages" :key="index" :value="lang">{{lang}}</option>
                     </b-select>
-                  </b-field>
+                  </b-field> -->
               </b-field>
             </section>
             <section class="section topic_area">
@@ -42,6 +42,9 @@
                     <b-icon pack="fas" icon="question-circle" size="is-medium" type="is-light"></b-icon>
                   </b-tooltip>
                 </a>
+                <b-notification style="background:transparent;" v-if="isLoadingTopics" :closable="false">
+                    <b-loading :is-full-page="true" :active.sync="isLoadingTopics" :can-cancel="false"></b-loading>
+                </b-notification>
                 </div>
                  <b-notification
                     :active.sync="isTip1Active"
@@ -451,7 +454,8 @@ export default {
       searchingTopics:false,
       displayableList:[],
       isMoreAccurate:false,
-      isSearchingRelated:false
+      isSearchingRelated:false,
+      isLoadingTopics:false
     }
   },
   created(){
@@ -459,7 +463,14 @@ export default {
     this.profile.topics.topicFriendlyName = this.profile.topics.topicFriendlyName.replace(/^\w/, c => c.toUpperCase());
   },
   mounted(){
-    this.$store.dispatch('GetProfileConfig').then(con => this.config = this.$store.getters.GetProfileConfig);
+    this.isLoadingTopics = true;
+    this.$store.dispatch('GetProfileConfig').then(con => 
+    {
+      this.config = this.$store.getters.GetProfileConfig;
+      this.isLoadingTopics = false;
+    }).catch(err=>{
+      this.isLoadingTopics = false;
+    });
     this.searchReleatedTopics(this.profile.topics.topicFriendlyName);
   },
   computed:{

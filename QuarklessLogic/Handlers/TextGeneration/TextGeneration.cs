@@ -32,35 +32,35 @@ namespace QuarklessLogic.Handlers.TextGeneration
 			TDict t = MarkovHelper.BuildTDict(s, size);
 			return MarkovHelper.BuildString(t, limit, exact).TrimEnd(' ');
 		}
-		public async Task<string> MarkovIt(int type, string topic, string language, int size, int limit)
+		public async Task<string> MarkovIt(int type, string topic, string language, int limit)
 		{
 			if (type < 0 && type > 2) throw new Exception("invalid type");
 			switch (type)
 			{
 				case 0:
 					var data = (await _commentCorpusLogic
-						.GetComments(topic, language.ToLower(), language.MapLanguages().ToLower(),50000))
+						.GetComments(topic.OnlyWords(), language.MapLanguages().OnlyWords(),50000))
 						.DistinctBy(x=>x.Comment);
 					if (data == null) return null;
-					//data = data.Where(x => !x.Comment.ContainsHashtags()
-					//	&& !x.Comment.ContainsMentions()
-					//	&& !x.Comment.ContainsPhoneNumber()
-					//	&& !x.Comment.ContainsWebAddress());
+					data = data.Where(x => !x.Comment.ContainsHashtags()
+						&& !x.Comment.ContainsMentions()
+						&& !x.Comment.ContainsPhoneNumber()
+						&& !x.Comment.ContainsWebAddress());
 					var dataComment = Regex.Replace(string.Join(',', data.Select(sa => sa.Comment)), @"\s+", " ").TrimEnd(' ');
-					var dCommentDict = MarkovHelper.BuildTDict(dataComment, size);
-					return MarkovHelper.BuildString(dCommentDict, limit, true).TrimEnd(' ');
+					var dCommentDict = MarkovHelper.BuildTDict(dataComment, SecureRandom.Next(10,60));
+					return MarkovHelper.BuildString(dCommentDict, limit, true).TrimEnd(' ').Replace(","," ");
 				case 1:
 					var metaMedia = (await _mediaCorpusLogic
-						.GetMedias(topic, language.ToLower(), language.MapLanguages().ToLower(), 50000))
+						.GetMedias(topic.OnlyWords(), language.MapLanguages().OnlyWords(), 50000))
 						.DistinctBy(x => x.Caption);
-					//metaMedia = metaMedia.Where(x => !x.Caption.ContainsHashtags()
-					//	&& !x.Caption.ContainsMentions()
-					//	&& !x.Caption.ContainsPhoneNumber()
-					//	&& !x.Caption.ContainsWebAddress());
-					//
+					metaMedia = metaMedia.Where(x => !x.Caption.ContainsHashtags()
+						&& !x.Caption.ContainsMentions()
+						&& !x.Caption.ContainsPhoneNumber()
+						&& !x.Caption.ContainsWebAddress());
+					
 					var dataMedia = Regex.Replace(string.Join(',', metaMedia.Select(sa => sa.Caption)), @"\s+", " ").TrimEnd(' ');
-					var dMediaDict = MarkovHelper.BuildTDict(dataMedia, size);
-					return MarkovHelper.BuildString(dMediaDict, limit, true).TrimEnd(' ');
+					var dMediaDict = MarkovHelper.BuildTDict(dataMedia, SecureRandom.Next(10,60));
+					return MarkovHelper.BuildString(dMediaDict, limit, true).TrimEnd(' ').Replace(","," ");
 				case 2:
 					break;
 			}

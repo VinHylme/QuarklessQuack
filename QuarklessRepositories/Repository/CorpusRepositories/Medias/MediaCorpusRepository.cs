@@ -4,8 +4,10 @@ using QuarklessRepositories.RepositoryClientManager;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using MoreLinq;
 using System.Threading.Tasks;
+using QuarklessContexts.Extensions;
+using QuarklessContexts.Models.CorpusModels;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 
 namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
@@ -21,6 +23,12 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 		{
 			await _context.CorpusMedia.InsertManyAsync(medias);
 		}
+
+		public async Task AddMediasLocal(IEnumerable<MediaCorpus> medias)
+		{
+
+		}
+
 		public async Task<IEnumerable<MediaCorpus>> GetMedias(IEnumerable<FilterDefinition<MediaCorpus>> searchRepository = null, int limit = -1)
 		{
 			try
@@ -69,30 +77,55 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 			await _context.Hashtags.UpdateManyAsync(o => o.Topic == topic, updateDef3);
 		}
 
+		public async Task Clean()
+		{
+			try
+			{
+				const string mediaCorpusFilePath =
+					@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\Datas\new_data\RAWcaptions.csv";
+
+				var res = await _context.CorpusMedia.FindAsync(_=>true, 
+				new FindOptions<MediaCorpus, MediaCorpus>()
+				{
+					BatchSize = 1000
+				});
+				while (res.MoveNext())
+				{
+					var currentBatch = res.Current
+						.Where(x => !x.Caption.ContainsAnyFromCommentsAndCaptionCorpus())
+						.DistinctBy(_ => _.Caption);
+					currentBatch.ToDataTable().WriteToCsvFile(mediaCorpusFilePath);
+				}
+			}
+			catch (Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+			}
+		}
 		public async Task UpdateAllMediasLanguagesToLower()
 		{
 			var res = (await _context.CorpusMedia.DistinctAsync(_ => _.Language, _ => true)).ToList();
 			foreach (var lang in res)
-			{			
-				var updateDef = Builders<MediaCorpus>.Update.Set(o => o.Language, lang.ToLower().Replace(" ",""));
+			{
+				var updateDef = Builders<MediaCorpus>.Update.Set(o => o.Language, lang.ToLower());
 				await _context.CorpusMedia.UpdateManyAsync(_ => _.Language == lang, updateDef);
 			}
 		}
-		public async Task<IEnumerable<MediaCorpus>> GetMedias(string topic, string language = null ,string mapedLang = null, int limit = -1)
+		public async Task<IEnumerable<MediaCorpus>> GetMedias(string topic, string language = null, int limit = -1)
 		{
 			try
 			{
 				var filterList = new List<FilterDefinition<MediaCorpus>>();
 				var builders = Builders<MediaCorpus>.Filter;
 				FilterDefinition<MediaCorpus> filters;
-				if(string.IsNullOrEmpty(language) && string.IsNullOrEmpty(mapedLang))
+				if(string.IsNullOrEmpty(language))
 				{
 					filters = builders.Eq(_ => _.Topic, topic);
 				}
 				else
 				{
 
-					filters = builders.Eq(_ => _.Topic, topic) & (builders.Eq(_ => _.Language, language) | builders.Eq(_ => _.Language, mapedLang));
+					filters = builders.Eq(_ => _.Topic, topic) & (builders.Eq(_ => _.Language, language));
 				}
 				var options = new FindOptions<MediaCorpus, MediaCorpus>();
 				if (limit != -1)

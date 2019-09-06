@@ -33,9 +33,6 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 			_mediaCorpusLogic = media;
 			_heartbeatRepository = heartbeatRepository;
 			_utilProviders = utilProviders;
-			//_mediaCorpusLogic.UpdateAllMediasLanguagesToLower();
-			//_commentsLogic.UpdateAllCommentsLanguagesToLower();
-			//_hashtagLogic.UpdateAllMediasLanguagesToLower();
 		}
 		public async Task AddMetaData<T>(MetaDataType metaDataType, string topic, __Meta__<T> data, string userId = null)
 		{
@@ -71,7 +68,7 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 
 		public async void PopulateCaption(Media item, string topic)
 		{
-			var filtered = item.Medias.Select(o =>
+			var filtered = item.Medias.DistinctBy(x=>x.Caption).Where(c=>!c.HasSeen && !c.HasLikedBefore).Select(o =>
 			{
 				if (string.IsNullOrEmpty(o.Caption) || string.IsNullOrWhiteSpace(o.Caption)) return null;
 				var sepaStrings = o.Caption.ToLower().Split('#');
@@ -99,7 +96,7 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 						Language = null,
 						Location = o?.Location,
 						MediaId = o.MediaId,
-						Topic = topic,
+						Topic = topic.OnlyWords(),
 						Username = o?.User?.Username,
 						Usertags = o?.UserTags?.Select(s => s?.User?.UserName).ToList(),
 						CommentsCount = o.CommentCount,
@@ -109,7 +106,7 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 					Tags = new HashtagsModel
 					{
 						Hashtags = tagsEnumerator.Where((l, h) => h > 0 && l.Length <= 15).ToList(),
-						Topic = topic,
+						Topic = topic.OnlyWords(),
 						Language = null
 					}
 				};
@@ -117,12 +114,12 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 
 			if (filtered.Any())
 			{
-				var words = filtered.Select(s => s.Media.Caption);
-				var detections = _utilProviders.TranslateService.DetectLanguageYandex(words.ToArray()).ToList();
+				var words = filtered.Select(s => s.Media.Caption).ToArray();
+				var detections = _utilProviders.TranslateService.DetectLanguage(words).ToList();
 				for (var i = 0; i < detections.Count; i++)
 				{
-					filtered[i].Media.Language = detections[i].ToLower().Replace(" ", "");
-					filtered[i].Tags.Language = detections[i].ToLower().Replace(" ", "");
+					filtered[i].Media.Language = detections[i].OnlyWords();
+					filtered[i].Tags.Language = detections[i].OnlyWords();
 				}
 			}
 
@@ -144,7 +141,7 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 
 		public async void PopulateComments(List<UserResponse<InstaComment>> comments, string topic)
 		{
-			var filteredComments = comments.Select(o =>
+			var filteredComments = comments.DistinctBy(x=>x.Object).Select(o =>
 			{
 				if (string.IsNullOrEmpty(o.Object.Text)) return null;
 				var tags = new List<HashtagsModel>();
@@ -167,7 +164,7 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 					NumberOfReplies = o.Object.ChildCommentCount,
 					Username = o.Username,
 					MediaId = o.MediaId,
-					Topic = topic
+					Topic = topic.OnlyWords()
 				};
 			}).Where(comment => comment != null).ToArray();
 			var filteredTags = comments.Select(o =>
@@ -179,19 +176,18 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 					{
 						Hashtags = o.Object.Text.Split('#').Where(l => l.Length <= 15).ToList(),
 						Language = null,
-						Topic = topic
+						Topic = topic.OnlyWords()
 					};
 
 				return null;
 			}).Where(tag => tag != null).ToArray();
 			if (filteredComments.Any())
 			{
-				var words = filteredComments.Select(s => s.Comment);
-				var detections = _utilProviders.TranslateService.DetectLanguageYandex(words.ToArray()).ToList();
-
+				var words = filteredComments.Select(s => s.Comment).ToArray();
+				var detections = _utilProviders.TranslateService.DetectLanguage(words).ToList();
 				for (var i = 0; i < detections.Count; i++)
 				{
-					filteredComments[i].Language = detections[i].ToLower().Replace(" ", "");
+					filteredComments[i].Language = detections[i].OnlyWords();
 				}
 
 				var mostFrequentLang = string.Empty;
@@ -220,6 +216,22 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 			await _hashtagLogic.AddHashtagsToRepositoryAndCache(hashtagsComments);
 			Console.WriteLine($"Added hashtags of comments for topic:{topic}, Hashtags Captured: {hashtagsComments.Count}");
 		}
+
+		public async Task CleanCorpus()
+		{
+			await Task.Run(() =>
+			{
+				var mediaClean = Task.Run(async ()=>{
+					await _mediaCorpusLogic.CleanCorpus();
+				});
+				var commentClean = Task.Run(async () =>
+				{
+					await _commentsLogic.CleanCorpus();
+				});
+				Task.WaitAll(mediaClean, commentClean);
+			});
+		}
+
 		public async Task RefreshMetaData(MetaDataType metaDataType, string topic, string userId = null, ProxyModel proxy = null)
 		{
 			try {

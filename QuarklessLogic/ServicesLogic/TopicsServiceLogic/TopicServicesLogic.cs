@@ -4,7 +4,10 @@ using QuarklessRepositories.RedisRepository.SearchCache;
 using QuarklessRepositories.Repository.CorpusRepositories.Topic;
 using QuarklessRepositories.Repository.ServicesRepositories.TopicsRepository;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using MoreLinq;
+using QuarklessContexts.Extensions;
 using SubTopics = QuarklessContexts.Models.ServicesModels.DatabaseModels.SubTopics;
 
 namespace QuarklessLogic.ServicesLogic
@@ -34,8 +37,24 @@ namespace QuarklessLogic.ServicesLogic
 			return await _topicsRepository.AddOrUpdateTopic(topics);
 		}
 		public async Task AddTopicCategories(IEnumerable<TopicCategories> topicCategories) => await _topicCategoryRepository.AddCategories(topicCategories);
-		public async Task<IEnumerable<TopicCategories>> GetAllTopicCategories(){
-			return await _topicCategoryRepository.GetAllCategories();
+		public async Task<IEnumerable<TopicCategories>> GetAllTopicCategories()
+		{
+			var allCategories = await _topicCategoryRepository.GetAllCategories();
+			var uniqueByCat = allCategories.DistinctBy(x => x.CategoryName).DistinctBy(x => x.SubCategories);
+			//var total = (await GetTopics())
+			//	.Select(s => s.SubTopics)
+			//	.SquashMe()
+			//	.Where(y=>y.RelatedTopics.Count>0)
+			//	.Distinct()
+			//	.ToList();
+			//var selectedCategories = new List<TopicCategories>();
+			//foreach (var topicCategories in uniqueByCat)
+			//{
+			//	if (total.Any(c => topicCategories.SubCategories.Contains(c.Topic)))
+			//		selectedCategories.Add(topicCategories);
+			//}
+
+			return uniqueByCat;
 		}
 		public async Task<TopicsModel> GetTopicByName(string topicName)
 		{

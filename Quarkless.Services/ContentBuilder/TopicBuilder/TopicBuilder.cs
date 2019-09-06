@@ -239,7 +239,7 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 		}
 		public async Task<IEnumerable<string>> BuildHashtags(string topic, string subcategory, string language, int limit = 1, int pickRate = 20)
 		{
-			var res = (await _hashtagLogic.GetHashtagsByTopicAndLanguage(topic, language.ToUpper(), language.MapLanguages(),limit)).Shuffle().ToList();
+			var res = (await _hashtagLogic.GetHashtagsByTopicAndLanguage(topic.OnlyWords(), language.ToUpper().OnlyWords(), language.MapLanguages().OnlyWords(),limit)).Shuffle().ToList();
 			var clean = new Regex(@"[^\w\d]");
 			if (res.Count <= 0) return null;
 			var hashtags = new List<string>();

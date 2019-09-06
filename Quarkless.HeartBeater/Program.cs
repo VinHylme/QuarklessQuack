@@ -35,6 +35,7 @@ namespace Quarkless.HeartBeater
 			{
 				Accounts = new List<Account> { new Account("lemonkaces") }
 			};
+
 			var results = WithExceptionLogAsync(async () =>
 			{
 				switch (args[0])
@@ -46,7 +47,13 @@ namespace Quarkless.HeartBeater
  						await servicePreacher.Get<IInit>().Endeavor(settings);
 						break;
 					case "app2":
-						await servicePreacher.Get<IInit>().Populator(settings);
+						if(args.Length < 2) throw new Exception("Invalid Number of args");
+						var corpusSettings = new CorpusSettings
+						{
+							Accounts = new List<Account> { new Account("lemonkaces") },
+							PerformCleaning = bool.Parse(args[1])
+						};
+						await servicePreacher.Get<IInit>().Populator(corpusSettings);
 						break;
 					case "app3":
 						await servicePreacher.Get<IInit>().Creator();

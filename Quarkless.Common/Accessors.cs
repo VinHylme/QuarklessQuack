@@ -41,6 +41,8 @@ namespace Quarkless.Common
 				return _configuration["Endpoints:FrontEnd"];
 			}
 		}
+
+		public string NaturalLanguageAPIPath => _configuration["APIServices:NaturalLanguageProcessing"];
 		public string YandexAPIKey
 		{
 			get

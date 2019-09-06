@@ -1,0 +1,2 @@
+application:
+  connectionString: mongodb+srv://admina:Sherox.101@quarklessaccount-0lvto.mongodb.net/test?retryWrites=true&w=majority

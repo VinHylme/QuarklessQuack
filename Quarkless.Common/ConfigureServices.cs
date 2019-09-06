@@ -227,6 +227,7 @@ namespace Quarkless.Common
 			{
 				options.DetectLangAPIKey =_accessors.DetectAPI;
 				options.YandexAPIKey = _accessors.YandexAPIKey;
+				options.NaturalLanguageAPIPath = _accessors.NaturalLanguageAPIPath;
 			});
 			services.AddTransient<IRedisClient,RedisClient>();
 			services.AddTransient<IAccountCache, AccountCache>();

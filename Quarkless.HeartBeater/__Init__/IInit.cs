@@ -21,6 +21,12 @@ namespace Quarkless.HeartBeater.__Init__
 		Other,
 		TargetList
 	}
+
+	public class CorpusSettings
+	{
+		public List<Account> Accounts {get; set; }
+		public bool PerformCleaning { get; set; }
+	}
 	public class Settings 
 	{
 		public ActionExecuteType ActionExecute { get; set; }
@@ -34,7 +40,7 @@ namespace Quarkless.HeartBeater.__Init__
 	public interface IInit
 	{
 		Task Endeavor(Settings settings);
-		Task Populator(Settings settings);
+		Task Populator(CorpusSettings settings);
 		Task Creator();
 	}
 }

@@ -17,5 +17,6 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 		Task<__Meta__<List<UserResponse<string>>>> GetUserFromLikers(MetaDataType metaDataType, string topic);
 		void PopulateCaption(Media item, string topic);
 		void PopulateComments(List<UserResponse<InstaComment>> comments, string topic);
+		Task CleanCorpus();
 	}
 }

@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using MoreLinq;
 using Quarkless.HeartBeater.Creator;
 using QuarklessContexts.Extensions;
+using QuarklessContexts.Models.Topics;
 using QuarklessLogic.Logic.ResponseLogic;
 
 namespace Quarkless.HeartBeater.__Init__
@@ -103,66 +104,81 @@ namespace Quarkless.HeartBeater.__Init__
 				Console.WriteLine(ee.Message);
 			}
 		}
-		public async Task Populator(Settings settings)
+		public async Task Populator(CorpusSettings settings)
 		{
 			while (true)
 			{
 				try
 				{
-					var workers = (await GetAccounts(false, settings.Accounts.Select(_ => _.Username).ToArray())).ToList();
-					_topicBuilder.Init(new UserStoreDetails
+					if (settings.PerformCleaning)
 					{
-						OAccountId = workers.FirstOrDefault()?.AccountId,
-						OInstagramAccountUser = workers.FirstOrDefault()?.Id
-					});
-					//await _topicBuilder.BuildTopics((await _topicBuilder.GetAllTopicCategories())
-					//	.DistinctBy(x=>x.CategoryName).Where(sub=>sub.CategoryName.Contains("&")||sub.CategoryName.Contains("/")).Skip(1));
-					var total = (await _topicBuilder.GetTopics())
-						.Select(s => s.SubTopics)
-						.SquashMe()
-						.Distinct();
-					var topics = new List<TopicAss>();
-					foreach (var subItem in total)
-					{
-						//var item = await _topicBuilder.GetAllRelatedTopics(subItem);
-						if (subItem.RelatedTopics.Count <= 0) continue;
-						var low = subItem.RelatedTopics.Select(op => new
-						{
-							Similarity = op.Similarity(subItem.Topic),
-							Item = op
-						}).OrderBy(_=>_.Similarity).Take(10).ToList();
-						var selected = low.ElementAt(SecureRandom.Next(low.Count()));
-						//await _topicBuilder.Update(selected, subItem);
-						topics.Add(new TopicAss
-						{
-							Searchable = selected.Item,
-							FriendlyName = subItem.Topic
-						});
+						Console.WriteLine("Started Cleaning");
+						await _heartbeatLogic.CleanCorpus();
+						Console.WriteLine("Ended Cleaning");
 					}
-					
-					var populateAssignments = new List<PopulateAssignments>();
-
-					var amountEach = topics.Count / workers.Count;
-					var position = 0;
-
-					foreach (var worker in workers)
+					else
 					{
-						populateAssignments.AddRange(new List<PopulateAssignments>
+						var workers = (await GetAccounts(true, settings.Accounts.Select(_ => _.Username).ToArray()))
+							.ToList();
+						_topicBuilder.Init(new UserStoreDetails
 						{
-							new PopulateAssignments
+							OAccountId = workers.FirstOrDefault()?.AccountId,
+							OInstagramAccountUser = workers.FirstOrDefault()?.Id
+						});
+						//await _topicBuilder.BuildTopics((await _topicBuilder.GetAllTopicCategories())
+						//	.DistinctBy(x=>x.CategoryName)
+						//	.Where(sub=>sub.CategoryName.Contains("&")||sub.CategoryName.Contains("/")).Skip(1));
+						var total = (await _topicBuilder.GetTopics())
+							.Select(s => s.SubTopics)
+							.SquashMe()
+							.Where(c => c.RelatedTopics.Count > 0)
+							.DistinctBy(c => c.Topic)
+							.DistinctBy(c => c.RelatedTopics)
+							.ToList();
+
+						var topics = new List<TopicAss>();
+						foreach (var subItem in total)
+						{
+							//var item = await _topicBuilder.GetAllRelatedTopics(subItem);
+							if (subItem.RelatedTopics.Count <= 0) continue;
+							var low = subItem.RelatedTopics.Select(op => new
 							{
-								Worker = new APIClientContainer(_context, worker.AccountId, worker.Id),
-								TopicsAssigned = topics.TakeBetween(position, amountEach).ToList()
-							}
-						});
-						position += amountEach;
-					}
+								Similarity = op.Similarity(subItem.Topic),
+								Item = op
+							}).OrderBy(_ => _.Similarity).Take(10).ToList();
+							var selected = low.ElementAt(SecureRandom.Next(low.Count()));
+							//await _topicBuilder.Update(selected, subItem);
+							topics.Add(new TopicAss
+							{
+								Searchable = selected.Item,
+								FriendlyName = subItem.Topic
+							});
+						}
 
-					var metadataBuilder =
-						new MetadataBuilder(Assignments, _context, _heartbeatLogic, _proxyLogic, _responseResolver);
-					
-					//var currentBusinessCategories = await metadataBuilder.BuildTopicTypes();
-					await metadataBuilder.PopulateCorpusData(populateAssignments, 2);
+						var populateAssignments = new List<PopulateAssignments>();
+
+						var amountEach = topics.Count / workers.Count;
+						var position = 0;
+
+						foreach (var worker in workers)
+						{
+							populateAssignments.AddRange(new List<PopulateAssignments>
+							{
+								new PopulateAssignments
+								{
+									Worker = new APIClientContainer(_context, worker.AccountId, worker.Id),
+									TopicsAssigned = topics.TakeBetween(position, amountEach).ToList()
+								}
+							});
+							position += amountEach;
+						}
+
+						var metadataBuilder =
+							new MetadataBuilder(Assignments, _context, _heartbeatLogic, _proxyLogic, _responseResolver);
+
+						//var currentBusinessCategories = await metadataBuilder.BuildTopicTypes();
+						await metadataBuilder.PopulateCorpusData(populateAssignments, 2);
+					}
 				}
 				catch (Exception e)
 				{

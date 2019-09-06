@@ -246,12 +246,12 @@ export default {
       
       this.mediaLibrary.items = this.$store.getters.UserMediaLibrary(this.$route.params.id);
       if(this.mediaLibrary.items === undefined || this.mediaLibrary.items === null || this.mediaLibrary.items.length<=0){
-        this.isLoading = true;
+        //this.isLoading = true;
         this.$store.dispatch('GetSavedMedias', this.$store.getters.User).then(resp=>{
           this.mediaLibrary.items = this.$store.getters.UserMediaLibrary(this.$route.params.id);
-          this.isLoading = false;
+          //this.isLoading = false;
         }).catch(err=>{
-          this.isLoading = false;
+          //this.isLoading = false;
         })
       };
     },

@@ -39,11 +39,11 @@ namespace Quarkless.Services
 		{
 			return await _topicBuilder.BuildHashtags(topic,subcategory,language,limit,pickAmount);
 		}
-		public string GenerateText(string topic,string lang, int type, int limit, int size)
+		public string GenerateText(string topic,string lang, int type, int limit)
 		{
 			//return _textGeneration.MarkovTextGenerator(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\Datas\normalised_data\{0}.csv",
 			//	type,topic,lang,size,limit) ;
-			return _textGeneration.MarkovIt(type,topic,lang,size,limit).GetAwaiter().GetResult();
+			return _textGeneration.MarkovIt(type,topic,lang, limit).GetAwaiter().GetResult();
 		}
 		public MediaInfo GenerateMediaInfo(Topics topicSelect, string topicSelected, string language, string credit = null)
 		{
@@ -75,8 +75,8 @@ namespace Quarkless.Services
 			string captionOfFinal;
 			try
 			{
-				captionOfFinal = GenerateText(topicSelect.TopicFriendlyName, language.ToUpper(), 1,
-					SecureRandom.Next(1, 5), SecureRandom.Next(4, 5)).Split(',')[0];
+				captionOfFinal = GenerateText(topicSelect.TopicFriendlyName, language, 1,
+					SecureRandom.Next(3, 8)).Split(',')[0];
 				if(string.IsNullOrEmpty(captionOfFinal))
 					captionOfFinal = new string(Emojies.TakeAny(SecureRandom.Next(8)).ToArray());
 			}
@@ -94,13 +94,13 @@ namespace Quarkless.Services
 			};
 		}
 
-		private const string Emojies = @"😄😃😀😊☺😉😍😘😚😗😙😜😝😛😳😁😔😌😒😞😣😢😂😭😪😥😰😅😓😩😫😨😱😠😡😤😖😆😋😷😎😴😵😲😟😦😧😈👿😮😬😐😕😯😶😇😏😑👲👳👮👷💂👶👦👧👨👩👴👵👱👼👸👹👺💀👽💩";
+		private const string Emojies = @"😄😃😀😊☺😉😍😘😚😗😙😜😝😛😳😁😔😌😒😞😣😢😂😭😪😥😰😅😓😩😫😨😱😠😡😤😖😆😋😷😎😴😵😲😟😦😧😈👿😮😬";
 		public string GenerateComment(string topic, string language)
 		{
 			string comment;
 			try
 			{
-				comment = GenerateText(topic, language.ToUpper(), 0, SecureRandom.Next(4), SecureRandom.Next(4, 5))
+				comment = GenerateText(topic, language, 0, SecureRandom.Next(4, 5))
 					.Split(',')[0];
 				if (string.IsNullOrEmpty(comment))
 				{
