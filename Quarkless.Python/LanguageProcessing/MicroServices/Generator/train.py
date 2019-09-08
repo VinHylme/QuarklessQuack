@@ -6,8 +6,7 @@ def OnCaptionsWithTopic():
     print('----- Started Caption Training ----- Current: {}'.format(topic))
     captions = list(filter(None,mongoHelper.GetCaptionsByTopic(topic)))
     print('Collected {} Captions'.format(len(captions)))
-    removeTrash = list(set([re.sub(r'(_+|=+|\.+|\n+)',"", x["Caption"] if nltkHelper.IsLatinCharacters(x["Caption"]) else "" , re.M) for x in captions]))
-    print(removeTrash)
+    removeTrash = list(filter(None,list(set([re.sub(r'(_+|=+|\.+|\n+)',"", x["Caption"] if nltkHelper.IsLatinCharacters(x["Caption"]) else "" , re.M) for x in captions]))))
     try:
       gen = genHelper.initialise_textgen(topic, "captions")
       genHelper.train_textgen(gen, removeTrash, topic, trainType = "captions")
@@ -24,7 +23,7 @@ def OnCommentsWithTopic():
     print('----- Started Caption Training ----- Current: {}'.format(topic))
     comments = list(filter(None,mongoHelper.GetCommentsByTopic(topic)))
     #print('Collected {} Comments'.format(len(comments)))
-    removeTrash = list(set([re.sub(r'(_+|=+|\.+|\n+)',"",x["Comments"] if nltkHelper.IsLatinCharacters(x["Comments"]) else "", re.M) for x in comments]))
+    removeTrash = list(filter(None,list(set([re.sub(r'(_+|=+|\.+|\n+)',"",x["Comments"] if nltkHelper.IsLatinCharacters(x["Comments"]) else "", re.M) for x in comments]))))
     try:
       gen = genHelper.initialise_textgen(topic, "comments")
       genHelper.train_textgen(gen, removeTrash, topic, trainType = "comments")
