@@ -1,17 +1,13 @@
-import genHelper, mongoHelper, collections, os, re, nltk
+import genHelper, mongoHelper, collections, os, re, nltkHelper
 from itertools import groupby
-
-def RemoveNonEnglishWords(sent):
-  words = set(nltk.corpus.words.words())
-  return " ".join(w for w in nltk.wordpunct_tokenize(sent) \
-         if w.lower() in words or not w.isalpha())
 
 def OnCaptionsWithTopic():
   for topic in mongoHelper.GetCaptionTopics():
     print('----- Started Caption Training ----- Current: {}'.format(topic))
     captions = list(filter(None,mongoHelper.GetCaptionsByTopic(topic)))
     print('Collected {} Captions'.format(len(captions)))
-    removeTrash = list(set([re.sub(r'(_+|=+|\.+|\n+)',"", x["Caption"] , re.M) for x in captions]))
+    removeTrash = list(set([re.sub(r'(_+|=+|\.+|\n+)',"", x["Caption"] if nltkHelper.IsLatinCharacters(x["Caption"]) else "" , re.M) for x in captions]))
+    print(removeTrash)
     try:
       gen = genHelper.initialise_textgen(topic, "captions")
       genHelper.train_textgen(gen, removeTrash, topic, trainType = "captions")
@@ -27,8 +23,8 @@ def OnCommentsWithTopic():
   for topic in mongoHelper.GetCommentTopics():
     print('----- Started Caption Training ----- Current: {}'.format(topic))
     comments = list(filter(None,mongoHelper.GetCommentsByTopic(topic)))
-    print('Collected {} Comments'.format(len(comments)))
-    removeTrash = list(set([re.sub(r'(_+|=+|\.+|\n+)',"",x["Comments"], re.M) for x in comments]))
+    #print('Collected {} Comments'.format(len(comments)))
+    removeTrash = list(set([re.sub(r'(_+|=+|\.+|\n+)',"",x["Comments"] if nltkHelper.IsLatinCharacters(x["Comments"]) else "", re.M) for x in comments]))
     try:
       gen = genHelper.initialise_textgen(topic, "comments")
       genHelper.train_textgen(gen, removeTrash, topic, trainType = "comments")

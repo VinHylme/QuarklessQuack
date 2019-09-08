@@ -1,5 +1,5 @@
 from threading import Thread
-import argparse, train, genHelper
+import argparse, train, genHelper, nltkHelper
 
 def str2bool(v):
     if isinstance(v, bool):
@@ -36,6 +36,7 @@ if args.sample:
   #lm = mh.GetCaptionsByTopic(0,100,'art')
   #print(list(lm))
 else:
+  #print(nltkHelper.IsSentenceEnglish('le france andiamo wow my laldkada'))
   train.OnCaptionsWithTopic()
   #print(train.RemoveNonEnglishWords('le france andiamo wow my laldkada'))
   # skip = 0
