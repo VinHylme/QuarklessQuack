@@ -8,8 +8,11 @@ def OnCaptionsWithTopic():
     print('Collected {} Captions'.format(len(captions)))
     removeTrash = list(filter(None,list(set([re.sub(r'(_+|=+|\.+|\n+)',"", x["Caption"] if nltkHelper.IsLatinCharacters(x["Caption"]) else "" , re.M) for x in captions]))))
     try:
-      gen = genHelper.initialise_textgen(topic, "captions")
-      genHelper.train_textgen(gen, removeTrash, topic, trainType = "captions")
+      if not len(removeTrash) == 0:
+        gen = genHelper.initialise_textgen(topic, "captions")
+        genHelper.train_textgen(gen, removeTrash, topic, trainType = "captions")
+      else:
+        print("empty")
     except OSError as o:
       print(o)
       os.makedirs('Data/captions/{}'.format(topic))
