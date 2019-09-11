@@ -429,8 +429,6 @@ namespace Quarkless.Services
 		}
 		public async Task Begin()
 		{
-			for(int x = 0; x < 10; x++)
-				Console.WriteLine(_contentManager.GenerateText("home decor", "english", 1, 10));
 			//TODO : MAKE SURE ALL USERS ARE BUSINESS ACCOUNTS AND USERS OVER 100 FOLLOWERS BASE THEIR POSTING ON WHICH HOUR WAS MOST POPULAR
 			var numberOfWorkers = 0;
 			while (true) {

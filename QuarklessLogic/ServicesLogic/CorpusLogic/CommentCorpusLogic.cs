@@ -21,13 +21,13 @@ namespace QuarklessLogic.ServicesLogic.CorpusLogic
 			await _commentCorpusRepository.AddComments(comments);
 			//await _commentCorpusCache.AddComments(comments);
 		}
-		public async Task<IEnumerable<CommentCorpus>> GetComments(string topic, string lang, int limit)
+		public async Task<IEnumerable<CommentCorpus>> GetComments(string topic, string lang, int limit = -1, bool skip = true)
 		{
 			//var cacheRes = await _commentCorpusCache.GetComments(topic, mappedLang, limit);
 			//var commentCorpora = cacheRes as CommentCorpus[] ?? cacheRes.ToArray();
 			//if (commentCorpora.Any())
 				//return commentCorpora;
-			return await _commentCorpusRepository.GetComments(topic, lang, limit);
+			return await _commentCorpusRepository.GetComments(topic, lang, limit, skip);
 		}
 
 		public async Task CleanCorpus() => await _commentCorpusRepository.Clean();

@@ -47,8 +47,8 @@ namespace Quarkless.Services
 		}
 		public MediaInfo GenerateMediaInfo(Topics topicSelect, string topicSelected, string language, string credit = null)
 		{
-			List<string> selections = new List<string>();
-			List<string> hashtagsToUse = new List<string>();
+			var selections = new List<string>();
+			var hashtagsToUse = new List<string>();
 			//possibly analyse image and give out relevant hashtags
 			QuarklessContexts.Models.Profiles.SubTopics selectASubTopic;
 			if (!string.IsNullOrEmpty(topicSelected))
@@ -76,7 +76,7 @@ namespace Quarkless.Services
 			try
 			{
 				captionOfFinal = GenerateText(topicSelect.TopicFriendlyName, language, 1,
-					SecureRandom.Next(3, 8)).Split(',')[0];
+					SecureRandom.Next(1, 4));
 				if(string.IsNullOrEmpty(captionOfFinal))
 					captionOfFinal = new string(Emojies.TakeAny(SecureRandom.Next(8)).ToArray());
 			}
@@ -94,14 +94,13 @@ namespace Quarkless.Services
 			};
 		}
 
-		private const string Emojies = @"😄😃😀😊☺😉😍😘😚😗😙😜😝😛😳😁😔😌😒😞😣😢😂😭😪😥😰😅😓😩😫😨😱😠😡😤😖😆😋😷😎😴😵😲😟😦😧😈👿😮😬";
+		private const string Emojies = @"😄😃😀😊😉😍😘😚😗😙😜😝😛😳😁😔😌😒😞😣😢😂😭😪😥😰😅😓😩😫😨😱😠😡😤😖😆😋😷😎😴😵😲😟😦😧😈👿😮😬";
 		public string GenerateComment(string topic, string language)
 		{
 			string comment;
 			try
 			{
-				comment = GenerateText(topic, language, 0, SecureRandom.Next(4, 5))
-					.Split(',')[0];
+				comment = GenerateText(topic, language, 0, SecureRandom.Next(1, 3));
 				if (string.IsNullOrEmpty(comment))
 				{
 					comment = new string(Emojies.TakeAny(SecureRandom.Next(5)).ToArray());

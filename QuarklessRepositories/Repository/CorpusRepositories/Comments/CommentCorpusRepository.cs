@@ -76,7 +76,7 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Comments
 		{
 			try
 			{
-				List<FilterDefinition<CommentCorpus>> filterList = new List<FilterDefinition<CommentCorpus>>();
+				var filterList = new List<FilterDefinition<CommentCorpus>>();
 				var builders = Builders<CommentCorpus>.Filter;
 
 				if (searchRepository == null)
@@ -101,11 +101,10 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Comments
 				return null;
 			}
 		}
-		public async Task<IEnumerable<CommentCorpus>> GetComments(string topic, string language = null,  int limit = -1)
+		public async Task<IEnumerable<CommentCorpus>> GetComments(string topic, string language = null,  int limit = -1, bool skip = true)
 		{
 			try
 			{
-				var filterList = new List<FilterDefinition<CommentCorpus>>();
 				var builders = Builders<CommentCorpus>.Filter;
 				FilterDefinition<CommentCorpus> filters;
 				if (string.IsNullOrEmpty(language))
@@ -116,7 +115,13 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Comments
 				{
 					filters = builders.Eq(_ => _.Topic, topic) & (builders.Eq(_ => _.Language, language));
 				}
-				var options = new FindOptions<CommentCorpus, CommentCorpus>();
+
+				var len = await _context.CorpusComments.CountDocumentsAsync(filters);
+				if(len<=0) return new List<CommentCorpus>();
+				var options = new FindOptions<CommentCorpus, CommentCorpus>()
+				{
+					Skip = skip ? SecureRandom.Next((int)len/2) : 0
+				};
 				if (limit != -1)
 					options.Limit = limit;
 

@@ -111,11 +111,10 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 				await _context.CorpusMedia.UpdateManyAsync(_ => _.Language == lang, updateDef);
 			}
 		}
-		public async Task<IEnumerable<MediaCorpus>> GetMedias(string topic, string language = null, int limit = -1)
+		public async Task<IEnumerable<MediaCorpus>> GetMedias(string topic, string language = null, int limit = -1, bool skip = true)
 		{
 			try
 			{
-				var filterList = new List<FilterDefinition<MediaCorpus>>();
 				var builders = Builders<MediaCorpus>.Filter;
 				FilterDefinition<MediaCorpus> filters;
 				if(string.IsNullOrEmpty(language))
@@ -127,7 +126,12 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 
 					filters = builders.Eq(_ => _.Topic, topic) & (builders.Eq(_ => _.Language, language));
 				}
-				var options = new FindOptions<MediaCorpus, MediaCorpus>();
+				var len = await _context.CorpusMedia.CountDocumentsAsync(filters);
+				if(len<=0) return new List<MediaCorpus>();
+				var options = new FindOptions<MediaCorpus, MediaCorpus>()
+				{
+					Skip = skip ? SecureRandom.Next((int)len/2) : 0
+				};
 				if (limit != -1)
 					options.Limit = limit;
 				var res = await _context.CorpusMedia.FindAsync(filters, options);

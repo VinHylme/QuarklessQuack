@@ -245,7 +245,7 @@ export default {
       };
       
       this.mediaLibrary.items = this.$store.getters.UserMediaLibrary(this.$route.params.id);
-      if(this.mediaLibrary.items === undefined || this.mediaLibrary.items === null || this.mediaLibrary.items.length<=0){
+      if(this.mediaLibrary.items === undefined || this.mediaLibrary.items === null){
         //this.isLoading = true;
         this.$store.dispatch('GetSavedMedias', this.$store.getters.User).then(resp=>{
           this.mediaLibrary.items = this.$store.getters.UserMediaLibrary(this.$route.params.id);

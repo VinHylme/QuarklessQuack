@@ -18,7 +18,7 @@ def train_textgen(textgen : textgenrnn, texts, modelName, trainType, newModel = 
 
 def sample(model_name, trainType, n = 3, top_n = 3, temperatures=[0.2, 0.5, 1.0], prefix = None, returnAsList = False, interactive = False):
   try:
-    modelGen = initialise_textgen(model_name, trainType)
+    modelGen = loadModel(model_name, trainType)
     return modelGen.generate_samples(n = n, top_n = top_n, temperatures = temperatures, return_as_list = returnAsList, prefix = prefix, interactive = interactive)
   except Exception as e:
     print(e)

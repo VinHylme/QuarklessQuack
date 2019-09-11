@@ -46,11 +46,15 @@ namespace QuarklessContexts.Extensions
 		public static bool ContainsAnyFromCommentsAndCaptionCorpus(this string target)
 		{
 			return string.IsNullOrEmpty(target) 
+			       || string.IsNullOrWhiteSpace(target)
+				   || target.Contains(',')
 			       || target.ContainsMentions() 
 			       || target.ContainsHashtags() 
 			       || target.ContainsPhoneNumber() 
 			       || target.ContainsWebAddress();
 		}
+		public static bool ContainsEnglishCharacters(this string target) 
+			=> new Regex("^[a-zA-Z0-9. -_?]*$",RegexOptions.Compiled).IsMatch(target);
 		public static bool ContainsWebAddress(this string target)
 		{
 			var regex = new Regex(@"(http|www|.*?\.)\S*");
@@ -193,7 +197,7 @@ namespace QuarklessContexts.Extensions
 			{
 				amount = @items.Count()-1;
 			}
-			List<T> uniqueItems = new List<T>();
+			var uniqueItems = new List<T>();
 			while (uniqueItems.Count < amount)
 			{
 				var item = @items.ElementAtOrDefault(SecureRandom.Next(@items.Count()));

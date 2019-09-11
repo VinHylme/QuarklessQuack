@@ -9,7 +9,7 @@ def OnCaptionsWithTopic():
     removeTrash = list(filter(None,list(set([re.sub(r'(_+|=+|\.+|\n+)',"", x["Caption"] if nltkHelper.IsLatinCharacters(x["Caption"]) else "" , re.M) for x in captions]))))
     try:
       if not len(removeTrash) == 0:
-        gen = genHelper.initialise_textgen(topic, "captions")
+        gen = genHelper.loadModel(topic, "captions")
         genHelper.train_textgen(gen, removeTrash, topic, trainType = "captions")
       else:
         print("empty")
@@ -28,7 +28,7 @@ def OnCommentsWithTopic():
     #print('Collected {} Comments'.format(len(comments)))
     removeTrash = list(filter(None,list(set([re.sub(r'(_+|=+|\.+|\n+)',"",x["Comments"] if nltkHelper.IsLatinCharacters(x["Comments"]) else "", re.M) for x in comments]))))
     try:
-      gen = genHelper.initialise_textgen(topic, "comments")
+      gen = genHelper.loadModel(topic, "comments")
       genHelper.train_textgen(gen, removeTrash, topic, trainType = "comments")
     except OSError as o:
       print(o)

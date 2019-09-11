@@ -8,7 +8,7 @@ namespace QuarklessLogic.ServicesLogic.CorpusLogic
 	{
 		Task AddComments(IEnumerable<CommentCorpus> comments);
 		Task<long> CommentsCount(string topic);
-		Task<IEnumerable<CommentCorpus>> GetComments(string topic, string lang, int limit);
+		Task<IEnumerable<CommentCorpus>> GetComments(string topic, string lang, int limit = -1, bool skip = true);
 		Task UpdateAllCommentsLanguagesToLower();
 		Task CleanCorpus();
 	}
