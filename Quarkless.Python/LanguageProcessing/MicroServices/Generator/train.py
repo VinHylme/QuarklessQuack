@@ -17,7 +17,7 @@ def OnCaptionsWithTopic():
       print(o)
       os.makedirs('Data/captions/{}'.format(topic))
       gen = genHelper.create_textgen(topic, trainType = "captions")
-      genHelper.train_textgen(gen, removeTrash, topic, trainType = "captions", newModel = True)
+      genHelper.train_textgen(gen, removeTrash, topic, trainType = "captions", newModel = False)
     except Exception as e:
       print(e)
 
