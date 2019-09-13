@@ -13,7 +13,7 @@ def create_textgen(model_name, trainType):
   return textgenrnn(name='Data/{}/{}/{}'.format(trainType, model_name, model_name))
 
 def train_textgen(textgen : textgenrnn, texts, modelName, trainType, newModel = False):
-   textgen.train_on_texts(texts, gen_epochs=5, new_model=newModel, num_epochs=20, batch_size=64)
+   textgen.train_on_texts(texts, gen_epochs=5, new_model=newModel, num_epochs=25, batch_size=64)
    textgen.save('Data/{}/{}/{}_weights.hdf5'.format(trainType, modelName, modelName))
 
 def sample(model_name, trainType, n = 3, top_n = 3, temperatures=[0.2, 0.5, 1.0], prefix = None, returnAsList = False, interactive = False):
