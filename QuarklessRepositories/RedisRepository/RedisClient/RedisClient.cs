@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -123,6 +119,15 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 				await _redis.GetDatabase(_DbNumber).SetAddAsync(redisKey, value);
 				await _redis.GetDatabase(_DbNumber).KeyExpireAsync(redisKey, expires);
 			}, userId, redisKey.ToString());
+		}
+		public async Task SetAdd(string hashtagGrowKey, string value, TimeSpan? expires = null)
+		{
+			expires = expires != null && expires <= _defaultKeyExpiry ? expires : _defaultKeyExpiry;
+			await WithExceptionLogAsync(async () =>
+			{
+				await _redis.GetDatabase(_DbNumber).SetAddAsync(hashtagGrowKey, value);
+				await _redis.GetDatabase(_DbNumber).KeyExpireAsync(hashtagGrowKey, expires);
+			}, "", hashtagGrowKey);
 		}
 		public async Task<bool> SetMemberExists(string userId, HashtagGrowKeys hashtagGrowKey, string value)
 		{

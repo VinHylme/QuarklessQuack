@@ -16,20 +16,32 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using MoreLinq.Extensions;
 using Quarkless.Interfacing;
+using QuarklessLogic.ServicesLogic.HeartbeatLogic;
+using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
+using Quarkless.Interfacing.Objects;
+using QuarklessLogic.Handlers.ClientProvider;
+using QuarklessContexts.Models.Sections;
+using QuarklessRepositories.RedisRepository.LoggerStoring;
 
 namespace QuarklessLogic.Logic.QueryLogic
 {
-	public class QueryLogic : IQueryLogic
+	public class QueryLogic : CommonInterface, IQueryLogic
 	{
 		private readonly IRestSharpClientManager _restSharpClientManager;
 		private readonly IContentSearcherHandler _contentSearcherHandler;
 		private readonly ITopicServicesLogic _topicServicesLogic;
 		private readonly ISearchingCache _searchingCache;
 		private readonly IHashtagLogic _hashtagLogic;
-
+		private readonly IHeartbeatLogic _heartbeatLogic;
+		private readonly IAPIClientContext _aPIClientContext;
+		private readonly ILoggerStore _loggerStore;
 		public QueryLogic(IRestSharpClientManager restSharpClientManager, IContentSearcherHandler contentSearcherHandler,
-			ISearchingCache searchingCache, ITopicServicesLogic topicServicesLogic, IHashtagLogic hashtagLogic): base()
+			ISearchingCache searchingCache, ITopicServicesLogic topicServicesLogic, 
+			IHashtagLogic hashtagLogic, IHeartbeatLogic heartbeatLogic, IAPIClientContext aPIClientContext, ILoggerStore loggerStore)
+			: base(loggerStore, Sections.QueryLogic.GetDescription())
 		{
+			_aPIClientContext = aPIClientContext;
+			_heartbeatLogic = heartbeatLogic;
 			_hashtagLogic = hashtagLogic;
 			_searchingCache = searchingCache;
 			_restSharpClientManager = restSharpClientManager;
@@ -60,8 +72,7 @@ namespace QuarklessLogic.Logic.QueryLogic
 			{
 				return null;
 			}
-		}
-		
+		}	
 		public async Task<Media> SimilarImagesSearch(string userId, int limit = 1, int offset = 0, IEnumerable<string> urls = null, bool moreAccurate = false)
 		{
 			if(urls == null || (limit == 0)) return null;
@@ -173,7 +184,6 @@ namespace QuarklessLogic.Logic.QueryLogic
 				CanUserEditProfile = true
 			};
 		}
-
 		public async Task<IEnumerable<string>> BuildHashtags(string topic, string subcategory, string language,
 			int limit = 1, int pickRate = 20)
 		{
@@ -200,7 +210,6 @@ namespace QuarklessLogic.Logic.QueryLogic
 			}
 			return hashtags.Take(pickRate);
 		}
-
 		public async Task<SubTopics> GetRelatedKeywords(string topicName)
 		{
 			var res = await _searchingCache.GetReleatedTopic(topicName);
@@ -257,5 +266,145 @@ namespace QuarklessLogic.Logic.QueryLogic
 				return subTopics;
 			}
 		}
+
+		#region Search Instagram Stuff
+		public async Task<Media> SearchMediasByTopic(IEnumerable<string> topics, string username, string instagramAccountId, int limit = 1)
+		{
+			return await RunCodeWithLoggerExceptionAsync(async () =>
+			{
+				//_contentSearcherHandler.ChangeUser(new APIClientContainer(_aPIClientContext, username, instagramAccountId));
+				var results = await _contentSearcherHandler.SearchMediaDetailInstagram(topics.ToList(), limit);
+				if(results == null)
+				{
+					await Warn($"Nothing was found for search query {string.Join(',', topics)}", 
+						nameof(SearchMediasByTopic), username, instagramAccountId);  
+					return new Media();
+				}
+				return results;
+			}, nameof(SearchMediasByTopic), username, instagramAccountId);
+		}
+		public async Task<Media> SearchMediasByLocation(Location location, string username, string instagramAccountId, int limit = 1)
+		{
+			return await RunCodeWithLoggerExceptionAsync(async () =>
+			{
+				//_contentSearcherHandler.ChangeUser(new APIClientContainer(_aPIClientContext, username, instagramAccountId));
+				var results = await _contentSearcherHandler.SearchTopLocationMediaDetailInstagram(location, limit);
+				if(results == null)
+				{
+					await Warn($"Nothing was found for search query {location.City}", 
+						nameof(SearchMediasByLocation), username, instagramAccountId);  
+					return new Media();
+				}
+				return results;
+			}, nameof(SearchMediasByLocation), username, instagramAccountId);
+		}
+		#endregion
+		#region Heartbeat Logic Stuff
+		public async Task<IEnumerable<Media>> GetUsersFeed(SString accountId, SString instagramAccountId, SString topic)
+		{
+			return await RunCodeWithLoggerExceptionAsync(async () =>
+			{
+				var medias = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchUsersFeed, topic, instagramAccountId);
+				if(medias==null)
+				{
+					await Warn("Empty list returned", nameof(GetUsersFeed), accountId, instagramAccountId);  
+					return EmptyList<Media>();
+				}
+				return medias.Select(x=>x.ObjectItem);
+			}, nameof(GetUsersFeed), accountId, instagramAccountId);
+		}
+		public async Task<IEnumerable<Media>> GetUsersMedia(SString accountId, SString instagramAccountId, SString topic)
+		{
+			return await RunCodeWithLoggerExceptionAsync(async () =>
+			{
+				var medias = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchUserOwnProfile, topic, instagramAccountId);
+				if(medias==null) 
+				{
+					await Warn("Empty list returned", nameof(GetUsersMedia), accountId, instagramAccountId);  
+					return EmptyList<Media>();
+				}
+				return medias.Select(x=>x.ObjectItem);
+			}, nameof(GetUsersMedia), accountId, instagramAccountId);
+		}
+		public async Task<IEnumerable<Media>> GetUsersTargetList(SString accountId, SString instagramAccountId, SString topic)
+		{
+			return await RunCodeWithLoggerExceptionAsync(async () =>
+			{
+				var medias = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByUserTargetList, topic, instagramAccountId);
+				if(medias==null) 
+				{
+					await Warn("Empty list returned", nameof(GetUsersTargetList), accountId, instagramAccountId);  
+					return EmptyList<Media>();
+				}
+				return medias.Select(x=>x.ObjectItem);
+			}, nameof(GetUsersTargetList), accountId, instagramAccountId);
+		}
+		public async Task<IEnumerable<Media>> GetMediasByLocation(SString accountId, SString instagramAccountId, SString topic)
+		{
+			return await RunCodeWithLoggerExceptionAsync(async () =>
+			{
+				var medias = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByUserLocationTargetList, topic, instagramAccountId);
+				if(medias == null) 
+				{
+					await Warn("Empty list returned", nameof(GetMediasByLocation), accountId, instagramAccountId);  
+					return EmptyList<Media>(); 
+				}
+				return medias.Select(x=>x.ObjectItem);
+			}, nameof(GetMediasByLocation), accountId, instagramAccountId);
+		}
+		public async Task<IEnumerable<UserResponse>> GetUserByLocation(SString accountId, SString instagramAccountId, SString topic)
+		{
+			return await RunCodeWithLoggerExceptionAsync(async () =>
+			{
+				var medias = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByUserLocationTargetList, topic, instagramAccountId);
+				if(medias == null)
+				{ 
+					await Warn("Empty list returned", nameof(GetUserByLocation), accountId, instagramAccountId);  
+					return EmptyList<UserResponse>();
+				}
+				return medias.Select(a=>a.ObjectItem.Medias)
+				.SquashMe().Select(x=>x.User);
+			}, nameof(GetUserByLocation), accountId, instagramAccountId);
+		}
+		public async Task<IEnumerable<UserResponse<string>>> GetUsersFollowingList(SString accountId, SString instagramAccountId, SString topic)
+		{
+			return await RunCodeWithLoggerExceptionAsync(async () =>
+			{
+				var users = await _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersFollowingList, topic, instagramAccountId);
+				if(users == null) 
+				{ 
+					await Warn("Empty list returned", nameof(GetUsersFollowingList), accountId, instagramAccountId); 
+					return EmptyList<UserResponse<string>>();
+				}
+				return users.Select(x=>x.ObjectItem).SquashMe();
+			}, nameof(GetUsersFollowingList), accountId, instagramAccountId);
+		}
+		public async Task<IEnumerable<UserResponse<string>>> GetUsersFollowerList(SString accountId, SString instagramAccountId, SString topic)
+		{
+			return await RunCodeWithLoggerExceptionAsync(async () =>
+			{
+				var users = await _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersFollowerList, topic, instagramAccountId);
+				if(users == null)
+				{ 
+					await Warn("Returned empty list", nameof(GetUsersFollowerList), accountId, instagramAccountId); 
+					return EmptyList<UserResponse<string>>();
+				}
+				return users.Select(x=>x.ObjectItem).SquashMe();
+			}, nameof(GetUsersFollowerList), accountId, instagramAccountId);
+		}
+		public async Task<IEnumerable<UserResponse<UserSuggestionDetails>>> GetUsersSuggestedFollowingList(SString accountId, SString instagramAccountId, SString topic)
+		{
+			return await RunCodeWithLoggerExceptionAsync(async () =>
+			{
+				var users = await _heartbeatLogic.GetMetaData<List<UserResponse<UserSuggestionDetails>>>(MetaDataType.FetchUsersFollowSuggestions, topic, instagramAccountId);
+				if(users == null) 
+				{ 
+					await Warn("Returned empty list", nameof(GetUsersSuggestedFollowingList), accountId, instagramAccountId); 
+					return EmptyList<UserResponse<UserSuggestionDetails>>(); 
+				}
+				return users.Select(x=>x.ObjectItem).SquashMe();
+			}, nameof(GetUsersSuggestedFollowingList), accountId, instagramAccountId);
+		}
+		#endregion
 	}
 }

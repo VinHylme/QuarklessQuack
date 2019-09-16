@@ -24,9 +24,9 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 		private readonly IResponseResolver _responseResolver;
 		private readonly IRestSharpClientManager _restSharpClient;
 		private readonly YandexImageSearch _yandexImageSearch;
-		public ContentSearcherHandler(IAPIClientContainer worker, IResponseResolver responseResolver, ProxyModel proxy = null)
+		public ContentSearcherHandler(IAPIClientContainer clientContainer, IResponseResolver responseResolver, ProxyModel proxy = null)
 		{
-			_container = worker;
+			_container = clientContainer;
 			_responseResolver = responseResolver;
 			_restSharpClient = new RestSharpClientManager();
 			_restSharpClient.AddProxy(proxy);
@@ -350,7 +350,7 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 			var locationResult = await _responseResolver.WithClient(_container).WithResolverAsync
 				(await _container.Location.SearchPlacesAsync(location.City, PaginationParameters.MaxPagesToLoad(limit)));
 			if (!locationResult.Succeeded) return null;
-			var id = locationResult.Value.Items.ElementAt(SecureRandom.Next(locationResult.Value.Items.Count - 1)).Location.Pk;
+			var id = locationResult.Value.Items.FirstOrDefault().Location.Pk;
 			var mediasRes = await _container.Location.GetTopLocationFeedsAsync(id,PaginationParameters.MaxPagesToLoad(limit));
 			if (mediasRes.Succeeded)
 			{
@@ -426,10 +426,9 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 		public async Task<Media> SearchRecentLocationMediaDetailInstagram(Location location, int limit)
 		{
 			var locationResult = await _responseResolver.WithClient(_container).WithResolverAsync
-				(await _container.Location.SearchPlacesAsync(location.Coordinates.Latitude, 
-				location.Coordinates.Longitude, PaginationParameters.MaxPagesToLoad(limit)));
+				(await _container.Location.SearchPlacesAsync(location.City, PaginationParameters.MaxPagesToLoad(limit)));
 			if (!locationResult.Succeeded) return null;
-			var id = locationResult.Value.Items.ElementAt(SecureRandom.Next(locationResult.Value.Items.Count - 1)).Location.Pk;
+			var id = locationResult.Value.Items.FirstOrDefault().Location.Pk;
 			var mediasRes = await _container.Location.GetRecentLocationFeedsAsync(id, PaginationParameters.MaxPagesToLoad(limit));
 			if (mediasRes.Succeeded)
 			{

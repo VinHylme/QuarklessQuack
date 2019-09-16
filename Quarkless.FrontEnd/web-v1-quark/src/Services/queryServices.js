@@ -1,21 +1,52 @@
-import Api from './Api'
+import Api from './Api';
+import { Calling } from './constants';
 export default {
   GetProfileConfig(){
-    return Api(true).get('query/config');
+    return Api(true).get(Calling["query_config"]);
   },
   GooglePlaceSearch(query){
-    return Api(true).get('query/search/places/'+query);
+    return Api(true).get(Calling["query_place_search"]+query);
   },
   GooglePlacesAutocomplete(query, radius){
-    return Api(true).get('query/search/places/auto/'+query+'/'+radius);
+    return Api(true).get(Calling["query_place_autocomplete"]+query+'/'+radius);
   },
   SimilarImageSearch(urls, limit, offset, moreAccurate){
-    return Api(true).put('query/search/similar/'+ limit +'/' + offset + "/" + moreAccurate, urls);
+    return Api(true).put(Calling["query_similar_image_search"]+ limit +'/' + offset + "/" + moreAccurate, urls);
   },
   ReleatedTopic(instaAccount, topic){
-    return Api(true, instaAccount).get('query/releated/'+topic);
+    return Api(true, instaAccount).get(Calling["query_related_topics"]+topic);
   },
   BuildTags(topic, subcat, lang, limit, pickRate){
-    return Api(true).get('query/build/tags/'+topic + '/' + subcat + '/' + lang + '/' + limit + '/'+ pickRate);
+    return Api(true).get(Calling["query_buildtags"]+topic + '/' + subcat + '/' + lang + '/' + limit + '/'+ pickRate);
+  },
+  SearchByTopic(query, instaAccount, limit){
+    return Api(true, instaAccount).put(Calling["query_searchTopic"]+limit, query);
+  },
+  SearchByLocation(query, instaAccount, limit){
+    return Api(true, instaAccount).put(Calling["query_searchLocation"]+limit, query);
+  },
+  GetUserMedias(instaAccount, topic){
+    return Api(true).get(Calling["query_userMedia"]+instaAccount+'/'+topic)
+  },
+  GetUserFeed(instaAccount, topic){
+    return Api(true).get(Calling["query_userFeed"]+instaAccount+'/'+topic)
+  },
+  GetUserFollowerList(instaAccount, topic){
+    return Api(true).get(Calling["query_userFollowerList"]+instaAccount+'/'+topic)
+  },
+  GetUserFollowingList(instaAccount, topic){
+    return Api(true).get(Calling["query_userFollowingList"]+instaAccount+'/'+topic)
+  },
+  GetUserTargetLocation(instaAccount, topic){
+    return Api(true).get(Calling["query_userTargetLocation"]+instaAccount+'/'+topic)
+  },
+  GetUserFollowingSuggestions(instaAccount, topic){
+    return Api(true).get(Calling["query_userFollowingSuggestions"]+instaAccount+'/'+topic)
+  },
+  GetUsersTargetList(instaAccount, topic){
+    return Api(true).get(Calling["query_userTargetList"]+instaAccount+'/'+topic)
+  },
+  GetMediasByLocation(instaAccount, topic){
+    return Api(true).get(Calling["query_mediaByLocation"]+instaAccount+'/'+topic)
   }
 }

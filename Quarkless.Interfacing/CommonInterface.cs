@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
 using Quarkless.Interfacing.Objects;
+using QuarklessRepositories.RedisRepository.LoggerStoring;
 
 namespace Quarkless.Interfacing
 {
@@ -22,13 +22,15 @@ namespace Quarkless.Interfacing
 	/// </summary>
 	public abstract class CommonInterface
 	{
-		protected CommonInterface()
+		private readonly ILoggerStore _logger;
+		private readonly SString _section;
+		protected CommonInterface(ILoggerStore logger, string section)
 		{
-			var obList = new List<SString>();
-			obList.GetAt(12);
-			List(obList);
+			_logger = logger;
+			_section = section;
 		}
 
+		public List<T> EmptyList<T>() => new List<T>();
 		public List<T> List<T>(IEnumerable<T> items) => items.ToList();
 
 		//public int Len<T>(T genericObject) => Marshal.SizeOf(genericObject);
@@ -48,47 +50,106 @@ namespace Quarkless.Interfacing
 		public void PrintLn(object message) => Console.WriteLine(message);
 
 		/// <summary>
-		/// Todo: add functionality for logger
+		/// Basically encapulated try catch with log
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="code"></param>
 		/// <param name="ids"></param>
 		/// <returns></returns>
-		public Task<T> RunCodeWithLoggerExceptionAsync<T>(Func<Task<T>> code, params string[] ids)
+		public async Task<T> RunCodeWithLoggerExceptionAsync<T>(Func<Task<T>> code, SString function, SString accountId, SString instagramAccountId)
 		{
 			try
 			{
-				return code();
+				return await code();
 			}
 			catch (Exception io)
 			{
-				Console.WriteLine(io.Message + string.Join(",", ids));
-				throw;
+				await _logger.Log(new LoggerModel
+				{
+					AccountId = accountId,
+					InstagramAccountId = instagramAccountId,
+					Date = DateTime.UtcNow,
+					Id = Guid.NewGuid().ToString(),
+					Message = io.Message,
+					Section = _section,
+					Function = function,
+					SeverityLevel = SeverityLevel.Exception
+				});
+				return default(T);
 			}
 		}
-		public Task<T> RunCodeWithExceptionAsync<T>(Func<Task<T>> code, params string[] ids)
+		public async Task<T> RunCodeWithExceptionAsync<T>(Func<Task<T>> code, SString function, SString accountId, SString instagramAccountId)
 		{
 			try
 			{
-				return code();
+				return await code();
 			}
 			catch (Exception io)
 			{
-				Console.WriteLine(io.Message + string.Join(",", ids));
-				throw;
+				await _logger.Log(new LoggerModel
+				{
+					AccountId = accountId,
+					InstagramAccountId = instagramAccountId,
+					Date = DateTime.UtcNow,
+					Id = Guid.NewGuid().ToString(),
+					Message = io.Message,
+					Section = _section,
+					Function = function,
+					SeverityLevel = SeverityLevel.Exception
+				});
+				return default(T);
 			}
 		}
-		public Task RunCodeWithExceptionAsync(Func<Task> code, params string[] ids)
+		public async Task RunCodeWithExceptionAsync(Func<Task> code, SString function, SString accountId, SString instagramAccountId = null)
 		{
 			try
 			{
-				return code();
+				await code();
 			}
 			catch (Exception io)
 			{
-				Console.WriteLine(io.Message + string.Join(",", ids));
-				throw;
+				await _logger.Log(new LoggerModel
+				{
+					AccountId = accountId,
+					InstagramAccountId = instagramAccountId,
+					Date = DateTime.UtcNow,
+					Id = Guid.NewGuid().ToString(),
+					Message = io.Message,
+					Section = _section,
+					Function = function,
+					SeverityLevel = SeverityLevel.Exception
+				});
+				return;
 			}
 		}
+		public async Task Warn(string message, SString function, SString accountId, SString instagramAccountId)
+		{
+			await _logger.Log(new LoggerModel
+			{
+				AccountId = accountId,
+				InstagramAccountId = instagramAccountId,
+				Section = _section,
+				Function = function,
+				Date = DateTime.UtcNow,
+				Id = Guid.NewGuid().ToString(),
+				Message = message,
+				SeverityLevel = SeverityLevel.Warning
+			});
+		}
+		public async Task Inform(string message, SString function, SString accountId, SString instagramAccountId)
+		{
+			await _logger.Log(new LoggerModel
+			{
+				AccountId = accountId,
+				InstagramAccountId = instagramAccountId,
+				Section = _section,
+				Function = function,
+				Date = DateTime.UtcNow,
+				Id = Guid.NewGuid().ToString(),
+				Message = message,
+				SeverityLevel = SeverityLevel.Info
+			});
+		}
+
 	}
 }

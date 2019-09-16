@@ -5,6 +5,7 @@ using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.ResponseModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessContexts.Models.Topics;
+using QuarklessLogic.Handlers.ClientProvider;
 
 namespace QuarklessLogic.ServicesLogic.ContentSearch
 {
@@ -30,5 +31,6 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 		SearchResponse<Media> SearchViaYandexBySimilarImages(List<GroupImagesAlike> imagesSimilarUrls, int limit, int offset = 0);
 		SearchResponse<Media> SearchSimilarImagesViaGoogle(List<GroupImagesAlike> imagesAlikes, int limit, int offset = 0);
 		Task<IEnumerable<TopicCategories>> GetBusinessCategories();
+		void ChangeUser(IAPIClientContainer newUser);
 	}
 }

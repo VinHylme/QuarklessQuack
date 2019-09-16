@@ -330,6 +330,10 @@ namespace QuarklessLogic.Logic.ResponseLogic
 
 			return response;
 		}
+		private async Task<bool> MarkAsRecentlyDone(params string[] id)
+		{
+			return false;
+		}
 		private async Task<IResult<bool>> AcceptConsent()
 		{
 			try

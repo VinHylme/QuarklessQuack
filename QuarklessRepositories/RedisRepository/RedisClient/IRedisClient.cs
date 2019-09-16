@@ -21,6 +21,7 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 		HashEntry[] GetHash(RedisKey key);
 		Task RemoveHashField(string userId, RedisKeys.HashtagGrowKeys hashtagGrowKey, string field);
 		Task SetAdd(string userId, RedisKeys.HashtagGrowKeys hashtagGrowKey, string value, TimeSpan? expires = null);
+		Task SetAdd(string hashtagGrowKey, string value, TimeSpan? expires = null);
 		Task SetHashField(string userId, RedisKeys.HashtagGrowKeys hashtagGrowKey, string field, string value);
 		Task SetKeyExpiryDate(string userId, RedisKeys.HashtagGrowKeys hashtagGrowKey, TimeSpan expires);
 		Task<bool> SetMemberExists(string userId, RedisKeys.HashtagGrowKeys hashtagGrowKey, string value);

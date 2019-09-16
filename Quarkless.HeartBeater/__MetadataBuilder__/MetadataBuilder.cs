@@ -726,8 +726,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 									z.Medias = z.Medias.Where(t => 
 										!t.HasLikedBefore && 
 										!t.IsCommentsDisabled &&
-										!t.HasSeen && 
-										t.User.Username != worker.InstagramRequests.InstagramAccount.Username).ToList();
+										!t.HasSeen).ToList();
 									var comments = new __Meta__<Media>(z);
 									await _heartbeatLogic.AddMetaData(MetaDataType.FetchMediaByCommenters, worker.Topic.TopicFriendlyName, comments);
 								};
@@ -765,9 +764,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 							{
 								s.Medias = s.Medias.Where(t => 
 									!t.HasLikedBefore && 
-									!t.IsCommentsDisabled &&
-									!t.HasSeen && 
-									t.User.Username != worker.InstagramRequests.InstagramAccount.Username).ToList();
+									!t.HasSeen).ToList();
 								await _heartbeatLogic.AddMetaData(MetaDataType.FetchMediaByUserTargetList, worker.Topic.TopicFriendlyName,
 									new __Meta__<Media>(s), user.Id);
 							};
@@ -797,6 +794,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 						foreach (var targetLocation in profileLocationTargetList)
 						{
 							var fetchUsersMedia = await searcher.SearchTopLocationMediaDetailInstagram(targetLocation, limit);
+							await Task.Delay(TimeSpan.FromSeconds(1));
 							var recentUserMedia =
 								await searcher.SearchRecentLocationMediaDetailInstagram(targetLocation, limit);
 							if (recentUserMedia != null && recentUserMedia.Medias.Count > 0)
@@ -809,7 +807,6 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 							{
 								s.Medias = s.Medias.Where(t => 
 									!t.HasLikedBefore && 
-									!t.IsCommentsDisabled &&
 									!t.HasSeen && 
 									t.User.Username != worker.InstagramRequests.InstagramAccount.Username).ToList();
 								await _heartbeatLogic.AddMetaData(MetaDataType.FetchMediaByUserLocationTargetList, worker.Topic.TopicFriendlyName,
@@ -840,11 +837,6 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUserOwnProfile, worker.Topic.TopicFriendlyName, user.Id, proxy: worker.Worker.GetContext.Proxy);
 						foreach(var s in fetchUsersMedia.CutObjects(cutBy))
 						{
-							s.Medias = s.Medias.Where(t => 
-								!t.HasLikedBefore && 
-								!t.IsCommentsDisabled &&
-								!t.HasSeen && 
-								t.User.Username != worker.InstagramRequests.InstagramAccount.Username).ToList();
 							await _heartbeatLogic.AddMetaData(MetaDataType.FetchUserOwnProfile, worker.Topic.TopicFriendlyName,
 								new __Meta__<Media>(s),user.Id);
 						};
@@ -983,7 +975,6 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			}
 			Console.WriteLine($"Ended - BuildUserFollowerList : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
 		}
-
 		public async Task BuildUsersFollowSuggestions(int limit = 1, int cutObjectBy = 1)
 		{
 			Console.WriteLine("Began - BuildUsersFollowSuggestions");

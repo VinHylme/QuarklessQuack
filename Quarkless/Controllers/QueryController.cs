@@ -22,6 +22,7 @@ namespace Quarkless.Controllers
 			_queryLogic = queryLogic;
 			_userContext = userContext;
 		}
+
 		[HttpGet]
 		[Route("api/query/config")]
 		public async Task<IActionResult> GetProfileConfig()
@@ -31,6 +32,7 @@ namespace Quarkless.Controllers
 
 			return Ok(await _queryLogic.GetProfileConfig());
 		}
+
 		[HttpGet]
 		[Route("api/query/releated/{topic}")]
 		public async Task<IActionResult> SearchReleatedTopic(string topic)
@@ -66,6 +68,7 @@ namespace Quarkless.Controllers
 				return BadRequest("Invalid Request");
 			return Ok(_queryLogic.AutoCompleteSearchPlaces(query,radius));
 		}
+
 		[HttpPut]
 		[Route("api/query/search/similar/{limit}/{offset=0}/{moreAccurate}")]
 		public async Task<IActionResult> SimilarSearch([FromBody] IEnumerable<string> urls, [FromRoute] int limit, [FromRoute] int offset = 0, [FromRoute] bool moreAccurate = false)
@@ -74,5 +77,106 @@ namespace Quarkless.Controllers
 				return BadRequest("Invalid Request");
 			return Ok(await _queryLogic.SimilarImagesSearch(_userContext.CurrentUser, limit, offset, urls,moreAccurate));
 		}
+
+		[HttpPut]
+		[Route("api/query/searchTopic/{instagramId}/{limit}")]
+		public async Task<IActionResult> SearchByTopic([FromBody] string query, string instagramId, int limit)
+		{
+			IEnumerable<string> topics = null;
+			if(string.IsNullOrEmpty(_userContext.CurrentUser) || string.IsNullOrEmpty(query))
+				return BadRequest("Invalid Request");
+			if(query.Contains(','))
+				topics = query.Split(',');
+			else
+				topics = new string[] {query};
+
+			return Ok(await _queryLogic.SearchMediasByTopic(topics, _userContext.CurrentUser, instagramId, limit));
+		}
+
+		[HttpPut]
+		[Route("api/query/searchLocation/{instagramId}/{limit}")]
+		public async Task<IActionResult> SearchByLocation([FromBody] string query, string instagramId, int limit)
+		{
+			if(string.IsNullOrEmpty(_userContext.CurrentUser) || string.IsNullOrEmpty(query))
+				return BadRequest("Invalid Request");
+
+			return Ok(await _queryLogic.SearchMediasByLocation(new QuarklessContexts.Models.Profiles.Location
+			{
+				City = query
+			}, _userContext.CurrentUser, instagramId, limit));
+		}
+		#region Heartbeat Logic Stuff
+		[HttpGet]
+		[Route("api/query/userMedias/{instagramId}/{topic}")]
+		public async Task<IActionResult> GetUsersMedias(string instagramId, string topic)
+		{
+			if(string.IsNullOrEmpty(_userContext.CurrentUser))
+				return BadRequest("Invalid Request");
+			return Ok(await _queryLogic.GetUsersMedia(_userContext.CurrentUser, instagramId, topic));
+		}
+
+		[HttpGet]
+		[Route("api/query/userFeed/{instagramId}/{topic}")]
+		public async Task<IActionResult> GetUsersFeed(string instagramId, string topic)
+		{
+			if(string.IsNullOrEmpty(_userContext.CurrentUser))
+				return BadRequest("Invalid Request");
+			return Ok(await _queryLogic.GetUsersFeed(_userContext.CurrentUser, instagramId, topic));
+		}
+
+		[HttpGet]
+		[Route("api/query/userFollowerList/{instagramId}/{topic}")]
+		public async Task<IActionResult> GetUserFollowerList(string instagramId, string topic)
+		{
+			if(string.IsNullOrEmpty(_userContext.CurrentUser))
+				return BadRequest("Invalid Request");
+			return Ok(await _queryLogic.GetUsersFollowerList(_userContext.CurrentUser, instagramId, topic));
+		}
+
+		[HttpGet]
+		[Route("api/query/userFollowingList/{instagramId}/{topic}")]
+		public async Task<IActionResult> GetUserFollowingList(string instagramId, string topic)
+		{
+			if(string.IsNullOrEmpty(_userContext.CurrentUser))
+				return BadRequest("Invalid Request");
+			return Ok(await _queryLogic.GetUsersFollowingList(_userContext.CurrentUser, instagramId, topic));
+		}
+
+		[HttpGet]
+		[Route("api/query/userLocation/{instagramId}/{topic}")]
+		public async Task<IActionResult> GetUserByLocation(string instagramId, string topic)
+		{
+			if(string.IsNullOrEmpty(_userContext.CurrentUser))
+				return BadRequest("Invalid Request");
+			return Ok(await _queryLogic.GetUserByLocation(_userContext.CurrentUser, instagramId, topic));
+		}	
+		
+		[HttpGet]
+		[Route("api/query/userSuggestionFollowing/{instagramId}/{topic}")]
+		public async Task<IActionResult> GetUsersSuggestedFollowingList(string instagramId, string topic)
+		{
+			if(string.IsNullOrEmpty(_userContext.CurrentUser))
+				return BadRequest("Invalid Request");
+			return Ok(await _queryLogic.GetUsersSuggestedFollowingList(_userContext.CurrentUser, instagramId, topic));
+		}
+
+		[HttpGet]
+		[Route("api/query/userTargetList/{instagramId}/{topic}")]
+		public async Task<IActionResult> GetUsersTargetList(string instagramId, string topic)
+		{
+			if(string.IsNullOrEmpty(_userContext.CurrentUser))
+				return BadRequest("Invalid Request");
+			return Ok(await _queryLogic.GetUsersTargetList(_userContext.CurrentUser, instagramId, topic));
+		}
+
+		[HttpGet]
+		[Route("api/query/mediasLocation/{instagramId}/{topic}")]
+		public async Task<IActionResult> GetMediasByLocation(string instagramId, string topic)
+		{
+			if(string.IsNullOrEmpty(_userContext.CurrentUser))
+				return BadRequest("Invalid Request");
+			return Ok(await _queryLogic.GetMediasByLocation(_userContext.CurrentUser, instagramId, topic));
+		}
+		#endregion
 	}
 }

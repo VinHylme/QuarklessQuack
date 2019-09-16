@@ -11,7 +11,8 @@
 			Corpus,
 			SearchSession,
 			UserLibrary,
-			APILog
+			APILog,
+			Logger
 		}
 	}
 }

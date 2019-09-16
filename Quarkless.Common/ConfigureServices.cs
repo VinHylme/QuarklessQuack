@@ -78,6 +78,7 @@ using QuarklessLogic.Logic.TimelineEventLogLogic;
 using QuarklessRepositories.RedisRepository.APILogger;
 using QuarklessRepositories.RedisRepository.LibraryCache;
 using QuarklessRepositories.Repository.LibraryRepository;
+using QuarklessRepositories.RedisRepository.LoggerStoring;
 
 namespace Quarkless.Common
 {
@@ -109,7 +110,7 @@ namespace Quarkless.Common
 			services.AddTransient<ICommentCorpusLogic, CommentCorpusLogic>();
 			services.AddTransient<IMediaCorpusLogic, MediaCorpusLogic>();
 			services.AddTransient<IQueryLogic, QueryLogic>();
-			services.AddTransient<IContentSearcherHandler, ContentSearcherHandler>();
+			services.AddSingleton<IContentSearcherHandler, ContentSearcherHandler>();
 			services.AddTransient<ISearchingCache, SearchingCache>();
 			services.AddTransient<ILibraryLogic, LibraryLogic>();
 			services.AddTransient<ITimelineEventLogLogic, TimelineEventLogLogic>();
@@ -218,6 +219,7 @@ namespace Quarkless.Common
 			services.AddTransient<ILibraryRepository, LibraryRepository>();
 			services.AddTransient<ILibraryCache, LibraryCache>();
 			services.AddTransient<IAPILogCache, APILogCache>();
+			services.AddTransient<ILoggerStore,LoggerStore>();
 			services.Configure<RedisOptions>(o =>
 			{
 				o.ConnectionString = _accessors.RedisConnectionString;

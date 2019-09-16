@@ -1,4 +1,5 @@
-﻿using QuarklessContexts.Models.Profiles;
+﻿using Quarkless.Interfacing.Objects;
+using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.QueryModels.Settings;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using System.Collections.Generic;
@@ -15,5 +16,16 @@ namespace QuarklessLogic.Logic.QueryLogic
 		Task<SubTopics> GetRelatedKeywords(string topicName);
 		Task<IEnumerable<string>> BuildHashtags(string topic, string subcategory, string language,
 			int limit = 1, int pickRate = 20);
+
+		Task<IEnumerable<Media>> GetUsersMedia(SString username, SString instagramAccountId, SString topic);
+		Task<IEnumerable<Media>> GetUsersFeed(SString username, SString instagramAccountId, SString topic);
+		Task<IEnumerable<Media>> GetUsersTargetList(SString username, SString instagramAccountId, SString topic);
+		Task<IEnumerable<Media>> GetMediasByLocation(SString username, SString instagramAccountId, SString topic);
+		Task<IEnumerable<UserResponse>> GetUserByLocation(SString username, SString instagramAccountId, SString topic);
+		Task<IEnumerable<UserResponse<string>>> GetUsersFollowingList(SString username, SString instagramAccountId, SString topic);
+		Task<IEnumerable<UserResponse<string>>> GetUsersFollowerList(SString username, SString instagramAccountId, SString topic);
+		Task<Media> SearchMediasByTopic(IEnumerable<string> topics, string username, string instagramAccountId, int limit = 1);
+		Task<Media> SearchMediasByLocation(Location location, string username, string instagramAccountId, int limit = 1);
+		Task<IEnumerable<UserResponse<UserSuggestionDetails>>> GetUsersSuggestedFollowingList(SString username, SString instagramAccountId, SString topic);
 	}
 }
