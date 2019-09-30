@@ -42,6 +42,8 @@ namespace QuarklessContexts.Models.Sections
 		[Description("storagelogic")]
 		StorageLogic,
 		[Description("timelineventloglogic")]
-		TimelineEventLogLogic
+		TimelineEventLogLogic,
+		[Description("lookuplogic")]
+		LookupLogic
 	}
 }

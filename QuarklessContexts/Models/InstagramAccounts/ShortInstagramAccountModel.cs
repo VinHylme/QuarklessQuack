@@ -84,6 +84,7 @@ namespace QuarklessContexts.Models.InstagramAccounts
 		public string Id { get; set; }
 		public string AccountId { get; set; }
 		public string Username { get; set; }
+		public long? UserId { get; set; }
 		public string FullName { get; set; }
 		public string ProfilePicture { get; set; }
 		public Biography UserBiography { get; set; }

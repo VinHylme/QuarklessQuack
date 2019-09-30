@@ -32,5 +32,6 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 		SearchResponse<Media> SearchSimilarImagesViaGoogle(List<GroupImagesAlike> imagesAlikes, int limit, int offset = 0);
 		Task<IEnumerable<TopicCategories>> GetBusinessCategories();
 		void ChangeUser(IAPIClientContainer newUser);
+		Task<InstaDirectInboxContainer> SearchUserInbox(int limit = 1);
 	}
 }

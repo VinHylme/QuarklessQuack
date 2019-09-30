@@ -287,26 +287,27 @@ namespace Quarkless.HeartBeater.__Init__
 						Task.WaitAll(googleImages, yandexImages);
 						break;
 					case ActionExecuteType.UserSelf:
-						var profileRefresh = Task.Run(async () => await metadataBuilder.BuildUsersOwnMedias(_instagramAccountLogic));
+						var profileRefresh = Task.Run(async () => await metadataBuilder.BuildUsersOwnMedias(_instagramAccountLogic,3));
 						var followingList = Task.Run(async () => await metadataBuilder.BuildUserFollowList());
 						var followerList = Task.Run(async () => await metadataBuilder.BuildUserFollowerList());
 						var feedRefresh = await Task.Run(async () => await metadataBuilder.BuildUsersFeed()).ContinueWith(async x=> 
 						{
 							await metadataBuilder.BuildUsersFollowSuggestions(2);
+							await metadataBuilder.BuildUsersInbox();
 							await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchUsersFeed, MetaDataType.FetchCommentsViaUserFeed, true);
 						});
 						Task.WaitAll(profileRefresh, followerList, followingList, feedRefresh);
 						break;
 					case ActionExecuteType.TargetList:
-						var userTargetList = Task.Run(async () => await metadataBuilder.BuildUsersTargetListMedia())
+						var userTargetList = await Task.Run(async () => await metadataBuilder.BuildUsersTargetListMedia(1))
 							.ContinueWith(async x=>
 							{
-								await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserTargetList, MetaDataType.FetchCommentsViaUserTargetList, true, 2, takeMediaAmount: 10, takeuserAmount: 200);
+								await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserTargetList, MetaDataType.FetchCommentsViaUserTargetList, true, 2, takeMediaAmount: 14, takeuserAmount: 200);
 							});
-						var locTargetList = Task.Run(async () => await metadataBuilder.BuildLocationTargetListMedia())
+						var locTargetList = await Task.Run(async () => await metadataBuilder.BuildLocationTargetListMedia(1))
 							.ContinueWith(async s =>
 							{
-								await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserLocationTargetList, MetaDataType.FetchCommentsViaLocationTargetList, true, 2, takeMediaAmount:10, takeuserAmount:200);
+								await metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserLocationTargetList, MetaDataType.FetchCommentsViaLocationTargetList, true, 2, takeMediaAmount:14, takeuserAmount:200);
 							});
 						Task.WaitAll(userTargetList, locTargetList);
 						break;

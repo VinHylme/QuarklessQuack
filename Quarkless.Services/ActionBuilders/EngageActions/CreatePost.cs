@@ -239,7 +239,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						var bytes = url?.DownloadMedia();
 						if (bytes == null) continue;
 						var profileColor = user.Profile.Theme.Colors.Select(s => System.Drawing.Color.FromArgb(s.Red, s.Green, s.Blue)).ElementAt(user.Profile.Theme.Colors.Count-1);
-						var simPath = profileColor.IsVideoSimilar(bytes,user.Profile.Theme.Percentage/100,10);
+						var simPath = profileColor.IsVideoSimilar(bytes,user.Profile.Theme.Percentage/100,10).GetAwaiter().GetResult();
 						if (string.IsNullOrEmpty(simPath)) continue;
 						selectedMedia.MediaData.Add(new MediaData
 						{
@@ -394,6 +394,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 							user.Profile.Language, credit);
 						if (!user.Profile.AdditionalConfigurations.AutoGenerateCaption)
 							mediaInfo.Caption = string.Empty;
+						var video = selectedMedia.MediaData.FirstOrDefault();
+						var videoThumb = video.MediaBytes.GenerateVideoThumbnail().GetAwaiter().GetResult();
 						var uploadVideo = new UploadVideoModel
 						{
 							MediaInfo = mediaInfo,
@@ -408,10 +410,10 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 							{
 								Video = new InstaVideo
 								{
-									Uri = selectedMedia.MediaData.FirstOrDefault().Url,
-									VideoBytes = selectedMedia.MediaData.FirstOrDefault().MediaBytes
+									Uri = video.Url,
+									VideoBytes = video.MediaBytes
 								},
-								VideoThumbnail = new InstaImage {  ImageBytes = selectedMedia.MediaData.FirstOrDefault().MediaBytes.GenerateVideoThumbnail() }
+								VideoThumbnail = new InstaImage {  ImageBytes = videoThumb }
 							}
 						};
 						restModel.BaseUrl = UrlConstants.UploadVideo;

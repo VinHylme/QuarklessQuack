@@ -83,13 +83,26 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 		{
 			try
 			{
-				var res = _redis.GetServer(_redis.GetEndPoints().First()).Keys(_DbNumber,pageSize:limit);
+				var res = _redis.GetServer(_redis.GetEndPoints().First()).Keys(_DbNumber, pageSize:limit);
 				return res;
 			}
 			catch(Exception ee)
 			{
 				Console.WriteLine(ee.Message);
 				return null;
+			}
+		}
+		public RedisKey GetKey(RedisKey redisKey, HashtagGrowKeys hashtagGrowKey)
+		{
+			try
+			{
+				var res = _redis.GetServer(_redis.GetEndPoints().First()).Keys(_DbNumber).FirstOrDefault(x=> x == KeyFormater.FormatKey(redisKey, hashtagGrowKey));
+				return res;
+			}
+			catch(Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+				return string.Empty;
 			}
 		}
 		public async Task<bool> KeyExists(string userId, HashtagGrowKeys hashtagGrowKey)

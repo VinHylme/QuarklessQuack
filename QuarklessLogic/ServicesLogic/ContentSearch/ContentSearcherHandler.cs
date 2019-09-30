@@ -140,6 +140,38 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 			}));
 			return usersTotals;
 		}
+		/// <summary>
+		/// INCOMPLETE
+		/// </summary>
+		/// <param name="userId"></param>
+		/// <param name="chainingIds"></param>
+		/// <returns></returns>
+		public async Task<List<UserResponse<UserSuggestionDetails>>> GetSuggestedDetails(long userId, long[] chainingIds)
+		{
+			var res = await _responseResolver.WithClient(_container).WithResolverAsync
+				(await _container.User.GetSuggestionDetailsAsync(userId, chainingIds));
+			if (!res.Succeeded) return null;
+			var usersTotals = new List<UserResponse<UserSuggestionDetails>>();
+			var users = res.Value;
+			usersTotals.AddRange(users.Select(_ => new UserResponse<UserSuggestionDetails>
+			{
+				Object = new UserSuggestionDetails
+				{
+					IsNewSuggestions = _.IsNewSuggestion,
+					Caption = _.Caption,
+					FollowText = _.FollowText,
+					Algorithm = _.Algorithm,
+					Value = _.Value
+				},
+				UserId = _.User.Pk,
+				Username = _.User.UserName,
+				FullName = _.User.FullName,
+				ProfilePicture = _.User.ProfilePicture,
+				IsPrivate = _.User.IsPrivate,
+				IsVerified = _.User.IsVerified
+			}));
+			return usersTotals;
+		}
 		public async Task<List<UserResponse<string>>> SearchInstagramMediaLikers(string mediaId)
 		{
 			var userLikerResult = await _responseResolver.WithClient(_container).WithResolverAsync
@@ -197,8 +229,8 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 			var medias = new Media();
 			foreach (var topic in topics)
 			{
-				var mediasResults = !isRecent ? await _container.Hashtag.GetTopHashtagMediaListAsync(topic, PaginationParameters.MaxPagesToLoad(limit))
-											: await _container.Hashtag.GetRecentHashtagMediaListAsync(topic,PaginationParameters.MaxPagesToLoad(limit));
+				var mediasResults = !isRecent ? await _container.Hashtag.GetTopHashtagMediaListAsync(topic.OnlyWords(), PaginationParameters.MaxPagesToLoad(limit))
+											: await _container.Hashtag.GetRecentHashtagMediaListAsync(topic.OnlyWords(),PaginationParameters.MaxPagesToLoad(limit));
 				if (mediasResults.Succeeded)
 				{
 					medias.Medias.AddRange(mediasResults.Value.Medias.Select(s =>
@@ -348,7 +380,7 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 		public async Task<Media> SearchTopLocationMediaDetailInstagram(Location location, int limit)
 		{
 			var locationResult = await _responseResolver.WithClient(_container).WithResolverAsync
-				(await _container.Location.SearchPlacesAsync(location.City, PaginationParameters.MaxPagesToLoad(limit)));
+				(await _container.Location.SearchPlacesAsync(location.City.OnlyWords(), PaginationParameters.MaxPagesToLoad(limit)));
 			if (!locationResult.Succeeded) return null;
 			var id = locationResult.Value.Items.FirstOrDefault().Location.Pk;
 			var mediasRes = await _container.Location.GetTopLocationFeedsAsync(id,PaginationParameters.MaxPagesToLoad(limit));
@@ -358,7 +390,7 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 				{
 					Medias = mediasRes.Value.Medias.Select(s =>
 					{
-						MediaResponse mediaDetail = new MediaResponse();
+						var mediaDetail = new MediaResponse();
 						mediaDetail.LikesCount = s.LikesCount;
 						mediaDetail.MediaId = s.Pk;
 						mediaDetail.HasLikedBefore = s.HasLiked;
@@ -392,29 +424,33 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 							Username = s.User.UserName
 						};
 						var totalurls = new List<string>();
-						if (s.MediaType == InstaMediaType.Image)
+						switch (s.MediaType)
 						{
-							var im = s.Images.FirstOrDefault()?.Uri;
-							if (im != null)
-								totalurls.Add(im);
-						}
-						else if (s.MediaType == InstaMediaType.Video)
-						{
-							var iv = s.Videos.FirstOrDefault()?.Uri;
-							if (iv != null)
-								totalurls.Add(iv);
-						}
-						else if (s.MediaType == InstaMediaType.Carousel)
-						{
-							s.Carousel.ForEach(x =>
+							case InstaMediaType.Image:
 							{
-								var videos = x.Videos.FirstOrDefault()?.Uri;
-								if (videos != null)
-									totalurls.Add(videos);
-								var images = x.Images.FirstOrDefault()?.Uri;
-								if (images != null)
-									totalurls.Add(images);
-							});
+								var im = s.Images.FirstOrDefault()?.Uri;
+								if (im != null)
+									totalurls.Add(im);
+								break;
+							}
+							case InstaMediaType.Video:
+							{
+								var iv = s.Videos.FirstOrDefault()?.Uri;
+								if (iv != null)
+									totalurls.Add(iv);
+								break;
+							}
+							case InstaMediaType.Carousel:
+								s.Carousel.ForEach(x =>
+								{
+									var videos = x.Videos.FirstOrDefault()?.Uri;
+									if (videos != null)
+										totalurls.Add(videos);
+									var images = x.Images.FirstOrDefault()?.Uri;
+									if (images != null)
+										totalurls.Add(images);
+								});
+								break;
 						}
 						mediaDetail.MediaUrl = totalurls;
 						return mediaDetail;
@@ -574,6 +610,15 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 			}
 			return medias;
 		}
+
+		public async Task<InstaDirectInboxContainer> SearchUserInbox(int limit = 1)
+		{
+			var results = await _responseResolver.WithClient(_container).WithResolverAsync(
+				await _container.Messaging.GetDirectInboxAsync(PaginationParameters.MaxPagesToLoad(limit)));
+
+			return results.Succeeded ? results.Value : null;
+		}
+
 
 		#region Probably Old 
 		public async Task<Media> SearchMediaInstagram(List<string> topics, InstaMediaType mediaType, int limit)

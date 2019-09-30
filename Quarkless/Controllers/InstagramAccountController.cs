@@ -4,7 +4,6 @@ using InstagramApiSharp.Classes;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using QuarklessContexts.Contexts;
-using QuarklessContexts.Enums;
 using QuarklessContexts.Models.InstagramAccounts;
 using QuarklessContexts.Models.UserAuth.AuthTypes;
 using QuarklessLogic.Logic.InstagramAccountLogic;
@@ -168,12 +167,12 @@ namespace Quarkless.Controllers
 				return Ok(results);
 			}
 
-			if (_userContext.CurrentUser != null && _userContext.CurrentUser == accountId)
+			if (_userContext.CurrentUser == null || _userContext.CurrentUser != accountId)
+				return BadRequest("Please populate the id");
 			{
 				var results = await _instagramAccountLogic.GetInstagramAccountsOfUser(_userContext.CurrentUser);
 				return Ok(results);
 			}
-			return BadRequest("Please populate the id");
 		}
 		
 		[HttpPut]

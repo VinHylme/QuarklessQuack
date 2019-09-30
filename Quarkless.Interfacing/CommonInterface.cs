@@ -15,6 +15,22 @@ namespace Quarkless.Interfacing
 
 		public static bool IsGreaterThan<T>(this IEnumerable<T> items, IEnumerable<T> target) =>
 			items.Count() > target.Count();
+		public static int TimesMultimple(this IEnumerable<int> values)
+		{
+			var total = 0;
+			foreach(var value in values)
+				total*=value;
+			return total;
+		}
+		public static int CalculateTotalHash(this IEnumerable<object> values)
+		{
+			return TimesMultimple(values.Select(x=>x.GetHashCode()));
+		}
+		public static int CalculateTotalHash(params object[] values)
+		{
+			return TimesMultimple(values.Select(x=>x.GetHashCode()));
+		}
+
 	}
 
 	/// <summary>
@@ -34,6 +50,7 @@ namespace Quarkless.Interfacing
 		public List<T> List<T>(IEnumerable<T> items) => items.ToList();
 
 		//public int Len<T>(T genericObject) => Marshal.SizeOf(genericObject);
+
 		public int Len(string @string) => @string.Length;
 		public int Len(IEnumerable<object> @array) => @array.Count();
 		public long Len(object @object)
@@ -148,6 +165,20 @@ namespace Quarkless.Interfacing
 				Id = Guid.NewGuid().ToString(),
 				Message = message,
 				SeverityLevel = SeverityLevel.Info
+			});
+		}
+		public async Task Expect(string message, SString function, SString accountId, SString instagramAccountId)
+		{
+			await _logger.Log(new LoggerModel
+			{
+				AccountId = accountId,
+				InstagramAccountId = instagramAccountId,
+				Section = _section,
+				Function = function,
+				Date = DateTime.UtcNow,
+				Id = Guid.NewGuid().ToString(),
+				Message = message,
+				SeverityLevel = SeverityLevel.Exception
 			});
 		}
 

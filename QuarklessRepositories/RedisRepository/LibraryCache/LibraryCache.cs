@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
+using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.Library;
 using QuarklessRepositories.RedisRepository.RedisClient;
 using StackExchange.Redis;
@@ -16,92 +16,125 @@ namespace QuarklessRepositories.RedisRepository.LibraryCache
 			_redisClient = redisClient;
 		}
 
-		public async Task AddSavedHashtags(string accountId, string instagramId, HashtagsLib hashtagsLib)
+		public async Task AddSavedMessages(MessagesLib messagesLib)
 		{
 			await WithExceptionLogAsync(async () =>
 			{
-				RedisKey key = $"{accountId}:{instagramId}";
+				RedisKey key = $"{nameof(MessagesLib)}:{messagesLib.AccountId}";
 				await _redisClient.SetAdd(key, RedisKeys.HashtagGrowKeys.UserLibrary,
-					JsonConvert.SerializeObject(hashtagsLib), TimeSpan.FromDays(960));
-			}, accountId, instagramId);
+					messagesLib.ToJsonString(), TimeSpan.FromDays(360));
+			}, messagesLib.AccountId, messagesLib.InstagramAccountId);
 		}
-		public async Task AddSavedCaptions(string accountId, string instagramId, CaptionsLib captionsLib)
+		public async Task AddSavedHashtags(HashtagsLib hashtagsLib)
 		{
 			await WithExceptionLogAsync(async () =>
 			{
-				RedisKey key = $"{accountId}:{instagramId}";
+				RedisKey key = $"{nameof(HashtagsLib)}:{hashtagsLib.AccountId}";
 				await _redisClient.SetAdd(key, RedisKeys.HashtagGrowKeys.UserLibrary,
-					JsonConvert.SerializeObject(captionsLib), TimeSpan.FromDays(960));
-			}, accountId, instagramId);
+					hashtagsLib.ToJsonString(), TimeSpan.FromDays(360));
+			}, hashtagsLib.AccountId, hashtagsLib.InstagramAccountId);
 		}
-		public async Task AddSavedMedias(string accountId, string instagramId, MediasLib mediasLibs)
+		public async Task AddSavedCaptions(CaptionsLib captionsLib)
 		{
 			await WithExceptionLogAsync(async () =>
 			{
-				RedisKey key = $"{accountId}:{instagramId}";
+				RedisKey key = $"{nameof(CaptionsLib)}:{captionsLib.AccountId}";
 				await _redisClient.SetAdd(key, RedisKeys.HashtagGrowKeys.UserLibrary,
-					JsonConvert.SerializeObject(mediasLibs), TimeSpan.FromDays(960));
-			}, accountId, instagramId);
+					captionsLib.ToJsonString(), TimeSpan.FromDays(360));
+			}, captionsLib.AccountId, captionsLib.InstagramAccountId);
+		}
+		public async Task AddSavedMedias(IEnumerable<MediasLib> mediasLibs)
+		{
+			foreach (var mediasLib in mediasLibs)
+			{
+				await WithExceptionLogAsync(async () =>
+				{
+					RedisKey key = $"{nameof(MediasLib)}:{mediasLib.AccountId}";
+					await _redisClient.SetAdd(key, RedisKeys.HashtagGrowKeys.UserLibrary,
+						mediasLib.ToJsonString(), TimeSpan.FromDays(360));
+				}, mediasLib.AccountId, mediasLib.InstagramAccountId);
+				await Task.Delay(SecureRandom.Next(250,500));
+			}
 		}
 
-		public async Task DeleteSavedHashtags(string accountId, string instagramId, HashtagsLib hashtagsLib)
+		public async Task DeleteSavedMedias(MediasLib mediasLibs)
 		{
-			await WithExceptionLogAsync(async () =>
+			await WithExceptionLogAsync(async() =>
 			{
-				RedisKey key = $"{accountId}:{instagramId}";
-				await _redisClient.SetRemove(key, RedisKeys.HashtagGrowKeys.UserLibrary, JsonConvert.SerializeObject(hashtagsLib));
-			}, accountId, instagramId);
+				RedisKey key = $"{nameof(MediasLib)}:{mediasLibs.AccountId}";
+				await _redisClient.SetRemove(key, RedisKeys.HashtagGrowKeys.UserLibrary, mediasLibs.ToJsonString());
+			}, mediasLibs.AccountId, mediasLibs.InstagramAccountId);
+		}
+		public async Task DeleteSavedHashtags(HashtagsLib hashtagsLib)
+		{
+			await WithExceptionLogAsync(async() =>
+			{
+				RedisKey key = $"{nameof(HashtagsLib)}:{hashtagsLib.AccountId}";
+				await _redisClient.SetRemove(key, RedisKeys.HashtagGrowKeys.UserLibrary, hashtagsLib.ToJsonString());
+			}, hashtagsLib.AccountId, hashtagsLib.InstagramAccountId);
+		}
+		public async Task DeleteSavedCaptions(CaptionsLib captionsLib)
+		{
+			await WithExceptionLogAsync(async() =>
+			{
+				RedisKey key = $"{nameof(CaptionsLib)}:{captionsLib.AccountId}";
+				await _redisClient.SetRemove(key, RedisKeys.HashtagGrowKeys.UserLibrary, captionsLib.ToJsonString());
+			}, captionsLib.AccountId, captionsLib.InstagramAccountId);
+		}
+		public async Task DeleteSavedMessage(MessagesLib messagesLib)
+		{
+			await WithExceptionLogAsync(async() =>
+			{
+				RedisKey key = $"{nameof(MessagesLib)}:{messagesLib.AccountId}";
+				await _redisClient.SetRemove(key, RedisKeys.HashtagGrowKeys.UserLibrary, messagesLib.ToJsonString());
+			}, messagesLib.AccountId, messagesLib.InstagramAccountId);
 		}
 
-		public async Task DeleteSavedCaptions(string accountId, string instagramId, CaptionsLib captionsLib)
-		{
-			await WithExceptionLogAsync(async () =>
-			{
-				RedisKey key = $"{accountId}:{instagramId}";
-				await _redisClient.SetRemove(key, RedisKeys.HashtagGrowKeys.UserLibrary, JsonConvert.SerializeObject(captionsLib));
-			}, accountId, instagramId);		}
-
-		public async Task DeleteSavedMedias(string accountId, string instagramId, MediasLib mediasLibs)
-		{
-			await WithExceptionLogAsync(async () =>
-			{
-				RedisKey key = $"{accountId}:{instagramId}";
-				await _redisClient.SetRemove(key, RedisKeys.HashtagGrowKeys.UserLibrary, JsonConvert.SerializeObject(mediasLibs));
-			}, accountId, instagramId);		}
-
-		public async Task<IEnumerable<MediasLib>> GetSavedMedias(string accountId, string instagramId)
+		public async Task<IEnumerable<MediasLib>> GetSavedMedias(string accountId)
 		{
 			IEnumerable<MediasLib> results = null;
 			await WithExceptionLogAsync(async () =>
 			{
-				RedisKey key = $"{accountId}:{instagramId}";
+				RedisKey key = $"{nameof(MediasLib)}:{accountId}";
 				results = await _redisClient.GetMembers<MediasLib>(key, RedisKeys.HashtagGrowKeys.UserLibrary);
 
-			}, accountId, instagramId);
+			}, accountId, "");
 
 			return results;
 		}
-		public async Task<IEnumerable<CaptionsLib>> GetSavedCaptions(string accountId, string instagramId)
+		public async Task<IEnumerable<CaptionsLib>> GetSavedCaptions(string accountId)
 		{
 			IEnumerable<CaptionsLib> results = null;
 			await WithExceptionLogAsync(async () =>
 			{
-				RedisKey key = $"{accountId}:{instagramId}";
+				RedisKey key = $"{nameof(CaptionsLib)}:{accountId}";
 				results = await _redisClient.GetMembers<CaptionsLib>(key, RedisKeys.HashtagGrowKeys.UserLibrary);
 
-			}, accountId, instagramId);
+			}, accountId, "");
 
 			return results;
 		}
-		public async Task<IEnumerable<HashtagsLib>> GetSavedHashtags(string accountId, string instagramId)
+		public async Task<IEnumerable<HashtagsLib>> GetSavedHashtags(string accountId)
 		{
 			IEnumerable<HashtagsLib> results = null;
 			await WithExceptionLogAsync(async () =>
 			{
-				RedisKey key = $"{accountId}:{instagramId}";
+				RedisKey key = $"{nameof(HashtagsLib)}:{accountId}";
 				results = await _redisClient.GetMembers<HashtagsLib>(key, RedisKeys.HashtagGrowKeys.UserLibrary);
 
-			}, accountId, instagramId);
+			}, accountId, "");
+
+			return results;
+		}
+		public async Task<IEnumerable<MessagesLib>> GetSavedMessages(string accountId)
+		{
+			IEnumerable<MessagesLib> results = null;
+			await WithExceptionLogAsync(async () =>
+			{
+				RedisKey key = $"{nameof(MessagesLib)}:{accountId}";
+				results = await _redisClient.GetMembers<MessagesLib>(key, RedisKeys.HashtagGrowKeys.UserLibrary);
+
+			}, accountId, "");
 
 			return results;
 		}

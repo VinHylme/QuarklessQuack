@@ -7,8 +7,7 @@
       :class="['image-figure__item']"
       :data-url="source"
       :style="[size]"
-      alt="random image"
-    >
+      alt="random image">
   </figure>
 </template>
 
@@ -35,7 +34,7 @@ export default {
         width:this.width,
         height:this.height,
         objectfit: 'cover',
-        borderRadius:this.isRounded ? '.4em' : '0'
+        borderRadius:this.isRounded ? '4em' : '0'
       }
     }
   },
@@ -59,7 +58,6 @@ export default {
     justify-content: center;
     align-items: center;
     border-radius: 4px;
-
     &.loaded {
       .image-figure {
         &__item {

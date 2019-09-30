@@ -10,7 +10,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using InstagramApiSharp.Classes.Models;
 using MoreLinq;
+using Quarkless.MediaAnalyser;
+using QuarklessContexts.Models.Library;
+using QuarklessContexts.Models.LookupModels;
+using QuarklessContexts.Models.MessagingModels;
+using QuarklessLogic.Handlers.RequestBuilder.Consts;
+using QuarklessLogic.QueueLogic.Jobs.JobOptions;
+using QuarklessRepositories.RedisRepository.LookupCache;
 
 namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 {
@@ -23,10 +32,13 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 	{
 		private readonly ITaskService _taskService;
 		private readonly IRequestBuilder _requestBuilder;
-		public TimelineLogic(ITaskService taskService, IRequestBuilder requestBuilder)
+		private readonly ILookupCache _lookupCache;
+
+		public TimelineLogic(ITaskService taskService, IRequestBuilder requestBuilder, ILookupCache lookupCache)
 		{
 			_taskService = taskService;
 			_requestBuilder = requestBuilder;
+			_lookupCache = lookupCache;
 		}
 		#region Add Event To Queue
 		public string AddEventToTimeline(string actionName, RestModel restBody, DateTimeOffset executeTime)
@@ -38,8 +50,335 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 		}
 		public T ParseJsonObject<T>(string json) where T : class, new()
 		{
-			JObject jobject = JObject.Parse(json);
-			return JsonConvert.DeserializeObject<T>(jobject.ToString());
+			var jObject = JObject.Parse(json);
+			return JsonConvert.DeserializeObject<T>(jObject.ToString());
+		}
+
+		public async Task<TimelineScheduleResponse<RawMediaSubmit>> SchedulePostsByUser(UserStoreDetails userStoreDetails,
+			RawMediaSubmit dataMediaSubmit)
+		{
+			var response = new TimelineScheduleResponse<RawMediaSubmit>
+			{
+				RequestData = dataMediaSubmit,
+				IsSuccessful = false
+			};
+			if (string.IsNullOrEmpty(userStoreDetails.OAccountId) ||
+				string.IsNullOrEmpty(userStoreDetails.OAccessToken) ||
+				string.IsNullOrEmpty(userStoreDetails.OInstagramAccountUser))
+				return response;
+
+			try
+			{
+				var options = new LongRunningJobOptions
+				{
+					ActionName = "createPost",
+					ExecutionTime = dataMediaSubmit.ExecuteTime,
+					Rest = new RestModel {User = userStoreDetails, RequestType = RequestType.POST}
+				};
+				var mediaInfo = new MediaInfo
+				{
+					Caption = dataMediaSubmit.Caption,
+					Hashtags = dataMediaSubmit.Hashtags
+				};
+
+				foreach (var media in dataMediaSubmit.RawMediaDatas)
+				{
+					if (string.IsNullOrEmpty(media.Media64BaseData))
+						continue;
+
+					media.MediaByteArray = !media.Media64BaseData.IsBase64String() 
+						? media.Media64BaseData.DownloadMedia() 
+						: Convert.FromBase64String(media.Media64BaseData.Split(',')[1]);
+				}
+
+				switch (dataMediaSubmit.OptionSelected)
+				{
+					case MediaSelectionType.Image:
+						options.ActionName += $"_{MediaSelectionType.Image.ToString()}_userPosted";
+						options.Rest.BaseUrl = UrlConstants.UploadPhoto;
+						options.Rest.JsonBody = JsonConvert.SerializeObject(new UploadPhotoModel
+						{
+							MediaInfo = mediaInfo,
+							Image = new InstaImageUpload()
+							{
+								ImageBytes = dataMediaSubmit.RawMediaDatas.FirstOrDefault()?.MediaByteArray,
+							},
+							Location = dataMediaSubmit.Location != null
+								? new InstaLocationShort
+								{
+									Address = dataMediaSubmit.Location.Address,
+									Name = dataMediaSubmit.Location.City
+								}
+								: null
+						});
+						break;
+					case MediaSelectionType.Video:
+						options.ActionName += $"_{MediaSelectionType.Video.ToString()}_userPosted";
+						options.Rest.BaseUrl = UrlConstants.UploadVideo;
+						options.Rest.JsonBody = JsonConvert.SerializeObject(new UploadVideoModel
+						{
+							MediaInfo = mediaInfo,
+							Video = new InstaVideoUpload
+							{
+								Video = new InstaVideo
+								{
+									VideoBytes = dataMediaSubmit.RawMediaDatas.FirstOrDefault()?.MediaByteArray
+								},
+								VideoThumbnail = new InstaImage
+								{
+									ImageBytes = (await dataMediaSubmit.RawMediaDatas.FirstOrDefault()?
+										             .MediaByteArray.GenerateVideoThumbnail()) ?? null
+								}
+							},
+							Location = dataMediaSubmit.Location != null
+								? new InstaLocationShort
+								{
+									Address = dataMediaSubmit.Location.Address,
+									Name = dataMediaSubmit.Location.City
+								}
+								: null
+						});
+						break;
+					case MediaSelectionType.Carousel:
+						options.ActionName += $"_{MediaSelectionType.Carousel.ToString()}_userPosted";
+						options.Rest.BaseUrl = UrlConstants.UploadCarousel;
+						options.Rest.JsonBody = JsonConvert.SerializeObject(new UploadAlbumModel
+						{
+							Album = dataMediaSubmit.RawMediaDatas.Select(x => new InstaAlbumUpload
+							{
+								ImageToUpload = x.MediaType == MediaSelectionType.Image
+									? new InstaImageUpload {ImageBytes = x.MediaByteArray}
+									: null,
+								VideoToUpload = x.MediaType == MediaSelectionType.Video
+									? new InstaVideoUpload
+									{
+										Video = new InstaVideo
+										{
+											VideoBytes = x.MediaByteArray
+										},
+										VideoThumbnail = new InstaImage
+										{
+											ImageBytes = x.MediaByteArray.GenerateVideoThumbnail().GetAwaiter()
+												.GetResult()
+										}
+									}
+									: null
+							}).ToArray(),
+							Location = dataMediaSubmit.Location != null
+								? new InstaLocationShort
+								{
+									Address = dataMediaSubmit.Location.Address,
+									Name = dataMediaSubmit.Location.City
+								}
+								: null,
+							MediaInfo = mediaInfo
+						});
+						break;
+					default:
+						return response;
+				}
+
+				if (string.IsNullOrEmpty(options.Rest.JsonBody))
+					return response;
+
+				AddEventToTimeline(options.ActionName, options.Rest, options.ExecutionTime);
+				response.IsSuccessful = true;
+				return response;
+			}
+			catch (Exception ee)
+			{
+				response.IsSuccessful = false;
+				return response;
+			}
+		}
+
+		public async Task<TimelineScheduleResponse<IEnumerable<IDirectMessageModel>>> ScheduleMessage(UserStoreDetails userStoreDetails, IEnumerable<IDirectMessageModel> messages)
+		{
+			var directMessages= messages as IDirectMessageModel[] ?? messages.ToArray();
+			var response = new TimelineScheduleResponse<IEnumerable<IDirectMessageModel>>
+			{
+				RequestData = directMessages
+			};
+
+			if (userStoreDetails == null)
+				return response;
+			
+			if (string.IsNullOrEmpty(userStoreDetails.OAccountId) ||
+			string.IsNullOrEmpty(userStoreDetails.OAccessToken) ||
+			string.IsNullOrEmpty(userStoreDetails.OInstagramAccountUser))
+				return response;
+
+			foreach (var message in directMessages)
+			{
+				foreach (var messageRecipient in message.Recipients)
+				{
+					var localCopy = message.CloneObject();
+					localCopy.Recipients = new[] { messageRecipient };
+					var options = new LongRunningJobOptions
+					{
+						ExecutionTime = PickAGoodTime(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser, ActionType.SendDirectMessage).AddMinutes(.9),
+						Rest = new RestModel
+						{
+							User = userStoreDetails,
+							RequestType = RequestType.POST
+						}
+					};
+
+					switch (localCopy)
+					{
+						case ShareDirectMediaModel model:
+							if (string.IsNullOrEmpty(model.MediaId))
+							{
+								response.NumberOfFails++;
+								continue;;
+							}
+
+							options.Rest.JsonBody = model.ToJsonString();
+							options.Rest.BaseUrl = model.ThreadIds.Any() ? UrlConstants.SendDirectMessageMediaWithThreads 
+								: UrlConstants.SendDirectMessageMedia;
+
+							options.ActionName = ActionType.SendDirectMessageMedia.GetDescription();
+							break;
+						case SendDirectTextModel model:
+							if (string.IsNullOrEmpty(model.TextMessage))
+							{
+								response.NumberOfFails++;
+								continue;
+							}
+
+							options.Rest.JsonBody = model.ToJsonString();
+							options.Rest.BaseUrl = UrlConstants.SendDirectMessageText;
+							options.ActionName = ActionType.SendDirectMessageText.GetDescription();
+							break;
+						case SendDirectLinkModel model:
+							if (string.IsNullOrEmpty(model.TextMessage) || string.IsNullOrEmpty(model.Link))
+							{
+								response.NumberOfFails++;
+								continue;
+							}
+
+							if (!model.Link.IsValidUrl())
+							{
+								response.NumberOfFails++;
+								continue;
+							}
+
+							options.Rest.JsonBody = model.ToJsonString();
+							options.Rest.BaseUrl = UrlConstants.SendDirectMessageLink;
+							options.ActionName = ActionType.SendDirectMessageLink.GetDescription();
+							break;
+						case SendDirectPhotoModel model:
+							if (string.IsNullOrEmpty(model.Image.Uri))
+							{
+								response.NumberOfFails++;
+								continue;
+							}
+							if (model.Image.Uri.IsBase64String())
+							{
+								model.Image.ImageBytes = Convert.FromBase64String(model.Image.Uri.Split(',')[1]);
+								model.Image.Uri = null;
+							}
+							else
+							{
+								model.Image.ImageBytes = model.Image.Uri.DownloadMedia();
+								model.Image.Uri = null;
+							}
+
+							options.Rest.JsonBody = model.ToJsonString();
+							options.Rest.BaseUrl = UrlConstants.SendDirectMessagePhoto;
+							options.ActionName = ActionType.SendDirectMessagePhoto.GetDescription();
+							break;
+						case SendDirectVideoModel model:
+							if (string.IsNullOrEmpty(model.Video.Video.Uri))
+							{
+								response.NumberOfFails++;
+								continue;
+							}
+							if (model.Video.Video.Uri.IsBase64String())
+							{
+								model.Video.Video.VideoBytes = Convert.FromBase64String(model.Video.Video.Uri.Split(',')[1]);
+								model.Video.Video.Uri = null;
+							}
+							else
+							{
+								model.Video.Video.VideoBytes = model.Video.Video.Uri.DownloadMedia();
+								model.Video.Video.Uri = null;
+							}
+
+							model.Video.VideoThumbnail = new InstaImage
+							{
+								ImageBytes = await model.Video.Video.VideoBytes.GenerateVideoThumbnail()
+							};
+							options.ActionName = ActionType.SendDirectMessageVideo.GetDescription();
+							options.Rest.JsonBody = model.ToJsonString();
+							options.Rest.BaseUrl = UrlConstants.SendDirectMessageVideo;
+							break;
+						case SendDirectProfileModel model:
+
+							options.Rest.JsonBody = model.ToJsonString();
+							options.ActionName = ActionType.SendDirectMessageProfile.GetDescription();
+							options.Rest.BaseUrl = UrlConstants.SendDirectMessageProfile;
+							break;
+						default:
+							response.NumberOfFails++;
+							continue;
+					}
+
+					if(string.IsNullOrEmpty(options.Rest.BaseUrl))
+						continue;
+					
+					AddEventToTimeline(ActionType.SendDirectMessage.GetDescription()+"_"+"none", options.Rest, options.ExecutionTime);
+					await _lookupCache.AddObjectToLookup(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser, localCopy.Recipients.FirstOrDefault(),
+						new LookupModel {
+							Id = Guid.NewGuid().ToString(),
+							LastModified = DateTime.UtcNow,
+							LookupStatus = LookupStatus.Pending,
+							ActionType = options.ActionName.GetValueFromDescription<ActionType>()
+						});
+				}
+			}
+
+			//if all fails
+			if (response.NumberOfFails >= directMessages.Sum(_ => _.Recipients.Count()))
+			{
+				return response;
+			}
+
+			response.IsSuccessful = true;
+			return response;
+		}
+
+		public DateTime PickAGoodTime(string accountId, string instagramAccountId, ActionType? actionName = null)
+		{
+			List<TimelineItem> sft;
+				switch (actionName)
+				{
+					case null:
+						sft = GetScheduledEventsForUserByDate(accountId, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
+						break;
+					case ActionType.SendDirectMessage:
+						sft = GetScheduledEventsForUserForActionByDate(accountId, actionName.Value.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
+						break;
+					case ActionType.CreatePost:
+						sft = GetScheduledEventsForUserForActionByDate(accountId, actionName.Value.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
+						break;
+					default:
+						sft = GetScheduledEventsForUserForActionByDate(accountId, ActionType.CreateCommentMedia.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
+						sft.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.FollowUser.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList());
+						sft.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.LikePost.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList());
+						sft.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.LikeComment.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList());
+						sft.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.UnFollowUser.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList());
+						break;
+				}
+				var datesPlanned = sft.Select(_ => _.EnqueueTime);
+				var dateTimes = datesPlanned as DateTime?[] ?? datesPlanned.ToArray();
+				if (!dateTimes.Any()) return DateTime.UtcNow;
+				{
+					var current = DateTime.UtcNow;
+					var difference = dateTimes.Where(_ => _ != null).Max(_ => _ - current);
+					var position = dateTimes.ToList().FindIndex(n => n - current == difference);
+					return dateTimes.ElementAt(position).Value;
+				}
 		}
 		public string UpdateEvent(UpdateTimelineItemRequest updateTimelineItemRequest)
 		{

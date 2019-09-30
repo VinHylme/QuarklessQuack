@@ -18,6 +18,7 @@ namespace QuarklessContexts.Models.InstagramAccounts
 		[BsonRepresentation(BsonType.ObjectId)]
 		public string _id { get; set; }
 		public string AccountId { get; set; }
+		public long? UserId { get; set; }
 		public StateData State { get; set; }
 		public string Username { get; set; }
 		public string FullName { get; set; }

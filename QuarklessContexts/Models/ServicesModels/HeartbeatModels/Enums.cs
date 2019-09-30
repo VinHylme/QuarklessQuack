@@ -32,6 +32,8 @@ namespace QuarklessContexts.Models.ServicesModels.HeartbeatModels
 		FetchCommentsViaPostsLiked,
 		FetchCommentsViaUserTargetList,
 		FetchCommentsViaLocationTargetList,
-		FetchCommentsViaUserFeed
+		FetchCommentsViaUserFeed,
+
+		FetchUserDirectInbox
 	}
 }

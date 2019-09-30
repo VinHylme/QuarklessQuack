@@ -34,21 +34,22 @@
 </template>
 
 <script>
-
 export default {
     props:{
         isMulti:Boolean,
         acceptFile:String,
-        isHidden:false,
+        isHidden:Boolean,
         swidth:String,
         sheight:String
     },
    data() {
     return {
+        width:'250px',
+        height:'250px',
         dropFiles: [],
         styleSize:{
-            width:this.swidth + '!important',
-            height:this.sheight +'!important',
+            width:this.width + '!important',
+            height:this.height +'!important',
         },
         styleObject:{
             margin: "0 auto",
@@ -63,18 +64,12 @@ export default {
     }
   },
   created(){
-      if(this.swidth === undefined||this.swidth === null){
-          this.swidth = "250px";
-          this.sheight = "250px";
+      if(this.swidth !== undefined||this.swidth !== null){
+          this.width = this.swidth;
+          this.height = this.sheight;
       }
   },
   methods: {
-    uuidv4() 
-    {
-        return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-          (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-        )
-    },
     droped(e){
     },
     onChange(e){

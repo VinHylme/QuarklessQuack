@@ -71,7 +71,7 @@
                         <div class="control">
                         <b-tooltip label="Refresh this account" type="is-dark" position="is-top">
                             <button class="button is-light-dark" @click="RefreshState()">
-                                <b-icon pack="fas" icon="sync-alt" >
+                                <b-icon pack="fas" icon="sync-alt" :custom-class="IsRefreshing ? 'fa-spin' : ''">
                                 </b-icon>
                             </button>
                         </b-tooltip>
@@ -110,7 +110,6 @@
 
 <script>
 import DropZone from '../Objects/DropZone';
-import { EventBusing } from "../../EventBusing";
 
 export default {
 name:"InstaAccountCard",
@@ -131,6 +130,7 @@ props: {
   },
   data(){
       return {
+		  IsRefreshing:false,
           IsLoading:false,
           IsAdmin:false,
           IsAmendingAccount:false,
@@ -152,16 +152,16 @@ props: {
           this.$emit('OnConfirmUser', this.id);
       }
       let _self = this;
-      EventBusing.$on('doneUpdatingBiography',()=>{
+      this.$bus.$on('doneUpdatingBiography',()=>{
           _self.onFinishedUpdate();
       });
-      EventBusing.$on('clickedOutside',()=>{
+      this.$bus.$on('clickedOutside',()=>{
           _self.onFinishedUpdate();
       });
-      EventBusing.$on('cancel-other-focused',()=>{
+      this.$bus.$on('cancel-other-focused',()=>{
           _self.onFinishedUpdate();
       });
-      EventBusing.$on('focus-main', (id)=>{
+      this.$bus.$on('focus-main', (id)=>{
           if(id == this.id){
               this.IsAmendingAccount = true;
           }
@@ -169,7 +169,7 @@ props: {
   },
   methods:{
       onFocusBio(){
-          EventBusing.$emit('onFocusBio', this.id);
+          this.$bus.$emit('onFocusBio', this.id);
       },
       onFinishedUpdate(){
         this.IsAmendingAccount = false;
@@ -189,6 +189,7 @@ props: {
           this.$emit("ViewLibrary", this.id);
       },
       RefreshState(){
+		  this.IsRefreshing = true;
           this.$store.dispatch('RefreshState',this.id).then(res=>{
               if(res.data == 'true' || res.data == true){
                   //SUCCESS
@@ -196,8 +197,11 @@ props: {
               }
               else{
                   this.$emit("RefreshState",false)
-              }
-          })
+			  }
+			this.IsRefreshing = false;
+          }).catch(err=>{
+			this.IsRefreshing = false;
+		  })
       },
        GetAgentOptionList(currentSelected){
            var index = this.AgentOptions.findIndex(item=>item.index == currentSelected);

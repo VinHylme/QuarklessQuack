@@ -4,6 +4,9 @@ export default {
   Login(params){
     return Api(false).post('auth/loginaccount', params)
   },
+  RefreshToken(params){
+    return Api(false).post('auth/refreshState', params)
+  },
   ResendConfirm(username){
     return Api(false).put('auth/resendConfirmation/'+username);
   },

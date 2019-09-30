@@ -6,14 +6,17 @@ namespace QuarklessRepositories.RedisRepository.LibraryCache
 {
 	public interface ILibraryCache
 	{
-		Task AddSavedHashtags(string accountId, string instagramId, HashtagsLib hashtagsLib);
-		Task AddSavedCaptions(string accountId, string instagramId, CaptionsLib captionsLib);
-		Task AddSavedMedias(string accountId, string instagramId, MediasLib mediasLibs);
-		Task DeleteSavedHashtags(string accountId, string instagramId,  HashtagsLib hashtagsLib);
-		Task DeleteSavedCaptions(string accountId, string instagramId, CaptionsLib captionsLib);
-		Task DeleteSavedMedias(string accountId, string instagramId,  MediasLib mediasLibs);
-		Task<IEnumerable<MediasLib>> GetSavedMedias(string accountId, string instagramId);
-		Task<IEnumerable<CaptionsLib>> GetSavedCaptions(string accountId, string instagramId);
-		Task<IEnumerable<HashtagsLib>> GetSavedHashtags(string accountId, string instagramId);
+		Task AddSavedMessages(MessagesLib messagesLib);
+		Task AddSavedHashtags(HashtagsLib hashtagsLib);
+		Task AddSavedCaptions(CaptionsLib captionsLib);
+		Task AddSavedMedias(IEnumerable<MediasLib> mediasLibs);
+		Task DeleteSavedMedias(MediasLib mediasLibs);
+		Task DeleteSavedHashtags(HashtagsLib hashtagsLib);
+		Task DeleteSavedCaptions(CaptionsLib captionsLib);
+		Task DeleteSavedMessage(MessagesLib messagesLib);
+		Task<IEnumerable<MediasLib>> GetSavedMedias(string accountId);
+		Task<IEnumerable<CaptionsLib>> GetSavedCaptions(string accountId);
+		Task<IEnumerable<HashtagsLib>> GetSavedHashtags(string accountId);
+		Task<IEnumerable<MessagesLib>> GetSavedMessages(string accountId);
 	}
 }

@@ -25,6 +25,7 @@ namespace QuarklessRepositories.RedisRepository.LoggerStoring
 		public string AccountId { get; set; }
 		public string InstagramAccountId { get; set; }
 		public DateTime Date { get; set; }
+
 	}
 	public class LoggerStore : ILoggerStore
 	{

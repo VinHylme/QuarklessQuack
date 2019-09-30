@@ -41,7 +41,7 @@
 
 <script>
 import Vue from 'vue';
-
+import Fingerprint2 from 'fingerprintjs2';
 export default {
   name:"MainLoginPage",
   data(){
@@ -54,10 +54,27 @@ export default {
       verificationNeeded:false
     }
   },
+  mounted(){
+    if (window.requestIdleCallback) {
+      requestIdleCallback(function () {
+          Fingerprint2.get(function (components) {
+            //console.log(components) // an array of components: {key: ..., value: ...}
+            var values = components.map(function (component) { return component.value })
+            var murmur = Fingerprint2.x64hash128(values.join(''), 31)
+            //console.log(murmur)
+          })
+      });
+    } else {
+      setTimeout(function () {
+          Fingerprint2.get(function (components) {
+            console.log(components) // an array of components: {key: ..., value: ...}
+          })  
+      }, 500)
+    }
+  },
   methods:{
     resendConfirmation(){
       this.$store.dispatch('resendConfirmation',this.username).then(resp=>{
-        console.log(resp.data);
          Vue.prototype.$toast.open({
             message: 'Your confirmation code has been resend to ' + resp.data,
             type: 'is-info',
@@ -115,10 +132,13 @@ export default {
 
 <style lang="scss">
 @import '../Style/darkTheme.scss';
-
+::-webkit-scrollbar {
+    display: none;
+}
 body,html{
   margin: 0 auto;
   background: $backround_back;
+  scrollbar-width: none;
 }
 .contain{
   //background-image: url("../assets/9294.jpg");
@@ -136,7 +156,7 @@ body,html{
       margin: 0 auto ;
     }
   }
-  input{
+  input,.input,b-input{
     background:$backround_back !important;
     border:none !important;
     color:$main_font_color !important;

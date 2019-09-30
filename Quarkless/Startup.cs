@@ -12,7 +12,7 @@ using StackExchange.Redis;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Cors.Internal;
 using Quarkless.Filters;
-
+using Quarkless.Extensions;
 namespace Quarkless
 {
 	public class Startup
@@ -151,11 +151,12 @@ namespace Quarkless
 			app.UseDefaultFiles();
 			app.UseCookiePolicy();
 			app.UseAuthentication();
-			//app.UseMiddleware<RequestResponseLoggingMiddleware>();
-			app.UseMaxConcurrentRequests();
+			app.UseSecurityMiddleware(new SecurityHeadersBuilder()
+				.AddDefaultSecurePolicy()
+				/*.AddCustomHeader("X-Client-ID", "x-key-1-v")*/);
 			app.UseMvc();
 		}
-    }
+	}
 	public class WorkerActivator : JobActivator
 	{
 		private readonly IServiceProvider _serviceProvider;

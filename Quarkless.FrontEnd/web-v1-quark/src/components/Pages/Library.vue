@@ -18,15 +18,15 @@
                       <p class="subtitle"></p>
                       <div class="image_container zoomable" v-for="(media,index) in this.filterMedia" :key=index>
                           <ImageItem
-                            v-if="media.mediaBytes && media.mediaType === 0"
+                            v-if="media.mediaBytes && media.mediaType === 1"
                             :source="media.mediaBytes"
                             width="300px" 
                             height="300px"
-                            :isRounded=true
+                            :isRounded=false
                             @click="selectMedia(index)"
                             v-bind:style="mediaLibrary.selectedMedia.index == index ? 'border: 2px solid turquoise;' : 'border:none'"
                           />
-                          <video width="300px" height="300px" controls="controls" preload="metadata" v-else-if="media.mediaBytes && media.mediaType === 1" :src="media.mediaBytes+'#t=0.5'"></video>
+                          <video width="300px" height="300px" controls="controls" preload="metadata" v-else-if="media.mediaBytes && media.mediaType === 2" :src="media.mediaBytes+'#t=0.5'"></video>
                           <div class="cross-delete" @click="deleteMedia(index)">
                             <span class="icon">
                               <i class="far fa-2x fa-times-circle"></i>
@@ -70,8 +70,8 @@
                 <b-field label="Sort By Media Type">
                   <select v-model="mediaFilterObject.mediaType" class="select is-default" @change="onChangeMediaType">
                       <option value="-1" selected>All</option>
-                      <option value="0">Image</option>
-                      <option value="1">Video</option>
+                      <option value="1">Image</option>
+                      <option value="2">Video</option>
                   </select>
                 </b-field>
               </div>
@@ -152,6 +152,7 @@ import DropZone from '../../components/Objects/DropZone';
 import TextCard from '../Objects/TextCard';
 import moment from 'moment';
 import Vue from 'vue';
+import {AnalyseFiles, UUIDV4} from '../../helpers'
 export default {
   components:{
     TextCard,
@@ -224,7 +225,7 @@ export default {
     },
     loadData(){
       this.captionLibrary.items = this.$store.getters.UserCaptionLibrary(this.$route.params.id);
-      if(this.captionLibrary.items === undefined || this.captionLibrary.items === null){
+      if(this.captionLibrary.items === undefined || this.captionLibrary.items === null || this.captionLibrary.items.length === 0){
         this.$store.dispatch('GetSavedCaption', this.$store.getters.User).then(resp=>{
           this.captionLibrary.items = this.$store.getters.UserCaptionLibrary(this.$route.params.id);
         });
@@ -246,12 +247,12 @@ export default {
       
       this.mediaLibrary.items = this.$store.getters.UserMediaLibrary(this.$route.params.id);
       if(this.mediaLibrary.items === undefined || this.mediaLibrary.items === null){
-        //this.isLoading = true;
+        this.isLoading = true;
         this.$store.dispatch('GetSavedMedias', this.$store.getters.User).then(resp=>{
           this.mediaLibrary.items = this.$store.getters.UserMediaLibrary(this.$route.params.id);
-          //this.isLoading = false;
+          this.isLoading = false;
         }).catch(err=>{
-          //this.isLoading = false;
+          this.isLoading = false;
         })
       };
     },
@@ -293,7 +294,7 @@ export default {
       let hashtagData = {
         instagramAccountId: this.$route.params.id,
         accountId: this.$store.getters.User,
-        groupName: this.uuidv4(),
+        groupName: UUIDV4(),
         hashtag: this.hashtagsObject.hashtags,
         dateAdded: new Date()
       };
@@ -323,7 +324,7 @@ export default {
       let captionData = {
         instagramAccountId: this.$route.params.id,
         accountId: this.$store.getters.User,
-        groupName: this.uuidv4(),
+        groupName: UUIDV4(),
         caption: this.captionObject.caption,
         dateAdded: new Date()
       };
@@ -363,7 +364,7 @@ export default {
       let messageData = {
         instagramAccountId: this.$route.params.id,
         accountId: this.$store.getters.User,
-        groupName: this.uuidv4(),
+        groupName: UUIDV4(),
         entity: this.messageObject.entity,
         type: this.messageObject.type,
         dateAdded: new Date()
@@ -387,7 +388,6 @@ export default {
       this.selectedSection = e;
     },
     onChangeMediaType(e){
-      console.log(e);
     },
     onClickDelete(e){
       this.$store.dispatch('DeleteSavedCaption', e).then(resp=>{
@@ -437,7 +437,6 @@ export default {
       })
     },
     onClickEditMessage(e){
-      console.log(e);
       if(e.message!==undefined && e.message!= '' && e.message!==e.originalData.entity.message){
         e.originalData.entity.message = e.message;
         e.originalData.entity.link = e.link;
@@ -507,87 +506,21 @@ export default {
         this.isDeleting = false;
       })
     },
-    uuidv4() {
-        return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-          (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-        )
-    },
     async onUpload(data){
       this.isLoading = true;
-      var _this = this;
-      var submitMediaData = []
-      var xl = 0;
-      for(; xl < data.requestData.length; xl++){
-        var canAdd = false;
-        await this.readFile(data.requestData[xl]).then(async resp=>{
-         var media_type = resp.split('/')[0].split(':')[1];
-            if(media_type === "video"){
-              //check length
-              await this.readVideoLength(resp).then(res=>{
-                if(res){
-                  Vue.prototype.$toast.open({
-                    message: 'Sorry, please ensure your video is no longer than 1 minute',
-                    type: 'is-danger'
-                  });
-                }
-                else{
-                  canAdd = true;
-                }
-              });      
-            }
-            else if(media_type === "image"){
-             canAdd = true;
-            }
-            if(canAdd){
-              var mediaData = {
-                instagramAccountId : _this.$route.params.id,
-                accountId: _this.$store.getters.User,
-                groupName : _this.uuidv4(),
-                mediaType : media_type === "video" ? 1 : 0,
-                dateAdded : new Date(),
-                mediaBytes : resp
-              };
-              submitMediaData.push(mediaData);
-              _this.mediaLibrary.items.push({url: resp});
-          }
-        });
-      }
-      this.$store.dispatch('SetSavedMedias', submitMediaData).then(resp=>{
+
+      var data = await AnalyseFiles(data, this.$store.getters.User, this.$route.params.id);
+      data.forEach(v => {
+        this.mediaLibrary.items.push({url: v.mediaBytes})
+      });
+
+      this.$store.dispatch('SetSavedMedias', data).then(resp=>{
         this.mediaLibrary.items = this.$store.getters.UserMediaLibrary(this.$route.params.id);
         this.isLoading = false;
       }).catch(err=>{
         this.isLoading = false;
       })
-    },
-    readVideoLength(resp){
-      return new Promise((resolve, reject)=>{
-        let video = document.createElement('video');
-        video.preload = 'metadata';
-        video.onloadedmetadata = function(){
-          window.URL.revokeObjectURL(video.src);
-          var duration = video.duration;
-          if(duration > 65)
-            resolve(true);
-          else
-            resolve(false);
-        };
-        var byteCharacters = atob(resp.slice(resp.indexOf(',') + 1)); 
-        var byteNumbers = new Array(byteCharacters.length);
-        for (var i = 0; i < byteCharacters.length; i++) {            
-          byteNumbers[i] = byteCharacters.charCodeAt(i);            
-        }
-        var byteArray = new Uint8Array(byteNumbers);
-        var blob = new Blob([byteArray], {type: 'video/ogg'});
-        video.src = URL.createObjectURL(blob);          
-      })
-    },
-    readFile(file) {
-      return new Promise((resolve, reject) => {
-          let fr = new FileReader();
-          fr.onload = x=> resolve(fr.result);
-          fr.readAsDataURL(file)
-      })
-    },
+    }
   }
 }
 </script>

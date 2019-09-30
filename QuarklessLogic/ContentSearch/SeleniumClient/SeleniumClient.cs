@@ -1,18 +1,50 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web;
 using Newtonsoft.Json;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Firefox;
+using OpenQA.Selenium.Remote;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.ResponseModels;
 
 namespace QuarklessLogic.ContentSearch.SeleniumClient
 {
 
+	class FirefoxOptionsEx : FirefoxOptions {
+
+		public new string Profile { get; set; }
+
+		public override ICapabilities ToCapabilities() {
+
+			var capabilities = (DesiredCapabilities)base.ToCapabilities();
+			var options = (IDictionary)capabilities.GetCapability("moz:firefoxOptions");
+			var mstream = new MemoryStream();
+
+			using (var archive = new ZipArchive(mstream, ZipArchiveMode.Create, true)) {
+				foreach (string file in Directory.EnumerateFiles(Profile, "*", SearchOption.AllDirectories)) {
+					string name = file.Substring(Profile.Length + 1).Replace('\\', '/');
+					if (name != "parent.lock") {
+						using (Stream src = File.OpenRead(file), dest = archive.CreateEntry(name).Open())
+							src.CopyTo(dest);
+					}
+				}
+			}
+
+			options["profile"] = Convert.ToBase64String(mstream.GetBuffer(), 0, (int)mstream.Length);
+
+			return capabilities;
+		}
+
+	}
 	public class SeleniumClient : ISeleniumClient
 	{
 		//internal IWebDriver Driver { get; set; }
@@ -30,6 +62,40 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 				PageLoadStrategy = PageLoadStrategy.Normal
 			};
 		}
+
+		public void TestRunFireFox()
+		{
+			var profile = new FirefoxProfile
+			{
+				DeleteAfterUse = true
+			};
+
+			profile.AddExtension(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\firefox\extensions\canvasProtec.xpi");
+			var service = FirefoxDriverService.CreateDefaultService(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\firefox");
+			
+			var options = new FirefoxOptionsEx()
+			{
+				PageLoadStrategy = PageLoadStrategy.Normal,
+			};
+
+			var manager = new FirefoxProfileManager();
+			var profiles = (Dictionary<string, string>)manager.GetType()
+				.GetField("profiles", BindingFlags.Instance | BindingFlags.NonPublic)
+				.GetValue(manager);
+
+			string directory;
+			if (profiles.TryGetValue("default", out directory))
+				options.Profile = directory;
+
+			//options.Profile = profile;
+			options.SetPreference("network.proxy.type", 0);
+
+			using (var driver = new FirefoxDriver(service, options))
+			{
+				driver.Navigate().GoToUrl("https://www.google.com");
+			}
+		}
+
 		public void Initialise()
 		{
 			//Driver = new ChromeDriver(_chromeService, _chromeOptions);

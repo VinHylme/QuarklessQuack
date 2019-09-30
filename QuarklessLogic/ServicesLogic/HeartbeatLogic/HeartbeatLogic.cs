@@ -76,13 +76,13 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 				if (string.IsNullOrEmpty(caption) || string.IsNullOrWhiteSpace(caption)) return null;
 
 				if (caption.ContainsMentions()
-				    || caption.ContainsHashtags()
-				    || caption.ContainsPhoneNumber()
-				    || caption.ContainsWebAddress()
-				    || caption.Contains("check out")
-				    || caption.Contains("website")
-				    || caption.Contains("phone")
-				    || caption.Contains("blog")) return null;
+					|| caption.ContainsHashtags()
+					|| caption.ContainsPhoneNumber()
+					|| caption.ContainsWebAddress()
+					|| caption.Contains("check out")
+					|| caption.Contains("website")
+					|| caption.Contains("phone")
+					|| caption.Contains("blog")) return null;
 				var tags = sepaStrings.Skip(1);
 				var tagsEnumerator = tags as string[] ?? tags.ToArray();
 				if (!tagsEnumerator.Any()) return null;

@@ -1,6 +1,6 @@
 <template>
 <div class="ccontainer">
-        <div :style="!isNavOn?'margin-left:5.5em;':''">
+        <div :style="!isNavOn?'margin-left:7em;':''">
                 <div class="accounts_container" >
                         <div v-for="(acc,index) in InstagramAccounts" :key="index">
                                 <InstaCard @onChangeBiography="onChangeBiography" @onChangeProfilePicture="onChangeProfilePic" @OnConfirmUser="ConfirmUser" @ChangeState="StateChanged" @RefreshState="NotifyRefresh" @ViewLibrary="GetLibrary" @ViewProfile="GetProfile" :id="acc.id" :username="acc.username" :agentState="acc.agentState" 
@@ -90,7 +90,6 @@
 <script>
 import Vue from 'vue';
 import InstaCard from "../Objects/InstaAccountCard";
-import { EventBusing } from "../../EventBusing";
 export default {
         name:"manage",
         components:{
@@ -123,9 +122,9 @@ export default {
                 if(this.$store.getters.UserProfiles!==undefined)
                         this.IsProfileButtonDisabled=false;       
                         
-                        EventBusing.$on('onFocusBio', (id)=>{
-                                EventBusing.$emit('cancel-other-focused');
-                                EventBusing.$emit('focus-main', id);
+                        this.$bus.$on('onFocusBio', (id)=>{
+                                this.$bus.$emit('cancel-other-focused');
+                                this.$bus.$emit('focus-main', id);
                         })
                 },
         computed:{
@@ -133,7 +132,7 @@ export default {
         },
         methods:{
                 clickOutside(){
-                        EventBusing.$emit('clickedOutside')
+                        this.$bus.$emit('clickedOutside')
                 },
                 onChangeBiography(data){
                         this.$store.dispatch('ChangeBiography', {instagramAccountId: data.id, biography: data.biography}).then(resp=>{
@@ -143,7 +142,7 @@ export default {
                                         position:'is-top',
                                         duration:4000
                                 });
-                                EventBusing.$emit("doneUpdatingBiography")
+                                this.$bus.$emit("doneUpdatingBiography")
                         }).catch(err=>{
                                 Vue.prototype.$toast.open({
                                         message: "Could not Update your biography at this time",
@@ -151,7 +150,7 @@ export default {
                                         position:'is-top',
                                         duration:4000
                                 })
-                                 EventBusing.$emit("doneUpdatingBiography")
+                                 this.$bus.$emit("doneUpdatingBiography")
                         })
                 },
                 onChangeProfilePic(data){
@@ -356,7 +355,7 @@ export default {
         }
        
 }
-body,html {
+body {
        // overflow-y:hidden;
         width: 100%;
         text-align: center;

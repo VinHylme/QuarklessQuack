@@ -12,7 +12,8 @@
 			SearchSession,
 			UserLibrary,
 			APILog,
-			Logger
+			Logger,
+			LookUp
 		}
 	}
 }

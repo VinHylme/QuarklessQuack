@@ -45,6 +45,7 @@ namespace Quarkless.HeartBeater.Creator
 				"--ignore-certificate-errors",
 				"no-sandbox");
 		}
+
 		public class Tempo
 		{
 			public Name.Gender Gender;

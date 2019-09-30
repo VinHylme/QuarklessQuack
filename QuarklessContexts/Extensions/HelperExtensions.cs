@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
+using Exception = System.Exception;
 
 namespace QuarklessContexts.Extensions
 {
@@ -36,6 +37,76 @@ namespace QuarklessContexts.Extensions
 				Directory.Exists(Path.Combine(assemblyLocation, cultureInfo.Name)) &&
 				File.Exists(Path.Combine(assemblyLocation, cultureInfo.Name, resourceFilename))
 			).ToList();
+		}
+
+		public static int IndexOf<T>(this IEnumerable<T> items, T find)
+		{
+			var itemEnumerable = items as T[] ?? items.ToArray();
+			if (find == null) return -1;
+			for (var x = 0; x < itemEnumerable.Count(); x++)
+			{
+				if (Equals(itemEnumerable.ElementAt(x), find))
+					return x;
+			}
+			return -1;
+		}
+
+		public static T CloneObject<T>(this T obj)
+		{
+			var serialized = JsonConvert.SerializeObject(obj);
+			return (T) JsonConvert.DeserializeObject(serialized, obj.GetType());
+		}
+
+		public static bool IsValidUrl(this string url) => Uri.IsWellFormedUriString(url, UriKind.RelativeOrAbsolute);
+		public static bool IsBase64String(this string base64)
+		{
+			try
+			{
+				var filter = base64.Split(',')[1];
+				var buffer = new Span<byte>(new byte[filter.Length]);
+				return Convert.TryFromBase64String(filter, buffer, out int bytesParsed);
+			}
+			catch (Exception ee)
+			{
+				return false;
+			}
+		}
+		public static IEnumerable<TType> ToCastList<TType> (this IEnumerable<object> @objects)
+		{
+			var results = new List<TType>();
+			var classes = (from domainAssembly in AppDomain.CurrentDomain.GetAssemblies()
+				from assemblyType in domainAssembly.GetTypes()
+				where typeof(TType).IsAssignableFrom(assemblyType)
+				select assemblyType).ToArray();
+
+			if (!classes.Any()) return null;
+
+			var objectsArray = objects as object[] ?? objects.ToArray();
+
+			foreach (var type in classes)
+			{
+				try
+				{
+					var conv = JsonConvert.DeserializeObject(objectsArray.First().ToString(), type, new JsonSerializerSettings
+					{
+						NullValueHandling = NullValueHandling.Include
+					});
+
+				}
+				catch (Exception ex)
+				{
+					continue;
+				}
+			}
+
+			foreach (var @object in objectsArray)
+			{
+				var exists = classes.IndexOf(@object.GetType()) > 0;
+				if (!exists) continue;
+				results.Add((TType) @object);
+			}
+
+			return !results.Any() ? null : results;
 		}
 
 		public static string OnlyWords(this string @string)
@@ -139,25 +210,20 @@ namespace QuarklessContexts.Extensions
 		}
 		public static string GetDescription<T>(this T e) where T : IConvertible
 		{
-			if (e is Enum)
+			if (!(e is Enum)) return null; // could also return string.Empty
+			var type = e.GetType();
+			var values = System.Enum.GetValues(type);
+
+			foreach (int val in values)
 			{
-				Type type = e.GetType();
-				Array values = System.Enum.GetValues(type);
+				if (val != e.ToInt32(CultureInfo.InvariantCulture)) continue;
+				var memInfo = type.GetMember(type.GetEnumName(val));
 
-				foreach (int val in values)
+				if (memInfo[0]
+					.GetCustomAttributes(typeof(DescriptionAttribute), false)
+					.FirstOrDefault() is DescriptionAttribute descriptionAttribute)
 				{
-					if (val == e.ToInt32(CultureInfo.InvariantCulture))
-					{
-						var memInfo = type.GetMember(type.GetEnumName(val));
-						var descriptionAttribute = memInfo[0]
-							.GetCustomAttributes(typeof(DescriptionAttribute), false)
-							.FirstOrDefault() as DescriptionAttribute;
-
-						if (descriptionAttribute != null)
-						{
-							return descriptionAttribute.Description;
-						}
-					}
+					return descriptionAttribute.Description;
 				}
 			}
 			return null; // could also return string.Empty
@@ -168,9 +234,8 @@ namespace QuarklessContexts.Extensions
 			if (!type.IsEnum) throw new InvalidOperationException();
 			foreach (var field in type.GetFields())
 			{
-				var attribute = Attribute.GetCustomAttribute(field,
-					typeof(DescriptionAttribute)) as DescriptionAttribute;
-				if (attribute != null)
+				if (Attribute.GetCustomAttribute(field,
+					typeof(DescriptionAttribute)) is DescriptionAttribute attribute)
 				{
 					if (attribute.Description == description)
 						return (T)field.GetValue(null);
@@ -181,7 +246,7 @@ namespace QuarklessContexts.Extensions
 						return (T)field.GetValue(null);
 				}
 			}
-			throw new ArgumentException("Not found.", "description");
+			throw new ArgumentException("Not found.", nameof(description));
 			// or return default(T);
 		}
 		public static IEnumerable<T> TakeBetween<T>(this IEnumerable<T> @items, int start, int max)

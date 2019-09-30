@@ -13,6 +13,11 @@
           <b-icon v-if="timelineLog.actionType === 3" icon="comment" pack="fas" class="is-purple" size="is-default"/>
           <b-icon v-if="timelineLog.actionType === 5" icon="book" pack="fas" class="is-gold" size="is-default"></b-icon>
           <b-icon v-if="timelineLog.actionType === 20" icon="inbox" pack="fas" class="is-success" size="is-default"></b-icon>
+          <b-icon v-if="timelineLog.actionType === 21" icon="inbox" pack="fas" class="is-success" size="is-default"></b-icon>
+          <b-icon v-if="timelineLog.actionType === 22" icon="inbox" pack="fas" class="is-success" size="is-default"></b-icon>
+          <b-icon v-if="timelineLog.actionType === 23" icon="inbox" pack="fas" class="is-success" size="is-default"></b-icon>
+          <b-icon v-if="timelineLog.actionType === 24" icon="inbox" pack="fas" class="is-success" size="is-default"></b-icon>
+          <b-icon v-if="timelineLog.actionType === 25" icon="inbox" pack="fas" class="is-success" size="is-default"></b-icon>
         </div>
         <div class="card-activity-content">
           {{timelineLog.message}}
@@ -84,8 +89,8 @@ export default {
         }).catch(err=>{
           this.isLoadingLogs = false;
       });
-      this.timer = setInterval(this.loadData, 15000);
-      this.timerLog = setInterval(this.loadLogs,8000);
+      this.timer = setInterval(this.loadData, 11000);
+	  this.timerLog = setInterval(this.loadLogs, 8000);
   },
   mounted(){
 
@@ -130,7 +135,22 @@ export default {
       });
     },
     eventDisplay(event) {
-      return  event.actionObject.actionName;
+		if(event.actionObject.actionType === "Image"){
+			return JSON.parse(event.actionObject.body).Image.ImageBytes;
+		}
+		else if(event.actionObject.actionType === "Video"){
+			return JSON.parse(event.actionObject.body).Video.VideoThumbnail.ImageBytes;
+		}
+		else if(event.actionObject.actionType === "Carousel"){
+			let carousel = JSON.parse(event.actionObject.body).Album[0];
+			if(carousel.ImageToUpload === null && carousel.ImageToUpload === undefined)
+				return carousel.VideoToUpload.VideoThumbnail.ImageBytes;
+			else 
+				return carousel.ImageToUpload.ImageBytes
+		}
+		else{
+	  		return  event.actionObject.actionName;
+		}
     }
   },
   beforeDestroy() {

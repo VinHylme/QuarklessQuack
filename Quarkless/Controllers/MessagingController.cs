@@ -47,6 +47,23 @@ namespace Quarkless.Controllers
 		    return BadRequest(results.Info);
 	    }
 
+	    [HttpGet]
+	    [Route("api/messaging/thread/{threadId}/{limit}")]
+	    public async Task<IActionResult> GetThread(string threadId, int limit)
+	    {
+		    if (!_userContext.UserAccountExists) return BadRequest("Invalid Request");
+		    var results = await _responseResolver
+			    .WithResolverAsync(await _messagingLogic.GetDirectInboxThreadAsync(threadId,limit), ActionType.GetThread,
+				    limit.ToString());
+		    if (results == null) return BadRequest("Invalid Request");
+		    if (results.Succeeded)
+		    {
+			    return Ok(results.Value);
+		    }
+
+		    return BadRequest(results.Info);
+	    }
+
 	    [HttpPost]
 	    [Route("api/messaging/text")]
 		public async Task<IActionResult> SendDirectText([FromBody] SendDirectTextModel sendDirectText)
@@ -116,6 +133,46 @@ namespace Quarkless.Controllers
 		}
 
 		[HttpPost]
+		[Route("api/messaging/media")]
+		public async Task<IActionResult> ShareDirectMedia([FromBody] ShareDirectMediaModel shareDirectMedia)
+		{
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid Request");
+			if (shareDirectMedia == null) return BadRequest("Invalid Params");
+			var results = await _responseResolver
+				.WithResolverAsync(
+					await _messagingLogic.ShareMediaToUserAsync(shareDirectMedia.MediaId, shareDirectMedia.MediaType, shareDirectMedia.Text, shareDirectMedia.Recipients.Select(long.Parse).ToArray()), 
+					ActionType.SendDirectMessageMedia,
+					shareDirectMedia.ToJsonString());
+			if (results == null) return BadRequest("Invalid Request");
+			if (results.Succeeded)
+			{
+				return Ok(results.Value);
+			}
+
+			return BadRequest(results.Info);
+		}
+
+		[HttpPost]
+		[Route("api/messaging/media-threads")]
+		public async Task<IActionResult> ShareDirectMediaWithThreads([FromBody] ShareDirectMediaModel shareDirectMedia)
+		{
+			if (!_userContext.UserAccountExists) return BadRequest("Invalid Request");
+			if (shareDirectMedia == null) return BadRequest("Invalid Params");
+			var results = await _responseResolver
+				.WithResolverAsync(
+					await _messagingLogic.ShareMediaToThreadAsync(shareDirectMedia.MediaId, shareDirectMedia.MediaType, shareDirectMedia.Text, shareDirectMedia.ThreadIds.ToArray()), 
+					ActionType.SendDirectMessageMedia,
+					shareDirectMedia.ToJsonString());
+			if (results == null) return BadRequest("Invalid Request");
+			if (results.Succeeded)
+			{
+				return Ok(results.Value);
+			}
+
+			return BadRequest(results.Info);
+		}
+
+		[HttpPost]
 		[Route("api/messaging/video")]
 		public async Task<IActionResult> SendDirectVideo([FromBody] SendDirectVideoModel sendDirectVideo)
 		{
@@ -141,9 +198,11 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Request");
 			if (sendDirectProfile == null) return BadRequest("Invalid Params");
+			if (sendDirectProfile.userId==0) return BadRequest("Invalid Params");
 			var recipients = string.Empty;
 			if (sendDirectProfile.Recipients != null && sendDirectProfile.Recipients.Any())
 				recipients = string.Join(",", sendDirectProfile.Recipients);
+
 			var results = await _responseResolver
 				.WithResolverAsync(
 					await _messagingLogic.SendDirectProfileToRecipientsAsync(sendDirectProfile.userId, recipients), 

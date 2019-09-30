@@ -1,31 +1,41 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using InstagramApiSharp.Classes;
 using Newtonsoft.Json;
+using Quarkless.Interfacing;
 using QuarklessContexts.Enums;
+using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.InstagramAccounts;
+using QuarklessContexts.Models.LookupModels;
+using QuarklessContexts.Models.MessagingModels;
+using QuarklessContexts.Models.Sections;
 using QuarklessContexts.Models.TimelineLoggingRepository;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.ReportHandler;
 using QuarklessLogic.Logic.InstagramAccountLogic;
+using QuarklessLogic.Logic.LookupLogic;
 using QuarklessLogic.Logic.TimelineEventLogLogic;
+using QuarklessRepositories.RedisRepository.LoggerStoring;
 
 namespace QuarklessLogic.Logic.ResponseLogic
 {
-	public class ResponseResolver : IResponseResolver
+	public class ResponseResolver : CommonInterface, IResponseResolver
 	{
 		private IAPIClientContainer _client;
-		private readonly IReportHandler _reportHandler;
+		private readonly ILookupLogic _lookupLogic;
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
 		private readonly ITimelineEventLogLogic _timelineEventLogLogic;
-		public ResponseResolver(IAPIClientContainer client, IReportHandler reportHandler, 
-			IInstagramAccountLogic instagramAccountLogic, ITimelineEventLogLogic timelineEventLogLogic)
+		private string AccountId { get; set; }
+		private string InstagramAccountId { get; set; }
+		public ResponseResolver(IAPIClientContainer client, IInstagramAccountLogic instagramAccountLogic, 
+			ITimelineEventLogLogic timelineEventLogLogic, ILoggerStore loggerStore, ILookupLogic lookup)
+			: base(loggerStore, Sections.ResponseLogic.GetDescription())
 		{
 			_client = client;
-			_reportHandler = reportHandler;
 			_instagramAccountLogic = instagramAccountLogic;
 			_timelineEventLogLogic = timelineEventLogLogic;
-			_reportHandler.SetupReportHandler("ResponseResolver");
+			_lookupLogic = lookup;
 		}
 
 		public IResponseResolver WithClient(IAPIClientContainer client)
@@ -57,12 +67,27 @@ namespace QuarklessLogic.Logic.ResponseLogic
 					return "Liked user's comment";
 				case ActionType.LikePost:
 					return "Liked a new post, based on your profile";
+				case ActionType.SendDirectMessageVideo:
+					return "Sent a video to a user via direct message";
+				case ActionType.SendDirectMessagePhoto:
+					return "Sent a video to a user via direct message";
+				case ActionType.SendDirectMessageText:
+					return "Sent a text to a user via direct message";
+				case ActionType.SendDirectMessageLink:
+					return "Sent a link to a user via direct message";
+				case ActionType.SendDirectMessageProfile:
+					return "Shared profile with a user via direct message";
+				case ActionType.SendDirectMessageMedia:
+					return "Shared media with a user via direct message";
 				default: return $"{actionType.ToString()} Made";
 			}
 		}
 		public async Task<IResult<TInput>> WithResolverAsync<TInput>(IResult<TInput> response, ActionType actionType, string request)
 		{
 			var context = _client.GetContext.InstagramAccount;
+			AccountId = context.AccountId;
+			InstagramAccountId = context.Id;
+
 			if (response?.Info == null)
 			{
 				await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
@@ -199,6 +224,37 @@ namespace QuarklessLogic.Logic.ResponseLogic
 						});
 					break;
 				case ResponseType.OK:
+					switch (actionType)
+					{
+						case ActionType.SendDirectMessageMedia:
+							await MarkAsComplete(actionType,
+								JsonConvert.DeserializeObject<ShareDirectMediaModel>(request).Recipients.ToArray());
+							break;
+						case ActionType.SendDirectMessageAudio:
+							await MarkAsComplete(actionType,
+								JsonConvert.DeserializeObject<SendDirectPhotoModel>(request).Recipients.ToArray());
+							break;
+						case ActionType.SendDirectMessageLink:
+							await MarkAsComplete(actionType,
+								JsonConvert.DeserializeObject<SendDirectLinkModel>(request).Recipients.ToArray());
+							break;
+						case ActionType.SendDirectMessagePhoto:
+							await MarkAsComplete(actionType,
+								JsonConvert.DeserializeObject<SendDirectPhotoModel>(request).Recipients.ToArray());
+							break;
+						case ActionType.SendDirectMessageProfile:
+							await MarkAsComplete(actionType,
+								JsonConvert.DeserializeObject<SendDirectProfileModel>(request).Recipients.ToArray());
+							break;
+						case ActionType.SendDirectMessageText:
+							await MarkAsComplete(actionType,
+								JsonConvert.DeserializeObject<SendDirectTextModel>(request).Recipients.ToArray());
+							break;
+						case ActionType.SendDirectMessageVideo:
+							await MarkAsComplete(actionType,
+								JsonConvert.DeserializeObject<SendDirectVideoModel>(request).Recipients.ToArray());
+							break;
+					}
 					break;
 				case ResponseType.MediaNotFound:
 					break;
@@ -221,6 +277,8 @@ namespace QuarklessLogic.Logic.ResponseLogic
 		public async Task<IResult<TInput>> WithResolverAsync<TInput>(IResult<TInput> response)
 		{
 			var context = _client.GetContext.InstagramAccount;
+			AccountId = context.AccountId;
+			InstagramAccountId = context.Id;
 			if (response?.Info == null) return response;
 			switch (response.Info.ResponseType)
 			{
@@ -311,6 +369,7 @@ namespace QuarklessLogic.Logic.ResponseLogic
 						});
 					break;
 				case ResponseType.OK:
+
 					break;
 				case ResponseType.MediaNotFound:
 					break;
@@ -330,9 +389,28 @@ namespace QuarklessLogic.Logic.ResponseLogic
 
 			return response;
 		}
-		private async Task<bool> MarkAsRecentlyDone(params string[] id)
+		private async Task MarkAsComplete(ActionType actionType, params string[] ids)
 		{
-			return false;
+			foreach(var id in ids)
+			{
+				try
+				{
+					var getObj = (await _lookupLogic.Get(AccountId, InstagramAccountId, id)).FirstOrDefault();
+					if (getObj == null)
+						continue;
+					await _lookupLogic.UpdateObjectToLookup(AccountId, InstagramAccountId, id, getObj, new LookupModel
+					{
+						Id = Guid.NewGuid().ToString(),
+						LastModified = DateTime.UtcNow,
+						LookupStatus = LookupStatus.Completeted,
+						ActionType = actionType
+					});
+				}
+				catch(Exception ee)
+				{
+					await Expect(ee.Message, nameof(MarkAsComplete), AccountId, InstagramAccountId);
+				}
+			}
 		}
 		private async Task<IResult<bool>> AcceptConsent()
 		{
@@ -342,7 +420,7 @@ namespace QuarklessLogic.Logic.ResponseLogic
 			}
 			catch(Exception ee)
 			{
-				_reportHandler.MakeReport(ee);
+				await Expect(ee.Message, nameof(AcceptConsent), AccountId, InstagramAccountId);
 				return null;
 			}
 		}
@@ -354,7 +432,7 @@ namespace QuarklessLogic.Logic.ResponseLogic
 			}
 			catch(Exception ee)
 			{
-				_reportHandler.MakeReport(ee);
+				await Expect(ee.Message, nameof(AcceptChallenge), AccountId, InstagramAccountId);
 				return null;
 			}
 		}
@@ -366,7 +444,7 @@ namespace QuarklessLogic.Logic.ResponseLogic
 			}
 			catch(Exception ee)
 			{
-				_reportHandler.MakeReport(ee);
+				await Expect(ee.Message, nameof(RequestVerifyCodeToEmailForChallengeRequireAsync), AccountId, InstagramAccountId);
 				return null;
 			}
 		}
@@ -378,7 +456,7 @@ namespace QuarklessLogic.Logic.ResponseLogic
 			}
 			catch (Exception ee)
 			{
-				_reportHandler.MakeReport(ee);
+				await Expect(ee.Message, nameof(RequestVerifyCodeToSmsForChallengeRequireAsync), AccountId, InstagramAccountId);
 				return null;
 			}
 		}
@@ -390,7 +468,7 @@ namespace QuarklessLogic.Logic.ResponseLogic
 			}
 			catch (Exception ee)
 			{
-				_reportHandler.MakeReport(ee);
+				Expect(ee.Message, nameof(GetChallangeInfo), AccountId, InstagramAccountId).GetAwaiter().GetResult();
 				return null;
 			}
 		}
@@ -402,7 +480,7 @@ namespace QuarklessLogic.Logic.ResponseLogic
 			}
 			catch(Exception ee)
 			{
-				_reportHandler.MakeReport(ee);
+				await Expect(ee.Message, nameof(GetChallengeRequireVerifyMethodAsync), AccountId, InstagramAccountId);
 				return null;
 			}
 		}
@@ -414,7 +492,7 @@ namespace QuarklessLogic.Logic.ResponseLogic
 			}
 			catch (Exception ee)
 			{
-				_reportHandler.MakeReport(ee);
+				await Expect(ee.Message, nameof(VerifyCodeForChallengeRequireAsync), AccountId, InstagramAccountId);
 				return null;
 			}
 		}

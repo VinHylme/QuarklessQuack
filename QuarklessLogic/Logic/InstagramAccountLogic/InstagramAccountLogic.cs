@@ -59,7 +59,8 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 					UserBiography = null,
 					UserLimits = null,
 					Location = null,
-					ChallengeInfo = null
+					ChallengeInfo = null,
+					UserId = null
 				};
 				var result = await _instagramAccountRepository.AddInstagramAccount(instamodel);
 				if(result!=null)
@@ -173,7 +174,8 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 					IsBusiness = res.IsBusiness,
 					Location = res.Location,
 					Type = res.Type,
-					ChallengeInfo = res.ChallengeInfo
+					ChallengeInfo = res.ChallengeInfo,
+					UserId = res.UserId
 				};
 				//await _instagramAccountRedis.SetInstagramAccountDetail(accountId, instagramAccountId, shortInst);
 				return shortInst;
@@ -228,7 +230,8 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 					UserLimits = res.UserLimits,
 					IsBusiness = res.IsBusiness,
 					Location = res.Location,
-					ChallengeInfo = res.ChallengeInfo
+					ChallengeInfo = res.ChallengeInfo,
+					UserId = res.UserId
 				});
 			}
 			catch (Exception ee)
@@ -325,7 +328,6 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 				return null;
 			}
 		}
-
 		public async Task EmptyChallengeInfo(string instagramAccountId)
 		{
 			try

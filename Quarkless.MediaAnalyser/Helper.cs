@@ -7,6 +7,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using Shipwreck.Phash;
 using Shipwreck.Phash.Bitmaps;
@@ -264,6 +265,8 @@ namespace Quarkless.MediaAnalyser
 				}
 			}
 		}
+
+		public static byte[] DownloadMediaLocal(this string url) => File.ReadAllBytes(url);
 		public static byte[] DownloadMedia(this string url)
 		{
 			using (var webClient = new WebClient())
@@ -499,27 +502,29 @@ namespace Quarkless.MediaAnalyser
 				yield return new Bitmap(Image.FromStream(meme));
 			}
 		}
-		public static byte[] GenerateVideoThumbnail(this byte[] video, int specificFrame = 5)
+		public static async Task<byte[]> GenerateVideoThumbnail(this byte[] video, int specificFrame = 5)
 		{
 			var path = GetFilePathByName("videosTempPath");
-			var outp = GetFilePathByName("imagesTempPath");
-			var engine_path = GetFilePathByName("enginePath");
-			var videoPath = string.Format(path + "video_{0}_{1}.mp4", Guid.NewGuid(), DateTime.UtcNow.ToLongDateString());
+			var outputPath = GetFilePathByName("imagesTempPath");
+			var enginePath = GetFilePathByName("enginePath");
+
+			var videoPath = string.Format(path + "video_{0}_{1}.mp4", Guid.NewGuid(), DateTime.UtcNow.Ticks);
+			var imagePath = string.Format(outputPath + "image_{0}_{1}.jpeg", Guid.NewGuid(), DateTime.UtcNow.Ticks);
+
 			File.WriteAllBytes(videoPath, video);
 			try
 			{
 				var mediaFile = new MediaFile(videoPath);
-				var engine = new Engine(engine_path);
-				var meta = engine.GetMetaDataAsync(mediaFile).GetAwaiter().GetResult();
+				var engine = new Engine(enginePath);
 				var opt = new ConversionOptions { Seek = TimeSpan.FromSeconds(specificFrame) };
-				var outputFile = new MediaFile((
-					$@"{outp}image-{Guid.NewGuid()}_{DateTime.UtcNow.ToLongDateString()}.jpeg"));
-				engine.GetThumbnailAsync(mediaFile, outputFile, opt);
+				var outputFile = new MediaFile(imagePath);
 
-				var image = File.ReadAllBytes(outputFile.FileInfo.FullName);
+				await engine.GetThumbnailAsync(mediaFile, outputFile, opt);
+
+				var image = File.ReadAllBytes(imagePath);
 
 				File.Delete(videoPath);
-				File.Delete(outputFile.FileInfo.FullName);
+				File.Delete(imagePath);
 
 				return image;
 			}
@@ -529,39 +534,39 @@ namespace Quarkless.MediaAnalyser
 				return null;
 			}
 		}
-		public static string IsVideoSimilar(this Color profileColor, byte[] video, double threshHold, int frameSkip = 5)
+		public static async Task<string> IsVideoSimilar(this Color profileColor, byte[] video, double threshHold, int frameSkip = 5)
 		{
 			var path = GetFilePathByName("videosTempPath");
-			var outp = GetFilePathByName("imagesTempPath");
-			var engine_path = GetFilePathByName("enginePath");
+			var outputPath = GetFilePathByName("imagesTempPath");
+			var enginePath = GetFilePathByName("enginePath");
 			var videoPath = string.Format(path + "video_{0}.mp4", Guid.NewGuid());
-			var dom_color = new Color();
+			var domColor = new Color();
 			File.WriteAllBytes(videoPath, video);
 			try
 			{
 				var mediaFile = new MediaFile(videoPath);
-				var engine = new Engine(engine_path);
+				var engine = new Engine(enginePath);
 				var meta = engine.GetMetaDataAsync(mediaFile).GetAwaiter().GetResult();
 				var i = 0;
 				while (i < meta.Duration.Seconds)
 				{
 					var opt = new ConversionOptions { Seek = TimeSpan.FromSeconds(frameSkip) };
-					var outputFile = new MediaFile(($@"{outp}image-{i}_{Guid.NewGuid()}.jpeg"));
-					engine.GetThumbnailAsync(mediaFile, outputFile, opt);
+					var outputFile = new MediaFile(($@"{outputPath}image-{i}_{Guid.NewGuid()}.jpeg"));
+					await engine.GetThumbnailAsync(mediaFile, outputFile, opt);
 					i++;
 				}
-				var videoframes = ReadImagesFromDirectory(outp, "*.jpeg").ToList();
-				var video_colors_avg = new List<Color>();
+				var videoFrames = ReadImagesFromDirectory(outputPath, "*.jpeg").ToList();
+				var videoColorsAvg = new List<Color>();
 
-				videoframes.ForEach(im => video_colors_avg.Add(GetDominantColor(im)));
+				videoFrames.ForEach(im => videoColorsAvg.Add(GetDominantColor(im)));
 				int r = 0, b = 0, g = 0;
-				video_colors_avg.ForEach(c => {
+				videoColorsAvg.ForEach(c => {
 					r += c.R;
 					b += c.B;
 					g += c.G;
 				});
-				var total = video_colors_avg.Count;
-				dom_color = Color.FromArgb(r / total, b / total, g / total);
+				var total = videoColorsAvg.Count;
+				domColor = Color.FromArgb(r / total, b / total, g / total);
 			}
 			catch (Exception ee)
 			{
@@ -569,7 +574,7 @@ namespace Quarkless.MediaAnalyser
 				return null;
 			}
 
-			var colorDiffs = ColorDiff(dom_color, profileColor);
+			var colorDiffs = ColorDiff(domColor, profileColor);
 			var maximus = profileColor.R + profileColor.G + profileColor.B;
 			var targetPerc = Math.Abs((maximus * threshHold) - maximus);
 
@@ -590,8 +595,8 @@ namespace Quarkless.MediaAnalyser
 
 					Directory.EnumerateFiles(outp, "*.jpeg").ToList()
 						.ForEach(f => {
-							FileInfo fileInfo = new FileInfo(f);
-							for (int tries = 0; IsFileLocked(fileInfo) && tries < 8; tries++)
+							var fileInfo = new FileInfo(f);
+							for (var tries = 0; IsFileLocked(fileInfo) && tries < 8; tries++)
 							{
 								Thread.Sleep(1000);
 							}

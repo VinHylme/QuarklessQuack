@@ -21,7 +21,7 @@
             v-model="messageArray">
           </b-taginput>
           <b-field v-if="link" label="Link">
-            <input class="input" type="text" v-model="link" placeholder="e.g. www.mycoolwebsite.com">
+            <input :disabled="!allowEdit" class="input" type="text" v-model="link" placeholder="e.g. www.mycoolwebsite.com">
           </b-field>
         </div>
         <div class="card-text-footer" v-if="allowDelete || allowEdit">

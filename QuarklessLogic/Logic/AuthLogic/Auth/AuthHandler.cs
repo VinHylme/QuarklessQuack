@@ -4,12 +4,15 @@ using Amazon.Extensions.CognitoAuthentication;
 using AspNetCore.Identity.MongoDbCore.Models;
 using Microsoft.AspNetCore.Identity;
 using Newtonsoft.Json.Linq;
+using Quarkless.Interfacing;
 using QuarklessContexts.Classes.Carriers;
 using QuarklessContexts.Contexts.AccountContext;
+using QuarklessContexts.Extensions;
+using QuarklessContexts.Models.Sections;
 using QuarklessContexts.Models.UserAuth.Auth;
-using QuarklessLogic.Handlers.ReportHandler;
 using QuarklessLogic.Logic.AuthLogic.Auth.Manager;
 using QuarklessRepositories.RedisRepository.AccountCache;
+using QuarklessRepositories.RedisRepository.LoggerStoring;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -19,29 +22,27 @@ using System.Threading.Tasks;
 
 namespace QuarklessLogic.Logic.AuthLogic.Auth
 {
-	public class AuthHandler : IAuthHandler
+	public class AuthHandler : CommonInterface, IAuthHandler
 	{
 		private readonly IAmazonCognitoIdentityProvider _cognito;
 		private readonly UserManager<AccountUser> _userManager;
 		private readonly SignInManager<AccountUser> _signInManager;
-		private readonly CognitoUserPool _cognitoUser;
 		private readonly IAuthAccessHandler _accessHandler;
-		private readonly IReportHandler _reportHandler;
 		private readonly IAccountCache _accountCache;
-		public AuthHandler(IAuthAccessHandler accessHandler, IAccountCache accountCache, IAmazonCognitoIdentityProvider provider, IReportHandler reportHandler, 
+		public AuthHandler(IAuthAccessHandler accessHandler, IAccountCache accountCache, 
+			IAmazonCognitoIdentityProvider provider, ILoggerStore logger,
 			CognitoUserPool cognitoUser, UserManager<AccountUser> userManager, SignInManager<AccountUser> signInManager)
+			:base(logger, Sections.AuthLogic.GetDescription())
 		{
 			_accountCache = accountCache;
 			_userManager = userManager;
 			_signInManager = signInManager;
 			_accessHandler = accessHandler;
-			_cognitoUser = cognitoUser;
 			_cognito = provider;
-			_reportHandler = reportHandler;
-			_reportHandler.SetupReportHandler("Auth");
+			UserPool = cognitoUser;
 		}
 
-		public CognitoUserPool UserPool {  get { return _cognitoUser;} }
+		public CognitoUserPool UserPool { get; }
 		#region Database
 		public async Task<bool> SignIn(AccountUser user, bool isPersistent = false)
 		{
@@ -129,8 +130,8 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 			var results = new ResultCarrier<CodeDeliveryDetailsType>();
 			var resendRequest = new ResendConfirmationCodeRequest
 			{
-				ClientId = _cognitoUser.ClientID,
-				SecretHash = _accessHandler.GetHash(userName,_cognitoUser.ClientID),
+				ClientId = UserPool.ClientID,
+				SecretHash = _accessHandler.GetHash(userName,UserPool.ClientID),
 				Username = userName
 			};
 			try
@@ -161,12 +162,12 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 			}
 			return results;
 		}
-		public ResultCarrier<CognitoUser> GetUserById(string userId)
+		public async Task<ResultCarrier<CognitoUser>> GetUserById(string userId)
 		{
 			var responseResults= new ResultCarrier<CognitoUser>();
 			try
 			{
-				var results =  _cognitoUser.GetUser(userId);
+				var results =  UserPool.GetUser(userId);
 				responseResults.Results = results;
 				responseResults.IsSuccesful = true;
 				return responseResults;
@@ -178,75 +179,44 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 					StatusCode = System.Net.HttpStatusCode.ExpectationFailed,
 					Message = ee.Message
 				};
-				_reportHandler.MakeReport($"Failed to get user: {userId}, error: {ee.Message}");
+				await Expect($"Failed to get user: {userId}, error: {ee.Message}", nameof(GetUserById), userId, null);
 				return responseResults;
 			}
 		}
-		public async Task<ResultCarrier<InitiateAuthResponse>> RefreshLogin(string refreshToken, string userName)
+		public async Task<ResultCarrier<LoginResponse>> RefreshLogin(string refreshToken, string userName)
 		{
-			var resultBase = new ResultCarrier<InitiateAuthResponse>();
+			var resultBase = new ResultCarrier<LoginResponse>();
 			var initiateAuthRequest = new InitiateAuthRequest()
 			{
-				ClientId = _cognitoUser.ClientID,
+				ClientId = UserPool.ClientID,
 				AuthFlow = AuthFlowType.REFRESH_TOKEN,
 				AuthParameters = new Dictionary<string, string>
 				{
 					{ "REFRESH_TOKEN",refreshToken },
-					{ "SECRET_HASH", _accessHandler.GetHash(userName, _cognitoUser.ClientID)  }
+					{ "SECRET_HASH", _accessHandler.GetHash(userName, UserPool.ClientID)  }
 				},
 				
 			};
 			try { 
 				var results = await _cognito.InitiateAuthAsync(initiateAuthRequest);
-				if(results.HttpStatusCode == System.Net.HttpStatusCode.OK)
+				if(results.HttpStatusCode == HttpStatusCode.OK)
 				{
-					resultBase.Results = results;
-					resultBase.IsSuccesful = true;
-					var userdb = await GetUserByUsername(userName);
-					if (userdb == null) return resultBase;
-					var hand = new JwtSecurityTokenHandler();
-					userdb.IsUserConfirmed = true;
-
-					var tokenClaims = hand.ReadJwtToken(results.AuthenticationResult.IdToken);
-					userdb.Claims = tokenClaims.Claims.Select(x => new MongoClaim
+					var loginResp = new LoginResponse
 					{
-						Issuer = x.Issuer,
-						Type = x.Type,
-						Value = x.Value
-					}).ToList();
-					userdb.Tokens = new List<Token>
-					{
-						new Token
-						{
-							LoginProvider = "aws",
-							Name = "refresh_token",
-							Value = refreshToken
-						},
-						new Token
-						{
-							LoginProvider = "aws",
-							Name = "expires_in",
-							Value = results.AuthenticationResult.ExpiresIn.ToString()
-						},
-						new Token
-						{
-							LoginProvider = "aws",
-							Name = "access_token",
-							Value = results.AuthenticationResult.AccessToken
-						},
-						new Token
-						{
-							LoginProvider = "aws",
-							Name = "id_token",
-							Value = results.AuthenticationResult.IdToken
-						}
+						Username = userName,
+						IdToken = results.AuthenticationResult.IdToken,
+						RefreshToken = refreshToken,
+						AccessToken = results.AuthenticationResult.AccessToken,
+						ExpiresIn = results.AuthenticationResult.ExpiresIn
 					};
 
-					var aresu = await UpdateUser(userdb);
-					if (!aresu)
+					resultBase.Results = loginResp;
+					resultBase.IsSuccesful = true;
+					if (await UpdateUserState(loginResp)) return resultBase;
+					resultBase.Info = new ErrorResponse
 					{
-						//something went wrong with the db
-					}
+						Message = "Failed to update state during refresh"
+					};
 					return resultBase;
 				}
 				results.HttpStatusCode = results.HttpStatusCode;
@@ -255,10 +225,10 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 			}
 			catch(Exception ee)
 			{
-				_reportHandler.MakeReport($"Failed to refresh token for user: {userName}, error: {ee.Message}");
+				await Expect($"Failed to refresh token for user: {userName}, error: {ee.Message}", nameof(RefreshLogin), userName, null);
 				resultBase.Info = new ErrorResponse
 				{
-					StatusCode = System.Net.HttpStatusCode.ExpectationFailed,
+					StatusCode = HttpStatusCode.ExpectationFailed,
 					Message = ee.Message
 				};
 				return resultBase;
@@ -269,14 +239,14 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 		{
 			var authReq = new AdminInitiateAuthRequest
 			{
-				UserPoolId = _cognitoUser.PoolID,
-				ClientId = _cognitoUser.ClientID,
+				UserPoolId = UserPool.PoolID,
+				ClientId = UserPool.ClientID,
 				AuthFlow = AuthFlowType.ADMIN_NO_SRP_AUTH,
 			};
 			var result = new ResultCarrier<AdminInitiateAuthResponse>();
 			authReq.AuthParameters.Add("USERNAME", loginRequest.Username);
 			authReq.AuthParameters.Add("PASSWORD", loginRequest.Password);		
-			authReq.AuthParameters.Add("SECRET_HASH", _accessHandler.GetHash(loginRequest.Username,_cognitoUser.ClientID));
+			authReq.AuthParameters.Add("SECRET_HASH", _accessHandler.GetHash(loginRequest.Username,UserPool.ClientID));
 			try
 			{
 				var authResp = await _cognito.AdminInitiateAuthAsync(authReq);
@@ -288,10 +258,10 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 			{
 				result.Info = new ErrorResponse
 				{
-					StatusCode = System.Net.HttpStatusCode.ExpectationFailed,
+					StatusCode = HttpStatusCode.ExpectationFailed,
 					Message = ee.Message
 				};	
-				_reportHandler.MakeReport($"Could Not login user: {loginRequest.Username}, error: {ee.Message}");
+				await Expect($"Could Not login user: {loginRequest.Username}, error: {ee.Message}", nameof(Login), loginRequest.Username, null);
 				return result;
 			}
 		}
@@ -305,10 +275,10 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 				{
 					GroupName = groupName,
 					Username = username,
-					UserPoolId = _cognitoUser.PoolID
+					UserPoolId = UserPool.PoolID
 				};
 				var results = await _cognito.AdminAddUserToGroupAsync(groupRequest);
-				if(results.HttpStatusCode == System.Net.HttpStatusCode.OK)
+				if(results.HttpStatusCode == HttpStatusCode.OK)
 				{
 					responseResults.Results = results;
 					responseResults.IsSuccesful = true;
@@ -326,24 +296,24 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 			{
 				responseResults.Info = new ErrorResponse
 				{
-					StatusCode = System.Net.HttpStatusCode.ExpectationFailed,
+					StatusCode = HttpStatusCode.ExpectationFailed,
 					Message = ee.Message
 				};
-				_reportHandler.MakeReport($"Could Not add user to group : {username}, error: {ee.Message}");
+				await Expect($"Could Not add user to group : {groupName}, error: {ee.Message}", nameof(AddUserToGroup), username, null);
 				return responseResults;
 			}
 		}
-		public async Task<ResultCarrier<ConfirmSignUpResponse>> ConfirmSignUp(EmailConfirmationModel emailConfirmationModel)
+		public async Task<ResultCarrier<ConfirmSignUpResponse>> ConfirmSignUp(SignupConfirmationModel signupConfirmationModel)
 		{
 			var responseResult = new ResultCarrier<ConfirmSignUpResponse>();
 
 			var confirmRequest = new ConfirmSignUpRequest
 			{
-				ClientId = _cognitoUser.ClientID,
-				ConfirmationCode = emailConfirmationModel.ConfirmationCode,
-				SecretHash = _accessHandler.GetHash(emailConfirmationModel.Username, _cognitoUser.ClientID),
-				Username = emailConfirmationModel.Username,
-				ForceAliasCreation = emailConfirmationModel.CreateAlias
+				ClientId = UserPool.ClientID,
+				ConfirmationCode = signupConfirmationModel.ConfirmationCode,
+				SecretHash = _accessHandler.GetHash(signupConfirmationModel.Username, UserPool.ClientID),
+				Username = signupConfirmationModel.Username,
+				ForceAliasCreation = signupConfirmationModel.CreateAlias
 			};
 			try
 			{
@@ -359,10 +329,10 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 				responseResult.IsSuccesful = false;
 				responseResult.Info = new ErrorResponse
 				{
-					StatusCode = System.Net.HttpStatusCode.ExpectationFailed,
+					StatusCode = HttpStatusCode.ExpectationFailed,
 					Message = ee.Message
 				};
-				_reportHandler.MakeReport($"Could Not confirm user: {emailConfirmationModel.Username}, error: {ee.Message}");
+				await Expect($"Could Not confirm user: {signupConfirmationModel.Username}, error: {ee.Message}", nameof(ConfirmSignUp), signupConfirmationModel.Username, null);
 
 				return responseResult;
 			}
@@ -373,7 +343,7 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 
 			var challengeResponses = new Dictionary<string, string>();
 			challengeResponses.Add("USERNAME", Newrequest.Username);
-			challengeResponses.Add("SECRET_HASH", _accessHandler.GetHash(Newrequest.Username, _cognitoUser.ClientID));
+			challengeResponses.Add("SECRET_HASH", _accessHandler.GetHash(Newrequest.Username, UserPool.ClientID));
 			challengeResponses.Add("NEW_PASSWORD", Newrequest.NewPassword);
 			if (Newrequest.ChallengeParams.ContainsKey("userAttributes"))
 			{
@@ -383,12 +353,12 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 			try { 
 				var resCha = await _cognito.RespondToAuthChallengeAsync(new RespondToAuthChallengeRequest()
 				{
-					ClientId = _cognitoUser.ClientID,
+					ClientId = UserPool.ClientID,
 					ChallengeName = Newrequest.ChallengeNameType,
 					Session = Newrequest.Session,
 					ChallengeResponses = challengeResponses
 				});
-				if (resCha.HttpStatusCode == System.Net.HttpStatusCode.OK)
+				if (resCha.HttpStatusCode == HttpStatusCode.OK)
 				{
 					responseResults.Results = resCha;
 					responseResults.IsSuccesful = true;
@@ -405,7 +375,7 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 					StatusCode = System.Net.HttpStatusCode.ExpectationFailed,
 					Message = ee.Message
 				};
-				_reportHandler.MakeReport($"Could Not set new password for user: {Newrequest.Username}, error: {ee.Message}");
+				await Expect($"Could Not set new password for user: {Newrequest.Username}, error: {ee.Message}", nameof(SetNewPassword), Newrequest.Username, null);
 				return responseResults;
 			}
 		}
@@ -415,7 +385,7 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 			try { 
 				var registerAccountRequest = new SignUpRequest
 				{
-					ClientId = _cognitoUser.ClientID,
+					ClientId = UserPool.ClientID,
 					Username = registerAccount.Username,
 					Password = registerAccount.Password,
 					UserAttributes = new List<AttributeType>()
@@ -431,11 +401,11 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 							Value = registerAccount.Name
 						}
 					},
-					SecretHash = _accessHandler.GetHash(registerAccount.Username, _cognitoUser.ClientID)
+					SecretHash = _accessHandler.GetHash(registerAccount.Username, UserPool.ClientID)
 				};
 
 				var response = await _cognito.SignUpAsync(registerAccountRequest);
-				if (response.HttpStatusCode != System.Net.HttpStatusCode.OK) return responseResults;
+				if (response.HttpStatusCode != HttpStatusCode.OK) return responseResults;
 				responseResults.Results = response;
 				responseResults.IsSuccesful = true;
 				return responseResults;
@@ -445,12 +415,67 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 			{
 				responseResults.Info = new ErrorResponse
 				{
-					StatusCode = System.Net.HttpStatusCode.ExpectationFailed,
+					StatusCode = HttpStatusCode.ExpectationFailed,
 					Message = ee.Message
 				};
-				_reportHandler.MakeReport($"Could Not register user: {registerAccount.Username}, error: {ee.Message}");
+				await Expect($"Could Not register user: {registerAccount.Username}, error: {ee.Message}", nameof(Register), registerAccount.Username, null);
 				return responseResults;
 			}
+		}
+
+		public async Task<bool> UpdateUserState(LoginResponse login)
+		{
+			return await RunCodeWithLoggerExceptionAsync(async () =>
+			{
+				var user = await GetUserByUsername(login.Username);
+				if (user == null) return false;
+				var hand = new JwtSecurityTokenHandler();
+				var tokenClaims = hand.ReadJwtToken(login.IdToken);
+
+				user.IsUserConfirmed = true;
+				user.LastLoggedIn = DateTime.UtcNow;
+				user.Claims = tokenClaims.Claims.Select(x=>new MongoClaim 
+				{
+					Issuer = x.Issuer,
+					Type = x.Type,
+					Value = x.Value
+				}).ToList();
+
+				user.Tokens = new List<Token>
+				{
+					new Token
+					{
+						LoginProvider = "aws",
+						Name = "refresh_token",
+						Value = login.RefreshToken
+					},
+					new Token
+					{
+						LoginProvider = "aws",
+						Name = "expires_in",
+						Value = login.ExpiresIn.ToString()
+					},
+					new Token
+					{
+						LoginProvider = "aws",
+						Name = "access_token",
+						Value = login.AccessToken
+					},
+					new Token
+					{
+						LoginProvider = "aws",
+						Name = "id_token",
+						Value = login.IdToken
+					}
+				};
+				user.Roles =  tokenClaims.Claims.Where(_=>_.Type.Contains("groups")).Select(s=>s.Value).ToList();
+
+				var updatedUser = await UpdateUser(user);
+
+				if(updatedUser)
+					return true;
+				return false;
+			}, nameof(UpdateUserState), login.Username, null);
 		}
 
 	}

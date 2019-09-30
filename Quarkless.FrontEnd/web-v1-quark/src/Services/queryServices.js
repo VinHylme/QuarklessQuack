@@ -20,13 +20,16 @@ export default {
     return Api(true).get(Calling["query_buildtags"]+topic + '/' + subcat + '/' + lang + '/' + limit + '/'+ pickRate);
   },
   SearchByTopic(query, instaAccount, limit){
-    return Api(true, instaAccount).put(Calling["query_searchTopic"]+limit, query);
+    return Api(true, instaAccount).post(Calling["query_searchTopic"]+instaAccount+'/'+limit, {query});
   },
   SearchByLocation(query, instaAccount, limit){
-    return Api(true, instaAccount).put(Calling["query_searchLocation"]+limit, query);
+    return Api(true, instaAccount).post(Calling["query_searchLocation"]+instaAccount+'/'+limit, {query});
   },
   GetUserMedias(instaAccount, topic){
     return Api(true).get(Calling["query_userMedia"]+instaAccount+'/'+topic)
+  },
+  GetUserInbox(instaAccount, topic){
+    return Api(true).get(Calling["query_userInbox"]+instaAccount+'/'+topic)
   },
   GetUserFeed(instaAccount, topic){
     return Api(true).get(Calling["query_userFeed"]+instaAccount+'/'+topic)

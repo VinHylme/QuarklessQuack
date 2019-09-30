@@ -4,6 +4,7 @@ using QuarklessContexts.Models.UserAuth.AuthTypes;
 using QuarklessLogic.Logic.QueryLogic;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using QuarklessContexts.Models.QueryModels;
 
 namespace Quarkless.Controllers
 {
@@ -78,34 +79,66 @@ namespace Quarkless.Controllers
 			return Ok(await _queryLogic.SimilarImagesSearch(_userContext.CurrentUser, limit, offset, urls,moreAccurate));
 		}
 
-		[HttpPut]
-		[Route("api/query/searchTopic/{instagramId}/{limit}")]
-		public async Task<IActionResult> SearchByTopic([FromBody] string query, string instagramId, int limit)
+		[HttpPost]
+		[Route("api/query/searchMediaTopic/{instagramId}/{limit}")]
+		public async Task<IActionResult> SearchMediasByTopic([FromBody] UserSearchRequest queryObject, string instagramId, int limit)
 		{
-			IEnumerable<string> topics = null;
-			if(string.IsNullOrEmpty(_userContext.CurrentUser) || string.IsNullOrEmpty(query))
+			if(string.IsNullOrEmpty(_userContext.CurrentUser) || string.IsNullOrEmpty(queryObject.Query))
 				return BadRequest("Invalid Request");
-			if(query.Contains(','))
-				topics = query.Split(',');
-			else
-				topics = new string[] {query};
+			IEnumerable<string> topics = queryObject.Query.Contains(',') ? queryObject.Query.Split(',') : new string[] {queryObject.Query};
 
 			return Ok(await _queryLogic.SearchMediasByTopic(topics, _userContext.CurrentUser, instagramId, limit));
 		}
 
-		[HttpPut]
-		[Route("api/query/searchLocation/{instagramId}/{limit}")]
-		public async Task<IActionResult> SearchByLocation([FromBody] string query, string instagramId, int limit)
+		[HttpPost]
+		[Route("api/query/searchMediaLocation/{instagramId}/{limit}")]
+		public async Task<IActionResult> SearchMediasByLocation([FromBody] UserSearchRequest queryObject, string instagramId, int limit)
 		{
-			if(string.IsNullOrEmpty(_userContext.CurrentUser) || string.IsNullOrEmpty(query))
+			if(string.IsNullOrEmpty(_userContext.CurrentUser) || string.IsNullOrEmpty(queryObject.Query))
 				return BadRequest("Invalid Request");
 
 			return Ok(await _queryLogic.SearchMediasByLocation(new QuarklessContexts.Models.Profiles.Location
 			{
-				City = query
+				City = queryObject.Query
 			}, _userContext.CurrentUser, instagramId, limit));
 		}
+
+		[HttpPost]
+		[Route("api/query/searchUserTopic/{instagramId}/{limit}")]
+		public async Task<IActionResult> SearchUsersByTopic([FromBody] UserSearchRequest queryObject, string instagramId, int limit)
+		{
+			if(string.IsNullOrEmpty(_userContext.CurrentUser) || string.IsNullOrEmpty(queryObject.Query) && queryObject.Query.Length<2)
+				return BadRequest("Invalid Request");
+			IEnumerable<string> topics = queryObject.Query.Contains(',') ? queryObject.Query.Split(',') : new string[] {queryObject.Query};
+
+			return Ok(await _queryLogic.SearchUsersByTopic(topics, _userContext.CurrentUser, instagramId, limit));
+		}
+
+		[HttpPost]
+		[Route("api/query/searchUserLocation/{instagramId}/{limit}")]
+		public async Task<IActionResult> SearchUsersByLocation([FromBody] UserSearchRequest queryObject, string instagramId, int limit)
+		{
+			if(string.IsNullOrEmpty(_userContext.CurrentUser) || string.IsNullOrEmpty(queryObject.Query))
+				return BadRequest("Invalid Request");
+
+			return Ok(await _queryLogic.SearchUsersByLocation(new QuarklessContexts.Models.Profiles.Location
+			{
+				City = queryObject.Query
+			}, _userContext.CurrentUser, instagramId, limit));
+		}
+
+
 		#region Heartbeat Logic Stuff
+
+		[HttpGet]
+		[Route("api/query/userInbox/{instagramId}/{topic}")]
+		public async Task<IActionResult> GetUserInbox(string instagramId, string topic)
+		{
+			if(string.IsNullOrEmpty(_userContext.CurrentUser))
+				return BadRequest("Invalid Request");
+			return Ok(await _queryLogic.GetUserInbox(_userContext.CurrentUser, instagramId, topic));
+		}
+
 		[HttpGet]
 		[Route("api/query/userMedias/{instagramId}/{topic}")]
 		public async Task<IActionResult> GetUsersMedias(string instagramId, string topic)

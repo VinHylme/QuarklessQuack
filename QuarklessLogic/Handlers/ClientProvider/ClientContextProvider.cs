@@ -125,7 +125,7 @@ namespace QuarklessLogic.Handlers.ClientProvider
 								UserLimits = instagramAccount.UserLimits,
 								Location = instagramAccount.Location,
 								IsBusiness = instagramAccount.IsBusiness,
-								ChallengeInfo = instagramAccount.ChallengeInfo
+								ChallengeInfo = instagramAccount.ChallengeInfo,
 							},
 							Profile = profileOfInstagramAccountModel,
 							Proxy = proxyOfInstagramAccountModel
@@ -159,7 +159,7 @@ namespace QuarklessLogic.Handlers.ClientProvider
 							UserLimits = instagramAccount.UserLimits,
 							Location = instagramAccount.Location,
 							IsBusiness = instagramAccount.IsBusiness,
-							ChallengeInfo = instagramAccount.ChallengeInfo
+							ChallengeInfo = instagramAccount.ChallengeInfo,
 						},
 						Profile = profileOfInstagramAccountModel,
 						Proxy = proxyOfInstagramAccountModel

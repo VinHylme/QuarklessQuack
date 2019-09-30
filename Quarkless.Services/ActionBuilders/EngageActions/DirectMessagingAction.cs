@@ -394,7 +394,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 								{
 									ImageBytes = Convert
 										.FromBase64String(templateSelected?.Entity.MediaBytes.Split(',')[1])
-										.GenerateVideoThumbnail()
+										.GenerateVideoThumbnail().GetAwaiter().GetResult()
 								}
 							}
 						};

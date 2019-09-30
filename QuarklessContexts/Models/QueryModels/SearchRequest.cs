@@ -1,5 +1,4 @@
 ﻿using QuarklessContexts.Models.ServicesModels.SearchModels;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace QuarklessContexts.Models.QueryModels
@@ -10,5 +9,10 @@ namespace QuarklessContexts.Models.QueryModels
 		public int Offset { get; set; }
 		public IEnumerable<string> RequestData { get; set; }
 		public Media ResponseData { get; set;}
+	}
+
+	public class UserSearchRequest
+	{
+		public string Query { get; set; }
 	}
 }

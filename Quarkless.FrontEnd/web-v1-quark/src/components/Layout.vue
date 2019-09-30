@@ -142,7 +142,6 @@ export default {
     },
     changeState(){
       this.$store.dispatch('HideunHideMenu', this.isNavOn = !this.isNavOn)
-      console.log(this.isNavOn)
     }
   }
 }

@@ -1,13 +1,15 @@
+/* eslint-disable no-unused-vars */
 import Vue from 'vue'
 import Vuex from 'vuex';
 import AccountServices from './Services/accountServices';
 import TimelineServices from './Services/timelineService';
 import QueryServices from './Services/queryServices';
 import LibraryServices from './Services/libraryServices';
+import MessagingServices from './Services/messagingServices';
 import Axios from 'axios';
 import decoder from 'jwt-decode';
 import moment from 'moment';
-import helper from './helpers';
+import {ReadFile} from './helpers';
 Vue.use(Vuex);
 export default new Vuex.Store({
   state:{
@@ -32,6 +34,11 @@ export default new Vuex.Store({
   },
 
   mutations: {
+	success_thread(state,thread){
+	},
+	failed_thread(state){
+		
+	},
     auth_request(state){
       state.status = 'loading'
     },
@@ -46,7 +53,11 @@ export default new Vuex.Store({
       state.token = ''
       state.user = ''
       state.role = ''
-    }, 
+    },
+    auth_refresh_error(state){
+      state.token = ''
+      state.status = 'error'
+    },
     logout(state){
       state.status = ''
       state.token = ''
@@ -77,12 +88,12 @@ export default new Vuex.Store({
       for(var i = 0; i < data.length; i++){
         var item = data[i];
         var moment_enqueued = moment(item.enqueueTime);
-        var enqueueTime = new Date(moment_enqueued.format('YYYY-MM-DD HH:mm:ss'));
+        var enqueueTime = new moment(moment_enqueued.format('YYYY-MM-DD HH:mm:ss'));
         if(enqueueTime===undefined){continue;}
         state.AccountData.TimelineData.push({
           id: item.itemId,
-          startTime: enqueueTime.getHours()+":"+ enqueueTime.getMinutes(),
-          endTime: enqueueTime.getHours() + ":" + enqueueTime.getMinutes(),
+          startTime: enqueueTime,
+          endTime: enqueueTime.add(30,'minutes'),
           actionObject:{
             actionName:item.actionName.split('_')[0],
             actionType:item.actionName.split('_')[1],
@@ -195,7 +206,7 @@ export default new Vuex.Store({
       state.AccountData.TimelineLogData = []
     },
     async update_profile_picture(state, data){
-      await helper.readFile(data.image.requestData[0]).then(res=>{
+      await ReadFile(data.image.requestData[0]).then(res=>{
         state.AccountData.InstagramAccounts.filter((item)=>{
           if(item.id == data.instagramAccountId)
             item.profilePicture = res
@@ -313,9 +324,126 @@ export default new Vuex.Store({
       }
     },
     GetProfileConfig:state=> state.AccountData.ProfileConfg,
-    MenuState: () => localStorage.getItem("menu_state")
+	MenuState: () => localStorage.getItem("menu_state")
   },
   actions: {
+	DMMessage({commit}, data){
+		return new Promise((resolve, reject)=>{
+			MessagingServices.SendDM(data.id, data.type, data.message).then(resp=>{
+				resolve(resp)
+			}).catch(err=>reject(err))
+		})
+	},
+	GetThread({commit}, data){
+		return new Promise((resolve, reject)=>{
+			MessagingServices.GetThread(data.instagramAccountId, data.threadId, data.limit).then(resp=>{
+				commit('success_thread', resp.data)
+				resolve(resp);
+			}).catch((err)=>{
+				commit('failed_thread')
+				reject(err);
+			})
+		})
+	},
+    SearchByTopic({commit}, data){
+      return new Promise((resolve, reject)=>{
+        QueryServices.SearchByTopic(data.query, data.instagramAccountId, data.limit).then(resp=>{
+          resolve(resp);
+        }).catch((err)=>{
+          reject(err);
+        })
+      })
+    },
+    SearchByLocation({commit}, data){
+      return new Promise((resolve, reject)=>{
+        QueryServices.SearchByLocation(data.query, data.instagramAccountId, data.limit).then(resp=>{
+          resolve(resp);
+        }).catch((err)=>{
+          reject(err);
+        })
+      })
+    },
+    GetUserMedias({commit}, data){
+      return new Promise((resolve, reject)=>{
+        QueryServices.GetUserMedias(data.instagramAccountId, data.topic).then(resp=>{
+          resolve(resp);
+        }).catch((err)=>{
+          reject(err);
+        })
+      })
+	},
+	GetUserInbox({commit}, data){
+		return new Promise((resolve, reject)=>{
+			QueryServices.GetUserInbox(data.instagramAccountId, data.topic).then(resp=>{
+				resolve(resp);
+			}).catch((err)=>{
+				reject(err);
+			})
+		})
+	},
+    GetUserFeed({commit}, data){
+      return new Promise((resolve, reject)=>{
+        QueryServices.GetUserFeed(data.instagramAccountId, data.topic).then(resp=>{
+          resolve(resp);
+        }).catch((err)=>{
+          reject(err);
+        })
+      })
+    },
+    GetMediasByLocation({commit}, data){
+      return new Promise((resolve, reject)=>{
+        QueryServices.GetMediasByLocation(data.instagramAccountId, data.topic).then(resp=>{
+          resolve(resp);
+        }).catch((err)=>{
+          reject(err);
+        })
+      })
+    },
+    GetUserFollowerList({commit}, data){
+      return new Promise((resolve, reject)=>{
+        QueryServices.GetUserFollowerList(data.instagramAccountId, data.topic).then(resp=>{
+          resolve(resp);
+        }).catch((err)=>{
+          reject(err);
+        })
+      })
+    },
+    GetUserFollowingList({commit}, data){
+      return new Promise((resolve, reject)=>{
+        QueryServices.GetUserFollowingList(data.instagramAccountId, data.topic).then(resp=>{
+          resolve(resp);
+        }).catch((err)=>{
+          reject(err);
+        })
+      })
+    },
+    GetUserFollowingSuggestionList({commit}, data){
+      return new Promise((resolve, reject)=>{
+        QueryServices.GetUserFollowingSuggestions(data.instagramAccountId, data.topic).then(resp=>{
+          resolve(resp);
+        }).catch((err)=>{
+          reject(err);
+        })
+      })
+    },
+    GetUserTargetLocation({commit}, data){
+      return new Promise((resolve, reject)=>{
+        QueryServices.GetUserTargetLocation(data.instagramAccountId, data.topic).then(resp=>{
+          resolve(resp);
+        }).catch((err)=>{
+          reject(err);
+        })
+      })
+    },
+    GetUsersTargetList({commit}, data){
+      return new Promise((resolve, reject)=>{
+        QueryServices.GetUsersTargetList(data.instagramAccountId, data.topic).then(resp=>{
+          resolve(resp);
+        }).catch((err)=>{
+          reject(err);
+        })
+      })
+    },
     GetEventLogs({commit}, data){
       return new Promise((resolve, reject)=>{
         TimelineServices.GetEventLogs(data.instagramAccountId, data.limit).then(resp=>{
@@ -349,7 +477,15 @@ export default new Vuex.Store({
         })
       })
     },
-   
+    CreateMessage({commit}, data){
+      return new Promise((resolve, reject)=>{
+        TimelineServices.CreateMessage(data.type, data.id, data.messages).then(resp=>{
+          resolve(resp);
+        }).catch(err=>{
+          reject(err);
+        })
+      })
+    },
     SetSavedMedias({commit}, medias){
       return new Promise((resolve, reject)=>{
         LibraryServices.SetSavedMedias(medias).then(resp=>{
@@ -717,12 +853,44 @@ export default new Vuex.Store({
         }).catch(err=>reject(err))
       })
     },
+    refreshToken({commit}){
+      return new Promise((resolve, reject)=>{
+        AccountServices.RefreshToken({refreshToken: localStorage.getItem('refresh'), username: this.getters.User}).then(resp=>{
+          const token = resp.data.idToken;
+          //const refreshToken = resp.data.refreshToken;
+          localStorage.setItem('token', token)
+         // localStorage.setItem('refresh', refreshToken);
+          Axios.defaults.headers.common['Authorization'] = token;
+          var decoded = decoder(token);
+          var role = decoded["cognito:groups"][0];
+          //localStorage.setItem('user', this.getters.User)
+          //localStorage.setItem('role', role)
+          commit('auth_success', 
+          { 
+            Token: token, 
+            User: { 
+              Username: this.getters.User,
+              Role: role
+            }
+          });
+          decoded = null;
+          resolve(resp);
+        }).catch(err=>{
+          commit('auth_refresh_error')
+          localStorage.removeItem('token')
+          this.state.UserAuthenticated = false;
+          reject(err);
+        })
+      });
+    },
     async login({commit}, user){
       return new Promise((resolve, reject) => {
         commit('auth_request')
         AccountServices.Login(user).then(resp=>{
           const token = resp.data.idToken
-          localStorage.setItem('token',token)
+          const refreshToken = resp.data.refreshToken;
+          localStorage.setItem('token', token)
+          localStorage.setItem('refresh', refreshToken);
           Axios.defaults.headers.common['Authorization'] = token;
           var decoded = decoder(token);
           var role = decoded["cognito:groups"][0];
@@ -742,6 +910,7 @@ export default new Vuex.Store({
         .catch(err=>{
           commit('auth_error')
           localStorage.removeItem('token')
+          localStorage.removeItem('refresh')
           this.state.UserAuthenticated = false;
           reject(err)
         })

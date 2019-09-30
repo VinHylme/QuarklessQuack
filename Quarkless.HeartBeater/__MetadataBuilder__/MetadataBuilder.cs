@@ -843,39 +843,43 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 						var userFirst = fetchUsersMedia.Medias.FirstOrDefault();
 						if (userFirst != null) { 
 							var details = await searcher.SearchInstagramFullUserDetail(userFirst.User.UserId);
-							await _logic.PartialUpdateInstagramAccount(user.AccountId, user.Id,
-								new QuarklessContexts.Models.InstagramAccounts.InstagramAccountModel
-								{
-									FollowersCount = details.UserDetail.FollowerCount,
-									FollowingCount = details.UserDetail.FollowingCount,
-									TotalPostsCount = details.UserDetail.MediaCount,
-									Email = details.UserDetail.PublicEmail,
-									ProfilePicture =
-										details.UserDetail.ProfilePicture ?? details.UserDetail.ProfilePicUrl,
-									FullName = details.UserDetail.FullName,
-									UserBiography = new QuarklessContexts.Models.InstagramAccounts.Biography
+							if (details.UserDetail.Pk != 0)
+							{
+								await _logic.PartialUpdateInstagramAccount(user.AccountId, user.Id,
+									new QuarklessContexts.Models.InstagramAccounts.InstagramAccountModel
 									{
-										Text = details.UserDetail.BiographyWithEntities.Text,
-										Hashtags = details.UserDetail.BiographyWithEntities.Entities
-											.Select(_ => _.Hashtag.Name).ToList()
-									},
-									IsBusiness = details.UserDetail.IsBusiness,
-									Location = new Location
-									{
-										Address = details.UserDetail.AddressStreet,
-										City = details.UserDetail.CityName,
-										Coordinates = new Coordinates
+										UserId = details.UserDetail.Pk,
+										FollowersCount = details.UserDetail.FollowerCount,
+										FollowingCount = details.UserDetail.FollowingCount,
+										TotalPostsCount = details.UserDetail.MediaCount,
+										Email = details.UserDetail.PublicEmail,
+										ProfilePicture =
+											details.UserDetail.ProfilePicture ?? details.UserDetail.ProfilePicUrl,
+										FullName = details.UserDetail.FullName,
+										UserBiography = new QuarklessContexts.Models.InstagramAccounts.Biography
 										{
-											Latitude = details.UserDetail.Latitude,
-											Longitude = details.UserDetail.Longitude
+											Text = details.UserDetail.BiographyWithEntities.Text,
+											Hashtags = details.UserDetail.BiographyWithEntities.Entities
+												.Select(_ => _.Hashtag.Name).ToList()
 										},
-										PostCode = details.UserDetail.ZipCode
-									},
-									PhoneNumber = details.UserDetail.PublicPhoneCountryCode +
-									              (!string.IsNullOrEmpty(details.UserDetail.PublicPhoneNumber)
-										              ? details.UserDetail.PublicPhoneNumber
-										              : details.UserDetail.ContactPhoneNumber)
-								});
+										IsBusiness = details.UserDetail.IsBusiness,
+										Location = new Location
+										{
+											Address = details.UserDetail.AddressStreet,
+											City = details.UserDetail.CityName,
+											Coordinates = new Coordinates
+											{
+												Latitude = details.UserDetail.Latitude,
+												Longitude = details.UserDetail.Longitude
+											},
+											PostCode = details.UserDetail.ZipCode
+										},
+										PhoneNumber = details.UserDetail.PublicPhoneCountryCode +
+										              (!string.IsNullOrEmpty(details.UserDetail.PublicPhoneNumber)
+											              ? details.UserDetail.PublicPhoneNumber
+											              : details.UserDetail.ContactPhoneNumber)
+									});
+							}
 						}
 					}
 				});
@@ -948,7 +952,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			}
 			Console.WriteLine($"Ended - BuildUserUnfollowList : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
 		}
-		public async Task BuildUserFollowerList(int limit = 3, int cutBy = 1)
+		public async Task BuildUserFollowerList(int limit = 4, int cutBy = 1)
 		{
 			Console.WriteLine("Began - BuildUserFollowerList");
 			var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -960,7 +964,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					var fetchUsersMedia = await searcher.GetUsersFollowersList(user.Username, limit);
 					if (fetchUsersMedia != null)
 					{
-						//await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersFollowerList, worker.Topic.TopicFriendlyName, user.Id, proxy: worker.Worker.GetContext.Proxy);
+						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersFollowerList, worker.Topic.TopicFriendlyName, user.Id, proxy: worker.Worker.GetContext.Proxy);
 						foreach(var s in fetchUsersMedia.ToList().CutObject(cutBy))
 						{
 							await _heartbeatLogic.AddMetaData(MetaDataType.FetchUsersFollowerList, worker.Topic.TopicFriendlyName,
@@ -989,7 +993,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					searcher.ChangeUser(worker.Worker);
 					if (fetchUsersMedia != null)
 					{
-						//await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersFollowSuggestions, worker.Topic.TopicFriendlyName, user.Id, proxy: worker.Worker.GetContext.Proxy);
+						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersFollowSuggestions, worker.Topic.TopicFriendlyName, user.Id, proxy: worker.Worker.GetContext.Proxy);
 						foreach(var s in fetchUsersMedia.ToList().CutObject(cutObjectBy))
 						{
 							await _heartbeatLogic.AddMetaData(MetaDataType.FetchUsersFollowSuggestions, worker.Topic.TopicFriendlyName,
@@ -1004,5 +1008,37 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			}
 			Console.WriteLine($"Ended - BuildUsersFollowSuggestions : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
 		}
+		public async Task BuildUsersInbox(int limit = 1)
+		{
+			Console.WriteLine("Began - BuildUsersInbox");
+			var watch = System.Diagnostics.Stopwatch.StartNew();
+			try
+			{
+				await _assignments.ParallelForEachAsync(async worker => {
+					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.InstagramRequests.ProxyUsing);
+					
+					var user = worker.InstagramRequests.InstagramAccount;
+					
+					searcher.ChangeUser(new APIClientContainer(_context, user.AccountId, user.Id));
+					var fetchUserInbox = await searcher.SearchUserInbox(limit);
+					searcher.ChangeUser(worker.Worker);
+					
+					if (fetchUserInbox != null)
+					{
+						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUserDirectInbox, worker.Topic.TopicFriendlyName, user.Id, proxy: worker.Worker.GetContext.Proxy);
+
+						await _heartbeatLogic.AddMetaData(MetaDataType.FetchUserDirectInbox,
+							worker.Topic.TopicFriendlyName, new __Meta__<InstaDirectInboxContainer>(fetchUserInbox),
+							user.Id);
+					}
+				});
+			}
+			catch (Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+			}
+			Console.WriteLine($"Ended - BuildUsersInbox : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+		}
+
 	}
 }

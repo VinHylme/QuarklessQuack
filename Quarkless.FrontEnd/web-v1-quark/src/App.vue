@@ -12,16 +12,18 @@
 <script>
 import Layout from "./components/Layout.vue";
 import MainPage from "./components/MainPage";
-import Axios from 'axios';
+import axios from 'axios';
 export default {
   name: 'app',
   components: {
     Layout,
     MainPage
   },
- created: function () {
-   this.MockResponseTest();
-   this.timer = setInterval(this.MockResponseTest, 6000)
+  created: function () {
+
+  },
+  mounted(){
+
   },
   data(){
     return {
@@ -30,18 +32,7 @@ export default {
     }
   },
   methods:{
-    MockResponseTest(){
-     Axios.interceptors.response.use(undefined, function (err) {
-          return new Promise(function (resolve, reject) {
-            if (err.status === 401 && err.config && !err.config.__isRetryRequest) {
-            // if you ever get an unauthorized, logout the user
-              this.$store.dispatch('logout')
-            // you can also redirect to /login if needed !
-            }
-            throw err;
-          });
-      });
-    }
+  
   }
 }
 </script>
@@ -78,5 +69,19 @@ body{
   background: $background;
   height:100%;
   overflow-x: hidden !important;
+}
+
+/* Enter and leave animations can use different */
+/* durations and timing functions.              */
+.slide-fade-enter-active {
+  transition: all .3s ease;
+}
+.slide-fade-leave-active {
+  transition: all .3s cubic-bezier(1.0, 0.5, 0.8, 1.0);
+}
+.slide-fade-enter, .slide-fade-leave-to
+/* .slide-fade-leave-active below version 2.1.8 */ {
+  transform: translateX(10px);
+  opacity: 0;
 }
 </style>

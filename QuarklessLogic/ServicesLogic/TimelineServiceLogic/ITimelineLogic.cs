@@ -1,11 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using QuarklessContexts.Enums;
+using QuarklessContexts.Models.MediaModels;
+using QuarklessContexts.Models.MessagingModels;
 using QuarklessContexts.Models.Timeline;
 
 namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 {
 	public interface ITimelineLogic
 	{
+		Task<TimelineScheduleResponse<RawMediaSubmit>> SchedulePostsByUser(UserStoreDetails userStoreDetails,
+			RawMediaSubmit dataMediaSubmit);
+		Task<TimelineScheduleResponse<IEnumerable<IDirectMessageModel>>> ScheduleMessage(UserStoreDetails userStoreDetails, IEnumerable<IDirectMessageModel> messages);
+		DateTime PickAGoodTime(string accountId, string instagramAccountId, ActionType? actionName = null);
 		string UpdateEvent(UpdateTimelineItemRequest updateTimelineItemRequest);
 		bool DeleteEvent(string eventId);
 		void ExecuteNow(string eventId);

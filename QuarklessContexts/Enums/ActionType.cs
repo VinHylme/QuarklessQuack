@@ -52,8 +52,10 @@ namespace QuarklessContexts.Enums
 		RefreshLogin,
 		[Description("changedProfilePicture")]
 		ChangeProfilePicture,
-		[Description("getInbox")]
+		[Description("getinbox")]
 		GetInbox,
+		[Description("getthread")]
+		GetThread,
 		[Description("senddirectmessage")]
 		SendDirectMessage,
 		[Description("sendmessagetext")]
@@ -67,6 +69,8 @@ namespace QuarklessContexts.Enums
 		[Description("sendmessageaudio")]
 		SendDirectMessageAudio,
 		[Description("sendmessageprofile")]
-		SendDirectMessageProfile
+		SendDirectMessageProfile,
+		[Description("sharemessagemedia")]
+		SendDirectMessageMedia
 	}
 }

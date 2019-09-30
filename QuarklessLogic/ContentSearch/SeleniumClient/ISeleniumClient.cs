@@ -6,6 +6,7 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 {
 	public interface ISeleniumClient
 	{
+		void TestRunFireFox();
 		IEnumerable<string> YandexImageSearch(string url, string imageurl,string targetElement, int limit = 5, string patternRegex = @"(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|gif|png)");
 		void AddArguments(params string[] args);
 		void Initialise();

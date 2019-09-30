@@ -54,11 +54,11 @@ namespace QuarklessContexts.Models.Library
 	public enum MediaSelectionType
 	{
 		[Description("image")]
-		Image = 0,
+		Image = 1,
 		[Description("video")]
-		Video = 1,
+		Video = 2,
 		[Description("carousel")]
-		Carousel = 2
+		Carousel = 3
 	}
 
 	public class MediasLib

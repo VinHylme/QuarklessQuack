@@ -17,6 +17,10 @@ using QuarklessContexts.Models.Library;
 using QuarklessContexts.Models.MediaModels;
 using QuarklessLogic.Handlers.RequestBuilder.Consts;
 using QuarklessLogic.Logic.TimelineEventLogLogic;
+using QuarklessContexts.Models.MessagingModels;
+using QuarklessContexts.Extensions;
+using QuarklessRepositories.RedisRepository.LookupCache;
+using QuarklessContexts.Models.LookupModels;
 
 namespace Quarkless.Controllers
 {
@@ -32,13 +36,15 @@ namespace Quarkless.Controllers
 		private readonly IRequestBuilder _requestBuilder;
 		private readonly ITimelineLogic _timelineLogic;
 		private readonly ITimelineEventLogLogic _timelineEventLogLogic;
+		private readonly ILookupCache _lookupCache;
 		public TimelineController(IUserContext userContext, ITimelineLogic timelineLogic, 
-			ITimelineEventLogLogic timelineEventLogLogic, IRequestBuilder requestBuilder)
+			ITimelineEventLogLogic timelineEventLogLogic, IRequestBuilder requestBuilder, ILookupCache lookupCache)
 		{
 			_userContext = userContext;
 			_timelineLogic = timelineLogic;
 			_timelineEventLogLogic = timelineEventLogLogic;
 			_requestBuilder = requestBuilder;
+			_lookupCache = lookupCache;
 		}
 
 		[HttpGet]
@@ -66,6 +72,7 @@ namespace Quarkless.Controllers
 				return BadRequest("Invalid Request");
 			return Ok(await _timelineEventLogLogic.GetAllTimelineLogs((ActionType)actionType));
 		}
+
 		[HashtagAuthorize(AuthTypes.Admin)]
 		[HttpGet]
 		[Route("api/timeline/{from}/{limit}")]
@@ -96,6 +103,7 @@ namespace Quarkless.Controllers
 			}
 			return BadRequest();
 		}
+
 		[HttpDelete]
 		[Route("api/timeline/delete/{eventId}")]
 		public IActionResult DeleteEvent(string eventId)
@@ -107,6 +115,7 @@ namespace Quarkless.Controllers
 
 			return NotFound("this event no longer exists or has already been deleted");
 		}
+
 		[HttpPut]
 		[Route("api/timeline/update")]
 		public IActionResult UpdateEvent(UpdateTimelineItemRequest updateTimelineItemRequest)
@@ -125,6 +134,7 @@ namespace Quarkless.Controllers
 				return BadRequest(ee.Message);
 			}
 		}
+
 		[HttpPut]
 		[Route("api/timeline/enqueue/{eventId}")]
 		public IActionResult EnqueueNow(string eventId)
@@ -142,7 +152,7 @@ namespace Quarkless.Controllers
 
 		[HttpPost]
 		[Route("api/timeline/post/{instagramId}")]
-		public IActionResult CreatePost([FromRoute] string instagramId, [FromBody] RawMediaSubmit dataMediaSubmit)
+		public async Task<IActionResult> CreatePost([FromRoute] string instagramId, [FromBody] RawMediaSubmit dataMediaSubmit)
 		{
 			if (string.IsNullOrEmpty(_userContext.CurrentUser)) return BadRequest("Invalid Request");
 			if (dataMediaSubmit == null) return BadRequest("Data Invalid");
@@ -153,83 +163,128 @@ namespace Quarkless.Controllers
 			if (dataMediaSubmit.RawMediaDatas == null || dataMediaSubmit.RawMediaDatas?.Count()<=0)
 				return BadRequest("Invalid Media");
 
-			var options = new LongRunningJobOptions
-			{
-				ActionName = "createPost",
-				ExecutionTime = dataMediaSubmit.ExecuteTime
-			};
 			var accessToken = HttpContext.Request.Headers["Authorization"];
-			options.Rest = new RestModel
+			var user = new UserStoreDetails
 			{
-				User = new UserStoreDetails
-				{
-					OAccessToken = accessToken,
-					OAccountId = _userContext.CurrentUser,
-					OInstagramAccountUser = instagramId
-				},
-				RequestType = RequestType.POST
+				OAccessToken = accessToken,
+				OAccountId = _userContext.CurrentUser,
+				OInstagramAccountUser = instagramId
 			};
-			var mediaInfo = new MediaInfo
-			{
-				Caption = dataMediaSubmit.Caption,
-				Hashtags = dataMediaSubmit.Hashtags
-			};
-			var medias = new List<byte[]>();
 
-			foreach (var media in dataMediaSubmit.RawMediaDatas)
+			var results = await _timelineLogic.SchedulePostsByUser(user, dataMediaSubmit);
+			if (results.IsSuccessful)
 			{
-				if(media.isBs64)
-					medias.Add(Convert.FromBase64String(media.Media64BaseData.Split(',')[1]));
-				else
-				{
-					try
-					{
-						var downloadedFile = media.Media64BaseData.DownloadMedia();
-						if(downloadedFile!=null)
-							medias.Add(downloadedFile);
-					}
-					catch
-					{
-						
-					}
-				}
+				return Ok(results);
 			}
-
-			if (medias.Count <= 0) return BadRequest("Invalid File");
-			switch (dataMediaSubmit.MediaSelectionType)
-			{
-				case MediaSelectionType.Image:
-					options.ActionName += $"_{MediaSelectionType.Image.ToString()}_userPosted";
-					options.Rest.BaseUrl = UrlConstants.UploadPhoto;
-					options.Rest.JsonBody = JsonConvert.SerializeObject(new UploadPhotoModel
-					{
-						MediaInfo = mediaInfo,
-						Image = new InstaImageUpload()
-						{
-							ImageBytes = medias.ElementAtOrDefault(0),
-						},
-						Location = dataMediaSubmit.Location != null
-							? new InstaLocationShort
-							{
-								Address = dataMediaSubmit.Location.Address,
-								Name = dataMediaSubmit.Location.City
-							}
-							: null
-					});
-					break;
-				case MediaSelectionType.Video:
-					break;
-				case MediaSelectionType.Carousel:
-					break;
-				default:
-					return BadRequest("Invalid Media Type");
-			}
-
-			if (string.IsNullOrEmpty(options.Rest.JsonBody)) return BadRequest("Invalid Request");
-			_timelineLogic.AddEventToTimeline(options.ActionName, options.Rest, options.ExecutionTime);
-			return Ok(new {Message = "Added To Queue", StatusCode = 200, RequestData = dataMediaSubmit});
+			
+			return BadRequest(results.NumberOfFails);
 		}
 
+		[HttpPost]
+		[Route("api/timeline/messaging/photo/{instagramId}")]
+		public async Task<IActionResult> CreatePhotoMessages([FromRoute] string instagramId, [FromBody] IEnumerable<SendDirectPhotoModel> messages)
+		{
+			if (string.IsNullOrEmpty(_userContext.CurrentUser)) return BadRequest("something went wrong");
+			if (messages == null) return BadRequest("Invalid Params");
+			var accessToken = HttpContext.Request.Headers["Authorization"];
+			var user = new UserStoreDetails
+			{
+				OAccessToken = accessToken,
+				OAccountId = _userContext.CurrentUser,
+				OInstagramAccountUser = instagramId
+			};
+
+			var schedule = await _timelineLogic.ScheduleMessage(user, messages);
+			if(!schedule.IsSuccessful)
+				return NotFound(schedule);
+
+			return Ok(schedule);
+		}
+
+		[HttpPost]
+		[Route("api/timeline/messaging/video/{instagramId}")]
+		public async Task<IActionResult> CreateVideoMessages([FromRoute] string instagramId, [FromBody] IEnumerable<SendDirectVideoModel> messages)
+		{
+			if (string.IsNullOrEmpty(_userContext.CurrentUser)) return BadRequest("something went wrong");
+			if (messages == null) return BadRequest("Invalid Params");
+			var accessToken = HttpContext.Request.Headers["Authorization"];
+			var user = new UserStoreDetails
+			{
+				OAccessToken = accessToken,
+				OAccountId = _userContext.CurrentUser,
+				OInstagramAccountUser = instagramId
+			};
+
+			var schedule = await _timelineLogic.ScheduleMessage(user, messages);
+			if(!schedule.IsSuccessful)
+				return NotFound(schedule);
+
+			return Ok(schedule);
+		}
+
+		[HttpPost]
+		[Route("api/timeline/messaging/text/{instagramId}")]
+		public async Task<IActionResult> CreateTextMessages([FromRoute] string instagramId, [FromBody] IEnumerable<SendDirectTextModel> messages)
+		{
+			if (string.IsNullOrEmpty(_userContext.CurrentUser)) return BadRequest("something went wrong");
+			if (messages == null) return BadRequest("Invalid Params");
+			var accessToken = HttpContext.Request.Headers["Authorization"];
+			var user = new UserStoreDetails
+			{
+				OAccessToken = accessToken,
+				OAccountId = _userContext.CurrentUser,
+				OInstagramAccountUser = instagramId
+			};
+
+			var schedule = await _timelineLogic.ScheduleMessage(user, messages);
+			if(!schedule.IsSuccessful)
+				return NotFound(schedule);
+
+			return Ok(schedule);
+		}
+
+		[HttpPost]
+		[Route("api/timeline/messaging/link/{instagramId}")]
+		public async Task<IActionResult> CreateLinkMessages([FromRoute] string instagramId, [FromBody] IEnumerable<SendDirectLinkModel> messages)
+		{
+			if (string.IsNullOrEmpty(_userContext.CurrentUser)) return BadRequest("something went wrong");
+			if (messages == null) return BadRequest("Invalid Params");
+			var accessToken = HttpContext.Request.Headers["Authorization"];
+			var user = new UserStoreDetails
+			{
+				OAccessToken = accessToken,
+				OAccountId = _userContext.CurrentUser,
+				OInstagramAccountUser = instagramId
+			};
+
+			var schedule = await _timelineLogic.ScheduleMessage(user, messages);
+			if(!schedule.IsSuccessful)
+				return NotFound(schedule);
+
+			return Ok(schedule);
+		}
+
+		[HttpPost]
+		[Route("api/timeline/messaging/media/{instagramId}")]
+		public async Task<IActionResult> CreateShareMediaMessage([FromRoute] string instagramId, [FromBody] IEnumerable<ShareDirectMediaModel> messages)
+		{
+			if (string.IsNullOrEmpty(_userContext.CurrentUser)) return BadRequest("something went wrong");
+			if (messages == null) return BadRequest("Invalid Params");
+			var accessToken = HttpContext.Request.Headers["Authorization"];
+			var user = new UserStoreDetails
+			{
+				OAccessToken = accessToken,
+				OAccountId = _userContext.CurrentUser,
+				OInstagramAccountUser = instagramId
+			};
+
+			var schedule = await _timelineLogic.ScheduleMessage(user, messages);
+			if(!schedule.IsSuccessful)
+				return NotFound(schedule);
+
+			return Ok(schedule);
+		}
+		
 		[HttpPost]
 		[Route("api/timeline/{instagramId}")]
 		public IActionResult AddEvent([FromRoute] string instagramId, [FromBody] LongRunningJobOptions eventItem)
@@ -237,7 +292,7 @@ namespace Quarkless.Controllers
 			if (string.IsNullOrEmpty(_userContext.CurrentUser)) return BadRequest("something went wrong");
 			var accessToken = HttpContext.Request.Headers["Authorization"];
 			_userContext.FocusInstaAccount = instagramId;
-			var headers = _requestBuilder.DefaultHeaders(instagramId); //token will expire after 1 hour, either increase token time or find another solution
+			var headers = _requestBuilder.DefaultHeaders(instagramId);
 			try {
 				eventItem.Rest.RequestHeaders.ToList().AddRange(headers);
 				eventItem.Rest.User.OAccessToken = accessToken;
@@ -247,8 +302,6 @@ namespace Quarkless.Controllers
 			catch(Exception ee) {
 				return BadRequest(ee.Message);
 			}
-
-			return BadRequest("something went wrong");
 		}
 	}
 }

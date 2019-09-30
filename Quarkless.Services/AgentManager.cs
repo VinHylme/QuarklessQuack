@@ -54,8 +54,9 @@ namespace Quarkless.Services
 		private readonly IHeartbeatLogic _heartbeatLogic;
 		private readonly IAgentLogic _agentLogic;
 		private readonly ILibraryLogic _libraryLogic;
-		public AgentManager(IInstagramAccountLogic instagramAccountLogic, IProfileLogic profileLogic ,IContentManager contentManager,
-			ITimelineLogic timelineLogic,IHeartbeatLogic heartbeatLogic, IAuthHandler authHandler, IAgentLogic agentLogic, ILibraryLogic libraryLogic)
+		public AgentManager(IInstagramAccountLogic instagramAccountLogic, IProfileLogic profileLogic,
+			IContentManager contentManager, ITimelineLogic timelineLogic, IHeartbeatLogic heartbeatLogic, 
+			IAuthHandler authHandler, IAgentLogic agentLogic, ILibraryLogic libraryLogic)
 		{
 			_agentLogic = agentLogic;
 			_heartbeatLogic = heartbeatLogic;
@@ -238,7 +239,7 @@ namespace Quarkless.Services
 					TimelineType = typeof(TimelineFinishedItem)
 				}));
 
-			if (todays.Count > 0)
+			if (todays.Count <= 0) return new ScheduleWindow();
 			{
 				var schedulerHistory = todays.OrderBy(_ => _.Response.EnqueueTime).GroupBy(_ => new { Type = typeof(TimelineFinishedItem), _.Response.ActionName });
 
@@ -251,7 +252,6 @@ namespace Quarkless.Services
 					LikeMediaActions = schedulerHistory.Where(_ => _.Key.Type != typeof(TimelineDeletedItem) && _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionType.LikePost.GetDescription().ToLower()).SquashMe().ToList()
 				};
 			}
-			return new ScheduleWindow();
 		}
 		private ScheduleWindow GetHourCompletedActions(string accountId, string instagramId = null, int limit = 1000)
 		{
@@ -292,25 +292,25 @@ namespace Quarkless.Services
 					TimelineType = typeof(TimelineFinishedItem)
 				}));
 
-			if (todays.Count > 0)
+
+			if (todays.Count <= 0) return new ScheduleWindow();
 			{
 				var schedulerHistory = todays.OrderBy(_ => _.Response.EnqueueTime).GroupBy(_ => new { Type = typeof(TimelineFinishedItem), _.Response.ActionName });
 
 				return new ScheduleWindow
 				{
-					All = schedulerHistory.Where(_ => _.Key?.ActionName?.Split('_')?[0].ToLower() != ActionType.CreatePost.GetDescription().ToLower()).SquashMe().ToList(),
-					CreatePostActions = schedulerHistory.Where(_ => _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionType.CreatePost.GetDescription().ToLower()).SquashMe().ToList(),
-					CommentingActions = schedulerHistory.Where(_ => _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionType.CreateCommentMedia.GetDescription().ToLower()).SquashMe().ToList(),
-					FollowUserActions = schedulerHistory.Where(_ => _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionType.FollowUser.GetDescription().ToLower()).SquashMe().ToList(),
-					LikeMediaActions = schedulerHistory.Where(_ => _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionType.LikePost.GetDescription().ToLower()).SquashMe().ToList(),
-					LikeCommentActions = schedulerHistory.Where(_ => _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionType.LikeComment.GetDescription().ToLower()).SquashMe().ToList()
+					All = schedulerHistory.Where(_ => !string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.CreatePost.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList(),
+					CreatePostActions = schedulerHistory.Where(_ => string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.CreatePost.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList(),
+					CommentingActions = schedulerHistory.Where(_ => string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.CreateCommentMedia.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList(),
+					FollowUserActions = schedulerHistory.Where(_ => string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.FollowUser.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList(),
+					LikeMediaActions = schedulerHistory.Where(_ => string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.LikePost.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList(),
+					LikeCommentActions = schedulerHistory.Where(_ => string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.LikeComment.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList()
 				};
 			}
-			return new ScheduleWindow();
 		}
 		private ScheduleWindow GetTodaysScheduleWindow (string accountId, string instagramId = null, int limit = 1000)
 		{
-			object _locker = new object();
+			var _locker = new object();
 			lock (_locker) { 
 				var todays = new List<ResultBase<TimelineItem>>();
 				var backwards = _timelineLogic.GetAllEventsForUser(accountId, DateTime.UtcNow, instaId: instagramId, 
@@ -323,20 +323,18 @@ namespace Quarkless.Services
 				if(forward!=null)
 					todays.AddRange(forward);
 
-				if (todays.Count > 0) { 
-					var schedulerHistory = todays.OrderBy(_ => _.Response.EnqueueTime).GroupBy(_ => new { _.TimelineType, _.Response.ActionName });
+				if (todays.Count <= 0) return null;
+				var schedulerHistory = todays.OrderBy(_ => _.Response.EnqueueTime).GroupBy(_ => new { _.TimelineType, _.Response.ActionName });
 
-					return new ScheduleWindow
-					{
-						All = schedulerHistory.Where(_ => _.Key?.ActionName?.Split('_')?[0].ToLower() != ActionType.CreatePost.GetDescription().ToLower()).SquashMe().ToList(),
-						CreatePostActions = schedulerHistory.Where(_ => _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionType.CreatePost.GetDescription().ToLower()).SquashMe().ToList(),
-						CommentingActions = schedulerHistory.Where(_ => _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionType.CreateCommentMedia.GetDescription().ToLower()).SquashMe().ToList(),
-						FollowUserActions = schedulerHistory.Where(_ => _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionType.FollowUser.GetDescription().ToLower()).SquashMe().ToList(),
-						LikeMediaActions = schedulerHistory.Where(_ => _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionType.LikePost.GetDescription().ToLower()).SquashMe().ToList(),
-						LikeCommentActions = schedulerHistory.Where(_ => _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionType.LikeComment.GetDescription().ToLower()).SquashMe().ToList()
-					};
-				}
-				return null;
+				return new ScheduleWindow
+				{
+					All = schedulerHistory.Where(_ => !string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.CreatePost.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList(),
+					CreatePostActions = schedulerHistory.Where(_ => string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.CreatePost.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList(),
+					CommentingActions = schedulerHistory.Where(_ => string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.CreateCommentMedia.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList(),
+					FollowUserActions = schedulerHistory.Where(_ => string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.FollowUser.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList(),
+					LikeMediaActions = schedulerHistory.Where(_ => string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.LikePost.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList(),
+					LikeCommentActions = schedulerHistory.Where(_ => string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.LikeComment.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList()
+				};
 			}
 		}
 		private ScheduleWindow GetLastHoursScheduleWindow(string accountId, string instagramId = null, int limit = 1000)
@@ -351,31 +349,22 @@ namespace Quarkless.Services
 				todays.AddRange(backwards);
 			if(forward!=null)
 				todays.AddRange(forward);
-			if (todays.Count > 0) {
-				var schedulerHistory = todays.OrderBy(_ => _.Response.EnqueueTime).GroupBy(_ => new { _.TimelineType, _.Response.ActionName });
+			if (todays.Count <= 0) return new ScheduleWindow();
+			var schedulerHistory = todays.OrderBy(_ => _.Response.EnqueueTime).GroupBy(_ => new { _.TimelineType, _.Response.ActionName });
 
-				return new ScheduleWindow
-				{
-					All = schedulerHistory.SquashMe().ToList(),
-					CreatePostActions = schedulerHistory.Where(_ => _.Key.TimelineType != typeof(TimelineDeletedItem) && _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionType.CreatePost.GetDescription().ToLower()).SquashMe().ToList(),
-					CommentingActions = schedulerHistory.Where(_ => _.Key.TimelineType != typeof(TimelineDeletedItem) && _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionType.CreateCommentMedia.GetDescription().ToLower()).SquashMe().ToList(),
-					FollowUserActions = schedulerHistory.Where(_ => _.Key.TimelineType != typeof(TimelineDeletedItem) && _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionType.FollowUser.GetDescription().ToLower()).SquashMe().ToList(),
-					LikeMediaActions = schedulerHistory.Where(_ => _.Key.TimelineType != typeof(TimelineDeletedItem) && _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionType.LikePost.GetDescription().ToLower()).SquashMe().ToList()
-				}; 
-			}
-			return new ScheduleWindow();
+			return new ScheduleWindow
+			{
+				All = schedulerHistory.SquashMe().ToList(),
+				CreatePostActions = schedulerHistory.Where(_ => _.Key.TimelineType != typeof(TimelineDeletedItem) && _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionType.CreatePost.GetDescription().ToLower()).SquashMe().ToList(),
+				CommentingActions = schedulerHistory.Where(_ => _.Key.TimelineType != typeof(TimelineDeletedItem) && _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionType.CreateCommentMedia.GetDescription().ToLower()).SquashMe().ToList(),
+				FollowUserActions = schedulerHistory.Where(_ => _.Key.TimelineType != typeof(TimelineDeletedItem) && _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionType.FollowUser.GetDescription().ToLower()).SquashMe().ToList(),
+				LikeMediaActions = schedulerHistory.Where(_ => _.Key.TimelineType != typeof(TimelineDeletedItem) && _.Key?.ActionName?.Split('_')?[0].ToLower() == ActionType.LikePost.GetDescription().ToLower()).SquashMe().ToList()
+			};
 		}
 		private List<ResultBase<TimelineItem>> GetEveryActionForToday (string accid, ActionType action, string instaacc = null, int limit = 5000, bool isHourly = false)
 		{
-			ScheduleWindow schedule = new ScheduleWindow();
-			if (isHourly)
-			{
-				schedule = GetHourCompletedActions(accid, instaacc, limit);
-			}
-			else
-			{
-				schedule = GetDayCompletedActions(accid, instaacc, limit);
-			}
+			var schedule = new ScheduleWindow();
+			schedule = isHourly ? GetHourCompletedActions(accid, instaacc, limit) : GetDayCompletedActions(accid, instaacc, limit);
 
 			switch (action)
 			{
@@ -394,39 +383,7 @@ namespace Quarkless.Services
 			return null;
 		}
 		#endregion
-		private DateTime PickAGoodTime(string accountId, string instagramAccountId, ActionType? actionName = null)
-		{
-			List<TimelineItem> sft;
-				switch (actionName)
-				{
-					case null:
-						sft = _timelineLogic.GetScheduledEventsForUserByDate(accountId, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
-						break;
-					case ActionType.SendDirectMessage:
-						sft = _timelineLogic.GetScheduledEventsForUserForActionByDate(accountId, actionName.Value.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
-						break;
-					case ActionType.CreatePost:
-						sft = _timelineLogic.GetScheduledEventsForUserForActionByDate(accountId, actionName.Value.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
-						break;
-					default:
-						sft = _timelineLogic.GetScheduledEventsForUserForActionByDate(accountId, ActionType.CreateCommentMedia.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
-						sft.AddRange(_timelineLogic.GetScheduledEventsForUserForActionByDate(accountId, ActionType.FollowUser.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList());
-						sft.AddRange(_timelineLogic.GetScheduledEventsForUserForActionByDate(accountId, ActionType.LikePost.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList());
-						sft.AddRange(_timelineLogic.GetScheduledEventsForUserForActionByDate(accountId, ActionType.LikeComment.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList());
-						sft.AddRange(_timelineLogic.GetScheduledEventsForUserForActionByDate(accountId, ActionType.UnFollowUser.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList());
-						break;
-				}
-				var datesPlanned = sft.Select(_ => _.EnqueueTime);
-				var dateTimes = datesPlanned as DateTime?[] ?? datesPlanned.ToArray();
-				if (!dateTimes.Any()) return DateTime.UtcNow;
-				{
-					var current = DateTime.UtcNow;
-					var difference = dateTimes.Where(_ => _ != null).Max(_ => _ - current);
-					var position = dateTimes.ToList().FindIndex(n => n - current == difference);
-					return dateTimes.ElementAt(position).Value;
-				}
-
-		}
+		
 		public async Task Begin()
 		{
 			//TODO : MAKE SURE ALL USERS ARE BUSINESS ACCOUNTS AND USERS OVER 100 FOLLOWERS BASE THEIR POSTING ON WHICH HOUR WAS MOST POPULAR
@@ -462,8 +419,8 @@ namespace Quarkless.Services
 										var res = await _authHandler.RefreshLogin(refreshToken, acc.UserName);
 										shortInstagram.UserLimits = SetLimits(acc.Roles.FirstOrDefault().GetValueFromDescription<AuthTypes>());
 										await _instagramAccountLogic.PartialUpdateInstagramAccount(shortInstagram.AccountId,shortInstagram.Id, new InstagramAccountModel{UserLimits = shortInstagram.UserLimits});
-										accessToken = res.Results.AuthenticationResult.AccessToken;
-										idToken = res.Results.AuthenticationResult.IdToken;
+										accessToken = res.Results.AccessToken;
+										idToken = res.Results.IdToken;
 									
 										userStoreDetails.AddUpdateUser(shortInstagram.AccountId, shortInstagram.Id, idToken);
 										userStoreDetails.OInstagramAccountUsername = shortInstagram.Username;
@@ -490,7 +447,7 @@ namespace Quarkless.Services
 								userStoreDetails.Profile = profile;
 								userStoreDetails.MessagesTemplates =
 									await _libraryLogic.GetSavedMessagesForUser(shortInstagram.Id);
-								var nextAvaliableDate = PickAGoodTime(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser);
+								var nextAvaliableDate = _timelineLogic.PickAGoodTime(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser);
 								#region Unfollow Section
 								if (shortInstagram.LastPurgeCycle == null)
 								{
@@ -615,7 +572,7 @@ namespace Quarkless.Services
 											var actionType = actionName.GetValueFromDescription<ActionType>();
 											var timeSett = actionsContainerManager.FindActionLimit(actionType);
 
-											nextAvaliableDate = PickAGoodTime(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser, actionName.GetValueFromDescription<ActionType>());
+											nextAvaliableDate = _timelineLogic.PickAGoodTime(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser, actionName.GetValueFromDescription<ActionType>());
 											actionsContainerManager.HasMetTimeLimit();
 											if (nextAvaliableDate == null) return;
 											if (timeSett != null)

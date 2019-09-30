@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace QuarklessContexts.Models.ServicesModels.SearchModels
 {
@@ -16,6 +14,7 @@ namespace QuarklessContexts.Models.ServicesModels.SearchModels
 		public bool IsPrivate { get; set; }
 		public bool IsVerified { get; set; }
 		public string ProfilePicture { get; set; }
+
 	}
 	[Serializable]
 	public class UserResponse

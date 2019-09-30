@@ -72,6 +72,7 @@ using System;
 using QuarklessLogic.Handlers.EmailService;
 using QuarklessLogic.Logic.BusinessLogic;
 using QuarklessLogic.Logic.LibaryLogic;
+using QuarklessLogic.Logic.LookupLogic;
 using QuarklessLogic.Logic.MessagingLogic;
 using QuarklessLogic.Logic.ResponseLogic;
 using QuarklessLogic.Logic.TimelineEventLogLogic;
@@ -79,6 +80,7 @@ using QuarklessRepositories.RedisRepository.APILogger;
 using QuarklessRepositories.RedisRepository.LibraryCache;
 using QuarklessRepositories.Repository.LibraryRepository;
 using QuarklessRepositories.RedisRepository.LoggerStoring;
+using QuarklessRepositories.RedisRepository.LookupCache;
 
 namespace Quarkless.Common
 {
@@ -90,7 +92,6 @@ namespace Quarkless.Common
 			serviceCollection.AddTransient<IBackgroundJobClient, BackgroundJobClient>();
 			serviceCollection.AddTransient<IJobRunner, JobRunner>();		
 		}
-
 		public static void AddLogics(this IServiceCollection services)
 		{
 			services.AddSingleton<IDiscoverLogic, DiscoverLogic>();
@@ -118,6 +119,8 @@ namespace Quarkless.Common
 			services.AddTransient<IResponseResolver, ResponseResolver>();
 			services.AddTransient<IBusinessLogic, BusinessLogic>();
 			services.AddTransient<IMessagingLogic, MessagingLogic>();
+			services.AddTransient<ILookupLogic, LookupLogic>();
+			services.AddTransient<ILookupCache, LookupCache>();
 		}
 		public static void AddAuthHandlers(this IServiceCollection services, Accessors _accessors, AWSOptions aWSOptions)
 		{

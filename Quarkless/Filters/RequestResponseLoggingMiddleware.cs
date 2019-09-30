@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -10,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Primitives;
 using QuarklessContexts.Models.APILogger;
 using QuarklessRepositories.RedisRepository.APILogger;
 
@@ -24,10 +22,10 @@ namespace Quarkless.Filters
 		private readonly MaxConcurrentRequestsOptions _options;
 		private readonly MaxConcurrentRequestsEnqueuer _enqueuer;
 		private readonly IAPILogCache _apiLogCache;
-		//private readonly Encrypter _encrypter;
-		//private readonly byte[] _senderPublicKey;
+		private readonly SecurityHeadersPolicy _policy;
 		#endregion
-		public RequestResponseLoggingMiddleware(RequestDelegate next, IAPILogCache apiLogCache,
+
+		public RequestResponseLoggingMiddleware(RequestDelegate next, SecurityHeadersPolicy securityHeadersPolicy, IAPILogCache apiLogCache,
 			IOptions<MaxConcurrentRequestsOptions> options)
 		{
 			_concurrentRequestsCount = 0;
@@ -39,13 +37,33 @@ namespace Quarkless.Filters
 			{
 				_enqueuer = new MaxConcurrentRequestsEnqueuer(_options.MaxQueueLength, (MaxConcurrentRequestsEnqueuer.DropMode)_options.LimitExceededPolicy, _options.MaxTimeInQueue);
 			}
+
 			_apiLogCache = apiLogCache;
-			//_encrypter = new Encrypter(_senderPublicKey);
+			_policy = securityHeadersPolicy;
 		}
+
 		public async Task Invoke(HttpContext httpContext)
 		{
-			if (httpContext == null) throw new ArgumentNullException(nameof(httpContext));
-			httpContext.Request.Headers.Add("X-Client-ID", new [] { "x-key-1-v" });
+			#region Response Headers
+			if (httpContext == null) throw new ArgumentNullException(nameof(httpContext));		
+
+			var httpResponse = httpContext.Response;
+
+			if (httpResponse == null) throw new ArgumentNullException(nameof(httpResponse));
+
+			var headers = httpResponse.Headers;
+
+			foreach (var headerValuePair in _policy.SetHeaders)
+			{
+				headers[headerValuePair.Key] = headerValuePair.Value;
+			}
+
+			foreach (var header in _policy.RemoveHeaders)
+			{
+				headers.Remove(header);
+			}
+			#endregion
+
 			async Task Execute()
 			{
 				var sw = Stopwatch.StartNew();
@@ -109,6 +127,7 @@ namespace Quarkless.Filters
 				await Execute();
 				return;
 			}
+
 			if (_options.Enabled && CheckLimitExceeded() && !(await TryWaitInQueueAsync(httpContext.RequestAborted)))
 			{
 				if (!httpContext.RequestAborted.IsCancellationRequested)

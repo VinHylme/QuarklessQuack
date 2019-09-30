@@ -102,5 +102,6 @@ namespace QuarklessContexts.Models.Profiles
 		public List<Location> LocationTargetList { get; set; }
 		public AdditionalConfigurations AdditionalConfigurations { get; set; }
 		public Themes Theme { get; set; }
+
 	}
 }

@@ -29,6 +29,8 @@ namespace QuarklessLogic.Handlers.RequestBuilder.Consts
 		public const string SendDirectMessageText = ApiPath + "messaging/text";
 		public const string SendDirectMessageLink = ApiPath + "messaging/link";
 		public const string SendDirectMessagePhoto = ApiPath + "messaging/photo";
+		public const string SendDirectMessageMedia = ApiPath + "messaging/media";
+		public const string SendDirectMessageMediaWithThreads = ApiPath + "messaging/media-threads";
 		public const string SendDirectMessageVideo = ApiPath + "messaging/video";
 		public const string SendDirectMessageProfile = ApiPath + "messaging/profile";
 

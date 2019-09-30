@@ -18,7 +18,15 @@ const router = new Router({
         meta:{
             requiresAuth: true
         }
-       },
+		},
+		{
+			name:"notice",
+			path:"/notice/",
+			component:LazyLoad("Notice"),
+			meta:{
+				requiresAuth:true
+			}
+		},
        {
            name:"view",
            path:"/view/:id",
@@ -99,7 +107,8 @@ router.beforeEach((to, from, next) => {
         next()
         return
       }
-      next('/') 
+      if(router.currentRoute.fullPath !== '/')
+        next('/')
     } else {
       next() 
     }

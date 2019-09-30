@@ -1,6 +1,6 @@
 ﻿namespace QuarklessContexts.Models.UserAuth.Auth
 {
-	public class EmailConfirmationModel
+	public class SignupConfirmationModel
 	{
 		public string Username { get; set; }
 		public string ConfirmationCode { get; set; }
