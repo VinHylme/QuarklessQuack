@@ -425,7 +425,7 @@ namespace Quarkless.Services
 		public async Task Begin()
 		{
 			// TODO: Need to create a warm up function which does basic routine for 2 days 
-			// TODO : MAKE SURE ALL USERS ARE BUSINESS ACCOUNTS AND USERS OVER 100 FOLLOWERS BASE THEIR POSTING ON WHICH HOUR WAS MOST POPULAR
+			// TODO: MAKE SURE ALL USERS ARE BUSINESS ACCOUNTS AND USERS OVER 100 FOLLOWERS BASE THEIR POSTING ON WHICH HOUR WAS MOST POPULAR
 			var numberOfWorkers = 0;
 			while (true) {
 				if (numberOfWorkers < 5) { 

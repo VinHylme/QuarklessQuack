@@ -20,6 +20,14 @@ const router = new Router({
         }
 		},
 		{
+			name:"checkout",
+			path:"/checkout/",
+			component:LazyLoad("Checkout"),
+			meta:{
+				requiresAuth:true
+			}
+		},
+		{
 			name:"notice",
 			path:"/notice/",
 			component:LazyLoad("Notice"),
