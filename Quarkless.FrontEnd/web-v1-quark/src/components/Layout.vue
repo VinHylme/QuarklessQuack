@@ -5,16 +5,16 @@
         <Nav @onHide="changeState"></Nav>
     </div>
     <div v-else>
-      <b-tooltip type="is-dark" label="Show Panel" position="is-right" style="position:absolute; top:2em;left:4em;">
-        <a @click="changeState">
+      <b-tooltip type="is-dark" label="Go back to Site" position="is-right" style="position:absolute; top:2em;left:4em;">
+        <router-link to="/">
         <b-icon
-          class="floater"
+          class="floater is-site"
           pack="fas"
-          icon="compress"
+          icon="home"
           size="is-medium"
           type="is-light">
         </b-icon>
-        </a>
+        </router-link>
       </b-tooltip>
       <b-tooltip type="is-dark" label="Go to Dashboard" position="is-right" style="position:absolute; top:5em;left:4em;">
         <router-link to="/manage">
@@ -27,8 +27,8 @@
         </b-icon>
         </router-link>
       </b-tooltip>
-       <b-tooltip type="is-dark" label="Messaging" position="is-right" style="position:absolute; top:8em;left:4em;">
-        <router-link to="/messaging">
+       <b-tooltip type="is-dark" label="Communications" position="is-right" style="position:absolute; top:8em;left:4em;">
+        <router-link to="/communications">
         <b-icon
           class="floater is-messaging"
           pack="fa"
@@ -114,16 +114,19 @@ export default {
     }
   },
   mounted(){
-    this.$store.dispatch('AccountDetails', {"userId":this.$store.state.user}).then(s=>{
-      this.$store.dispatch('GetProfiles', this.$store.state.user).then(c=>{
-        this.isLoaded = true;
-      })
-    });
+	this.loadData();
     this.isNavOn = this.$store.getters.MenuState === 'true'
-    this.loadLibraryData();
-    this.timer = setInterval(this.loadLibraryData, 15000);
+    //this.loadLibraryData();
+    this.timer = setInterval(this.loadData, 12000);
   },
   methods:{
+	loadData(){
+		this.$store.dispatch('AccountDetails', {"userId":this.$store.state.user}).then(s=>{
+			this.$store.dispatch('GetProfiles', this.$store.state.user).then(c=>{
+				this.isLoaded = true;
+			})
+		});
+	},
     async loadLibraryData(){
       await this.$store.dispatch('GetSavedCaption', this.$store.getters.User);
       await this.$store.dispatch('GetSavedHashtags', this.$store.getters.User);
@@ -183,12 +186,16 @@ export default {
       opacity:0.4;
     }
   }
+  &.is-site{
+	  font-size: .8rem;
+	  left:2em;
+  }
   &.is-house{
-    top:4.5em;
+    top:4em;
     left:1.85em;
   }
   &.is-messaging{
-    top:7em;
+    top:6.5em;
     left:1.85em;
   }
   &.is-library{

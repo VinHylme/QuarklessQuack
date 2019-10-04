@@ -14,7 +14,6 @@ using System;
 using System.Collections.Async;
 using System.Collections.Generic;
 using System.Linq;
-using MoreLinq;
 using System.Threading.Tasks;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.Proxies;
@@ -1038,6 +1037,44 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 				Console.WriteLine(ee.Message);
 			}
 			Console.WriteLine($"Ended - BuildUsersInbox : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+		}
+
+		public async Task BuildUsersRecentComments(int howManyMedias = 10, int limit = 1)
+		{
+			Console.WriteLine("Began - BuildUsersRecentComments");
+			var watch = System.Diagnostics.Stopwatch.StartNew();
+
+			try
+			{
+				await _assignments.ParallelForEachAsync(async worker =>
+				{
+					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
+					var user = worker.InstagramRequests.InstagramAccount;
+					await _heartbeatLogic.RefreshMetaData(MetaDataType.UsersRecentComments, worker.Topic.TopicFriendlyName, user.Id, 
+						proxy: worker.Worker.GetContext.Proxy);
+
+					var mediasForUser = (await _heartbeatLogic.GetMetaData<Media>
+						(MetaDataType.FetchUserOwnProfile, worker.Topic.TopicFriendlyName, user.Id))
+						.Select(x => x.ObjectItem.Medias)
+						.SquashMe()
+						.OrderByDescending(x=>x.TakenAt)
+						.Take(howManyMedias);
+
+					foreach (var media in mediasForUser)
+					{
+						var comments = await searcher.SearchInstagramMediaCommenters(media.MediaId, limit);
+
+						await _heartbeatLogic.AddMetaData(MetaDataType.UsersRecentComments,
+							worker.Topic.TopicFriendlyName,
+							new __Meta__<List<UserResponse<InstaComment>>>(comments), user.Id);
+					}
+				});
+			}
+			catch (Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+			}
+			Console.WriteLine($"Ended - BuildUsersRecentComments : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
 		}
 
 	}

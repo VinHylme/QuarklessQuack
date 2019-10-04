@@ -26,8 +26,8 @@ instance.interceptors.response.use((response) => { return response }, (error) =>
     let token = response.data.idToken
     let headerAuth = 'Bearer ' + token;
     originalRequest.headers['Authorization'] = headerAuth
-    Promise.resolve(error.config)
-    window.location.reload();
+	Promise.resolve(error.config)
+	window.location.reload();
     return axios(originalRequest)
  }).catch((error) => {
    store.dispatch('logout').then(() => {

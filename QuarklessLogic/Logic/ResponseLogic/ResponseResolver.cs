@@ -12,7 +12,6 @@ using QuarklessContexts.Models.MessagingModels;
 using QuarklessContexts.Models.Sections;
 using QuarklessContexts.Models.TimelineLoggingRepository;
 using QuarklessLogic.Handlers.ClientProvider;
-using QuarklessLogic.Handlers.ReportHandler;
 using QuarklessLogic.Logic.InstagramAccountLogic;
 using QuarklessLogic.Logic.LookupLogic;
 using QuarklessLogic.Logic.TimelineEventLogLogic;
@@ -108,6 +107,7 @@ namespace QuarklessLogic.Logic.ResponseLogic
 			{
 				await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
 				{
+					_id = Guid.NewGuid().ToString(),
 					AccountID = context.AccountId,
 					InstagramAccountID = context.Id,
 					ActionType = actionType,

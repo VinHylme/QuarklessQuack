@@ -610,7 +610,6 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 			}
 			return medias;
 		}
-
 		public async Task<InstaDirectInboxContainer> SearchUserInbox(int limit = 1)
 		{
 			var results = await _responseResolver.WithClient(_container).WithResolverAsync(
@@ -618,7 +617,6 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 
 			return results.Succeeded ? results.Value : null;
 		}
-
 
 		#region Probably Old 
 		public async Task<Media> SearchMediaInstagram(List<string> topics, InstaMediaType mediaType, int limit)

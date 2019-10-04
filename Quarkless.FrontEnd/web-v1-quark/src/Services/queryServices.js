@@ -51,5 +51,8 @@ export default {
   },
   GetMediasByLocation(instaAccount, topic){
     return Api(true).get(Calling["query_mediaByLocation"]+instaAccount+'/'+topic)
+  },
+  GetRecentComments(instaAccount, topic){
+	return Api(true).get(Calling["query_recentComments"]+instaAccount+'/'+topic)
   }
 }

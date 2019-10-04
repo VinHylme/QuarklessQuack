@@ -7,7 +7,6 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Shipwreck.Phash;
 using Shipwreck.Phash.Bitmaps;
@@ -23,6 +22,17 @@ namespace Quarkless.MediaAnalyser
 		{
 			public byte[] OriginalImageData;
 			public byte[] ReducedImageData;
+		}
+		public static bool IsValidImage(this byte[] bytes)
+		{
+			try {
+				using(var ms = new MemoryStream(bytes))
+					Image.FromStream(ms);
+			}
+			catch (ArgumentException) {
+				return false;
+			}
+			return true; 
 		}
 		private static string GetFilePathByName(string name)
 		{

@@ -3,7 +3,11 @@ using System.Threading.Tasks;
 
 namespace QuarklessLogic.Logic.StorageLogic
 {
-	public interface IS3BucketLogic
+	public interface IStorage
+	{
+
+	}
+	public interface IS3BucketLogic : IStorage
 	{
 		Task<bool> CreateBucket(string bucketName);
 		Task<bool> UploadFile(string filePath, string keyName, string bucketName = null);

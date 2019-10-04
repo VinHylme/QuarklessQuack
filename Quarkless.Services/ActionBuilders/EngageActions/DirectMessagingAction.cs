@@ -16,6 +16,7 @@ using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.Handlers.RequestBuilder.Consts;
+using QuarklessLogic.Logic.StorageLogic;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 
 namespace Quarkless.Services.ActionBuilders.EngageActions
@@ -448,6 +449,11 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		{
 			user = userStoreDetails;
 			return this;
+		}
+
+		public IActionCommit IncludeStorage(IStorage storage)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

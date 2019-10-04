@@ -13,6 +13,7 @@ using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using QuarklessLogic.Logic.StorageLogic;
 
 namespace Quarkless.Services.ActionBuilders.EngageActions
 {
@@ -153,65 +154,62 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				var followActionsChances = new List<Chance<FollowActionType>>();
 				if (followActionOptions != null && followActionOptions.FollowActionType == FollowActionType.Any)
 				{
-					if (user.Profile.LocationTargetList != null)
+					if (user.Profile.LocationTargetList != null && user.Profile?.LocationTargetList?.Count > 0)
 					{
-						if (user.Profile.LocationTargetList.Count > 0)
+						followActionsChances.AddRange(new List<Chance<FollowActionType>>
 						{
-							followActionsChances.AddRange(new List<Chance<FollowActionType>>
+							new Chance<FollowActionType>
 							{
-								new Chance<FollowActionType>
-								{
-									Object = FollowActionType.FollowBasedOnCommenters, 
-									Probability = 0.20
-								},
-								new Chance<FollowActionType>
-								{
-									Object = FollowActionType.FollowBasedOnLocation, 
-									Probability = user.Profile.AdditionalConfigurations.FocusLocalMore ? 0.40 : 0.15
-								},
-								new Chance<FollowActionType>
-								{
-									Object = FollowActionType.FollowBasedOnLikers, 
-									Probability = user.Profile.AdditionalConfigurations.FocusLocalMore ? 0.15 : 0.40
-								},
-								new Chance<FollowActionType>
-								{
-									Object = FollowActionType.FollowBasedOnTopic, 
-									Probability = 0.5
-								},
-								new Chance<FollowActionType>
-								{
-									Object = FollowActionType.FollowBasedOnSuggestions,
-									Probability = 0.20
-								}
-							});
-						}
-						else
+								Object = FollowActionType.FollowBasedOnCommenters, 
+								Probability = 0.20
+							},
+							new Chance<FollowActionType>
+							{
+								Object = FollowActionType.FollowBasedOnLocation, 
+								Probability = user.Profile.AdditionalConfigurations.FocusLocalMore ? 0.40 : 0.15
+							},
+							new Chance<FollowActionType>
+							{
+								Object = FollowActionType.FollowBasedOnLikers, 
+								Probability = user.Profile.AdditionalConfigurations.FocusLocalMore ? 0.15 : 0.40
+							},
+							new Chance<FollowActionType>
+							{
+								Object = FollowActionType.FollowBasedOnTopic, 
+								Probability = 0.5
+							},
+							new Chance<FollowActionType>
+							{
+								Object = FollowActionType.FollowBasedOnSuggestions,
+								Probability = 0.20
+							}
+						});
+					}
+					else
+					{
+						followActionsChances.AddRange(new List<Chance<FollowActionType>>
 						{
-							followActionsChances.AddRange(new List<Chance<FollowActionType>>
+							new Chance<FollowActionType>
 							{
-								new Chance<FollowActionType>
-								{
-									Object = FollowActionType.FollowBasedOnCommenters, 
-									Probability = 0.25
-								},
-								new Chance<FollowActionType>
-								{
-									Object = FollowActionType.FollowBasedOnLikers, 
-									Probability = 0.40
-								},
-								new Chance<FollowActionType>
-								{
-									Object = FollowActionType.FollowBasedOnTopic, 
-									Probability = 0.15
-								},
-								new Chance<FollowActionType>
-								{
-									Object = FollowActionType.FollowBasedOnSuggestions,
-									Probability = 0.20
-								}
-							});
-						}
+								Object = FollowActionType.FollowBasedOnCommenters, 
+								Probability = 0.25
+							},
+							new Chance<FollowActionType>
+							{
+								Object = FollowActionType.FollowBasedOnLikers, 
+								Probability = 0.40
+							},
+							new Chance<FollowActionType>
+							{
+								Object = FollowActionType.FollowBasedOnTopic, 
+								Probability = 0.15
+							},
+							new Chance<FollowActionType>
+							{
+								Object = FollowActionType.FollowBasedOnSuggestions,
+								Probability = 0.20
+							}
+						});
 					}
 
 					followActionTypeSelected = SecureRandom.ProbabilityRoll(followActionsChances);
@@ -284,6 +282,11 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		{
 			user = userStoreDetails;
 			return this;
+		}
+
+		public IActionCommit IncludeStorage(IStorage storage)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }

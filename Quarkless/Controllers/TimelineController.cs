@@ -9,18 +9,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using InstagramApiSharp.Classes.Models;
-using Newtonsoft.Json;
-using Quarkless.MediaAnalyser;
 using QuarklessContexts.Enums;
-using QuarklessContexts.Models.Library;
 using QuarklessContexts.Models.MediaModels;
-using QuarklessLogic.Handlers.RequestBuilder.Consts;
 using QuarklessLogic.Logic.TimelineEventLogLogic;
 using QuarklessContexts.Models.MessagingModels;
-using QuarklessContexts.Extensions;
 using QuarklessRepositories.RedisRepository.LookupCache;
-using QuarklessContexts.Models.LookupModels;
 
 namespace Quarkless.Controllers
 {
@@ -60,18 +53,19 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> GetTimelineEventLog(int limit)
 		{
 			if (string.IsNullOrEmpty(_userContext.CurrentUser)) return BadRequest("Invalid Request");
-			return Ok(await _timelineEventLogLogic.GetLogsForUser(_userContext.CurrentUser, limit));
+			if (string.IsNullOrEmpty(_userContext.FocusInstaAccount)) return BadRequest("Invalid user");
+			return Ok(await _timelineEventLogLogic.GetLogsForUser(_userContext.CurrentUser, _userContext.FocusInstaAccount, limit));
 		}
 
-		[HashtagAuthorize(AuthTypes.Admin)]
-		[HttpGet]
-		[Route("api/timeline/log/all/{actionType}")]
-		public async Task<IActionResult> GetAllTimelineEventLog(int actionType = 0)
-		{
-			if (!_userContext.IsAdmin)
-				return BadRequest("Invalid Request");
-			return Ok(await _timelineEventLogLogic.GetAllTimelineLogs((ActionType)actionType));
-		}
+//		[HashtagAuthorize(AuthTypes.Admin)]
+//		[HttpGet]
+//		[Route("api/timeline/log/all/{actionType}")]
+//		public async Task<IActionResult> GetAllTimelineEventLog(int actionType = 0)
+//		{
+//			if (!_userContext.IsAdmin)
+//				return BadRequest("Invalid Request");
+//			return Ok(await _timelineEventLogLogic.GetAllTimelineLogs((ActionType)actionType));
+//		}
 
 		[HashtagAuthorize(AuthTypes.Admin)]
 		[HttpGet]

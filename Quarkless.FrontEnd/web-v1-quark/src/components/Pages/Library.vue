@@ -63,7 +63,7 @@
           <div class="media-section-side-panel">
             <div ref="media_section" v-if="selectedSection === 0" >
               <div class="uploader-section">
-                <d-drop accept="image/x-png, image/jpeg" :isHidden="false" :isMulti="true" swidth="240px" sheight="180px" class="dropStyle" @readyUpload="onUpload"></d-drop> 
+                <d-drop accept="image/x-png, image/jpeg" :isHidden="false" :isMulti="true" swidth="200px" sheight="180px" class="dropStyle" @readyUpload="onUpload"></d-drop> 
               </div>
               <hr class="hr-an">
               <div class="sort_media_type">
@@ -225,28 +225,28 @@ export default {
     },
     loadData(){
       this.captionLibrary.items = this.$store.getters.UserCaptionLibrary(this.$route.params.id);
-      if(this.captionLibrary.items === undefined || this.captionLibrary.items === null || this.captionLibrary.items.length === 0){
+      if(this.captionLibrary.items === undefined || this.captionLibrary.items === null || this.captionLibrary.items.length <= 0){
         this.$store.dispatch('GetSavedCaption', this.$store.getters.User).then(resp=>{
           this.captionLibrary.items = this.$store.getters.UserCaptionLibrary(this.$route.params.id);
         });
       };
 
       this.hashtagsLibrary.items = this.$store.getters.UserHashtagsLibrary(this.$route.params.id);
-      if(this.hashtagsLibrary.items === undefined || this.hashtagsLibrary.items === null){
+      if(this.hashtagsLibrary.items === undefined || this.hashtagsLibrary.items === null || this.hashtagsLibrary.items.length <=0){
         this.$store.dispatch('GetSavedHashtags', this.$store.getters.User).then(resp=>{
             this.hashtagsLibrary.items = this.$store.getters.UserHashtagsLibrary(this.$route.params.id);
         });
       };
      
       this.messageLibrary.items = this.$store.getters.UserMessageLibrary(this.$route.params.id);
-      if(this.messageLibrary.items === undefined || this.messageLibrary.items === null){
+      if((this.messageLibrary.items === undefined || this.messageLibrary.items === null) || this.messageLibrary.items.length<=0){
         this.$store.dispatch('GetSavedMessages', this.$store.getters.User).then(resp=>{
           this.messageLibrary.items = this.$store.getters.UserMessageLibrary(this.$route.params.id);
         });
       };
       
-      this.mediaLibrary.items = this.$store.getters.UserMediaLibrary(this.$route.params.id);
-      if(this.mediaLibrary.items === undefined || this.mediaLibrary.items === null){
+	  this.mediaLibrary.items = this.$store.getters.UserMediaLibrary(this.$route.params.id);
+      if((this.mediaLibrary.items === undefined || this.mediaLibrary.items === null) || this.mediaLibrary.items.length<=0){
         this.isLoading = true;
         this.$store.dispatch('GetSavedMedias', this.$store.getters.User).then(resp=>{
           this.mediaLibrary.items = this.$store.getters.UserMediaLibrary(this.$route.params.id);
@@ -746,10 +746,10 @@ video {
   }
   .uploader-section{
     margin:0 auto;
-    width:100%;
+    width:90%;
     text-align: center;
     padding-top:3em;
-    margin-left:-.4em;
+    margin-left:1em;
     color:#d9d9d9;
     .file-cta{
       width:100% !important;

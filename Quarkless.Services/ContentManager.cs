@@ -76,13 +76,13 @@ namespace Quarkless.Services
 			try
 			{
 				captionOfFinal = GenerateText(topicSelect.TopicFriendlyName, language, 1,
-					SecureRandom.Next(1, 4));
+					SecureRandom.Next(1, 2));
 				if(string.IsNullOrEmpty(captionOfFinal))
-					captionOfFinal = new string(Emojies.TakeAny(SecureRandom.Next(8)).ToArray());
+					captionOfFinal = new string(Emojies.TakeAny(SecureRandom.Next(1,8)).ToArray());
 			}
 			catch
 			{
-				captionOfFinal = new string(Emojies.TakeAny(SecureRandom.Next(8)).ToArray());
+				captionOfFinal = new string(Emojies.TakeAny(SecureRandom.Next(1,8)).ToArray());
 				// ignored
 			}
 
@@ -100,7 +100,7 @@ namespace Quarkless.Services
 			string comment;
 			try
 			{
-				comment = GenerateText(topic, language, 0, SecureRandom.Next(1, 3));
+				comment = GenerateText(topic, language, 0, SecureRandom.Next(1, 2));
 				if (string.IsNullOrEmpty(comment))
 				{
 					comment = new string(Emojies.TakeAny(SecureRandom.Next(5)).ToArray());

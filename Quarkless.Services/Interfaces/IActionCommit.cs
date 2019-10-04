@@ -4,6 +4,7 @@ using QuarklessContexts.Models;
 using QuarklessContexts.Models.Timeline;
 using System;
 using System.Collections.Generic;
+using QuarklessLogic.Logic.StorageLogic;
 
 namespace Quarkless.Services.Interfaces
 {
@@ -16,5 +17,6 @@ namespace Quarkless.Services.Interfaces
 		ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions);
 		IActionCommit IncludeStrategy(IStrategySettings strategy);
 		IActionCommit IncludeUser(UserStoreDetails userStoreDetails);
+		IActionCommit IncludeStorage(IStorage storage);
 	}
 }

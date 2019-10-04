@@ -36,8 +36,8 @@ const router = new Router({
            }
        },
         {
-        name:'Messaging',
-        path:'/messaging',
+        name:'Communications',
+        path:'/communications',
         component:LazyLoad('Messaging'),
         meta:{
             requiresAuth:true

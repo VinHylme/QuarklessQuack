@@ -6,7 +6,7 @@ namespace QuarklessContexts.Models.MediaModels
 {
 	public class RawMediaData
 	{
-		public byte[] MediaByteArray { get; set; }
+		public string UrlToSend { get; set; }
 		public string Media64BaseData { get; set; }
 		public MediaSelectionType MediaType { get; set; }
 	}

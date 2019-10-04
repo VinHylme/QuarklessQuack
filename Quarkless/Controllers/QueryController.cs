@@ -131,6 +131,15 @@ namespace Quarkless.Controllers
 		#region Heartbeat Logic Stuff
 
 		[HttpGet]
+		[Route("api/query/recentComments/{instagramId}/{topic}")]
+		public async Task<IActionResult> GetRecentComments(string instagramId, string topic)
+		{
+			if(string.IsNullOrEmpty(_userContext.CurrentUser))
+				return BadRequest("Invalid Request");
+			return Ok(await _queryLogic.GetRecentComments(_userContext.CurrentUser, instagramId, topic));
+		}
+
+		[HttpGet]
 		[Route("api/query/userInbox/{instagramId}/{topic}")]
 		public async Task<IActionResult> GetUserInbox(string instagramId, string topic)
 		{

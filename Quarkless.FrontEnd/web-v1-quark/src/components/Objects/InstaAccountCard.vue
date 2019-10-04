@@ -19,14 +19,14 @@
                             <div class="control">
                                 <b-taglist attached>
                                     <b-tag size="is-default" type="is-dark">Followers</b-tag>
-                                    <b-tag size="is-default" type="is-info">{{userFollowers}}</b-tag>
+                                    <b-tag style="font-weight:bold;" size="is-default" type="is-info">{{userFollowers}}</b-tag>
                                 </b-taglist>
                             </div>
 
                             <div class="control">
                                 <b-taglist attached>
                                     <b-tag size="is-default" type="is-dark">Following</b-tag>
-                                    <b-tag size="is-default" type="is-danger">{{userFollowing}}</b-tag>
+                                    <b-tag style="font-weight:bold;" size="is-default" type="is-danger">{{userFollowing}}</b-tag>
                                 </b-taglist>
                             </div>
            
@@ -39,9 +39,9 @@
             <div class="content">
                 <div id="user_info" style="margin-left:-.7em">
                     <div class="field is-grouped">
-                    <div class="control has-icons-left">
+                    <div class="control is-expanded has-icons-left">
                         <div class="control has-icons-left">
-                            <div class="select">
+                            <div class="select ">
                                 <select is-primary @change="OnSelectChange($event)" :disabled="!IsAdmin">
                                     <option selected>{{MapToCorrectState(agentState)}}</option>
                                     <option v-for="(option,index) in GetAgentOptionList(agentState)" :value="option.index" v-bind:key="index">{{option.name}}</option>
@@ -137,7 +137,7 @@ props: {
           AgentOptions:[
               {name:"Not Started", index:0},
               {name:"Running", index:1},
-              {name:"Stopped", index:2},
+              {name:"Stop", index:2},
               {name:"Resting", index:3},
               {name:"Sleeping",index:4},
               {name:"Blocked by instagram",index:5},
@@ -207,8 +207,12 @@ props: {
            var index = this.AgentOptions.findIndex(item=>item.index == currentSelected);
            if(index>-1){
                return this.AgentOptions.splice(index,1);
-           }
-           return this.AgentOptions;
+		   }
+		   return this.AgentOptions;
+        //    return this.AgentOptions.filter(res=>{
+		// 	   if(res.index === 1 || res.index === 2)
+		// 	   	return res;
+		//    });
       },
       OnSelectChange(event){
           var objectToSend = {"instaId": this.id, "state": event.target.value};

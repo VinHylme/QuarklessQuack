@@ -14,6 +14,7 @@ using InstagramApiSharp.Classes.Models;
 using MoreLinq;
 using QuarklessLogic.Handlers.RequestBuilder.Consts;
 using QuarklessContexts.Classes.Carriers;
+using QuarklessLogic.Logic.StorageLogic;
 
 namespace Quarkless.Services.ActionBuilders.MaintainActions
 {
@@ -39,6 +40,12 @@ namespace Quarkless.Services.ActionBuilders.MaintainActions
 			user = userStoreDetails;
 			return this;
 		}
+
+		public IActionCommit IncludeStorage(IStorage storage)
+		{
+			throw new System.NotImplementedException();
+		}
+
 		struct ContainMedia
 		{
 			public byte[] mediaData;

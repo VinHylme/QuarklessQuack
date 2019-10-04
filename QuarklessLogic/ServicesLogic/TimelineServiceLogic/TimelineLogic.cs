@@ -8,6 +8,7 @@ using QuarklessLogic.Handlers.RequestBuilder.RequestBuilder;
 using QuarklessLogic.QueueLogic.Services;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -18,6 +19,7 @@ using QuarklessContexts.Models.Library;
 using QuarklessContexts.Models.LookupModels;
 using QuarklessContexts.Models.MessagingModels;
 using QuarklessLogic.Handlers.RequestBuilder.Consts;
+using QuarklessLogic.Logic.StorageLogic;
 using QuarklessLogic.QueueLogic.Jobs.JobOptions;
 using QuarklessRepositories.RedisRepository.LookupCache;
 
@@ -33,12 +35,13 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 		private readonly ITaskService _taskService;
 		private readonly IRequestBuilder _requestBuilder;
 		private readonly ILookupCache _lookupCache;
-
-		public TimelineLogic(ITaskService taskService, IRequestBuilder requestBuilder, ILookupCache lookupCache)
+		private readonly IS3BucketLogic _s3BucketLogic;
+		public TimelineLogic(ITaskService taskService, IRequestBuilder requestBuilder, ILookupCache lookupCache, IS3BucketLogic bucketLogic)
 		{
 			_taskService = taskService;
 			_requestBuilder = requestBuilder;
 			_lookupCache = lookupCache;
+			_s3BucketLogic = bucketLogic;
 		}
 		#region Add Event To Queue
 		public string AddEventToTimeline(string actionName, RestModel restBody, DateTimeOffset executeTime)
@@ -52,6 +55,13 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 		{
 			var jObject = JObject.Parse(json);
 			return JsonConvert.DeserializeObject<T>(jObject.ToString());
+		}
+		private async Task<string> UploadToS3(byte[] media, string keyName)
+		{
+			using (var mediaStream = new MemoryStream(media))
+			{
+				return await _s3BucketLogic.UploadStreamFile(mediaStream, keyName);
+			}
 		}
 
 		public async Task<TimelineScheduleResponse<RawMediaSubmit>> SchedulePostsByUser(UserStoreDetails userStoreDetails,
@@ -86,9 +96,14 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 					if (string.IsNullOrEmpty(media.Media64BaseData))
 						continue;
 
-					media.MediaByteArray = !media.Media64BaseData.IsBase64String() 
-						? media.Media64BaseData.DownloadMedia() 
-						: Convert.FromBase64String(media.Media64BaseData.Split(',')[1]);
+					media.UrlToSend = !media.Media64BaseData.IsBase64String()
+						? media.Media64BaseData
+						: await UploadToS3(Convert.FromBase64String(media.Media64BaseData.Split(',')[1]),
+							$"media_self_user{Guid.NewGuid()}");
+
+//					media.MediaByteArray = !media.Media64BaseData.IsBase64String() 
+//						? media.Media64BaseData.DownloadMedia() 
+//						: Convert.FromBase64String(media.Media64BaseData.Split(',')[1]);
 				}
 
 				switch (dataMediaSubmit.OptionSelected)
@@ -101,7 +116,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 							MediaInfo = mediaInfo,
 							Image = new InstaImageUpload()
 							{
-								ImageBytes = dataMediaSubmit.RawMediaDatas.FirstOrDefault()?.MediaByteArray,
+								Uri = dataMediaSubmit.RawMediaDatas.FirstOrDefault()?.UrlToSend
 							},
 							Location = dataMediaSubmit.Location != null
 								? new InstaLocationShort
@@ -115,29 +130,32 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 					case MediaSelectionType.Video:
 						options.ActionName += $"_{MediaSelectionType.Video.ToString()}_userPosted";
 						options.Rest.BaseUrl = UrlConstants.UploadVideo;
-						options.Rest.JsonBody = JsonConvert.SerializeObject(new UploadVideoModel
-						{
-							MediaInfo = mediaInfo,
-							Video = new InstaVideoUpload
+						var urlToSend = dataMediaSubmit.RawMediaDatas
+							.FirstOrDefault()?.UrlToSend;
+						if (urlToSend != null)
+							options.Rest.JsonBody = JsonConvert.SerializeObject(new UploadVideoModel
 							{
-								Video = new InstaVideo
+								MediaInfo = mediaInfo,
+								Video = new InstaVideoUpload
 								{
-									VideoBytes = dataMediaSubmit.RawMediaDatas.FirstOrDefault()?.MediaByteArray
+									Video = new InstaVideo
+									{
+										Uri = urlToSend
+									},
+									VideoThumbnail = new InstaImage
+									{
+										Uri = await UploadToS3(await (urlToSend?.DownloadMedia()
+											.GenerateVideoThumbnail()), $"user_self_videoThumb_{Guid.NewGuid()}")
+									}
 								},
-								VideoThumbnail = new InstaImage
-								{
-									ImageBytes = (await dataMediaSubmit.RawMediaDatas.FirstOrDefault()?
-										             .MediaByteArray.GenerateVideoThumbnail()) ?? null
-								}
-							},
-							Location = dataMediaSubmit.Location != null
-								? new InstaLocationShort
-								{
-									Address = dataMediaSubmit.Location.Address,
-									Name = dataMediaSubmit.Location.City
-								}
-								: null
-						});
+								Location = dataMediaSubmit.Location != null
+									? new InstaLocationShort
+									{
+										Address = dataMediaSubmit.Location.Address,
+										Name = dataMediaSubmit.Location.City
+									}
+									: null
+							});
 						break;
 					case MediaSelectionType.Carousel:
 						options.ActionName += $"_{MediaSelectionType.Carousel.ToString()}_userPosted";
@@ -147,19 +165,23 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 							Album = dataMediaSubmit.RawMediaDatas.Select(x => new InstaAlbumUpload
 							{
 								ImageToUpload = x.MediaType == MediaSelectionType.Image
-									? new InstaImageUpload {ImageBytes = x.MediaByteArray}
+									? new InstaImageUpload
+									{
+										Uri = x.UrlToSend
+									}
 									: null,
 								VideoToUpload = x.MediaType == MediaSelectionType.Video
 									? new InstaVideoUpload
 									{
 										Video = new InstaVideo
 										{
-											VideoBytes = x.MediaByteArray
+											Uri = x.UrlToSend
 										},
 										VideoThumbnail = new InstaImage
 										{
-											ImageBytes = x.MediaByteArray.GenerateVideoThumbnail().GetAwaiter()
-												.GetResult()
+											Uri = UploadToS3((x.UrlToSend?.DownloadMedia()
+												.GenerateVideoThumbnail().GetAwaiter().GetResult()),
+												$"user_self_videoThumb_{Guid.NewGuid()}").GetAwaiter().GetResult()
 										}
 									}
 									: null
@@ -387,9 +409,9 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 				job.ExecuteTime = updateTimelineItemRequest.Time;
 			
 				var object_ = JsonConvert.DeserializeObject(job.Rest.JsonBody, 
-					updateTimelineItemRequest.MediaType == 0 ? typeof(UploadPhotoModel) 
-					: updateTimelineItemRequest.MediaType == 1 ? typeof(UploadVideoModel) 
-					: updateTimelineItemRequest.MediaType == 2 ? typeof(UploadAlbumModel) : typeof(object)
+					updateTimelineItemRequest.MediaType == 1 ? typeof(UploadPhotoModel) 
+					: updateTimelineItemRequest.MediaType == 2 ? typeof(UploadVideoModel) 
+					: updateTimelineItemRequest.MediaType == 3 ? typeof(UploadAlbumModel) : typeof(object)
 					);
 
 				object_.GetProp("MediaInfo").SetValue(object_, new MediaInfo
@@ -402,12 +424,9 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 
 				job.Rest.JsonBody = JsonConvert.SerializeObject(object_);
 
-				if (DeleteEvent(updateTimelineItemRequest.EventId)) { 
-					var res = AddEventToTimeline(job.ActionName, job.Rest, job.ExecuteTime);
-					if(!string.IsNullOrEmpty(res))
-						return res;
-				}
-				return null;
+				if (!DeleteEvent(updateTimelineItemRequest.EventId)) return null;
+				var res = AddEventToTimeline(job.ActionName, job.Rest, job.ExecuteTime);
+				return !string.IsNullOrEmpty(res) ? res : null;
 			}
 			catch(Exception ee)
 			{
@@ -433,6 +452,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 		{
 			return GetAllEventsForUser(userName, startDate, endDate, instaId, limit, timelineDateType).Where(_ => _?.Response?.ActionName?.Split('_')?[0]?.ToLower() == (actionName.ToLower()));
 		}
+
 		public IEnumerable<TimelineItem> GetScheduledEventsForUserByDate(string username, DateTime date, DateTime? endDate = null,
 			string instaId = null, int limit = 100, TimelineDateType timelineDateType = TimelineDateType.Backwards)
 		{
@@ -578,6 +598,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 			return null;
 		}
 		public IEnumerable<ResultBase<TimelineItemShort>> ShortGetAllEventsForUser(string userName, DateTime startDate, DateTime? endDate = null,
+		
 		string instaId = null, int limit = 1000, TimelineDateType timelineDateType = TimelineDateType.Backwards)
 		{
 			List<ResultBase<TimelineItemShort>> totalEvents = new List<ResultBase<TimelineItemShort>>();
@@ -615,7 +636,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 		public IEnumerable<ResultBase<TimelineItem>> GetAllEventsForUser(string userName, DateTime startDate, DateTime? endDate = null,
 		string instaId = null, int limit = 1000, TimelineDateType timelineDateType = TimelineDateType.Backwards)
 		{
-			List<ResultBase<TimelineItem>> totalEvents = new List<ResultBase<TimelineItem>>();
+			var totalEvents = new List<ResultBase<TimelineItem>>();
 			totalEvents.AddRange(GetScheduledEventsForUserByDate(userName, startDate, endDate, instaId, limit, timelineDateType).Select(_ => new ResultBase<TimelineItem>
 			{
 				Response = new TimelineItem
@@ -631,6 +652,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 				},
 				TimelineType = typeof(TimelineItem)
 			}));
+			
 			/*totalEvents.AddRange(GetFinishedEventsForUserByDate(userName, startDate, endDate, instaId, limit, timelineDateType).Select(_ => new ResultBase<TimelineItem>
 			{
 				Response = new TimelineItem
@@ -714,6 +736,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 		{
 			return _taskService.GetDeletedItemsForUser(username, instagramId, limit);
 		}
+
 		#endregion
 		#region GET BY SPECIFIED JOB ID FOR ANY USER (ADMIN) BUT CAN BE USED FOR USER LEVEL TOO (BECAREFUL)
 		public TimelineItemDetail GetEventDetail(string eventId)

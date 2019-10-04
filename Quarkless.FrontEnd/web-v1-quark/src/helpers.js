@@ -7,7 +7,7 @@ function ReadFile(file) {
 }
 
 function GetMediaType(file){
-  return new Promise(async (resolve,reject)=>{
+  return new Promise(async (resolve, reject)=>{
     var media_type = file.split('/')[0].split(':')[1];
     if(media_type === "video"){
       await ReadVideoLength(file).then(res=>{

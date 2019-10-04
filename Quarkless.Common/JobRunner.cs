@@ -27,10 +27,14 @@ namespace Quarkless.Common
 		}
 		public void ExecuteNow(string jobId)
 		{
-			var jobdetails = JobStorage.Current.GetMonitoringApi().JobDetails(jobId);
-			var actionDetails = ((LongRunningJobOptions)jobdetails.Job?.Args?.FirstOrDefault());
-			actionDetails.ExecutionTime = DateTime.UtcNow.AddSeconds(10);
-			_backgroundJobClient.Enqueue<LongRunningJob>(job=>job.Perform(actionDetails));
+			var jobDetails = JobStorage.Current.GetMonitoringApi().JobDetails(jobId);
+			var actionDetails = ((LongRunningJobOptions)jobDetails.Job?.Args?.FirstOrDefault());
+			if (actionDetails != null)
+			{
+				actionDetails.ExecutionTime = DateTime.UtcNow.AddSeconds(10);
+				_backgroundJobClient.Enqueue<LongRunningJob>(job => job.Perform(actionDetails));
+			}
+
 			DeleteJob(jobId);
 		}
 		public JobDetailsDto GetJobDetails (string jobId)

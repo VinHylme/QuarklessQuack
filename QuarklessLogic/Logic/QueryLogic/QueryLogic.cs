@@ -22,7 +22,6 @@ using Quarkless.Interfacing.Objects;
 using QuarklessContexts.Models.Sections;
 using QuarklessRepositories.RedisRepository.LoggerStoring;
 using InstagramApiSharp.Classes.Models;
-using QuarklessContexts.Enums;
 using QuarklessContexts.Models.LookupModels;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Logic.LookupLogic;
@@ -346,6 +345,30 @@ namespace QuarklessLogic.Logic.QueryLogic
 		}
 		#endregion
 		#region Heartbeat Logic Stuff
+
+		public async Task<IEnumerable<CommentMedia>> GetRecentComments(SString accountId,
+			SString instagramAccountId, SString topic)
+		{
+			return await RunCodeWithLoggerExceptionAsync(async () =>
+			{
+				var metaDataComments =
+					await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(
+						MetaDataType.UsersRecentComments, topic, instagramAccountId);
+				var metaS = metaDataComments as __Meta__<List<UserResponse<InstaComment>>>[] ?? metaDataComments.ToArray();
+
+				if (metaS.Any())
+				{
+					var recentComments = metaS.Select(x=>x.ObjectItem).SquashMe().ToList();
+					var medias = await GetUsersMedia(accountId, instagramAccountId, topic);
+
+					return (from mediaResponseSingle in medias 
+						where recentComments.Exists(x => x.MediaId == mediaResponseSingle.MediaId) select new CommentMedia {Media = mediaResponseSingle, Comments = recentComments.Where(x => x.MediaId == mediaResponseSingle.MediaId).ToList()}).ToList();
+				}
+				await Warn("Empty Comments", nameof(GetRecentComments), accountId, instagramAccountId);
+				return EmptyList<CommentMedia>();
+			}, nameof(GetRecentComments), accountId, instagramAccountId);
+		}
+
 		public async Task<InstaDirectInbox> GetUserInbox(SString accountId, SString instagramAccountId, SString topic)
 		{
 			return await RunCodeWithLoggerExceptionAsync(async () =>

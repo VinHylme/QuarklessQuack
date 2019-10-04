@@ -11,6 +11,8 @@ namespace QuarklessLogic.Logic.QueryLogic
 {
 	public interface IQueryLogic
 	{
+		Task<IEnumerable<CommentMedia>> GetRecentComments(SString accountId,
+			SString instagramAccountId, SString topic);
 		Task<ProfileConfiguration> GetProfileConfig();
 		object SearchPlaces(string query);
 		object AutoCompleteSearchPlaces(string query, int radius = 500);

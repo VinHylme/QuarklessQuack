@@ -14,6 +14,7 @@ using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using QuarklessLogic.Logic.StorageLogic;
 
 namespace Quarkless.Services.ActionBuilders.EngageActions
 {
@@ -160,6 +161,11 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		{
 			user = userStoreDetails;
 			return this;
+		}
+
+		public IActionCommit IncludeStorage(IStorage storage)
+		{
+			throw new NotImplementedException();
 		}
 
 		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)

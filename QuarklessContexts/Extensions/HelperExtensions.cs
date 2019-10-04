@@ -38,7 +38,6 @@ namespace QuarklessContexts.Extensions
 				File.Exists(Path.Combine(assemblyLocation, cultureInfo.Name, resourceFilename))
 			).ToList();
 		}
-
 		public static int IndexOf<T>(this IEnumerable<T> items, T find)
 		{
 			var itemEnumerable = items as T[] ?? items.ToArray();

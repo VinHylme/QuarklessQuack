@@ -142,17 +142,32 @@ namespace QuarklessLogic.Logic.MediaLogic
 		private string MakeCaption(MediaInfo mediaInfo)
 		{
 			var hashtags = mediaInfo.Hashtags.Select(j => j.Replace(" ", "")).JoinEvery(Environment.NewLine, 3);
-			string creditLine = string.Empty;
+			var creditLine = string.Empty;
 
 			if (mediaInfo.Credit != null)
 				creditLine = $"@{mediaInfo.Credit}";
-			string seperate = "\n.\n.\n.\n";
+			var seperate = "\n.\n.\n.\n";
 			return  mediaInfo.Caption + seperate + creditLine + Environment.NewLine + hashtags;
 		}
 		public async Task<IResult<InstaMedia>> UploadAlbumAsync(UploadAlbumModel uploadAlbum)
 		{
 			try
 			{
+				foreach (var instaAlbumUpload in uploadAlbum.Album)
+				{
+					if (instaAlbumUpload.VideoToUpload != null)
+					{
+						instaAlbumUpload.VideoToUpload.Video.VideoBytes =
+							instaAlbumUpload.VideoToUpload.Video.Uri.DownloadMedia();
+						instaAlbumUpload.VideoToUpload.Video.Uri = string.Empty;
+					}
+					else
+					{
+						instaAlbumUpload.ImageToUpload.ImageBytes = instaAlbumUpload.ImageToUpload.Uri.DownloadMedia();
+						instaAlbumUpload.ImageToUpload.Uri = string.Empty;
+					}
+				}
+
 				return await _Client.Media.UploadAlbumAsync(uploadAlbum.Album, MakeCaption(uploadAlbum.MediaInfo),uploadAlbum.Location);
 			}
 			catch (Exception ee)
@@ -163,7 +178,10 @@ namespace QuarklessLogic.Logic.MediaLogic
 		}
 		public async Task<IResult<InstaMedia>> UploadPhotoAsync(UploadPhotoModel uploadPhoto)
 		{
-			try { 
+			try
+			{
+				uploadPhoto.Image.ImageBytes = uploadPhoto.Image.Uri.DownloadMedia();
+				uploadPhoto.Image.Uri = string.Empty;
 				return await _Client.Media.UploadPhotoAsync(uploadPhoto.Image, MakeCaption(uploadPhoto.MediaInfo), uploadPhoto.Location);
 			}
 			catch(Exception ee)
@@ -176,11 +194,13 @@ namespace QuarklessLogic.Logic.MediaLogic
 		{
 			try
 			{
+				uploadVideo.Video.Video.VideoBytes = uploadVideo.Video.Video.Uri.DownloadMedia();
+				uploadVideo.Video.Video.Uri = string.Empty;
 				var res =  await  _Client.Media.UploadVideoAsync(uploadVideo.Video, MakeCaption(uploadVideo.MediaInfo), uploadVideo.Location);
-				if (res.Succeeded)
-				{
-					Helper.DisposeVideos(uploadVideo.Video.Video.Uri);
-				}
+//				if (res.Succeeded)
+//				{
+//					Helper.DisposeVideos(uploadVideo.Video.Video.Uri);
+//				}
 				return res;
 			}
 			catch (Exception ee)

@@ -60,7 +60,7 @@
               </b-menu-list>
               <b-menu-list>
                   <b-menu-item @click="SelectSection(MapType(7))" icon="inbox" label="Inbox"></b-menu-item>
-                  <b-menu-item @click="currentlySelected = 9" icon="comment" label="Recent Comments" disabled>
+                  <b-menu-item @click="SelectSection(MapType(8))" icon="comment" label="Recent Comments">
                   </b-menu-item>
               </b-menu-list>
           </b-menu>
@@ -153,9 +153,9 @@
                   <div class="columns is-gapless is-mobile chat-column">
                       <div class="column is-2 side">
                         <div class="filter-search-users-chat">
-                          <input type="text" class="input" placeholder="Filter Users...">
+                          <input type="text" class="input" v-model="chat.filterSearch" placeholder="Filter Users...">
                         </div>
-						<div v-for="(thread,index) in chat.inbox" :key="index">
+						<div v-for="(thread,index) in FilteredThreads" :key="index">
 							<div @click="SelectThread(index)" :class="thread.selected === false ?'user-item':'user-item is-active'">
 								<div class="grouped-users" v-if="thread.item.users.length > 1">
 									<img class="group-profile-con" v-for="(user,index) in thread.item.users.slice(0,2)" :key="index" :src="user.profilePicture" alt="">
@@ -169,7 +169,7 @@
 						</div>
                       </div>
                       <div class="column is-10 main">
-                        <div id="chat" v-if="MessagesLength > 0" class="chat-container" ref="chatContainer">
+                        <div @click="chat.emojiEnabled = false" id="chat" v-if="MessagesLength > 0" class="chat-container" ref="chatContainer">
                           <div v-for="(item,index) in Messages" :key="index">
                             <div :class="IsSameUser(item.userId) === false ? 'chat-message' : 'chat-message is-me'">
                               <div :class="IsSameUser(item.userId) === false ? 'speech-bubble' : 'speech-bubble is-me'">
@@ -245,25 +245,11 @@
                         <div v-if="MessagesLength > 0" class="chat-footer">
                           <div class="chat-input-container">
                               <div class="field has-addons">
-                                <!-- <p class="control">
-                                  <a class="button is-darker">
-                                    <span class="icon is-small">
-                                      <i class="fas fa-paperclip"></i>
-                                    </span>
-                                  </a>
-                                </p> -->
                                 <p class="control is-expanded">
                                   <v-text-area @on-click="SendChatMessage" @on-change="(e)=>chat.input = e" :data="chat.input" :auto-row="true"></v-text-area>
                                 </p>
-                                <!-- <p class="control">
-                                  <a class="button is-darker">
-                                    <span class="icon is-small">
-                                      <i class="far fa-smile-wink"></i>
-                                    </span>
-                                  </a>
-                                </p> -->
                                 <p class="control">
-                                  <a @click="SendChatMessage(undefined)" class="button is-success">
+                                  <a @click="SendChatMessage(chat.input)" class="button is-success">
                                     <span class="icon is-small">
                                       <i class="fas fa-paper-plane"></i>
                                     </span>
@@ -277,6 +263,19 @@
                 </div>
             </div>
           </div>
+		  <div class="recent-comment-container" v-else-if="currentlySelected === 8">
+			  <div v-for="(item,index) in recentComments" :key="index">
+			  	<MediaCard 
+				  @on-submit-reply-comment="SubmitReply" 
+				  @on-submit-comment="SubmitComment" 
+				  @on-delete-comment="DeleteComment"
+				  @on-like-comment="LikeComment" 
+				  :comments="item.comments" 
+				  :media="item.media" 
+				  :title="item.media.user.username" 
+				  :profileImage="item.media.user.profilePicture"/>
+			  </div>
+		  </div>
         </div>
       </div>
     </div>
@@ -286,6 +285,7 @@
 <script>
 import UserResults from '../Objects/UserResults';
 import VTextArea from '../Objects/VTextArea';
+import MediaCard from '../Objects/MediaCard';
 import Dialog from '../Dialogs';
 import moment from 'moment';
 import { Base64ToBuffer, ValidateUrl, UUIDV4 } from '../../helpers'
@@ -293,7 +293,8 @@ import vue from 'vue';
 export default {
   components:{
     UserResults,
-    VTextArea
+    VTextArea,
+	MediaCard,
   },
   data(){
     return{
@@ -328,11 +329,12 @@ export default {
       justEntered:true,
       previousSelected:0,
       chat:{
+		filterSearch:'',
 		isLoading:false,
 		inbox:[],
 		input:'',
-		threads:[]
-      }
+	  },
+	  recentComments:[]
     }
   },
   beforeMount(){
@@ -364,7 +366,17 @@ export default {
       });
 
       return this.results.selectedList;
-    },
+	},
+	FilteredThreads(){
+		return this.chat.inbox.filter(thread => {
+			let user = thread.item.users.filter(user => {
+				return user.userName.toLowerCase().includes(this.chat.filterSearch.toLowerCase())
+			});
+			if(user.length>0){
+				return thread;
+			}
+		})
+	},
     filteredList() {
       return this.results.searchResultItems.filter(user => {
         let cindex = this.SelectedItemsList.findIndex(r => r.item.object.username === user.item.object.username)
@@ -396,8 +408,6 @@ export default {
 		return this.chat.inbox[this.chat.inbox.findIndex(res=>res.selected === true)];
 	},
 	Messages:{
-		//let tm = this.ThreadAt(this.SelectedThread.item.threadId);
-		//return tm !== undefined ? tm.items : []
 		get(){
 			if(this.MessagesLength > 0){
 				return this.SelectedThread.item.items;
@@ -416,6 +426,114 @@ export default {
 	  }
   },
   methods:{
+	SubmitReply(e){
+		if(e===undefined){
+			vue.prototype.$toast.open({
+				message: 'Error has occured, please try again',
+				type: 'is-danger'
+			});
+			return;
+		}
+		if(!e.message.split(' ')[1]){
+			vue.prototype.$toast.open({
+				message: 'Please write your message before submitting',
+				type: 'is-danger'
+			});
+			return;
+		}
+		this.$store.dispatch('ReplyComment', {
+			instagramAccountId: this.selectedAccount.account.id,
+			media:e.media.mediaId,
+			comment:e.replyData.object.pk,
+			message:{text: e.message}
+		}).then(res=>{
+			vue.prototype.$toast.open({
+				message: 'Sent Comment, please wait a minute before it updates here',
+				type: 'is-info'
+			});
+		}).catch(err=>{
+			vue.prototype.$toast.open({
+				message: 'Failed to like comment ' +  err.response.data.message,
+				type: 'is-danger'
+        	});
+		})
+	},
+	SubmitComment(e){
+		if(e===undefined){
+			vue.prototype.$toast.open({
+				message: 'Error has occured, please try again',
+				type: 'is-danger'
+			});
+			return;
+		}
+		if(!e.message){
+			vue.prototype.$toast.open({
+				message: 'Please write your message before submitting',
+				type: 'is-danger'
+			});
+			return;
+		}
+		this.$store.dispatch('CreateComment', {
+			instagramAccountId: this.selectedAccount.account.id,
+			media:e.media.mediaId,
+			message:{text: e.message}
+		}).then(res=>{
+			vue.prototype.$toast.open({
+				message: 'Sent Comment, please wait a minute before it updates here',
+				type: 'is-info'
+			});
+		}).catch(err=>{
+			vue.prototype.$toast.open({
+				message: 'Failed to like comment ' +  err.response.data.message,
+				type: 'is-danger'
+        	});
+		})
+	},
+	DeleteComment(e){
+		if(e===undefined){
+			vue.prototype.$toast.open({
+				message: 'Please make sure you have selected a comment to like',
+				type: 'is-danger'
+			});
+			return;
+		}
+		this.$store.dispatch('DeleteComment', {
+			instagramAccountId: this.selectedAccount.account.id,
+			media:e.commentData.mediaId,
+			comment:e.commentData.object.pk 
+		}).then(resp=>{
+			vue.prototype.$toast.open({
+				message: 'Deleted Comment',
+				type: 'is-info'
+			});
+		}).catch(err=>{
+			vue.prototype.$toast.open({
+				message: 'Failed to like comment ' +  err.response.data.message,
+				type: 'is-danger'
+        	});
+		})
+	},
+	LikeComment(e){
+		if(e===undefined)
+		{
+			vue.prototype.$toast.open({
+				message: 'Please make sure you have selected a comment to like',
+				type: 'is-danger'
+			});
+			return;
+		}
+		this.$store.dispatch('LikeComment',{ instagramAccountId: this.selectedAccount.account.id, comment:e.commentData.object.pk }).then(resp=>{
+			vue.prototype.$toast.open({
+				message: 'Liked Comment',
+				type: 'is-info'
+			});
+		}).catch(err=>{
+ 			vue.prototype.$toast.open({
+				message: 'Failed to like comment ' +  err.response.data.message,
+				type: 'is-danger'
+        	});
+		})
+	},
 	MapUser(userId){
 		let users = this.SelectedThread.item.users;
 		let user = users.filter(x=>x.pk === userId)[0];
@@ -470,9 +588,11 @@ export default {
 		}
 	},
 	IsSameUser(targetId){
-		return this.selectedAccount.account.userId == targetId
+		return this.selectedAccount.account.userId === targetId
 	},
 	SelectThread(index){
+		this.chat.input = '';
+		this.$bus.$emit('on-clean');
 		this.chat.inbox.forEach(x=>{x.selected = false})
 		this.chat.inbox[index].selected = true;
 		//this.GetThreadAsync(this.SelectedThread.item.threadId);
@@ -516,16 +636,19 @@ export default {
 			liveViewerInvite:null,
 			videoCallEvent:null
 		  }
+
 		  this.SelectedThread.item.items.push(responsePre);
 
-		  this.$store.dispatch('DMMessage', {type: 'text', id: this.selectedAccount.account.id, message:request}).then(resp=>{
+		  this.$store.dispatch('DMMessage', { type: 'text', id: this.selectedAccount.account.id, message:request }).then(resp=>{
 			  const response = resp.data;
+
 			  responsePre.timeStamp = response.timestamp;
 			  responsePre.itemId = response.itemId;
 			  responsePre.clientContext = response.clientContext;
+
 			  let index = this.SelectedThread.item.items.findIndex(res=>res.itemId === tempKey);
 			  this.SelectedThread.item.items[index] = responsePre;
-			 // console.log(this.Messages)
+			  
 		  }).catch(err=>{
 			  responsePre.timeStamp = -1;
 			  responsePre.clientContext = 'error';
@@ -735,7 +858,8 @@ export default {
         case 4: return {index: 4, name:'GetUsersTargetList'}
         case 5: return {index: 5, name:'GetUserFollowingSuggestionList'}
         case 6: return {index: 6, name:undefined}
-        case 7: return {index: 7, name: undefined}
+		case 7: return {index: 7, name: undefined}
+		case 8: return {index: 8, name: undefined}
       }
     },
     SelectSection(s){
@@ -749,17 +873,32 @@ export default {
 			this.results.searchResultItems = []
 			this.GetUserInbox();
 		}
+		else if(s.index === 8){
+			this.results.searchResultItems = []
+			this.GetRecentComments();
+		}
         else{
           if(s.name!==undefined && s.name !== null)
             this.LoadData(s.name)
         }
       }
 	},
+	GetRecentComments(){
+		this.$store.dispatch('GetRecentComments', {
+			instagramAccountId: this.selectedAccount.account.id,
+			topic: this.selectedAccount.profile.topics.topicFriendlyName
+		}).then(res=>{
+			this.recentComments = res.data;
+		}).catch(err=>{
+			console.log(err);
+		})
+	},
 	GetUserInbox(){
 		this.$store.dispatch('GetUserInbox', {
 			instagramAccountId: this.selectedAccount.account.id,
 			topic: this.selectedAccount.profile.topics.topicFriendlyName
 		}).then(res=>{
+			console.log(res)
 			this.chat.inbox = res.data.threads.map(res=> { return {item:res, selected:false}})
 		}).catch(err=>{
 			console.log(err)
@@ -847,6 +986,13 @@ export default {
 </script>
 
 <style lang="scss">
+.recent-comment-container{
+	display: flex;  
+	flex-direction: row; /* let the content flow to the next row */
+	flex-wrap: wrap;
+	//justify-content:flex-end;
+	align-items: flex-end;
+}
 .loading-background{
 	background:transparent !important;
 }
@@ -1100,7 +1246,7 @@ export default {
               }
             }
             .button{
-              position: absolute;
+             // position: absolute;
               bottom: 0;
               right:0;
 			  height:52.5px;
@@ -1178,6 +1324,7 @@ export default {
             .chat-message-content{
 				.subtitle{
 					&.is-message{
+						text-align: left;
 						color:white;
 						font-size:16px;
 						&.italic{

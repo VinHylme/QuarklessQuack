@@ -102,13 +102,12 @@ namespace Quarkless
 				//	QueuePollInterval = TimeSpan.FromSeconds(2),
 				//});
 				#endregion
-
 				options.UseRedisStorage(redis, new Hangfire.Redis.RedisStorageOptions
 				{
 					Db = 1,
 					Prefix = "Timeline",
-					SucceededListSize = 1000,
-					DeletedListSize = 1000,
+					SucceededListSize = 100000,
+					DeletedListSize = 100000,
 					ExpiryCheckInterval = TimeSpan.FromHours(1),
 					InvisibilityTimeout = TimeSpan.FromMinutes(30),
 					FetchTimeout = TimeSpan.FromMinutes(30),
@@ -138,7 +137,7 @@ namespace Quarkless
 			var jobServerOptions = new BackgroundJobServerOptions
 			{
 				WorkerCount = Environment.ProcessorCount * 5,
-				ServerName = string.Format("ISE_{0}.{1}", Environment.MachineName, Guid.NewGuid().ToString()),
+				ServerName = $"ISE_{Environment.MachineName}.{Guid.NewGuid().ToString()}",
 				//Activator = new WorkerActivator(services.BuildServiceProvider(false)),
 			};
 			

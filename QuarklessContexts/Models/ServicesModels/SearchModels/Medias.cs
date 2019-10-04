@@ -1,8 +1,6 @@
 ﻿using InstagramApiSharp.Classes.Models;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace QuarklessContexts.Models.ServicesModels.SearchModels
 {
@@ -11,6 +9,12 @@ namespace QuarklessContexts.Models.ServicesModels.SearchModels
 		Instagram,
 		Google,
 		Yandex
+	}
+
+	public class CommentMedia
+	{
+		public MediaResponseSingle Media { get; set; }
+		public List<UserResponse<InstaComment>> Comments { get; set; }
 	}
 
 	[Serializable]

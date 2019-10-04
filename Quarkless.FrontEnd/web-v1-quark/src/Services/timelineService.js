@@ -22,7 +22,7 @@ export default {
   GetEventLogs(instagramAccountId, limit){
     return Api(true).get('timeline/log/'+instagramAccountId+'/'+limit);
   },
-  GetAllEventLogsForUser(limit){
-    return Api(true).get('timeline/log/'+limit)
+  GetAllEventLogsForUser(instagramAccountId, limit){
+    return Api(true, instagramAccountId).get('timeline/log/'+limit)
   }
 }

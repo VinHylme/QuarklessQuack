@@ -188,6 +188,12 @@ namespace Quarkless.HeartBeater.__Init__
 			}
 		}
 
+		/// <summary>
+		/// TO DO: refactor this code for more workers
+		/// also need to deal with proxies of each worker properly and change the current proxy for each build request (using users proxy rn)
+		/// </summary>
+		/// <param name="settings"></param>
+		/// <returns></returns>
 		public async Task Endeavor(Settings settings)
 		{
 			Console.WriteLine("Heartbeat started");
@@ -287,7 +293,8 @@ namespace Quarkless.HeartBeater.__Init__
 						Task.WaitAll(googleImages, yandexImages);
 						break;
 					case ActionExecuteType.UserSelf:
-						var profileRefresh = Task.Run(async () => await metadataBuilder.BuildUsersOwnMedias(_instagramAccountLogic,3));
+						var profileRefresh = Task.Run(async () => await metadataBuilder.BuildUsersOwnMedias(_instagramAccountLogic,3))
+							.ContinueWith(async x => { await metadataBuilder.BuildUsersRecentComments(); });
 						var followingList = Task.Run(async () => await metadataBuilder.BuildUserFollowList());
 						var followerList = Task.Run(async () => await metadataBuilder.BuildUserFollowerList());
 						var feedRefresh = await Task.Run(async () => await metadataBuilder.BuildUsersFeed()).ContinueWith(async x=> 

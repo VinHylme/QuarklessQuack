@@ -10,6 +10,7 @@ module.exports.Calling = {
   "query_userMedia":'query/userMedias/',
   "query_userInbox":'query/userInbox/',
   "query_userFeed": 'query/userFeed/',
+  "query_recentComments":'query/recentComments/',
   "query_userFollowerList" : 'query/userFollowerList/',
   "query_userFollowingList" : 'query/userFollowingList/',
   "query_userTargetLocation" : 'query/userLocation/',
@@ -17,5 +18,10 @@ module.exports.Calling = {
   "query_userFollowingSuggestions" : 'query/userSuggestionFollowing/',
   "query_mediaByLocation" : 'query/mediasLocation/',
   "messaging_thread":'messaging/thread/',
-  "messaging_post_text":'messaging/'
+  "messaging_post_text":'messaging/',
+  "messaging_delete_comment":'comments/delete/',
+  "messaging_like_comment": 'comments/like/',
+  "messaging_unlike_comment": 'comments/unlike/',
+  "messaging_reply_comment": 'comments/reply/',
+  "messaging_create_comment": 'comments/create/'
 }

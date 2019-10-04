@@ -1,8 +1,8 @@
 <template>
 <div class="timeline_layout">
   <div class="columns is-mobile is-gapless">
-    <div :class="$store.state.showingLogs ?'column is-4':'column is-0'" style="background:#1f1f1f; color:white; display:inline-block;">
-        <p class="title" style="margin-left:9em; margin-top:2em; color:#d9d9d9; text-align:left;">Activity</p>
+    <div :class="$store.state.showingLogs ?'column is-3':'column is-0'" class="activity-log-container">
+        <p class="title">Activity</p>
       <div v-for="(timelineLog,index) in timelineLogs" :key="timelineLog+'_'+index" class="card-acticity-log">
         <div class="card-activity-header">
           <b-icon v-if="timelineLog.actionType === 8" icon="user-plus" pack="fas" type="is-success" size="is-default"/>
@@ -27,7 +27,7 @@
         </div>
       </div>
     </div>
-    <div :class="$store.state.showingLogs ?'column is-8':'column is-12'">
+    <div :class="$store.state.showingLogs ?'column is-9':'column is-12'">
       <div class="timeline_container">
         <vue-scheduler @CreatePost="OnCreatePost" :events="this.$store.getters.UserTimeline" :event-display="eventDisplay"/>
         <div id="scheduler" class="overlay_timeline">
@@ -83,14 +83,14 @@ export default {
       }).catch(err=>{
           this.isLoading = false;
       });
-      this.$store.dispatch('GetAllEventLogsForUser', 100).then(resp=>{
+      this.$store.dispatch('GetAllEventLogsForUser', {instagramAccountId: this.$route.params.id, limit:100}).then(resp=>{
           this.timelineLogs = this.$store.getters.UserTimelineLogForUser(this.$route.params.id);
           this.isLoadingLogs = false;
         }).catch(err=>{
           this.isLoadingLogs = false;
       });
-      this.timer = setInterval(this.loadData, 11000);
-	  this.timerLog = setInterval(this.loadLogs, 8000);
+      this.timer = setInterval(this.loadData, 10000);
+	  this.timerLog = setInterval(this.loadLogs, 5000);
   },
   mounted(){
 
@@ -102,12 +102,15 @@ export default {
      return moment(date).format('llll');
   },
     OnCreatePost(event){
+	  this.isLoading = true;
       this.$store.dispatch('CreatePost', event).then(resp=>{
+		  this.isLoading = false;
          Vue.prototype.$toast.open({
             message: 'Post Successfuly Scheduled',
             type: 'is-success'
-          })
+		  })
       }).catch(err=>{
+		  this.isLoading = false;
         Vue.prototype.$toast.open({
             message: 'Oops looks like something went wrong: ' + err.message,
             type: 'is-danger'
@@ -127,7 +130,7 @@ export default {
     },
     loadLogs(){
       this.isLoadingLogs = true;
-      this.$store.dispatch('GetAllEventLogsForUser', 100).then(resp=>{
+      this.$store.dispatch('GetAllEventLogsForUser', {instagramAccountId: this.$route.params.id, limit:100}).then(resp=>{
           this.timelineLogs = this.$store.getters.UserTimelineLogForUser(this.$route.params.id);
           this.isLoadingLogs = false;
         }).catch(err=>{
@@ -136,17 +139,17 @@ export default {
     },
     eventDisplay(event) {
 		if(event.actionObject.actionType === "Image"){
-			return JSON.parse(event.actionObject.body).Image.ImageBytes;
+			return JSON.parse(event.actionObject.body).Image.Uri;
 		}
 		else if(event.actionObject.actionType === "Video"){
-			return JSON.parse(event.actionObject.body).Video.VideoThumbnail.ImageBytes;
+			return JSON.parse(event.actionObject.body).Video.VideoThumbnail.Uri;
 		}
 		else if(event.actionObject.actionType === "Carousel"){
 			let carousel = JSON.parse(event.actionObject.body).Album[0];
 			if(carousel.ImageToUpload === null && carousel.ImageToUpload === undefined)
-				return carousel.VideoToUpload.VideoThumbnail.ImageBytes;
+				return carousel.VideoToUpload.VideoThumbnail.Uri;
 			else 
-				return carousel.ImageToUpload.ImageBytes
+				return carousel.ImageToUpload.Uri
 		}
 		else{
 	  		return  event.actionObject.actionName;
@@ -217,6 +220,17 @@ $v-cal-button-disabled-cursor	:not-allowed;
   ::-webkit-scrollbar {
      display: none;
   }
+}
+.activity-log-container {
+	background:#1f1f1f; 
+	color:white; 
+	display:inline-block;
+	.title{
+		margin-left:7em; 
+		margin-top:2em; 
+		color:#d9d9d9;
+		text-align:left;
+	}
 }
 html,body{
  overflow: auto;

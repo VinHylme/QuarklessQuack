@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using MongoDB.Bson;
 using MongoDB.Driver;
 using Newtonsoft.Json;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Models.TimelineLoggingRepository;
 using QuarklessRepositories.RedisRepository.RedisClient;
 using QuarklessRepositories.RepositoryClientManager;
-using StackExchange.Redis;
 
 namespace QuarklessRepositories.Repository.TimelineRepository
 {
@@ -26,9 +24,9 @@ namespace QuarklessRepositories.Repository.TimelineRepository
 		{
 			try
 			{
-				var userId = $"{timelineEvent.AccountID}";
+				var userId = $"{timelineEvent.AccountID}:{timelineEvent.InstagramAccountID}";
 				await _redisClient.SetAdd(userId, RedisKeys.HashtagGrowKeys.TimelineLog,
-					JsonConvert.SerializeObject(timelineEvent), TimeSpan.FromHours(4));
+					JsonConvert.SerializeObject(timelineEvent), TimeSpan.FromHours(24));
 				//await _context.TimelineLogger.InsertOneAsync(timelineEvent);
 			}
 			catch(Exception ee)
@@ -36,33 +34,35 @@ namespace QuarklessRepositories.Repository.TimelineRepository
 				// ignored
 			}
 		}
-		public async Task<IEnumerable<TimelineEventLog>> GetLogsForUser(string accountId)
+		public async Task<IEnumerable<TimelineEventLog>> GetLogsForUser(string accountId, string instagramAccountId)
 		{
 			try
 			{
-				return await _redisClient.GetMembers<TimelineEventLog>(accountId,
+				var userId = $"{accountId}:{instagramAccountId}";
+				return await _redisClient.GetMembers<TimelineEventLog>(userId,
 					RedisKeys.HashtagGrowKeys.TimelineLog);
-				var filter = Builders<TimelineEventLog>.Filter.Eq(_ => _.AccountID, accountId);
-				return (await _context.TimelineLogger.FindAsync(filter)).ToList();
 			}
 			catch (Exception ex)
 			{
 				return new List<TimelineEventLog>();
 			}
 		}
-		public async Task<IEnumerable<TimelineEventLog>> GetLogsForUser(string accountId, string instagramAccountId)
-		{
-			var builder = Builders<TimelineEventLog>.Filter;
-			var filters = builder.Eq(_ => _.AccountID, accountId)  & builder.Eq(_=>_.InstagramAccountID,instagramAccountId);
-			return (await _context.TimelineLogger.FindAsync(filters)).ToList();
-		}
-		public async Task<IEnumerable<TimelineEventLog>> GetAllTimelineLogs(ActionType actionType = ActionType.None)
-		{
-			var builders = Builders<TimelineEventLog>.Filter;
-			var filters = builders.Empty; 
-			if (actionType == ActionType.None)
-				filters = builders.Eq(_ => _.ActionType, actionType);
-			return (await _context.TimelineLogger.FindAsync(filters)).ToList();
-		}
+
+//		[Obsolete]
+//		public async Task<IEnumerable<TimelineEventLog>> GetLogsForUser(string accountId, string instagramAccountId)
+//		{
+//			var builder = Builders<TimelineEventLog>.Filter;
+//			var filters = builder.Eq(_ => _.AccountID, accountId)  & builder.Eq(_=>_.InstagramAccountID,instagramAccountId);
+//			return (await _context.TimelineLogger.FindAsync(filters)).ToList();
+//		}
+//		[Obsolete]
+//		public async Task<IEnumerable<TimelineEventLog>> GetAllTimelineLogs(ActionType actionType = ActionType.None)
+//		{
+//			var builders = Builders<TimelineEventLog>.Filter;
+//			var filters = builders.Empty; 
+//			if (actionType == ActionType.None)
+//				filters = builders.Eq(_ => _.ActionType, actionType);
+//			return (await _context.TimelineLogger.FindAsync(filters)).ToList();
+//		}
 	}
 }

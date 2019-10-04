@@ -188,11 +188,11 @@ namespace Quarkless.Controllers
 
 		[HttpPost]
 		[Route("api/comments/reply/{mediaId}/{targetCommentId}")]
-		public async Task<IActionResult> ReplyCommentMedia([FromRoute]string mediaId, [FromRoute] string targetCommentId,[FromBody] string text)
+		public async Task<IActionResult> ReplyCommentMedia([FromRoute]string mediaId, [FromRoute] string targetCommentId, [FromBody] CreateCommentRequest text)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
 			var results = await  _responseResolver.WithResolverAsync(
-				await _commentLogic.ReplyCommentMediaAsync(mediaId, targetCommentId, text), ActionType.CreateCommentMedia, targetCommentId);
+				await _commentLogic.ReplyCommentMediaAsync(mediaId, targetCommentId, text.Text), ActionType.CreateCommentMedia, targetCommentId);
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);

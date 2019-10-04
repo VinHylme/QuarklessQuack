@@ -62,12 +62,9 @@ namespace QuarklessLogic.QueueLogic.Services
 		}
 		public IEnumerable<TimelineItem> GetScheduledItemsForUser(string username, string instagramId = null, int limit = 30)
 		{
-			IEnumerable<TimelineItem> total;
-			if (string.IsNullOrEmpty(instagramId)) 
-				total = GetTotalScheduledEvents(0,int.MaxValue).Where(_=>_.User.OAccountId == username);
-			else
-				total = GetTotalScheduledEvents(0, int.MaxValue).Where(_ => _.User.OAccountId == username && _.User.OInstagramAccountUser == instagramId);
-			
+			var total = string.IsNullOrEmpty(instagramId) 
+				? GetTotalScheduledEvents(0,int.MaxValue).Where(_ => _.User.OAccountId == username) 
+				: GetTotalScheduledEvents(0, int.MaxValue).Where(_ => _.User.OAccountId == username && _.User.OInstagramAccountUser == instagramId);
 			return total?.Take(limit) ?? null;
 		}
 		public IEnumerable<TimelineInProgressItem> GetCurrentlyRunningItemsForUser(string username, string instagramId = null, int limit = 30)
@@ -113,28 +110,23 @@ namespace QuarklessLogic.QueueLogic.Services
 		public IEnumerable<TimelineItem> GetTotalScheduledEvents(int from, int limit)
 		{
 			var res = _jobRunner.GetScheduledJobs(from, limit);
-			if (res != null)
+			if (res == null) yield break;
+			foreach (var total in res)
 			{
-				foreach (var total in res)
+				var actionDetails = (LongRunningJobOptions) total.Value?.Job?.Args?.FirstOrDefault();
+				if (actionDetails != null)
 				{
-					if (total.Value != null)
+					yield return new TimelineItem
 					{
-						var actionDetails = ((LongRunningJobOptions)total.Value?.Job?.Args?.FirstOrDefault());
-						if (actionDetails != null)
-						{
-							yield return new TimelineItem
-							{
-								ItemId = total.Key,
-								ActionName = actionDetails?.ActionName,
-								User = actionDetails?.Rest?.User,
-								Url = actionDetails?.Rest?.BaseUrl,
-								StartTime = total.Value?.ScheduledAt,
-								EnqueueTime = total.Value?.EnqueueAt,
-								State = total.Value.InScheduledState,
-								Rest = actionDetails?.Rest
-							};
-						}
-					}
+						ItemId = total.Key,
+						ActionName = actionDetails?.ActionName,
+						User = actionDetails?.Rest?.User,
+						Url = actionDetails?.Rest?.BaseUrl,
+						StartTime = total.Value?.ScheduledAt,
+						EnqueueTime = total.Value?.EnqueueAt,
+						State = total.Value.InScheduledState,
+						Rest = actionDetails?.Rest
+					};
 				}
 			}
 		}
@@ -194,32 +186,25 @@ namespace QuarklessLogic.QueueLogic.Services
 		public IEnumerable<TimelineInProgressItem> GetTotalCurrentlyRunningJobs(int from, int limit)
 		{
 			var res = _jobRunner.GetCurrentlyRunningJobs(from, limit);
-			if (res != null)
+			return res?.Select(_ =>
 			{
-				return res.Select(_ =>
-				{
-					if (_.Value != null) { 
-						var actionDetails = ((LongRunningJobOptions)_.Value.Job.Args.FirstOrDefault());
-						return new TimelineInProgressItem
-						{
-							ItemId = _.Key,
-							ActionName = actionDetails?.ActionName,
-							User = actionDetails?.Rest?.User,
-							Url = actionDetails?.Rest?.BaseUrl,
-							StartedAt = _.Value.StartedAt,
-							State = _.Value.InProcessingState,
-						};
-					}
-					else
+				if (_.Value != null) { 
+					var actionDetails = ((LongRunningJobOptions)_.Value.Job.Args.FirstOrDefault());
+					return new TimelineInProgressItem
 					{
-						return null;
-					}
-				});
-			}
-			else
-			{
-				return null;
-			}
+						ItemId = _.Key,
+						ActionName = actionDetails?.ActionName,
+						User = actionDetails?.Rest?.User,
+						Url = actionDetails?.Rest?.BaseUrl,
+						StartedAt = _.Value.StartedAt,
+						State = _.Value.InProcessingState,
+					};
+				}
+				else
+				{
+					return null;
+				}
+			});
 		}
 		public IEnumerable<TimelineFinishedItem> GetTotalFinishedJobs(int from, int limit)
 		{

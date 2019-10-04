@@ -28,24 +28,25 @@ namespace QuarklessRepositories.RedisRepository.TimelineJobRedis
 		}
 		public List<EventResponse> GetScheduledJobs(int from, int limit)
 		{
-			List<EventResponse> response = new List<EventResponse>();
+			var response = new List<EventResponse>();
 			var jobs = _redis.Database(1).GetKeys(limit).ToList();
 			foreach(var job in jobs)
 			{
-				try { 
-					if (job.ToString().Count(_ => _ == ':') == 1)
+				try
+				{
+					if (job.ToString().Count(_ => _ == ':') != 1) continue;
 					{
 						var res =  _redis.Database(1).GetHash(job);
-						var obj = res.Where(_=>_.Name.ToString().Contains("Arguments")).SingleOrDefault().Value;
-						var fetchExecuteTime = JObject.Parse(JsonConvert.DeserializeObject<IReadOnlyList<object>>(obj).FirstOrDefault().ToString())["ExecutionTime"].ToString();
+						var obj = res.SingleOrDefault(_ => _.Name.ToString().Contains("Arguments")).Value;
+						var fetchExecuteTime = JObject.Parse(JsonConvert.DeserializeObject<IReadOnlyList<object>>(obj).FirstOrDefault()?.ToString())["ExecutionTime"].ToString();
 						response.Add(new EventResponse
 						{
 							ItemId = job.ToString().Split(':')[0],
 							EnqueueAt = DateTime.Parse(fetchExecuteTime),
-							CreatedAt = DateTime.Parse(res.Where(_=>_.Name.ToString().Contains("CreatedAt")).SingleOrDefault().Value),
-							Culture = res.Where(_ => _.Name.ToString().Contains("Culture")).FirstOrDefault().Value,
+							CreatedAt = DateTime.Parse(res.SingleOrDefault(_ => _.Name.ToString().Contains("CreatedAt")).Value),
+							Culture = res.FirstOrDefault(_ => _.Name.ToString().Contains("Culture")).Value,
 							JsonBody = obj,
-							State = (res.Where(_ => _.Name.ToString().Contains("State")).SingleOrDefault().Value)
+							State = (res.SingleOrDefault(_ => _.Name.ToString().Contains("State")).Value)
 						});
 					}
 				}
