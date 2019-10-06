@@ -80,6 +80,33 @@ namespace QuarklessLogic.Logic.ProxyLogic
 		[JsonProperty("threadsAllowed")]
 		public int ThreadsAllowed { get; set; }
 	}
+	public class ProxyResponse
+	{
+		public Datum[] data { get; set; }
+		public int count { get; set; }
+	}
+	public class Datum
+	{
+		public string ipPort { get; set; }
+		public string ip { get; set; }
+		public string port { get; set; }
+		public string country { get; set; }
+		public string last_checked { get; set; }
+		public string proxy_level { get; set; }
+		public string type { get; set; }
+		public string speed { get; set; }
+		public Support support { get; set; }
+	}
+	public class Support
+	{
+		public int https { get; set; }
+		public int get { get; set; }
+		public int post { get; set; }
+		public int cookies { get; set; }
+		public int referer { get; set; }
+		public int user_agent { get; set; }
+		public int google { get; set; }
+	}
 
 	public class ProxyLogic : IProxyLogic
 	{
@@ -120,7 +147,6 @@ namespace QuarklessLogic.Logic.ProxyLogic
 				return false;
 			}
 		}
-
 		public async Task<bool> AssignProxy(AssignedTo assignedTo)
 		{
 			try
@@ -134,7 +160,6 @@ namespace QuarklessLogic.Logic.ProxyLogic
 				return false;
 			}
 		}
-
 		public async Task<IEnumerable<ProxyModel>> GetAllAssignedProxies()
 		{
 			var results = await _proxyRepostory.GetAllAssignedProxies();
@@ -190,20 +215,41 @@ namespace QuarklessLogic.Logic.ProxyLogic
 				return false;
 			}
 		}
-		public async Task<bool> TestProxy(Datum proxy)
+		public async Task<bool> TestProxy(ProxyModel proxy)
 		{
 			try
 			{
-				var req = (HttpWebRequest)HttpWebRequest.Create("http://ip-api.com/json");
+				var req = (HttpWebRequest)WebRequest.Create("http://ip-api.com/json");
 				req.Timeout = 4000;
-				req.Proxy = new WebProxy($"http://{proxy.ipPort}/");
+				req.Proxy = new WebProxy($"{proxy.Address}:{proxy.Port}",false);
 
 				var resp = await req.GetResponseAsync();
 				var json = new StreamReader(resp.GetResponseStream()).ReadToEnd();
 
 				var myip = (string)JObject.Parse(json)["query"];
 
-				return myip == proxy.ip;
+				return myip == proxy.Address;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine(ex.Message);
+				return false;
+			}
+		}
+		public async Task<bool> TestProxy(Datum proxy)
+		{
+			try
+			{
+				var req = (HttpWebRequest)WebRequest.Create("http://ip-api.com/json");
+				req.Timeout = 4000;
+				req.Proxy = new WebProxy($"http://{proxy.ipPort}/");
+
+				var resp = await req.GetResponseAsync();
+				var json = new StreamReader(resp.GetResponseStream() ?? throw new InvalidOperationException()).ReadToEnd();
+
+				var myIp = (string)JObject.Parse(json)["query"];
+
+				return myIp == proxy.ip;
 			}
 			catch (Exception ex)
 			{
@@ -217,69 +263,75 @@ namespace QuarklessLogic.Logic.ProxyLogic
 			return results ?? null;
 		}
 
-		public class ProxyResponse
-		{
-			public Datum[] data { get; set; }
-			public int count { get; set; }
-		}
-		public class Datum
-		{
-			public string ipPort { get; set; }
-			public string ip { get; set; }
-			public string port { get; set; }
-			public string country { get; set; }
-			public string last_checked { get; set; }
-			public string proxy_level { get; set; }
-			public string type { get; set; }
-			public string speed { get; set; }
-			public Support support { get; set; }
-		}
-		public class Support
-		{
-			public int https { get; set; }
-			public int get { get; set; }
-			public int post { get; set; }
-			public int cookies { get; set; }
-			public int referer { get; set; }
-			public int user_agent { get; set; }
-			public int google { get; set; }
-		}
-
-		public async Task<ProxyModel> TestProxyGrapper()
+		public async Task<ProxyModel> ProxyListGrab()
 		{
 			try
 			{
-				var baseUrl = "http://pubproxy.com/api/proxy?type=socks5?level=elite";
-				var jsonResponse = string.Empty;
-				var proxyItem = new ProxyResponse();
+				const string baseUrl = "https://api.getproxylist.com/proxy?protocol[]=socks4&protocol[]=socks5";
+//				ProxyListObject proxyItem;
+//				var request = (HttpWebRequest) WebRequest.Create(baseUrl);
+//				using (var response = (HttpWebResponse) await request.GetResponseAsync())
+//					using(var stream = response.GetResponseStream())
+//					using (var reader = new StreamReader(stream))
+//					{
+//						var jsonResponse = reader.ReadToEnd();
+//						proxyItem = JsonConvert.DeserializeObject<ProxyListObject>(jsonResponse);
+//					}
+//
+//				if (string.IsNullOrEmpty(proxyItem?.ip))
+//					return await ProxyListGrab();
+//				var proxy = new ProxyModel
+//				{
+//					Address = proxyItem.ip,
+//					Port = proxyItem.port,
+//					Region = proxyItem.country
+//				};
+//				if (await TestProxy(proxy))
+//				{
+//					return proxy;
+//				}
+
+				return await ProxyListGrab();
+			}
+			catch (Exception ee)
+			{
+				return await ProxyListGrab();
+			}
+		}
+		public async Task<ProxyModel> ProxyGrabber()
+		{
+			try
+			{
+				const string baseUrl = "http://pubproxy.com/api/proxy?type=socks5?level=elite";
+				ProxyResponse proxyItem;
 				var request = (HttpWebRequest)WebRequest.Create(baseUrl);
 				using (var response = (HttpWebResponse)await request.GetResponseAsync())
 				using (var stream = response.GetResponseStream())
 				using (var reader = new StreamReader(stream))
 				{
-					jsonResponse = reader.ReadToEnd();
+					var jsonResponse = reader.ReadToEnd();
 					proxyItem = JsonConvert.DeserializeObject<ProxyResponse>(jsonResponse);
 				}
 
 				if (string.IsNullOrEmpty(proxyItem?.data.SingleOrDefault()?.ipPort))
-					return await TestProxyGrapper();
+					return await ProxyGrabber();
 				if (await TestProxy(proxyItem.data.SingleOrDefault()))
 				{
 					return new ProxyModel
 					{
 						Address = proxyItem.data.SingleOrDefault()?.ip,
-						Port = int.Parse(proxyItem.data.SingleOrDefault()?.port),
+						Port = int.Parse(proxyItem.data.SingleOrDefault()?.port ?? throw new InvalidOperationException()),
 						Region = proxyItem.data.SingleOrDefault()?.country,
 						Type = proxyItem.data.SingleOrDefault()?.type
 					};
 				}
 
-				return await TestProxyGrapper();
+				return await ProxyGrabber();
 			}
 			catch (Exception ex)
 			{
 				_reportHandler.MakeReport(ex);
-				return await TestProxyGrapper();
+				return await ProxyGrabber();
 			}
 		}
 		public async Task<ProxyModel> RetrieveRandomProxy(bool? get = null, bool? post = null, bool? cookies = null, bool? referer = null,
@@ -289,7 +341,7 @@ namespace QuarklessLogic.Logic.ProxyLogic
 			try
 			{
 				#region URL BUILD
-				string baseUrl = $@"http://falcon.proxyrotator.com:51337/?apiKey=XR4E5JzkxMZcovaYQW2VUBw3PDj876eK";
+				var baseUrl = $@"http://falcon.proxyrotator.com:51337/?apiKey=XR4E5JzkxMZcovaYQW2VUBw3PDj876eK";
 				if (get != null)
 					baseUrl += $"&get={get}";
 				if (post != null)
@@ -311,16 +363,15 @@ namespace QuarklessLogic.Logic.ProxyLogic
 				if (connectionType != ConnectionType.Any)
 					baseUrl += $"&connectionType={connectionType.GetDescription()}";
 				#endregion
-				var proxyItem = new ProxyItem();
-				var jsonRespoonse = string.Empty;
+				ProxyItem proxyItem;
 				var request = (HttpWebRequest)WebRequest.Create(baseUrl);
 
 				using (var response = (HttpWebResponse)await request.GetResponseAsync())
 				using (var stream = response.GetResponseStream())
 				using (var reader = new StreamReader(stream))
 				{
-					jsonRespoonse = reader.ReadToEnd();
-					proxyItem = JsonConvert.DeserializeObject<ProxyItem>(jsonRespoonse);
+					var jsonResponse = reader.ReadToEnd();
+					proxyItem = JsonConvert.DeserializeObject<ProxyItem>(jsonResponse);
 				}
 
 				if (string.IsNullOrEmpty(proxyItem?.Proxy) || string.IsNullOrEmpty(proxyItem?.IP))

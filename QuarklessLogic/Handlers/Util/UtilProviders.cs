@@ -30,16 +30,16 @@ namespace QuarklessLogic.Handlers.Util
 
 			var userName = faker.Internet.UserName(firstName, lastName) + "_" + SecureRandom.Next(1,1050);
 
-			var password = faker.Internet.Password(SecureRandom.Next(20,30), true, prefix: lastName.Substring(0,lastName.Length/2));
+			var password = faker.Internet.Password(SecureRandom.Next(13,25), true, prefix: lastName.Substring(0,lastName.Length/2));
 			
 			var userAgent = faker.Internet.UserAgent();
 			string email;
 			if(emailProvider!=null)
-				email = faker.Internet.Email(firstName, lastName, emailProvider, (SecureRandom.Next(20,30)+faker.UniqueIndex).ToString());
+				email = faker.Internet.Email(firstName, lastName, emailProvider, (SecureRandom.Next(12,22)+faker.UniqueIndex).ToString());
 			else
 			{
 				email = faker.Internet.Email(firstName, lastName,
-					(SecureRandom.Next(20, 30) + faker.UniqueIndex).ToString());
+					(SecureRandom.Next(13, 23) + faker.UniqueIndex).ToString());
 			}
 
 			return new FakerModel

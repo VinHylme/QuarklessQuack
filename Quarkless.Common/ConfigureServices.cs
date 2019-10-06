@@ -70,6 +70,8 @@ using QuarklessRepositories.Repository.TimelineRepository;
 using QuarklessRepositories.RepositoryClientManager;
 using System;
 using QuarklessLogic.Handlers.EmailService;
+using QuarklessLogic.Handlers.WebHooks;
+using QuarklessLogic.Logic.AccountLogic;
 using QuarklessLogic.Logic.BusinessLogic;
 using QuarklessLogic.Logic.LibaryLogic;
 using QuarklessLogic.Logic.LookupLogic;
@@ -121,6 +123,8 @@ namespace Quarkless.Common
 			services.AddTransient<IMessagingLogic, MessagingLogic>();
 			services.AddTransient<ILookupLogic, LookupLogic>();
 			services.AddTransient<ILookupCache, LookupCache>();
+			services.AddSingleton<IAccountLogic, AccountLogic>();
+			services.AddSingleton<IWebHookHandlers, WebHookHandlers>();
 		}
 		public static void AddAuthHandlers(this IServiceCollection services, Accessors _accessors, AWSOptions aWSOptions)
 		{

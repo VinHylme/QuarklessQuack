@@ -20,7 +20,7 @@ namespace QuarklessLogic.Handlers.ClientProvider
 
 		public InstaClient EmptyClient => _clientContextProvider.InitialClientGenerate();
 
-		public InstaClient EmptyClientWithProxy (ProxyModel model) =>
-			_clientContextProvider.InitialClientGenerateWithProxy(model);
+		public InstaClient EmptyClientWithProxy (ProxyModel model, bool genDevice = false) =>
+			_clientContextProvider.InitialClientGenerateWithProxy(model, genDevice);
 	}
 }

@@ -13,7 +13,7 @@ namespace QuarklessLogic.Handlers.ClientProvider
 		ICommentProcessor Comment { get; }
 		IDiscoverProcessor Discover { get; }
 		InstaClient EmptyClient { get; }
-		InstaClient EmpClientWithProxy(ProxyModel model);
+		InstaClient EmpClientWithProxy(ProxyModel model, bool genDevice = false);
 		IFeedProcessor Feeds { get; }
 		ContextContainer GetContext { get; }
 		IHashtagProcessor Hashtag { get; }

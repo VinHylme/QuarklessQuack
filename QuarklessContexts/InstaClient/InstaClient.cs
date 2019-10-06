@@ -33,13 +33,17 @@ namespace QuarklessContexts.InstaClient
 			return this;
 		}
 
-		public InstaClient Empty(ProxyModel proxy)
+		public InstaClient Empty(ProxyModel proxy, bool genDevice = false)
 		{
 			if(_client != null) return this;
 			_client = InstaApiBuilder.CreateBuilder()
 				.UseLogger(new DebugLogger(LogLevel.All))
 				.SetRequestDelay(RequestDelay.FromSeconds(0, 2))
 				.Build();
+
+			if(genDevice)
+				_client.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
+
 			_client.SetApiVersion(InstaApiVersionType.Version100);
 			_client.UseHttpClientHandler(SetupProxy(proxy));
 			return this;
@@ -67,7 +71,6 @@ namespace QuarklessContexts.InstaClient
 
 			return httpClientHandler;
 		}
-
 		public InstaClient GetClientFromModel(InstagramClientAccount instagramAccount)
 		{
 			if (instagramAccount == null)
@@ -142,7 +145,6 @@ namespace QuarklessContexts.InstaClient
 				};
 			}
 		}
-
 		public InstaClient StateClient(string state)
 		{
 			if (string.IsNullOrEmpty(state))

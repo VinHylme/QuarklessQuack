@@ -4,18 +4,19 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Quarkless.Enums;
+using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.Account;
 using Stripe;
+using Stripe.Checkout;
 
 namespace QuarklessLogic.Logic.AccountLogic
 {
-	public class AccountLogic
+	public class AccountLogic : IAccountLogic
 	{
 
 		public AccountLogic()
 		{
-			StripeConfiguration.ApiKey = "pk_test_HUG9HPrcnZ33VxkT89jmH2g600SFty01Vn";
-
+			StripeConfiguration.ApiKey = "sk_test_nWTSzRRrRHLlMWKBwKIh7hui00v6s2nMMh";
 		}
 
 		private int GetAmount(ChargeType premiumType)
@@ -37,13 +38,72 @@ namespace QuarklessLogic.Logic.AccountLogic
 					}, message: "Invalid option selected");
 			}
 		}
+
+		public Session CreateSubscriptionSession(ChargeRequest chargeRequest)
+		{
+			try
+			{
+				var options = new SessionCreateOptions
+				{
+					PaymentMethodTypes = new List<string>
+					{
+						"card",
+					},
+					SubscriptionData = new SessionSubscriptionDataOptions
+					{
+						Items = new List<SessionSubscriptionDataItemOptions>
+						{
+							new SessionSubscriptionDataItemOptions
+							{
+								PlanId = chargeRequest.ChargeType.GetDescription(),
+							},
+						},
+					},
+					SuccessUrl = "https://example.com/success?session_id={CHECKOUT_SESSION_ID}",
+					CancelUrl = "https://example.com/cancel",
+				};
+
+				var service = new SessionService();
+				var session = service.Create(options);
+				return session;
+			}
+			catch (StripeException e)
+			{
+				switch (e.StripeError.ErrorType)
+				{
+					case "card_error":
+						break;
+					case "api_connection_error":
+						break;
+					case "api_error":
+						break;
+					case "authentication_error":
+						break;
+					case "invalid_request_error":
+						break;
+					case "rate_limit_error":
+						break;
+					case "validation_error":
+						break;
+					default:
+						// Unknown Error Type
+						break;
+				}
+			}
+			catch (Exception e)
+			{
+
+			}
+
+			return null;
+		}
 		public Charge CreateCharge(ChargeRequest chargeRequest)
 		{
 			try 
 			{
 				var options = new ChargeCreateOptions()
 				{
-					Amount = GetAmount(chargeRequest.SelectedPremiumType),
+					Amount = GetAmount(chargeRequest.ChargeType),
 					Currency = chargeRequest.Currency,
 					Source = chargeRequest.Source,
 					Metadata = new Dictionary<String, String>()

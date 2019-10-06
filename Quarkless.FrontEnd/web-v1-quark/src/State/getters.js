@@ -35,6 +35,5 @@ export default {
         return elment.profilePicture;
       }
     },
-    GetProfileConfig:state=> state.AccountData.ProfileConfg,
-	MenuState: () => localStorage.getItem("menu_state")
+    GetProfileConfig:state=> state.AccountData.ProfileConfg
   }

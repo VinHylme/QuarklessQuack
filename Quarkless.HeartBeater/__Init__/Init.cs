@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using MoreLinq;
 using Quarkless.HeartBeater.Creator;
 using QuarklessContexts.Extensions;
+using QuarklessContexts.Models.FakerModels;
 using QuarklessContexts.Models.Topics;
 using QuarklessLogic.Logic.ResponseLogic;
 
@@ -73,29 +74,37 @@ namespace Quarkless.HeartBeater.__Init__
 
 		public async Task Creator()
 		{
-			var results = new List<Creator.Creator.Tempo>();
+			var results = new List<Tempo>();
 			try
 			{
-				for (var x = 0; x < 1000; x++)
+				for (var x = 0; x < 10; x++)
 				{
-					try
-					{
-						var proxy = new ProxyModel
-						{
-							Address = "37.48.118.4",
-							Port = 13010
-						};
-						var res = await _creator.CreateInstagramAccount(proxy);
-						if (res != null)
-							results.Add(res);
-
-						await Task.Delay(1200);
-					}
-					catch (Exception ee)
-					{
-						Console.WriteLine(ee.Message);
-					}
+					var res = await _creator.CreateInstagramAccountMobile();
+					if (res != null)
+						results.Add(res);
+					await Task.Delay(1200);
 				}
+
+//				for (var x = 0; x < 1000; x++)
+//				{
+//					try
+//					{
+//						var proxy = new ProxyModel
+//						{
+//							Address = "37.48.118.4",
+//							Port = 13010
+//						};
+//						var res = await _creator.CreateInstagramAccountWeb(proxy);
+//						if (res != null)
+//							results.Add(res);
+//
+//						await Task.Delay(1200);
+//					}
+//					catch (Exception ee)
+//					{
+//						Console.WriteLine(ee.Message);
+//					}
+//				}
 				Console.WriteLine("wowe i finished");
 				results.ForEach(i=>Console.WriteLine($"{i.FirstName}:{i.Username}:{i.Password}"));
 			}

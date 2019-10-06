@@ -452,6 +452,9 @@ namespace InstagramApiSharp.API
         /// <param name="password">Password to set</param>
         /// <param name="firstName">First name to set</param>
         Task<IResult<InstaAccountCreation>> ValidateNewAccountWithPhoneNumberAsync(string phoneNumber, string verificationCode, string username, string password, string firstName);
+
+        Task<IResult<InstaAccountCreation>> CreateNewAccountAsync(string username, string password, string email,
+	        string firstName = "", TimeSpan? delay = null);
         /// <summary>
         ///     Create a new instagram account
         /// </summary>

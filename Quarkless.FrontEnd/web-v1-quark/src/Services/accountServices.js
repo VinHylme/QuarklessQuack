@@ -54,5 +54,13 @@ export default {
         'Authorization': 'Bearer '+  axios.defaults.headers.common['Authorization']
         }
     })
+  },
+  CreateSession(ptype, curr, sauce, accid){
+		return Api(true).post('account/session',{
+			chargeType: ptype,
+			source: sauce,
+			currency: curr,
+			accountId: accid
+		});
   }
 }

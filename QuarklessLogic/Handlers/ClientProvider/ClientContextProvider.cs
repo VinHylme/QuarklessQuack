@@ -78,7 +78,7 @@ namespace QuarklessLogic.Handlers.ClientProvider
 			}
 		}
 
-		public InstaClient InitialClientGenerateWithProxy(ProxyModel model) => this._instaClient.Empty(model);
+		public InstaClient InitialClientGenerateWithProxy(ProxyModel model, bool genDevice = false) => this._instaClient.Empty(model, genDevice);
 
 		private async Task<ContextContainer> GetClient(string accountId, string instagramAccountId)
 		{

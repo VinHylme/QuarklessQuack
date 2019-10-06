@@ -404,9 +404,6 @@ export default {
         }).catch((err)=>reject(err))
       })
     },
-    HideunHideMenu({commit}, value){
-        localStorage.setItem("menu_state", value);
-    },
     UploadFileForProfile({commit}, data){
       return new Promise((resolve, reject)=>{
         AccountServices.UploadFile(data.instaId, data.profileId, data.formData).then(resp=>{
@@ -664,5 +661,12 @@ export default {
           resolve(resp)
         }).catch(err=>reject(err));
       })
-    }
+	},
+	CreateSession({commit}, data){
+		return new Promise((resolve,reject)=>{
+			AccountServices.CreateSession(data.ptype,data.curr,data.sauce,data.accid).then(resp=>{
+				resolve(resp)
+			}).catch(err=> reject(err))
+		})
+	}
   }

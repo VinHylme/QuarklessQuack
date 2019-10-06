@@ -9,6 +9,6 @@ namespace QuarklessLogic.Handlers.ClientProvider
 	{
 		Task<ContextContainer> Get(string accId, string insAccId);
 		InstaClient InitialClientGenerate() ;
-		InstaClient InitialClientGenerateWithProxy(ProxyModel model);
+		InstaClient InitialClientGenerateWithProxy(ProxyModel model, bool genDevice = false);
 	}
 }

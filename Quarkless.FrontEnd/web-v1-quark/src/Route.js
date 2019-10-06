@@ -20,6 +20,16 @@ const router = new Router({
         }
 		},
 		{
+			name:"login",
+			path:"/login",
+			component:LazyLoad("Login")
+		},
+		{
+			name:"register",
+			path:"/register",
+			component:LazyLoad("Register")
+		},
+		{
 			name:"checkout",
 			path:"/checkout/",
 			component:LazyLoad("Checkout"),
@@ -116,7 +126,7 @@ router.beforeEach((to, from, next) => {
         return
       }
       if(router.currentRoute.fullPath !== '/')
-        next('/')
+        next()
     } else {
       next() 
     }

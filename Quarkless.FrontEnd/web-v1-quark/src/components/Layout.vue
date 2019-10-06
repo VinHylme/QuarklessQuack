@@ -1,10 +1,7 @@
 <template>
 <div class="home_layout">
   <div class="columns is-mobile">
-    <div v-if="isNavOn" class="column is-1">
-        <Nav @onHide="changeState"></Nav>
-    </div>
-    <div v-else>
+    <div>
       <b-tooltip type="is-dark" label="Go back to Site" position="is-right" style="position:absolute; top:2em;left:4em;">
         <router-link to="/">
         <b-icon
@@ -83,9 +80,10 @@
         </a>
       </b-tooltip>
     </div>
-    <div :class="isNavOn ? 'column is-11' : 'column is-12'" :style="isNavOn ? 'margin:0 auto;' : 'margin:0 auto;'" >
+    <div class="column is-12" style="margin:0 auto;" >
         <div class="main_area">
-          <router-view @selectedAccount="activateUser" @unSelectAccount="deactivateUser" v-if="isLoaded" :key="$route.fullPath"></router-view>
+          <router-view @selectedAccount="activateUser" @unSelectAccount="deactivateUser" 
+		  v-if="isLoaded" :key="$route.fullPath"></router-view>
         </div>
     </div>
   </div>
@@ -95,18 +93,12 @@
 </div>
 </template>
 <script>
-import Nav from './Nav.vue'
-
 export default {
   name: 'app',
-  components: {
-    Nav
-  },
   data(){
     return {
       timer:'',
       isProfileButtonDisabled:false,
-      isNavOn:true,
       isLoaded:false,
       showData:{
         userSelected:null
@@ -115,8 +107,6 @@ export default {
   },
   mounted(){
 	this.loadData();
-    this.isNavOn = this.$store.getters.MenuState === 'true'
-    //this.loadLibraryData();
     this.timer = setInterval(this.loadData, 12000);
   },
   methods:{
@@ -127,12 +117,6 @@ export default {
 			})
 		});
 	},
-    async loadLibraryData(){
-      await this.$store.dispatch('GetSavedCaption', this.$store.getters.User);
-      await this.$store.dispatch('GetSavedHashtags', this.$store.getters.User);
-      await this.$store.dispatch('GetSavedMessages', this.$store.getters.User);
-      await this.$store.dispatch('GetSavedMedias', this.$store.getters.User);
-    },
     deactivateUser(){
       this.showData.userSelected  = null;
     },
@@ -142,9 +126,6 @@ export default {
     signout(){
       this.$store.dispatch('logout');
       window.location.reload();
-    },
-    changeState(){
-      this.$store.dispatch('HideunHideMenu', this.isNavOn = !this.isNavOn)
     }
   }
 }

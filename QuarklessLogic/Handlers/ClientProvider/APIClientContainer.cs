@@ -31,7 +31,7 @@ namespace QuarklessLogic.Handlers.ClientProvider
 
 		public InstaClient EmptyClient => _clientContext.EmptyClient;
 
-		public InstaClient EmpClientWithProxy (ProxyModel model) => _clientContext.EmptyClientWithProxy(model);
+		public InstaClient EmpClientWithProxy (ProxyModel model, bool genDevice = false) => _clientContext.EmptyClientWithProxy(model, genDevice);
 
 		public IDiscoverProcessor Discover => Context.ActionClient.DiscoverProcessor;
 

@@ -10,6 +10,7 @@ using QuarklessLogic.Logic.InstaUserLogic;
 using System.Threading.Tasks;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Extensions;
+using QuarklessContexts.Models.Proxies;
 using QuarklessContexts.Models.Requests;
 using QuarklessLogic.Logic.InstaAccountOptionsLogic;
 using QuarklessLogic.Logic.ResponseLogic;
@@ -94,11 +95,11 @@ namespace Quarkless.Controllers
 
 		[HttpPost]
 		[Route("api/instaUser/createAccount/")]
-		public async Task<IActionResult> CreateInstaAccount()
+		public async Task<IActionResult> CreateInstaAccount([FromBody] ProxyModel proxy)
 		{
 			if (string.IsNullOrEmpty(_userContext.CurrentUser))
 				return BadRequest("Invalid Request");
-			var results = await _instaUserLogic.CreateAccount();
+			var results = await _instaUserLogic.CreateAccount(proxy);
 			if (results == null) return BadRequest("Failed");
 			if (results.InResult.Succeeded)
 			{

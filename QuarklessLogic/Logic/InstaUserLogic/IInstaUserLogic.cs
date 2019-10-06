@@ -2,13 +2,15 @@
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Models;
 using InstagramApiSharp.Enums;
+using QuarklessContexts.Models.FakerModels;
 using QuarklessContexts.Models.InstagramAccounts;
+using QuarklessContexts.Models.Proxies;
 
 namespace QuarklessLogic.Logic.InstaUserLogic
 {
 	public interface IInstaUserLogic
 	{
-		Task<InstaUserLogic.Tempo> CreateAccount();
+		Task<Tempo> CreateAccount(ProxyModel proxy);
 		InstaChallengeLoginInfo GetChallangeInfo();
 		Task<SubmitChallengeResponse> SubmitChallangeCode(string username, string password, InstaChallengeLoginInfo instaChallengeLoginInfo, string code);
 		Task<IResult<InstaChallengeRequireEmailVerify>> RequestVerifyCodeToEmailForChallengeRequireAsync(string username, string password);

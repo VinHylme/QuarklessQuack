@@ -11,7 +11,10 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
 using QuarklessContexts.Extensions;
+using QuarklessContexts.Models.FakerModels;
 using QuarklessLogic.Handlers.Util;
+using QuarklessLogic.Logic.InstaUserLogic;
+using QuarklessLogic.Logic.ProxyLogic;
 
 namespace Quarkless.HeartBeater.Creator
 {
@@ -26,16 +29,23 @@ namespace Quarkless.HeartBeater.Creator
 	}
 	public interface ICreator
 	{
-		Task<Creator.Tempo> CreateInstagramAccount(ProxyModel proxy = null);
+		Task<Tempo> CreateInstagramAccountWeb(ProxyModel proxy = null);
+		Task<Tempo> CreateInstagramAccountMobile();
 	}
 	public class Creator : ICreator
 	{
 		private readonly ISeleniumClient _seleniumClient;
 		private readonly IUtilProviders _utilProviders;
-		public Creator(ISeleniumClient seleniumClient, IUtilProviders utilProviders)
+		private readonly IInstaUserLogic _instaUserLogic;
+		private readonly IProxyLogic _proxyLogic;
+		public Creator(ISeleniumClient seleniumClient, IUtilProviders utilProviders, 
+			IInstaUserLogic instaUserLogic, IProxyLogic proxyLogic)
 		{
+			_proxyLogic = proxyLogic;
+			_instaUserLogic = instaUserLogic;
 			_seleniumClient = seleniumClient;
 			_utilProviders = utilProviders;
+
 			_seleniumClient.AddArguments(
 				//"headless",
 				"--log-level=3",
@@ -46,17 +56,18 @@ namespace Quarkless.HeartBeater.Creator
 				"no-sandbox");
 		}
 
-		public class Tempo
+		public async Task<Tempo> CreateInstagramAccountMobile()
 		{
-			public Name.Gender Gender;
-			public string FirstName;
-			public string LastName;
-			public string Username;
-			public string Password;
-			public string UserAgent;
-			public string Email;
+			var proxy = await _proxyLogic.RetrieveRandomProxy(connectionType: ConnectionType.Residential, post:true, cookies: false);
+			//var proxy = await _proxyLogic.ProxyListGrab();
+			if (proxy != null)
+			{
+				return await _instaUserLogic.CreateAccount(null);
+			}
+			return null;
 		}
-		public async Task<Tempo> CreateInstagramAccount(ProxyModel proxy = null)
+
+		public async Task<Tempo> CreateInstagramAccountWeb(ProxyModel proxy = null)
 		{
 			Tempo tempo = null;
 			if (proxy != null)
@@ -102,7 +113,7 @@ namespace Quarkless.HeartBeater.Creator
 			}
 			return tempo;
 		}
-		private bool IsElementPresent(IWebDriver driver, By by)
+		private static bool IsElementPresent(IWebDriver driver, By by)
 		{
 			try
 			{
