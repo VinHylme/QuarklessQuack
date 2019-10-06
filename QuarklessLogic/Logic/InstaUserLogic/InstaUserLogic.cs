@@ -51,12 +51,12 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 				{
 					res = await Client.EmpClientWithProxy(proxy, true).ReturnClient.CreateNewAccountAsync(
 						person.Username, person.Password, person.Email,
-						person.FirstName,TimeSpan.FromSeconds(2.6));
+						person.FirstName);
 				}
 				else
 				{
 					res = await Client.EmptyClient.ReturnClient.CreateNewAccountAsync(
-						person.Username, person.Password, person.Email, person.FirstName, TimeSpan.FromSeconds(2.7));
+						person.Username, person.Password, person.Email, person.FirstName);
 				}
 
 				if (!(res.Succeeded && res.Value.AccountCreated))
