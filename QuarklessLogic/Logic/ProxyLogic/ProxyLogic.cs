@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -11,6 +12,7 @@ using QuarklessRepositories.ProxyRepository;
 using System.Linq;
 using Newtonsoft.Json;
 using System.ComponentModel;
+using System.Text;
 using QuarklessContexts.Extensions;
 
 namespace QuarklessLogic.Logic.ProxyLogic
@@ -267,7 +269,41 @@ namespace QuarklessLogic.Logic.ProxyLogic
 		{
 			try
 			{
-				const string baseUrl = "https://api.getproxylist.com/proxy?protocol[]=socks4&protocol[]=socks5";
+				const string baseUrl = "https://portal.proxyguys.com";
+
+				var headers = new WebHeaderCollection();
+				var request = (HttpWebRequest) WebRequest.Create(baseUrl);
+				using(var response = (HttpWebResponse) await request.GetResponseAsync())
+					using(var stream = response.GetResponseStream())
+					using (var reader = new StreamReader(stream))
+					{
+						var jsonResponse = reader.ReadToEnd();
+						headers = response.Headers;
+					}
+
+				var loginUrl = $"{baseUrl}/login";
+				var requestLogin = (HttpWebRequest) WebRequest.Create(loginUrl);
+
+				const string loginPost = "username=pgtrial3&password=proxyguys#1";
+				var data = Encoding.ASCII.GetBytes(loginPost);
+
+				requestLogin.Headers = headers;
+				requestLogin.Method = "POST";
+				requestLogin.ContentType = "application/x-www-form-urlencoded";
+				requestLogin.ContentLength = data.Length;
+
+				using (var stream = requestLogin.GetRequestStream())
+				{
+					stream.Write(data, 0, data.Length);
+				}
+
+				var responseLogin = (HttpWebResponse)requestLogin.GetResponse();
+
+				var responseString = new StreamReader(responseLogin.GetResponseStream()).ReadToEnd();
+
+
+
+
 //				ProxyListObject proxyItem;
 //				var request = (HttpWebRequest) WebRequest.Create(baseUrl);
 //				using (var response = (HttpWebResponse) await request.GetResponseAsync())

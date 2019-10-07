@@ -77,12 +77,12 @@ namespace Quarkless.HeartBeater.__Init__
 			var results = new List<Tempo>();
 			try
 			{
-				for (var x = 0; x < 10; x++)
+				for (var x = 0; x < 2000; x++)
 				{
 					var res = await _creator.CreateInstagramAccountMobile();
 					if (res != null)
 						results.Add(res);
-					await Task.Delay(1200);
+					await Task.Delay(TimeSpan.FromMinutes(5.10));
 				}
 
 //				for (var x = 0; x < 1000; x++)

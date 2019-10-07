@@ -35,7 +35,7 @@ namespace QuarklessContexts.InstaClient
 
 		public InstaClient Empty(ProxyModel proxy, bool genDevice = false)
 		{
-			if(_client != null) return this;
+			//if(_client != null) return this;
 			_client = InstaApiBuilder.CreateBuilder()
 				.UseLogger(new DebugLogger(LogLevel.All))
 				.SetRequestDelay(RequestDelay.FromSeconds(0, 2))

@@ -58,11 +58,28 @@ namespace Quarkless.HeartBeater.Creator
 
 		public async Task<Tempo> CreateInstagramAccountMobile()
 		{
-			var proxy = await _proxyLogic.RetrieveRandomProxy(connectionType: ConnectionType.Residential, post:true, cookies: false);
+			//var proxy = await _proxyLogic.RetrieveRandomProxy(connectionType: ConnectionType.Residential, post:true, cookies: false);
 			//var proxy = await _proxyLogic.ProxyListGrab();
+//			var proxy = new ProxyModel
+//			{
+//				Address = "194.183.168.4",
+//				Port = 20754,
+//				NeedServerAuth = true,
+//				Username = "user5054",
+//				Password = "quoh7Ich"
+//			};
+			var proxy = new ProxyModel
+			{
+				Address = "194.67.193.151",
+				Port = 8088,
+				NeedServerAuth = true,
+				Username = "user8",
+				Password = "dsifuys*&9ydsgd"
+			};
+
 			if (proxy != null)
 			{
-				return await _instaUserLogic.CreateAccount(null);
+				return await _instaUserLogic.CreateAccount(proxy);
 			}
 			return null;
 		}
