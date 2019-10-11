@@ -61,10 +61,7 @@ namespace QuarklessRepositories.RedisRepository.LoggerStoring
 			await WithExceptionLogAsync(async () =>
 			{
 				var res = (await _redis.GetMembers<LoggerModel>("HashtagGrow:"+RedisKeys.HashtagGrowKeys.Logger.ToString()));
-				if (severityLevel == SeverityLevel.All)
-					results = res.Where(x=>x.Section == section);
-				else
-					results = res.Where(x => x.SeverityLevel == severityLevel && x.Section == section);
+				results = severityLevel == SeverityLevel.All ? res.Where(x=>x.Section == section) : res.Where(x => x.SeverityLevel == severityLevel && x.Section == section);
 			});
 			return results;
 		}

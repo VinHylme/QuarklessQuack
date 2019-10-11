@@ -47,13 +47,7 @@ namespace Quarkless.HeartBeater.Creator
 			_utilProviders = utilProviders;
 
 			_seleniumClient.AddArguments(
-				//"headless",
-				"--log-level=3",
-				"--silent",
-				"--disable-extensions",
-				"test-type",
-				"--ignore-certificate-errors",
-				"no-sandbox");
+				"window-size=1200x600", "--incognito");
 		}
 
 		public async Task<Tempo> CreateInstagramAccountMobile()
@@ -70,11 +64,11 @@ namespace Quarkless.HeartBeater.Creator
 //			};
 			var proxy = new ProxyModel
 			{
-				Address = "194.67.193.151",
-				Port = 8088,
+				Address = "86.141.112.99",
+				Port = 30013,
 				NeedServerAuth = true,
-				Username = "user8",
-				Password = "dsifuys*&9ydsgd"
+				Username = "josi",
+				Password = "trialbhw99"
 			};
 
 			if (proxy != null)
@@ -84,20 +78,34 @@ namespace Quarkless.HeartBeater.Creator
 			return null;
 		}
 
+
+
 		public async Task<Tempo> CreateInstagramAccountWeb(ProxyModel proxy = null)
 		{
 			Tempo tempo = null;
 			if (proxy != null)
 			{
 				var proxyLine = string.IsNullOrEmpty(proxy.Username) ? $"http://{proxy.Address}:{proxy.Port}" : $"http://{proxy.Username}:{proxy.Password}@{proxy.Address}:{proxy.Port}";
-				_seleniumClient.AddArguments($"--proxy-server={proxyLine}");
+				//_seleniumClient.AddArguments($"--proxy-server={proxyLine}");
+				const string px = "86.141.112.99:30013";
+
+				var pro = new Proxy();
+				pro.SslProxy = px;
+				pro.FtpProxy = px;
+				pro.SocksUserName = "josi";
+				pro.SocksPassword = "trialbhw99";
+				pro.HttpProxy = px;
+
+				_seleniumClient.SetProxy(pro);
 			}
 
 			var person = _utilProviders.GeneratePerson(emailProvider:"gmai.com");
 			_seleniumClient.AddArguments($"user-agent={person.UserAgent}");
+			
 			using (var driver = _seleniumClient.Driver)
 			{
 				driver.Navigate().GoToUrl("https://www.instagram.com/");
+
 				driver.FindElement(By.Name("emailOrPhone"),5).SendKeys(person.Email);
 				await Task.Delay(SecureRandom.Next(100,400));
 				driver.FindElement(By.Name("fullName"),5).SendKeys(person.FirstName + " " + person.LastName);

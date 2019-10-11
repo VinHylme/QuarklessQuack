@@ -28,7 +28,7 @@ namespace Quarkless.Tests.ServicesTests
 		private UserStoreDetails user;
 		private ServiceReacher _services;
 		private UploadVideoModel videoModelTest;
-		private string localvideoPath = @"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Quarkless.Tests\data\nature.mp4";
+		private string localvideoPath = @"C:\Users\yousef.alaw\source\repos\QuarklessQuack\Quarkless.Tests\data\nature.mp4";
 		[SetUp]
 		public void Setup()
 		{

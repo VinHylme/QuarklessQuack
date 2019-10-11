@@ -18,6 +18,7 @@ namespace Quarkless.Controllers
 	    private readonly IUserContext _userContext;
 	    private readonly IResponseResolver _responseResolver;
 	    private readonly IBusinessLogic _businessLogic;
+	   
 	    public BusinessController(IUserContext userContext, IResponseResolver responseResolver, IBusinessLogic businessLogic)
 	    {
 		    _userContext = userContext;

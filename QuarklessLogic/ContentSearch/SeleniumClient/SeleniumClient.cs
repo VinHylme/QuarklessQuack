@@ -54,13 +54,18 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 		public SeleniumClient()
 		{
 			var path = Environment.CurrentDirectory;
-			 _chromeService = ChromeDriverService.CreateDefaultService(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\chrome");
+			 _chromeService = ChromeDriverService.CreateDefaultService(Path.Combine(path,@"..\..\..\..\Requires\chrome"));
 			_chromeOptions = new ChromeOptions()
 			{
 				LeaveBrowserRunning = false,
 				AcceptInsecureCertificates = true,
 				PageLoadStrategy = PageLoadStrategy.Normal
 			};
+		}
+
+		public void SetProxy(Proxy proxy)
+		{
+			_chromeOptions.Proxy = proxy;
 		}
 
 		public void TestRunFireFox()
@@ -70,8 +75,8 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 				DeleteAfterUse = true
 			};
 
-			profile.AddExtension(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\firefox\extensions\canvasProtec.xpi");
-			var service = FirefoxDriverService.CreateDefaultService(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\firefox");
+			profile.AddExtension(@"C:\Users\yousef.alaw\source\repos\QuarklessQuack\Requires\firefox\extensions\canvasProtec.xpi");
+			var service = FirefoxDriverService.CreateDefaultService(@"C:\Users\yousef.alaw\source\repos\QuarklessQuack\Requires\firefox");
 			
 			var options = new FirefoxOptionsEx()
 			{
@@ -102,6 +107,7 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 		}
 
 		public IWebDriver Driver => new ChromeDriver(_chromeService, _chromeOptions);
+
 		public void ScrollPage(IWebDriver driver, int counter)
 		{
 			const string script =
@@ -158,7 +164,7 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 			var results = new List<string>();
 			try
 			{
-				using (IWebDriver driver = new ChromeDriver(ChromeDriverService.CreateDefaultService(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\chrome\"), _chromeOptions))
+				using (IWebDriver driver = new ChromeDriver(ChromeDriverService.CreateDefaultService(@"C:\Users\yousef.alaw\source\repos\QuarklessQuack\Requires\chrome\"), _chromeOptions))
 				{
 					foreach (var text in data)
 					{

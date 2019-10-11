@@ -43,10 +43,10 @@ namespace Quarkless.Services
 	{
 		static void Main(string[] args)
 		{
-			var settingPath = Path.GetFullPath(Path.Combine(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Quarkless"));
+			var settingPath = Path.GetFullPath(Path.Combine(@"..\..\..\..\Quarkless"));
 			IConfiguration configuration = new ConfigurationBuilder().
 				SetBasePath(settingPath).AddJsonFile("appsettings.json").Build();
-			Accessors accessors = new Accessors(configuration);
+			var accessors = new Accessors(configuration);
 			
 			var Redis = ConnectionMultiplexer.Connect(accessors.RedisConnectionString);
 			var services = new ServiceCollection();
@@ -75,7 +75,7 @@ namespace Quarkless.Services
 				UseTransactions = true
 			}).WithJobExpirationTimeout(TimeSpan.FromHours(12));
 
-			ServiceReacher serviceReacher = new ServiceReacher(services.BuildServiceProvider());
+			var serviceReacher = new ServiceReacher(services.BuildServiceProvider());
 
 			var results = WithExceptionLogAsync(async () =>
 			{

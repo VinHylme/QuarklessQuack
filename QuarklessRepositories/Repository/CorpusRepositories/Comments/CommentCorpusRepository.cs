@@ -43,7 +43,7 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Comments
 			try
 			{
 				const string mediaCorpusFilePath =
-					@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\Datas\new_data\RAWcomments.csv";
+					@"C:\Users\yousef.alaw\source\repos\QuarklessQuack\Requires\Datas\new_data\RAWcomments.csv";
 
 				var res = await _context.CorpusComments.FindAsync(_=>true, 
 					new FindOptions<CommentCorpus, CommentCorpus>()

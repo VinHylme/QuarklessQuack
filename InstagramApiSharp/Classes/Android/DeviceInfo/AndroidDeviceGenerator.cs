@@ -103,6 +103,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                 "htc10",
                 new AndroidDevice
                 {
+					//[DeviceBrand]|[FirmwareBrand]|[{OS_NAME ?}:OS_VERSION]|[Framework_Version/PDA/AP Version:*user*]/release-keys
+
                     AndroidBoardName = "msm8996",
                     AndroidBootloader = "1.0.0.0000",
                     DeviceBrand = "HTC",

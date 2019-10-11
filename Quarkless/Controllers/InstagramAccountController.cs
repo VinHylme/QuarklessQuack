@@ -18,8 +18,7 @@ namespace Quarkless.Controllers
 	[HashtagAuthorize(AuthTypes.BasicUsers)]
 	[HashtagAuthorize(AuthTypes.PremiumUsers)]
 	[HashtagAuthorize(AuthTypes.Admin)]
-
-	public class InstagramAccountController : ControllerBase
+    public class InstagramAccountController : ControllerBase
     {
 		private readonly IUserContext _userContext;
 		private readonly IInstaUserLogic _instaUserLogic;
@@ -33,6 +32,7 @@ namespace Quarkless.Controllers
 			_instaUserLogic = instaUserLogic;
 			_responseResolver = responseResolver;
 		}
+
 		[HttpPut]
 		[Route("api/insta/challange/submitCode/{code}")]
 		public async Task<IActionResult> SubmitChallangeCode([FromBody]SubmitVerifyCodeRequest model,[FromRoute] string code)

@@ -19,17 +19,17 @@ namespace QuarklessContexts.Extensions
 		public static string ToJsonString<TInput>(this TInput input) => JsonConvert.SerializeObject(input);
 		public static List<CultureInfo> GetSupportedCultures()
 		{
-			CultureInfo[] culture = CultureInfo.GetCultures(CultureTypes.AllCultures);
+			var culture = CultureInfo.GetCultures(CultureTypes.AllCultures);
 
 			// get the assembly
-			Assembly assembly = Assembly.GetExecutingAssembly();
+			var assembly = Assembly.GetExecutingAssembly();
 
 			//Find the location of the assembly
-			string assemblyLocation =
+			var assemblyLocation =
 				Path.GetDirectoryName(Uri.UnescapeDataString(new UriBuilder(assembly.CodeBase).Path));
 
 			//Find the file anme of the assembly
-			string resourceFilename = Path.GetFileNameWithoutExtension(assembly.Location) + ".resources.dll";
+			var resourceFilename = Path.GetFileNameWithoutExtension(assembly.Location) + ".resources.dll";
 
 			//Return all culture for which satellite folder found with culture code.
 			return culture.Where(cultureInfo =>
@@ -49,13 +49,11 @@ namespace QuarklessContexts.Extensions
 			}
 			return -1;
 		}
-
 		public static T CloneObject<T>(this T obj)
 		{
 			var serialized = JsonConvert.SerializeObject(obj);
 			return (T) JsonConvert.DeserializeObject(serialized, obj.GetType());
 		}
-
 		public static bool IsValidUrl(this string url) => Uri.IsWellFormedUriString(url, UriKind.RelativeOrAbsolute);
 		public static bool IsBase64String(this string base64)
 		{
@@ -94,7 +92,7 @@ namespace QuarklessContexts.Extensions
 				}
 				catch (Exception ex)
 				{
-					continue;
+					//
 				}
 			}
 
@@ -107,12 +105,10 @@ namespace QuarklessContexts.Extensions
 
 			return !results.Any() ? null : results;
 		}
-
 		public static string OnlyWords(this string @string)
 		{
 			return Regex.Replace(@string, "[^a-zA-Z]", "").ToLower();
 		}
-
 		public static bool ContainsAnyFromCommentsAndCaptionCorpus(this string target)
 		{
 			return string.IsNullOrEmpty(target) 
@@ -145,22 +141,22 @@ namespace QuarklessContexts.Extensions
 				return s.Length;
 			}
 
-			int n = s.Length;
-			int m = t.Length;
-			int[,] d = new int[n + 1, m + 1];
+			var n = s.Length;
+			var m = t.Length;
+			var d = new int[n + 1, m + 1];
 
 			// initialize the top and right of the table to 0, 1, 2, ...
-			for (int i = 0; i <= n; d[i, 0] = i++) ;
-			for (int j = 1; j <= m; d[0, j] = j++) ;
+			for (var i = 0; i <= n; d[i, 0] = i++) ;
+			for (var j = 1; j <= m; d[0, j] = j++) ;
 
-			for (int i = 1; i <= n; i++)
+			for (var i = 1; i <= n; i++)
 			{
-				for (int j = 1; j <= m; j++)
+				for (var j = 1; j <= m; j++)
 				{
-					int cost = (t[j - 1] == s[i - 1]) ? 0 : 1;
-					int min1 = d[i - 1, j] + 1;
-					int min2 = d[i, j - 1] + 1;
-					int min3 = d[i - 1, j - 1] + cost;
+					var cost = (t[j - 1] == s[i - 1]) ? 0 : 1;
+					var min1 = d[i - 1, j] + 1;
+					var min2 = d[i, j - 1] + 1;
+					var min3 = d[i - 1, j - 1] + cost;
 					d[i, j] = Math.Min(Math.Min(min1, min2), min3);
 				}
 			}
@@ -168,16 +164,14 @@ namespace QuarklessContexts.Extensions
 		}
 		public static string JoinEvery(this IEnumerable<string> @strings, string seperator, int every)
 		{
-			string result = string.Empty;
+			var result = string.Empty;
 
-			for (int i = 0; i < @strings.Count(); i++)
+			for (var i = 0; i < @strings.Count(); i++)
 			{
-				if (i % every == 0 && i != 0)
-				{
-					for (int j = Math.Abs(i - every); j < (i - every) + every; j++)
-						result += @strings.ElementAt(j) + " ";
-					result += seperator;
-				}
+				if (i % every != 0 || i == 0) continue;
+				for (var j = Math.Abs(i - every); j < (i - every) + every; j++)
+					result += @strings.ElementAt(j) + " ";
+				result += seperator;
 			}
 
 			return result;
@@ -191,21 +185,15 @@ namespace QuarklessContexts.Extensions
 					resp = JsonConvert.DeserializeObject(json,test);
 				}
 				catch
-				{	
-					continue;
+				{
+					//
 				}
 			}
 			return resp;
 		}
 		public static IEnumerable<TObject> SquashMe<TObject>(this IEnumerable<IEnumerable<TObject>> @items)
 		{
-			foreach (var item in @items)
-			{
-				foreach (var ite in item)
-				{
-					yield return ite;
-				}
-			}
+			return @items.SelectMany(item => item);
 		}
 		public static string GetDescription<T>(this T e) where T : IConvertible
 		{
@@ -250,7 +238,7 @@ namespace QuarklessContexts.Extensions
 		}
 		public static IEnumerable<T> TakeBetween<T>(this IEnumerable<T> @items, int start, int max)
 		{
-			for (int x = start; x < start + max && x < @items.Count(); x++)
+			for (var x = start; x < start + max && x < @items.Count(); x++)
 			{
 				yield return @items.ElementAtOrDefault(x);
 			}
@@ -277,12 +265,11 @@ namespace QuarklessContexts.Extensions
 			foreach(var item in @items)
 			{
 				if(item.GetType().GetProperty("Text")==null) throw new Exception("Format not supported");
-				string text = item.GetType().GetProperty("Text").GetValue(item).ToString();
+				var text = item.GetType().GetProperty("Text")?.GetValue(item).ToString();
 				if(!text.Contains("@"))
 					yield return item;
 			}
 		}
-
 		public static object GetValue<TObject>(this TObject @object, string propName)
 		{
 			try { 
@@ -295,7 +282,6 @@ namespace QuarklessContexts.Extensions
 				return null;
 			}
 		}
-
 		public static PropertyInfo GetProp<TObject>(this TObject @object, string propName)
 		{
 			try { 
@@ -306,10 +292,9 @@ namespace QuarklessContexts.Extensions
 				return null;
 			}
 		}
-
 		public static void SaveAsJSON<T>(this IEnumerable<T> @obj, string filePath)
 		{
-			using (StreamWriter writter = new StreamWriter(filePath, true))
+			using (var writter = new StreamWriter(filePath, true))
 			{
 				writter.WriteLine(JsonConvert.SerializeObject(@obj));
 			}
@@ -350,19 +335,19 @@ namespace QuarklessContexts.Extensions
 		}
 		public static DataTable CreateDataTable<T>(this IEnumerable<T> list)
 		{
-			Type type = typeof(T);
+			var type = typeof(T);
 			var properties = type.GetProperties();
 
-			DataTable dataTable = new DataTable();
-			foreach (PropertyInfo info in properties)
+			var dataTable = new DataTable();
+			foreach (var info in properties)
 			{
 				dataTable.Columns.Add(new DataColumn(info.Name, Nullable.GetUnderlyingType(info.PropertyType) ?? info.PropertyType));
 			}
 
-			foreach (T entity in list)
+			foreach (var entity in list)
 			{
-				object[] values = new object[properties.Length];
-				for (int i = 0; i < properties.Length; i++)
+				var values = new object[properties.Length];
+				for (var i = 0; i < properties.Length; i++)
 				{
 					values[i] = properties[i].GetValue(entity);
 				}

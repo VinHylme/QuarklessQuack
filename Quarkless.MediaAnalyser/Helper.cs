@@ -36,10 +36,11 @@ namespace Quarkless.MediaAnalyser
 		}
 		private static string GetFilePathByName(string name)
 		{
-			var settingPath = @"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Quarkless";
+			var settingPath = Path.GetFullPath(Path.Combine(@"..\..\..\..\Quarkless"));
 			IConfiguration configuration = new ConfigurationBuilder().
 				SetBasePath(settingPath).AddJsonFile("appsettings.json").Build();
-			return configuration["MediaPath:" + name];
+
+			return Path.GetFullPath(@"..\..\..\..\"+configuration["MediaPath:" + name]);
 		}
 		public static bool ImageIsDuplicate(this byte[] image, byte[] targetImage, double scorePerctange)
 		{
@@ -119,7 +120,6 @@ namespace Quarkless.MediaAnalyser
 			};
 			return results;
 		}
-
 		public static IEnumerable<byte[]> DistinctImages(this IEnumerable<byte[]> images, double score = 0.75)
 		{
 			var enumerable = images as byte[][] ?? images.ToArray();
@@ -275,7 +275,6 @@ namespace Quarkless.MediaAnalyser
 				}
 			}
 		}
-
 		public static byte[] DownloadMediaLocal(this string url) => File.ReadAllBytes(url);
 		public static byte[] DownloadMedia(this string url)
 		{

@@ -14,9 +14,9 @@ namespace Quarkless.Tasks
 		static void Main(string[] args)
 		{
 			var services = new ServiceCollection();
-			var settingPath = Path.GetFullPath(Path.Combine(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Quarkless"));
+			var settingPath = Path.GetFullPath(Path.Combine(@"..\..\..\..\Quarkless"));
 			IConfiguration configuration = new ConfigurationBuilder().SetBasePath(settingPath).AddJsonFile("appsettings.json").Build();
-			Accessors accessors = new Accessors(configuration);
+			var accessors = new Accessors(configuration);
 			var Redis = ConnectionMultiplexer.Connect(accessors.RedisConnectionString);
 
 			services.AddHangFrameworkServices(accessors);

@@ -426,6 +426,7 @@ namespace Quarkless.Services
 		{
 			// TODO: Need to create a warm up function which does basic routine for 2 days 
 			// TODO: MAKE SURE ALL USERS ARE BUSINESS ACCOUNTS AND USERS OVER 100 FOLLOWERS BASE THEIR POSTING ON WHICH HOUR WAS MOST POPULAR
+			await MediaAnalyser.Helper.GenerateVideoThumbnail(new byte[]{});
 			var numberOfWorkers = 0;
 			while (true) {
 				if (numberOfWorkers < 5) { 

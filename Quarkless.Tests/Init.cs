@@ -32,7 +32,7 @@ namespace Quarkless.Tests
 
 		public ServiceReacher InitialiseContext()
 		{
-			var settingPath = Path.GetFullPath(Path.Combine(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Quarkless"));
+			var settingPath = Path.GetFullPath(Path.Combine(@"..\..\..\..\Quarkless"));
 			IConfiguration configuration = new ConfigurationBuilder().
 				SetBasePath(settingPath).AddJsonFile("appsettings.json").Build();
 			var accessors = new Accessors(configuration);

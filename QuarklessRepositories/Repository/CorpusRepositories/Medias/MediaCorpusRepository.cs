@@ -82,7 +82,7 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 			try
 			{
 				const string mediaCorpusFilePath =
-					@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\Datas\new_data\RAWcaptions.csv";
+					@"C:\Users\yousef.alaw\source\repos\QuarklessQuack\Requires\Datas\new_data\RAWcaptions.csv";
 
 				var res = await _context.CorpusMedia.FindAsync(_=>true, 
 				new FindOptions<MediaCorpus, MediaCorpus>()

@@ -45,6 +45,7 @@ namespace Quarkless.HeartBeater.__Init__
 		private readonly ITopicBuilder _topicBuilder;
 		private readonly IHeartbeatLogic _heartbeatLogic;
 		private readonly ICreator _creator;
+
 		private List<Assignments> Assignments { get; set; }
 		public Init(IResponseResolver responseResolver, IInstagramAccountLogic instagramAccountLogic, IProfileLogic profileLogic, IProxyLogic proxyLogic,
 			IAPIClientContext context, IHeartbeatLogic heartbeatLogic,
@@ -79,10 +80,18 @@ namespace Quarkless.HeartBeater.__Init__
 			{
 				for (var x = 0; x < 2000; x++)
 				{
-					var res = await _creator.CreateInstagramAccountMobile();
+					var proxy = new ProxyModel
+					{
+						Address = "86.141.112.99",
+						Port = 30013,
+						NeedServerAuth = true,
+						Username = "josi",
+						Password = "trialbhw99"
+					};
+					var res = await _creator.CreateInstagramAccountWeb(proxy);
 					if (res != null)
 						results.Add(res);
-					await Task.Delay(TimeSpan.FromMinutes(5.10));
+					await Task.Delay(TimeSpan.FromMinutes(10));
 				}
 
 //				for (var x = 0; x < 1000; x++)
