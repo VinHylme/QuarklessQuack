@@ -39,7 +39,6 @@ namespace Quarkless.MediaAnalyser
 			var settingPath = Path.GetFullPath(Path.Combine(@"..\..\..\..\Quarkless"));
 			IConfiguration configuration = new ConfigurationBuilder().
 				SetBasePath(settingPath).AddJsonFile("appsettings.json").Build();
-
 			return Path.GetFullPath(@"..\..\..\..\"+configuration["MediaPath:" + name]);
 		}
 		public static bool ImageIsDuplicate(this byte[] image, byte[] targetImage, double scorePerctange)

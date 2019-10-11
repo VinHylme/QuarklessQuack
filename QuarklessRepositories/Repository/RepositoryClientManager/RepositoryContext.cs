@@ -14,6 +14,7 @@ using QuarklessContexts.Models.Topics;
 using System;
 using System.Threading.Tasks;
 using QuarklessContexts.Models.Library;
+using QuarklessContexts.Models.Options;
 using QuarklessContexts.Models.TimelineLoggingRepository;
 
 namespace QuarklessRepositories.RepositoryClientManager
@@ -24,7 +25,7 @@ namespace QuarklessRepositories.RepositoryClientManager
 		private readonly IMongoDatabase _controlDatabase;
 		private readonly IMongoDatabase _contentDatabase;
 		private readonly IMongoDatabase _schedulerDatabase;
-		public RepositoryContext(IOptions<Settings> options)
+		public RepositoryContext(IOptions<MongoSettings> options)
 		{
 			var client = new MongoClient(options.Value.ConnectionString);
 			_clientDatabase = client.GetDatabase(options.Value.MainDatabase);

@@ -17,6 +17,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.Proxies;
+using QuarklessLogic.ContentSearch.GoogleSearch;
+using QuarklessLogic.ContentSearch.SeleniumClient;
+using QuarklessLogic.ContentSearch.YandexSearch;
 using QuarklessLogic.Logic.ResponseLogic;
 
 namespace Quarkless.HeartBeater.__MetadataBuilder__
@@ -77,15 +80,25 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 		private readonly IProxyLogic _proxyLogic;
 		private readonly IAPIClientContext _context;
 		private readonly IResponseResolver _responseResolver;
+		private readonly IGoogleSearchLogic _googleSearchLogic;
+		private readonly IYandexImageSearch _yandexImageSearch;
 		public MetadataBuilder(List<Assignments> assignments, IAPIClientContext aPIClient, 
-			IHeartbeatLogic heartbeatLogic, IProxyLogic proxyLogic, IResponseResolver responseResolver)
+			IHeartbeatLogic heartbeatLogic, IProxyLogic proxyLogic, 
+			IResponseResolver responseResolver, 
+			IGoogleSearchLogic googleSearchLogic, IYandexImageSearch yandexImageSearch)
 		{
 			_proxyLogic = proxyLogic;
 			_assignments = assignments;
 			_heartbeatLogic = heartbeatLogic;
 			_context = aPIClient;
 			_responseResolver = responseResolver;
+			_googleSearchLogic = googleSearchLogic;
+			_yandexImageSearch = yandexImageSearch;
 		}
+
+		private ContentSearcherHandler CreateSearch(IAPIClientContainer context, ProxyModel proxy) 
+			=> new ContentSearcherHandler(context, _responseResolver, _googleSearchLogic, _yandexImageSearch, proxy);
+
 		private SearchImageModel GoogleQueryBuilder(string color, string topics, List<string> sites, int limit = 10,
 		string imageType = null, string exactSize = null, string similarImage = null)
 		{
@@ -114,7 +127,8 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			{
 				await _assignments.ParallelForEachAsync(async worker =>
 				{
-					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
+					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
+
 					var res = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaForSpecificUserGoogle,worker.Topic.TopicFriendlyName,worker.InstagramRequests.InstagramAccount.Id);
 					var by = new By { ActionType = 0, User = worker.InstagramRequests.InstagramAccount.Id };
 
@@ -188,7 +202,9 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 						Port = 13010,
 						NeedServerAuth = false
 					};
-					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
+
+					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
+
 					var topicTotal = new List<string>();
 
 					var res = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaForSepcificUserYandexQuery, worker.Topic.TopicFriendlyName, worker.InstagramRequests.InstagramAccount.Id);
@@ -277,7 +293,9 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 						Port = 13010,
 						NeedServerAuth = false
 					};
-					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
+
+					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
+
 					var imalike = worker.InstagramRequests.Profile.Theme.ImagesLike;
 					if (imalike == null) return;
 					var res = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaForSpecificUserYandex, worker.Topic.TopicFriendlyName, worker.InstagramRequests.InstagramAccount.Id);
@@ -349,7 +367,9 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			try
 			{
 				var anyworker = _assignments.FirstOrDefault().Worker;
-				var contentSearcher = new ContentSearcherHandler(anyworker, _responseResolver, anyworker.GetContext.Proxy);
+
+				var contentSearcher = CreateSearch(anyworker, anyworker.GetContext.Proxy);
+
 				return await contentSearcher.GetBusinessCategories();
 			}
 			catch(Exception e)
@@ -358,7 +378,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 				return null;
 			}
 		}
-		public async Task PopulateCorpusData(List<Init.PopulateAssignments> assignmentses, int mediaLimit = 2)
+		public async Task PopulateCorpusData(List<PopulateAssignments> assignmentses, int mediaLimit = 2)
 		{
 			Console.WriteLine("Began - PopulateCorpusData");
 			var watch = System.Diagnostics.Stopwatch.StartNew();
@@ -372,7 +392,9 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 						{
 							Console.WriteLine($"Started For Topic Of: {topic.FriendlyName}");
 							var innerWatch = System.Diagnostics.Stopwatch.StartNew();
-							var searcher = new ContentSearcherHandler(work.Worker, _responseResolver, work.Worker.GetContext.Proxy);
+
+							var searcher = CreateSearch(work.Worker, work.Worker.GetContext.Proxy);
+
 							var mediaByTopics =
 								await searcher.SearchMediaDetailInstagram(new List<string> {topic.Searchable}, mediaLimit);
 							var recentMedias =
@@ -461,7 +483,9 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			try {
 				await _assignments.ParallelForEachAsync(async worker =>
 				{
-					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
+
+					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
+
 					var topicTotal = new List<string>();
 
 					var subtopics = worker.Topic.SubTopics.Select(a => a.TopicName);
@@ -514,7 +538,9 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			try {
 				await _assignments.ParallelForEachAsync(async worker =>
 				{
-					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
+
+					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
+
 					var results = (await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic, worker.Topic.TopicFriendlyName)).ToList();
 					var recentResults = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopicRecent, worker.Topic.TopicFriendlyName);
 					var meta_S = recentResults as __Meta__<Media>[] ?? recentResults.ToArray();
@@ -557,7 +583,9 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			try {
 				await _assignments.ParallelForEachAsync(async worker =>
 				{
-					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
+
+					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
+
 					var results = (await _heartbeatLogic.GetMetaData<List<UserResponse<string>>>
 					(MetaDataType.FetchUsersViaPostLiked, worker.Topic.TopicFriendlyName)).ToList();
 
@@ -600,7 +628,9 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			{
 				await _assignments.ParallelForEachAsync(async worker =>
 				{
-					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
+
+					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
+
 					var results = (await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic, worker.Topic.TopicFriendlyName)).ToList();
 					var recentResults = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopicRecent, worker.Topic.TopicFriendlyName);
 					var meta_S = recentResults as __Meta__<Media>[] ?? recentResults.ToArray();
@@ -661,7 +691,8 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			{
 				await _assignments.ParallelForEachAsync(async worker =>
 				{
-					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
+					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
+					
 					var res = await _heartbeatLogic.GetMetaData<Media>(extractFrom, worker.Topic.TopicFriendlyName,includeUser ? worker.InstagramRequests.InstagramAccount.Id:null);
 					if (res != null) { 
 						await _heartbeatLogic.RefreshMetaData(saveTo, worker.Topic.TopicFriendlyName, proxy: worker.Worker.GetContext.Proxy);
@@ -707,7 +738,8 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			{
 				await _assignments.ParallelForEachAsync(async worker =>
 				{
-					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
+					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
+
 					var results = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>
 					(MetaDataType.FetchUsersViaPostCommented, worker.Topic.TopicFriendlyName)).ToList();
 
@@ -749,7 +781,9 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			try
 			{
 				await _assignments.ParallelForEachAsync(async worker => {
-					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
+
+					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
+
 					var user = worker.InstagramRequests.InstagramAccount;
 					var userTargetList = worker.InstagramRequests.Profile.UserTargetList;
 					if(userTargetList!=null && userTargetList.Count > 0)
@@ -785,7 +819,9 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			try
 			{
 				await _assignments.ParallelForEachAsync(async worker => {
-					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
+
+					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
+
 					var user = worker.InstagramRequests.InstagramAccount;
 					var profileLocationTargetList = worker.InstagramRequests.Profile.LocationTargetList;
 					if (profileLocationTargetList != null && profileLocationTargetList.Count > 0)
@@ -828,7 +864,9 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			try
 			{
 				await _assignments.ParallelForEachAsync(async worker => {
-					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
+
+					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
+
 					var user = worker.InstagramRequests.InstagramAccount;
 					var fetchUsersMedia = await searcher.SearchUsersMediaDetailInstagram(user.Username,limit);
 					if (fetchUsersMedia != null)
@@ -896,7 +934,9 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			try
 			{
 				await _assignments.ParallelForEachAsync(async worker => {
-					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
+
+					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
+
 					var user = worker.InstagramRequests.InstagramAccount;
 					searcher.ChangeUser(new APIClientContainer(_context,user.AccountId,user.Id));
 					var fetchUsersMedia = await searcher.SearchUserFeedMediaDetailInstagram(limit:limit);
@@ -931,7 +971,9 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			try
 			{
 				await _assignments.ParallelForEachAsync(async worker => {
-					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
+
+					var searcher = CreateSearch(worker.Worker,  worker.Worker.GetContext.Proxy);
+
 					var user = worker.InstagramRequests.InstagramAccount;
 					var fetchUsersMedia = await searcher.GetUserFollowingList(user.Username, limit);
 					if (fetchUsersMedia != null)
@@ -958,7 +1000,9 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			try
 			{
 				await _assignments.ParallelForEachAsync(async worker => {
-					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
+
+					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
+
 					var user = worker.InstagramRequests.InstagramAccount;
 					var fetchUsersMedia = await searcher.GetUsersFollowersList(user.Username, limit);
 					if (fetchUsersMedia != null)
@@ -985,7 +1029,9 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			try
 			{
 				await _assignments.ParallelForEachAsync(async worker => {
-					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.InstagramRequests.ProxyUsing);
+
+					var searcher = CreateSearch(worker.Worker, worker.InstagramRequests.ProxyUsing);
+
 					var user = worker.InstagramRequests.InstagramAccount;
 					searcher.ChangeUser(new APIClientContainer(_context, user.AccountId, user.Id));
 					var fetchUsersMedia = await searcher.GetSuggestedPeopleToFollow(limit);
@@ -1014,7 +1060,8 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			try
 			{
 				await _assignments.ParallelForEachAsync(async worker => {
-					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.InstagramRequests.ProxyUsing);
+
+					var searcher = CreateSearch(worker.Worker, worker.InstagramRequests.ProxyUsing);
 					
 					var user = worker.InstagramRequests.InstagramAccount;
 					
@@ -1038,7 +1085,6 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			}
 			Console.WriteLine($"Ended - BuildUsersInbox : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
 		}
-
 		public async Task BuildUsersRecentComments(int howManyMedias = 10, int limit = 1)
 		{
 			Console.WriteLine("Began - BuildUsersRecentComments");
@@ -1048,7 +1094,8 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			{
 				await _assignments.ParallelForEachAsync(async worker =>
 				{
-					var searcher = new ContentSearcherHandler(worker.Worker, _responseResolver, worker.Worker.GetContext.Proxy);
+					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
+
 					var user = worker.InstagramRequests.InstagramAccount;
 					await _heartbeatLogic.RefreshMetaData(MetaDataType.UsersRecentComments, worker.Topic.TopicFriendlyName, user.Id, 
 						proxy: worker.Worker.GetContext.Proxy);
@@ -1076,6 +1123,5 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			}
 			Console.WriteLine($"Ended - BuildUsersRecentComments : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
 		}
-
 	}
 }

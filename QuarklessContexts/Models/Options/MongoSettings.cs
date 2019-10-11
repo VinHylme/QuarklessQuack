@@ -1,7 +1,6 @@
-﻿
-namespace QuarklessRepositories.RepositoryClientManager
+﻿namespace QuarklessContexts.Models.Options
 {
-	public class Settings
+	public class MongoSettings
 	{
 		public string ControlDatabase { get; set; }
 		public string MainDatabase { get; set; }

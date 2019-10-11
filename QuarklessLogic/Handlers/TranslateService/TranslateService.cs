@@ -7,10 +7,8 @@ using QuarklessLogic.ContentSearch.SeleniumClient;
 using QuarklessLogic.Handlers.RestSharpClient;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Web;
-using MoreLinq;
-using Newtonsoft.Json.Serialization;
+using QuarklessContexts.Models.Options;
 
 namespace QuarklessLogic.Handlers.TranslateService
 {
@@ -37,12 +35,6 @@ namespace QuarklessLogic.Handlers.TranslateService
 		public int Code { get; set; }
 		[JsonProperty("message")]
 		public string Message { get; set; }
-	}
-	public class TranslateOptions
-	{
-		public string YandexAPIKey { get; set; }
-		public string DetectLangAPIKey { get; set; }
-		public string NaturalLanguageAPIPath { get; set; }
 	}
 
 	public class DetectLanguage

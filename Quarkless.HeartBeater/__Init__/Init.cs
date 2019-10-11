@@ -18,16 +18,28 @@ using MoreLinq;
 using Quarkless.HeartBeater.Creator;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.FakerModels;
-using QuarklessContexts.Models.Topics;
+using QuarklessLogic.ContentSearch.GoogleSearch;
+using QuarklessLogic.ContentSearch.YandexSearch;
 using QuarklessLogic.Logic.ResponseLogic;
 
 namespace Quarkless.HeartBeater.__Init__
 {
+	#region structures
 	public struct RequestAccountModel
 	{
 		public ShortInstagramAccountModel InstagramAccount { get; set; }
 		public ProfileModel Profile { get; set; } 
 		public ProxyModel ProxyUsing { get; set; }
+	}
+	public struct TopicAss
+	{
+		public string Searchable { get; set; }
+		public string FriendlyName { get; set; }
+	}
+	public struct PopulateAssignments
+	{
+		public List<TopicAss> TopicsAssigned { get; set; }
+		public IAPIClientContainer Worker { get; set; }
 	}
 	public struct Assignments
 	{
@@ -35,6 +47,8 @@ namespace Quarkless.HeartBeater.__Init__
 		public Topics Topic { get; set; }
 		public RequestAccountModel InstagramRequests { get; set; }
 	}
+	#endregion
+
 	public class Init : IInit
 	{
 		private readonly IResponseResolver _responseResolver;
@@ -45,11 +59,13 @@ namespace Quarkless.HeartBeater.__Init__
 		private readonly ITopicBuilder _topicBuilder;
 		private readonly IHeartbeatLogic _heartbeatLogic;
 		private readonly ICreator _creator;
+		private readonly IGoogleSearchLogic _googleSearchLogic;
+		private readonly IYandexImageSearch _yandexImageSearch;
 
 		private List<Assignments> Assignments { get; set; }
 		public Init(IResponseResolver responseResolver, IInstagramAccountLogic instagramAccountLogic, IProfileLogic profileLogic, IProxyLogic proxyLogic,
 			IAPIClientContext context, IHeartbeatLogic heartbeatLogic,
-			ITopicBuilder topicBuilder, ICreator creator)
+			ITopicBuilder topicBuilder, IGoogleSearchLogic googleSearchLogic, IYandexImageSearch yandexImageSearch, ICreator creator)
 		{
 			_responseResolver = responseResolver;
 			_instagramAccountLogic = instagramAccountLogic;
@@ -58,19 +74,10 @@ namespace Quarkless.HeartBeater.__Init__
 			_heartbeatLogic = heartbeatLogic;
 			_context = context;
 			_topicBuilder = topicBuilder;
+			_googleSearchLogic = googleSearchLogic;
+			_yandexImageSearch = yandexImageSearch;
 			_creator = creator;
 			Assignments = new List<Assignments>();
-		}
-
-		public struct TopicAss
-		{
-			public string Searchable { get; set;  }
-			public string FriendlyName { get; set;  }
-		}
-		public struct PopulateAssignments
-		{
-			public List<TopicAss> TopicsAssigned { get ; set;  }
-			public IAPIClientContainer Worker { get; set; }
 		}
 
 		public async Task Creator()
@@ -192,7 +199,7 @@ namespace Quarkless.HeartBeater.__Init__
 						}
 
 						var metadataBuilder =
-							new MetadataBuilder(Assignments, _context, _heartbeatLogic, _proxyLogic, _responseResolver);
+							new MetadataBuilder(Assignments, _context, _heartbeatLogic, _proxyLogic, _responseResolver, _googleSearchLogic, _yandexImageSearch);
 
 						//var currentBusinessCategories = await metadataBuilder.BuildTopicTypes();
 						await metadataBuilder.PopulateCorpusData(populateAssignments, 2);
@@ -279,7 +286,9 @@ namespace Quarkless.HeartBeater.__Init__
 				}
 				#endregion
 
-				var metadataBuilder = new MetadataBuilder(Assignments, _context, _heartbeatLogic, _proxyLogic, _responseResolver);
+				var metadataBuilder =
+					new MetadataBuilder(Assignments, _context, _heartbeatLogic, _proxyLogic, _responseResolver, _googleSearchLogic, _yandexImageSearch);
+
 				//var currentBusinessCategories = await metadataBuilder.BuildTopicTypes();
 				//await _topicBuilder.AddTopicCategories(currentBusinessCategories);
 				switch (settings.ActionExecute)

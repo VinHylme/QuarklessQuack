@@ -9,8 +9,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using QuarklessLogic.ContentSearch.SeleniumClient;
 
-namespace QuarklessLogic.ContentSearch
+namespace QuarklessLogic.ContentSearch.YandexSearch
 {
 	#region ResponseModels
 	public struct MoreItem
@@ -167,7 +168,7 @@ namespace QuarklessLogic.ContentSearch
 	}
 	#endregion
 
-	public class YandexImageSearch
+	public class YandexImageSearch : IYandexImageSearch
 	{
 		#region URL CONSTANTS
 		private const string yandexImages = @"https://yandex.com/images/";
@@ -181,17 +182,14 @@ namespace QuarklessLogic.ContentSearch
 		private const string uinfo_ = @"sw-1920-sh-1080-ww-1745-wh-855-pd-1.100000023841858-wp-16x9_2560x1440&serpid={0}&serpListType=horizontal&_=1563358335246";
 		#endregion
 
-		SeleniumClient.SeleniumClient seleniumClient = new SeleniumClient.SeleniumClient();
+		private readonly ISeleniumClient _seleniumClient;
 		private readonly IRestSharpClientManager _restSharpClientManager;
-		public YandexImageSearch(IRestSharpClientManager restSharpClientManager, ProxyModel proxy = null)
+		public YandexImageSearch(ISeleniumClient seleniumClient)
 		{
-			_restSharpClientManager = restSharpClientManager;
-			if (proxy != null)
-			{
-				var proxyLine = string.IsNullOrEmpty(proxy.Username) ? $"http://{proxy.Address}:{proxy.Port}" : $"http://{proxy.Username}:{proxy.Password}@{proxy.Address}:{proxy.Port}";
-				seleniumClient.AddArguments($"--proxy-server={proxyLine}");
-			}
-			seleniumClient.AddArguments(
+			_restSharpClientManager = new RestSharpClientManager();
+
+			_seleniumClient = seleniumClient;
+			_seleniumClient.AddArguments(
 				"headless",
 				"--log-level=3",
 				"--silent",
@@ -199,6 +197,13 @@ namespace QuarklessLogic.ContentSearch
 				"test-type",
 				"--ignore-certificate-errors",
 				"no-sandbox");
+		}
+
+		public void WithProxy(ProxyModel proxy)
+		{
+			_restSharpClientManager.AddProxy(proxy);
+			var proxyLine = string.IsNullOrEmpty(proxy.Username) ? $"http://{proxy.Address}:{proxy.Port}" : $"http://{proxy.Username}:{proxy.Password}@{proxy.Address}:{proxy.Port}";
+			_seleniumClient.AddArguments($"--proxy-server={proxyLine}");
 		}
 		private string BuildUrl(YandexSearchQuery yandexSearch)
 		{
@@ -241,7 +246,7 @@ namespace QuarklessLogic.ContentSearch
 			try
 			{
 				var url = BuildUrl(yandexSearchQuery);
-				var result = seleniumClient.Reader(url, limit);
+				var result = _seleniumClient.Reader(url, limit);
 				if (result?.Result != null) { 
 					totalFound.Medias.AddRange(result.Result.Select(o => new MediaResponse
 					{
@@ -280,7 +285,7 @@ namespace QuarklessLogic.ContentSearch
 				var fullurl_ = yandexImages;
 				try
 				{
-					var result = seleniumClient.YandexImageSearch(fullurl_, url.Url, "serp-item_pos_", limit);
+					var result = _seleniumClient.YandexImageSearch(fullurl_, url.Url, "serp-item_pos_", limit);
 					totalFound.Medias.AddRange(result.Where(s => !s.Contains(".gif")).Select(a => new MediaResponse
 					{
 						Topic = url.TopicGroup,
@@ -309,10 +314,9 @@ namespace QuarklessLogic.ContentSearch
 			}
 			return response;
 		}
-
 		public SearchResponse<List<SerpItem>> SearchRest(string imageUrl, int numberOfPages, int offset = 0)
 		{
-			return seleniumClient.YandexSearchMe(imageUrl, numberOfPages, offset);
+			return _seleniumClient.YandexSearchMe(imageUrl, numberOfPages, offset);
 			#region REST VERSION (SPAM DETECTED A LOT)
 //			RequestSettings requestSettings = new RequestSettings
 //			{
@@ -482,7 +486,6 @@ namespace QuarklessLogic.ContentSearch
 //			return response;
 			#endregion
 		}
-
 		public SearchResponse<Media> SearchRelatedImagesREST(IEnumerable<GroupImagesAlike> imagesAlikes, int numberOfPages, int offset = 0)
 		{
 			var response = new SearchResponse<Media>();

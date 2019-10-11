@@ -15,7 +15,7 @@ namespace Quarkless.Extensions
 				throw new ArgumentNullException(nameof(app));
 			}
 			
-			SecurityHeadersPolicy policy = builder.Build();
+			var policy = builder.Build();
 
 			var throttlingSettings = app.ApplicationServices.GetService<Microsoft.Extensions.Options.IOptions<MaxConcurrentRequestsOptions>>();
 			if (!throttlingSettings?.Value.Enabled ?? false)
@@ -27,7 +27,6 @@ namespace Quarkless.Extensions
 		public static IServiceCollection ConfigureRequestThrottleServices(this IServiceCollection services, IConfiguration configuration)
 		{
 			services.Configure<MaxConcurrentRequestsOptions>(configuration.GetSection("MaxConcurrentRequests"));
-
 			return services;
 		}
 	}

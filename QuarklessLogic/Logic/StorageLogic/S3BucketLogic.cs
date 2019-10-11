@@ -9,15 +9,19 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using Microsoft.Extensions.Options;
+using OpenQA.Selenium;
+using QuarklessContexts.Models.Options;
 
 namespace QuarklessLogic.Logic.StorageLogic
 {
 	public class S3BucketLogic : IS3BucketLogic
 	{
 		private readonly IAmazonS3 _client;
-		private readonly string _bucketName = "quarklessbucket";
-		public S3BucketLogic(IAmazonS3 client)
+		private readonly string _bucketName;
+		public S3BucketLogic(IOptions<S3Options> s3Options, IAmazonS3 client)
 		{
+			_bucketName = s3Options.Value.BucketName;
 			_client = client;
 		}
 		public async Task<bool> UploadFile(string filePath, string keyName, string bucketName = null)
@@ -53,20 +57,20 @@ namespace QuarklessLogic.Logic.StorageLogic
 		}
 		public async Task<string> ReadObjectDataAsync(string keyName, string bucketName)
 		{
-			string responseBody = "";
+			var responseBody = "";
+			var request = new GetObjectRequest
+			{
+				BucketName = bucketName,
+				Key = keyName
+			};
 			try
 			{
-				GetObjectRequest request = new GetObjectRequest
+				using (var response = await _client.GetObjectAsync(request))
+				using (var responseStream = response.ResponseStream)
+				using (var reader = new StreamReader(responseStream))
 				{
-					BucketName = bucketName,
-					Key = keyName
-				};
-				using (GetObjectResponse response = await _client.GetObjectAsync(request))
-				using (Stream responseStream = response.ResponseStream)
-				using (StreamReader reader = new StreamReader(responseStream))
-				{
-					string title = response.Metadata["x-amz-meta-title"]; // Assume you have "title" as medata added to the object.
-					string contentType = response.Headers["Content-Type"];
+					var title = response.Metadata["x-amz-meta-title"]; // Assume you have "title" as medata added to the object.
+					var contentType = response.Headers["Content-Type"];
 					Console.WriteLine("Object metadata, Title: {0}", title);
 					Console.WriteLine("Content type: {0}", contentType);
 
@@ -104,8 +108,8 @@ namespace QuarklessLogic.Logic.StorageLogic
 					Expires = DateTime.Now.AddDays(6.6)
 				};
 				//string url_ = $"https://{bucketName}.s3.eu-west-2.amazonaws.com/{keyName}";
-				string url = _client.GetPreSignedURL(expiryUrlRequest);
-				using(WebClient client = new WebClient())
+				var url = _client.GetPreSignedURL(expiryUrlRequest);
+				using(var client = new WebClient())
 				{
 					try
 					{
@@ -113,15 +117,15 @@ namespace QuarklessLogic.Logic.StorageLogic
 					}
 					catch(WebException ex)
 					{
-						HttpWebResponse res = (HttpWebResponse)ex.Response;
+						var res = (HttpWebResponse)ex.Response;
 						if(res.StatusCode == HttpStatusCode.NotFound)
 							url = null;
 					}
 				}
-				if (string.IsNullOrEmpty(url)) { 
-					await fileTransferUtility.UploadAsync(uploadRequest); 
-					url = _client.GetPreSignedURL(expiryUrlRequest);
-				}
+
+				if (!string.IsNullOrEmpty(url)) return url;
+				await fileTransferUtility.UploadAsync(uploadRequest); 
+				url = _client.GetPreSignedURL(expiryUrlRequest);
 
 				return url;
 			}

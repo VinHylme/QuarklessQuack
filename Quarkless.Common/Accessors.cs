@@ -1,9 +1,7 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System;
+using Microsoft.Extensions.Configuration;
 using QuarklessContexts;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace Quarkless.Common
 {
@@ -30,81 +28,23 @@ namespace Quarkless.Common
 				SecretKey = configuration["AWS:SecretKey"]
 			};
 		}
+
+		public string S3BucketName => _configuration["AppS3Bucket"];
+		public static string BasePath => Environment.CurrentDirectory.Split("QuarklessQuack")[0] + "QuarklessQuack";
 		public string GoogleCredentials(string path)
 		{
 			return File.ReadAllText(path);
 		}
-		public string FrontEnd
-		{
-			get
-			{
-				return _configuration["Endpoints:FrontEnd"];
-			}
-		}
-
-		public string NaturalLanguageAPIPath => _configuration["APIServices:NaturalLanguageProcessing"];
-		public string YandexAPIKey
-		{
-			get
-			{
-				return _configuration["APIServices:Yandex"];
-			}
-		}
-		public string DetectAPI
-		{
-			get
-			{
-				return _configuration["APIServices:DetectLanguageAPI"];
-			}
-		}
-		public string ImageSearchEndpoint
-		{
-			get
-			{
-				return _configuration["Endpoints:ImageSearchEndpointGoogle"];
-			}
-		}
-		public string RedisConnectionString
-		{
-			get
-			{
-				return _configuration["ConnectionStrings:Redis"];
-			}
-		}
-		public string ConnectionString
-		{
-			get
-			{ 
-				return _configuration["ConnectionStrings:MongoClientStrings"]; 
-			}
-		}
-		public string MainDatabase
-		{
-			get
-			{
-				return _configuration["ConnectionStrings:DatabaseNames:Accounts"];
-			}
-		}
-		public string SchedulerDatabase
-		{
-			get
-			{
-				return _configuration["ConnectionStrings:DatabaseNames:Scheduler"];
-			}
-		}
-		public string ControlDatabase
-		{
-			get
-			{
-				return _configuration["ConnectionStrings:DatabaseNames:Control"];
-			}
-		}
-		public string ContentDatabase
-		{
-			get
-			{
-				return _configuration["ConnectionStrings:DatabaseNames:Content"];
-			}
-		}
+		public string FrontEnd => _configuration["Endpoints:FrontEnd"];
+		public string NaturalLanguageApiPath => _configuration["APIServices:NaturalLanguageProcessing"];
+		public string YandexApiKey => _configuration["APIServices:Yandex"];
+		public string DetectApi => _configuration["APIServices:DetectLanguageAPI"];
+		public string ImageSearchEndpoint => _configuration["Endpoints:ImageSearchEndpointGoogle"];
+		public string RedisConnectionString => _configuration["ConnectionStrings:Redis"];
+		public string ConnectionString => _configuration["ConnectionStrings:MongoClientStrings"];
+		public string MainDatabase => _configuration["ConnectionStrings:DatabaseNames:Accounts"];
+		public string SchedulerDatabase => _configuration["ConnectionStrings:DatabaseNames:Scheduler"];
+		public string ControlDatabase => _configuration["ConnectionStrings:DatabaseNames:Control"];
+		public string ContentDatabase => _configuration["ConnectionStrings:DatabaseNames:Content"];
 	}
 }

@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace QuarklessRepositories.RedisRepository.RedisClient
+namespace QuarklessContexts.Models.Options
 {
 	public class RedisOptions
 	{

@@ -54,8 +54,8 @@ namespace Quarkless
 				options.CheckConsentNeeded = context => true;
 				options.MinimumSameSitePolicy = SameSiteMode.None;
 			});
-
 			services.ConfigureRequestThrottleServices(Configuration);
+			services.AddConfigurators(_accessors);
 			services.AddAuthHandlers(_accessors, Configuration.GetAWSOptions());		
 			services.AddHttpContextAccessor();
 			services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
@@ -71,12 +71,12 @@ namespace Quarkless
 			services.AddContexts();
 			services.AddHandlers();
 			services.AddHangFrameworkServices(_accessors);
-			services.AddRepositories(_accessors);
+			services.AddRepositories();
 			services.AddCors(options=>{
 				options.AddPolicy(CorsPolicy,
 					builder=>
 					{
-					//	builder.WithOrigins(_accessors.FrontEnd);
+						builder.WithOrigins(_accessors.FrontEnd);
 						builder.AllowAnyOrigin();
 						builder.AllowAnyHeader();
 						builder.AllowAnyMethod();

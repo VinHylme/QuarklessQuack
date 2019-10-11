@@ -43,20 +43,20 @@ namespace Quarkless.Services
 	{
 		static void Main(string[] args)
 		{
-			var settingPath = Path.GetFullPath(Path.Combine(@"..\..\..\..\Quarkless"));
+			var settingPath = Path.GetFullPath(Path.Combine(Accessors.BasePath, @"Quarkless"));
 			IConfiguration configuration = new ConfigurationBuilder().
 				SetBasePath(settingPath).AddJsonFile("appsettings.json").Build();
+
 			var accessors = new Accessors(configuration);
-			
 			var Redis = ConnectionMultiplexer.Connect(accessors.RedisConnectionString);
 			var services = new ServiceCollection();
-			
+
+			services.AddConfigurators(accessors);
 			services.AddLogics();
 			services.AddContexts();
 			services.AddHandlers();
 			services.AddAuthHandlers(accessors, configuration.GetAWSOptions());
-			services.AddRepositories(accessors);
-
+			services.AddRepositories();
 			services.AddTransient<IAgentManager, AgentManager>();
 			services.AddTransient<ITopicBuilder, TopicBuilder>();
 			services.AddSingleton<IContentManager, ContentManager>();

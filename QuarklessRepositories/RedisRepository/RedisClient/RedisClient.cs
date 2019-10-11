@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using QuarklessContexts.Models.Options;
 using StackExchange.Redis;
 using static QuarklessRepositories.RedisRepository.RedisClient.RedisKeys;
 

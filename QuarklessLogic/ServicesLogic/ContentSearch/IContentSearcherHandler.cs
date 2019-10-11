@@ -29,7 +29,7 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 		SearchResponse<Media> SearchViaYandex(YandexSearchQuery yandexSearchQuery, int limit);
 		SearchResponse<Media> SearchYandexSimilarSafeMode(List<GroupImagesAlike> imagesAlikes, int limit);
 		SearchResponse<Media> SearchViaYandexBySimilarImages(List<GroupImagesAlike> imagesSimilarUrls, int limit, int offset = 0);
-		SearchResponse<Media> SearchSimilarImagesViaGoogle(List<GroupImagesAlike> imagesAlikes, int limit, int offset = 0);
+		SearchResponse<Media> SearchSimilarImagesViaGoogle(List<GroupImagesAlike> groupImages, int limit, int offset = 0);
 		Task<IEnumerable<TopicCategories>> GetBusinessCategories();
 		void ChangeUser(IAPIClientContainer newUser);
 		Task<InstaDirectInboxContainer> SearchUserInbox(int limit = 1);

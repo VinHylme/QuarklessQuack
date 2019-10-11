@@ -16,20 +16,22 @@ namespace Quarkless.HeartBeater
 		static void Main(string[] args)
 		{
 			if (args.Length <= 0) return;
-			var settingPath = Path.GetFullPath(Path.Combine(@"..\..\..\..\Quarkless"));
+			var settingPath = Path.GetFullPath(Path.Combine(Accessors.BasePath, @"Quarkless"));
 			IConfiguration configuration = new ConfigurationBuilder().
 				SetBasePath(settingPath).AddJsonFile("appsettings.json").Build();
 
 			var accessors = new Accessors(configuration);
 			var services = new ServiceCollection();
+			services.AddConfigurators(accessors);
 			services.AddLogics();
 			services.AddContexts();
 			services.AddHandlers();
-			services.AddRepositories(accessors);
+			services.AddRepositories();
 			services.AddTransient<IInit,Init>();
 			services.AddTransient<ITopicBuilder, TopicBuilder>();
 			services.AddTransient<ICreator, Creator.Creator>();
 			services.AddLogging();
+
 			var servicePreacher = new ServiceReacher(services.BuildServiceProvider());
 			var settings = new Settings
 			{

@@ -69,6 +69,10 @@ using QuarklessRepositories.Repository.ServicesRepositories.TopicsRepository;
 using QuarklessRepositories.Repository.TimelineRepository;
 using QuarklessRepositories.RepositoryClientManager;
 using System;
+using System.IO;
+using QuarklessContexts.Models.Options;
+using QuarklessLogic.ContentSearch.GoogleSearch;
+using QuarklessLogic.ContentSearch.YandexSearch;
 using QuarklessLogic.Handlers.EmailService;
 using QuarklessLogic.Handlers.WebHooks;
 using QuarklessLogic.Logic.AccountLogic;
@@ -125,29 +129,35 @@ namespace Quarkless.Common
 			services.AddTransient<ILookupCache, LookupCache>();
 			services.AddSingleton<IAccountLogic, AccountLogic>();
 			services.AddSingleton<IWebHookHandlers, WebHookHandlers>();
+			services.AddSingleton<IGoogleSearchLogic, GoogleSearchLogic>();
+			services.AddSingleton<IYandexImageSearch, YandexImageSearch>();
 		}
-		public static void AddAuthHandlers(this IServiceCollection services, Accessors _accessors, AWSOptions aWSOptions)
+		public static void AddAuthHandlers(this IServiceCollection services, Accessors accessors, AWSOptions aWSOptions)
 		{
 			Environment.GetEnvironmentVariable("JWT_KEY");
-			Environment.SetEnvironmentVariable("AWS_ACCESS_KEY_ID", _accessors.AWSAccess.AccessKey);
-			Environment.SetEnvironmentVariable("AWS_SECRET_ACCESS_KEY", _accessors.AWSAccess.SecretKey);
-			Environment.SetEnvironmentVariable("AWS_REGION", _accessors.AWSAccess.Region);
+			Environment.SetEnvironmentVariable("AWS_ACCESS_KEY_ID", accessors.AWSAccess.AccessKey);
+			Environment.SetEnvironmentVariable("AWS_SECRET_ACCESS_KEY", accessors.AWSAccess.SecretKey);
+			Environment.SetEnvironmentVariable("AWS_REGION", accessors.AWSAccess.Region);
 
-			RegionEndpoint regionEndpoint = RegionEndpoint.EUWest2;
-			IAmazonCognitoIdentityProvider amazonCognitoIdentityProvider = new AmazonCognitoIdentityProviderClient(_accessors.AWSAccess.AccessKey, _accessors.AWSAccess.SecretKey, regionEndpoint);
-			CognitoUserPool userPool = new CognitoUserPool(_accessors.AWSPool.PoolID, _accessors.AWSPool.AppClientID, amazonCognitoIdentityProvider, _accessors.AWSPool.AppClientSecret);
+			var regionEndpoint = RegionEndpoint.EUWest2;
+			IAmazonCognitoIdentityProvider amazonCognitoIdentityProvider = new AmazonCognitoIdentityProviderClient(accessors.AWSAccess.AccessKey, accessors.AWSAccess.SecretKey, regionEndpoint);
+			var userPool = new CognitoUserPool(accessors.AWSPool.PoolID, accessors.AWSPool.AppClientID, amazonCognitoIdentityProvider, accessors.AWSPool.AppClientSecret);
 			services.AddSingleton(amazonCognitoIdentityProvider);
 			services.AddSingleton(userPool);
-			IAmazonS3 amazonS3 = new AmazonS3Client(_accessors.AWSAccess.AccessKey, _accessors.AWSAccess.SecretKey,new AmazonS3Config
-			{
-				RegionEndpoint = regionEndpoint,
-				SignatureVersion = "v4",
-				SignatureMethod = Amazon.Runtime.SigningAlgorithm.HmacSHA256
-			});
-			services.AddAWSService<IAmazonS3>();
-			services.AddSingleton<IS3BucketLogic>(new S3BucketLogic(amazonS3));
 
-			var mongoDbContext = new MongoDbContext(_accessors.ConnectionString, "Accounts");
+			services.AddAWSService<IAmazonS3>();
+
+			services.AddSingleton<IAmazonS3>(new AmazonS3Client(accessors.AWSAccess.AccessKey,
+				accessors.AWSAccess.SecretKey, new AmazonS3Config
+				{
+					RegionEndpoint = regionEndpoint,
+					SignatureVersion = "v4",
+					SignatureMethod = Amazon.Runtime.SigningAlgorithm.HmacSHA256
+				}));
+
+			services.AddSingleton<IS3BucketLogic, S3BucketLogic>();
+
+			var mongoDbContext = new MongoDbContext(accessors.ConnectionString, "Accounts");
 
 			services.AddIdentity<AccountUser, AccountRole>()
 				.AddMongoDbStores<AccountUser, AccountRole, string>(mongoDbContext)
@@ -174,8 +184,8 @@ namespace Quarkless.Common
 				o =>
 				{
 
-					o.Audience = _accessors.AWSPool.AppClientID;
-					o.Authority = _accessors.AWSPool.AuthUrl;
+					o.Audience = accessors.AWSPool.AppClientID;
+					o.Authority = accessors.AWSPool.AuthUrl;
 					o.RequireHttpsMetadata = false;
 					o.SaveToken = true;
 
@@ -189,22 +199,38 @@ namespace Quarkless.Common
 				}
 			);
 
-
-			services.AddSingleton<IAuthAccessHandler>(new AuthAccessHandler(_accessors.AWSPool.AppClientSecret));
+			services.AddSingleton<IAuthAccessHandler>(new AuthAccessHandler(accessors.AWSPool.AppClientSecret));
 			services.AddScoped<IAuthHandler, AuthHandler>();
 			services.AddScoped<IAuthorizationHandler, AuthClientHandler>();
 		}
-		public static void AddRepositories(this IServiceCollection services, Accessors _accessors)
+
+		public static void AddConfigurators(this IServiceCollection services, Accessors accessors)
+		{
+			services.Configure<MongoSettings>(o => {
+				o.ConnectionString = accessors.ConnectionString;
+				o.MainDatabase = accessors.MainDatabase;
+				o.ControlDatabase = accessors.ControlDatabase;
+				o.ContentDatabase = accessors.ContentDatabase;
+				o.SchedulerDatabase = accessors.SchedulerDatabase;
+			});
+			services.Configure<S3Options>(options => { options.BucketName = accessors.S3BucketName; });
+			services.Configure<GoogleSearchOptions>(options => { options.Endpoint = accessors.ImageSearchEndpoint; });
+			services.Configure<RedisOptions>(o =>
+			{
+				o.ConnectionString = accessors.RedisConnectionString;
+				o.DefaultKeyExpiry = TimeSpan.FromDays(7);
+			});
+			services.Configure<TranslateOptions>(options =>
+			{
+				options.DetectLangAPIKey = accessors.DetectApi;
+				options.YandexAPIKey = accessors.YandexApiKey;
+				options.NaturalLanguageAPIPath = accessors.NaturalLanguageApiPath;
+			});
+		}
+		public static void AddRepositories(this IServiceCollection services)
 		{
 			BsonSerializer.RegisterSerializer(typeof(Guid),
 			new GuidSerializer(BsonType.String));
-			services.Configure<Settings>(o => {
-				o.ConnectionString = _accessors.ConnectionString;
-				o.MainDatabase = _accessors.MainDatabase;
-				o.ControlDatabase = _accessors.ControlDatabase;
-				o.ContentDatabase = _accessors.ContentDatabase;
-				o.SchedulerDatabase = _accessors.SchedulerDatabase;
-			});
 			services.AddSingleton<IRepositoryContext, RepositoryContext>();
 			services.AddTransient<IInstagramAccountRepository, InstagramAccountRepository>();
 			services.AddTransient<IProxyRepostory, ProxyRepository>();
@@ -227,17 +253,6 @@ namespace Quarkless.Common
 			services.AddTransient<ILibraryCache, LibraryCache>();
 			services.AddTransient<IAPILogCache, APILogCache>();
 			services.AddTransient<ILoggerStore,LoggerStore>();
-			services.Configure<RedisOptions>(o =>
-			{
-				o.ConnectionString = _accessors.RedisConnectionString;
-				o.DefaultKeyExpiry = TimeSpan.FromDays(7);
-			});
-			services.Configure<TranslateOptions>(options =>
-			{
-				options.DetectLangAPIKey =_accessors.DetectAPI;
-				options.YandexAPIKey = _accessors.YandexAPIKey;
-				options.NaturalLanguageAPIPath = _accessors.NaturalLanguageAPIPath;
-			});
 			services.AddTransient<IRedisClient,RedisClient>();
 			services.AddTransient<IAccountCache, AccountCache>();
 		}
@@ -247,10 +262,15 @@ namespace Quarkless.Common
 			services.AddSingleton<IRestSharpClientManager, RestSharpClientManager>();
 			services.AddTransient<ITopicServicesLogic, TopicServicesLogic>();
 
+			services.Configure<SeleniumLaunchOptions>(options =>
+				{
+					options.ChromePath = Path.Combine(Accessors.BasePath, @"Requires\chrome");
+				});
+			services.AddTransient<ISeleniumClient, SeleniumClient>();
+
 			services.AddTransient<IClientContextProvider, ClientContextProvider>();
 			services.AddTransient<IAPIClientContext,APIClientContext>();
 			services.AddTransient<IAPIClientContainer,APIClientContainer>();
-			services.AddTransient<ISeleniumClient,SeleniumClient>();
 			services.AddTransient<ITranslateService,TranslateService>();
 			services.AddTransient<IUtilProviders,UtilProviders>();
 			services.AddSingleton<ITextGeneration,TextGeneration>();
@@ -261,6 +281,5 @@ namespace Quarkless.Common
 			services.AddTransient<IUserContext, UserContext>();
 			services.AddTransient<IRequestBuilder,RequestBuilder>();
 		}
-
 	}
 }

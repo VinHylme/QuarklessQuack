@@ -14,14 +14,14 @@ namespace Quarkless.Tasks
 		static void Main(string[] args)
 		{
 			var services = new ServiceCollection();
-			var settingPath = Path.GetFullPath(Path.Combine(@"..\..\..\..\Quarkless"));
+			var settingPath = Path.GetFullPath(Path.Combine(Accessors.BasePath, @"Quarkless"));
 			IConfiguration configuration = new ConfigurationBuilder().SetBasePath(settingPath).AddJsonFile("appsettings.json").Build();
 			var accessors = new Accessors(configuration);
-			var Redis = ConnectionMultiplexer.Connect(accessors.RedisConnectionString);
+			var connectionMultiplexer = ConnectionMultiplexer.Connect(accessors.RedisConnectionString);
 
 			services.AddHangFrameworkServices(accessors);
 
-			GlobalConfiguration.Configuration.UseRedisStorage(Redis, new Hangfire.Redis.RedisStorageOptions{
+			GlobalConfiguration.Configuration.UseRedisStorage(connectionMultiplexer, new Hangfire.Redis.RedisStorageOptions{
 				Prefix = "Timeline",
 				SucceededListSize = 5000,
 				DeletedListSize = 1000,
