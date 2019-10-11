@@ -1,6 +1,4 @@
-﻿
-
-namespace QuarklessContexts.Models.ApiModels
+﻿namespace QuarklessContexts.Models.ApiModels
 {
 
 }

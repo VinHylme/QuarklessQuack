@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace QuarklessContexts.Models.ServicesModels.HeartbeatModels
+﻿namespace QuarklessContexts.Models.ServicesModels.HeartbeatModels
 {
 	public enum MetaDataType
 	{

@@ -1,6 +1,4 @@
-﻿using MongoDB.Bson;
-using QuarklessContexts.Models.UserAuth.AuthTypes;
-using System.Collections;
+﻿using QuarklessContexts.Models.UserAuth.AuthTypes;
 
 namespace QuarklessContexts.Contexts
 {

@@ -13,6 +13,5 @@ namespace QuarklessContexts.Models.FakerModels
 		public string UserAgent;
 		public string Email;
 		public IResult<InstaAccountCreation> InResult;
-
 	}
 }

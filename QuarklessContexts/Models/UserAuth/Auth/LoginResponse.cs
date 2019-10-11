@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace QuarklessContexts.Models.UserAuth.Auth
+﻿namespace QuarklessContexts.Models.UserAuth.Auth
 {
 	public class LoginResponse
 	{

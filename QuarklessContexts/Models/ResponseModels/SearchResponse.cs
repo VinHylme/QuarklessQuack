@@ -1,5 +1,4 @@
-﻿
-namespace QuarklessContexts.Models.ResponseModels
+﻿namespace QuarklessContexts.Models.ResponseModels
 {
 	public enum ResponseCode
 	{

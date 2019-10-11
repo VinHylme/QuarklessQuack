@@ -46,6 +46,7 @@ namespace Quarkless
 			//services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
 			//services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
 			// inject counter and rules distributed cache stores
+
 			services.AddSingleton<IIpPolicyStore, DistributedCacheIpPolicyStore>();
 			services.AddSingleton<IRateLimitCounterStore,DistributedCacheRateLimitCounterStore>();
 			services.Configure<CookiePolicyOptions>(options =>
@@ -59,6 +60,7 @@ namespace Quarkless
 			services.AddAuthHandlers(_accessors, Configuration.GetAWSOptions());		
 			services.AddHttpContextAccessor();
 			services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+
 			// https://github.com/aspnet/Hosting/issues/793
 			// the IHttpContextAccessor service is not registered by default.
 			// the clientId/clientIp resolvers use it.

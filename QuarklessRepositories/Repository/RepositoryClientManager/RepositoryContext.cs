@@ -36,7 +36,6 @@ namespace QuarklessRepositories.RepositoryClientManager
 
 		public IMongoCollection<TopicsModel> Topics => _contentDatabase.GetCollection<TopicsModel>("Topics");
 		public IMongoCollection<LoggerModel> Logger => _controlDatabase.GetCollection<LoggerModel>("ReportHandle");
-
 		public IMongoCollection<TimelineEventLog> TimelineLogger =>
 			_controlDatabase.GetCollection<TimelineEventLog>("TimelineLogger");
 		public IMongoCollection<InstagramAccountModel> InstagramAccounts => _clientDatabase.GetCollection<InstagramAccountModel>("InstagramAccounts");

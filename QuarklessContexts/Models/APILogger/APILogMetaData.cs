@@ -1,9 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Security.Principal;
-using QuarklessContexts.Models.UserAuth.AuthTypes;
 
 namespace QuarklessContexts.Models.APILogger
 {

@@ -1,7 +1,5 @@
 ﻿using QuarklessContexts.Models.Topics;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace QuarklessContexts.Models.QueryModels.Settings
 {

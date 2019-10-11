@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace QuarklessContexts.Models
+﻿namespace QuarklessContexts.Models
 {
 	public struct Range
 	{

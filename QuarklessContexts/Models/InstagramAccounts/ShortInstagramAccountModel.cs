@@ -2,7 +2,6 @@
 using MongoDB.Bson.Serialization.Attributes;
 using QuarklessContexts.Models.Profiles;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace QuarklessContexts.Models.InstagramAccounts

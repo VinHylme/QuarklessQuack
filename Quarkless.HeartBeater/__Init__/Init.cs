@@ -48,7 +48,6 @@ namespace Quarkless.HeartBeater.__Init__
 		public RequestAccountModel InstagramRequests { get; set; }
 	}
 	#endregion
-
 	public class Init : IInit
 	{
 		private readonly IResponseResolver _responseResolver;
@@ -63,9 +62,12 @@ namespace Quarkless.HeartBeater.__Init__
 		private readonly IYandexImageSearch _yandexImageSearch;
 
 		private List<Assignments> Assignments { get; set; }
-		public Init(IResponseResolver responseResolver, IInstagramAccountLogic instagramAccountLogic, IProfileLogic profileLogic, IProxyLogic proxyLogic,
+		public Init(
+			IResponseResolver responseResolver, IInstagramAccountLogic instagramAccountLogic, 
+			IProfileLogic profileLogic, IProxyLogic proxyLogic,
 			IAPIClientContext context, IHeartbeatLogic heartbeatLogic,
-			ITopicBuilder topicBuilder, IGoogleSearchLogic googleSearchLogic, IYandexImageSearch yandexImageSearch, ICreator creator)
+			ITopicBuilder topicBuilder, IGoogleSearchLogic googleSearchLogic, 
+			IYandexImageSearch yandexImageSearch, ICreator creator)
 		{
 			_responseResolver = responseResolver;
 			_instagramAccountLogic = instagramAccountLogic;

@@ -1,7 +1,4 @@
 ﻿using InstagramApiSharp.Classes.Models;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace QuarklessContexts.Models.MediaModels
 {

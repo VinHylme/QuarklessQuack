@@ -1,7 +1,4 @@
 ﻿using InstagramApiSharp.Classes.Models;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace QuarklessContexts.Models.ServicesModels.SearchModels
 {
@@ -13,6 +10,5 @@ namespace QuarklessContexts.Models.ServicesModels.SearchModels
 		public string FollowText { get; set; }
 		public string Algorithm { get; set; }
 		public InstaUserInfo UserInfo { get; set; }
-
 	}
 }

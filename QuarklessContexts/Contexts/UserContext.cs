@@ -15,13 +15,10 @@ namespace QuarklessContexts.Contexts
 		public string CurrentUser 
 		{
 			get {
-				if (_httpContextAccessor.HttpContext == null)
-					return null;
-				if (_httpContextAccessor.HttpContext?.User?.Identity != null || _httpContextAccessor.HttpContext.User.Identity.IsAuthenticated)
+				if (_httpContextAccessor.HttpContext?.User != null && (_httpContextAccessor.HttpContext?.User?.Identity != null || _httpContextAccessor.HttpContext.User.Identity.IsAuthenticated))
 				{
 					return _httpContextAccessor.HttpContext.User.Claims?.Single(_ => _.Type == "cognito:username").Value;
 				}
-
 				return null;
 			}
 		}
@@ -29,7 +26,7 @@ namespace QuarklessContexts.Contexts
 		{
 			get
 			{
-				if (_httpContextAccessor.HttpContext?.User?.Identity != null || _httpContextAccessor.HttpContext.User.Identity.IsAuthenticated)
+				if (_httpContextAccessor.HttpContext != null && (_httpContextAccessor.HttpContext?.User?.Identity != null || _httpContextAccessor.HttpContext.User.Identity.IsAuthenticated))
 				{
 					return _httpContextAccessor.HttpContext.User.Claims?.Single(_ => _.Type == "cognito:groups").Value.GetValueFromDescription<AuthTypes>() ?? AuthTypes.Expired;
 				}
@@ -42,8 +39,7 @@ namespace QuarklessContexts.Contexts
 		{
 			get
 			{
-				if(_httpContextAccessor.HttpContext==null) return null;
-				if (_httpContextAccessor.HttpContext?.User?.Identity != null || _httpContextAccessor.HttpContext.User.Identity.IsAuthenticated)
+				if (_httpContextAccessor.HttpContext?.User != null && (_httpContextAccessor.HttpContext?.User?.Identity != null || _httpContextAccessor.HttpContext.User.Identity.IsAuthenticated))
 				{
 					return _httpContextAccessor.HttpContext.Request.Headers["FocusInstaAccount"].FirstOrDefault();				
 				}
