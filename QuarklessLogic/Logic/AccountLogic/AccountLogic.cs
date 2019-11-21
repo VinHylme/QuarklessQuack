@@ -55,7 +55,7 @@ namespace QuarklessLogic.Logic.AccountLogic
 						{
 							new SessionSubscriptionDataItemOptions
 							{
-								PlanId = chargeRequest.ChargeType.GetDescription(),
+								Plan = chargeRequest.ChargeType.GetDescription(),
 							},
 						},
 					},
@@ -90,7 +90,9 @@ namespace QuarklessLogic.Logic.AccountLogic
 						break;
 				}
 			}
+#pragma warning disable CS0168 // Variable is declared but never used
 			catch (Exception e)
+#pragma warning restore CS0168 // Variable is declared but never used
 			{
 
 			}

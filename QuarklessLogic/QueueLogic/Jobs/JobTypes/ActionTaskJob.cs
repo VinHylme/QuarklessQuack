@@ -1,5 +1,5 @@
-﻿using QuarklessContexts.JobClass;
-using QuarklessLogic.QueueLogic.Jobs.JobOptions;
+﻿using QuarklessLogic.QueueLogic.Jobs.JobOptions;
+using QuarklessLogic.QueueLogic.Jobs.JobRunner;
 using System;
 
 namespace QuarklessLogic.QueueLogic.Jobs.JobTypes

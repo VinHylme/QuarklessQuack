@@ -24,11 +24,6 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 			await _context.CorpusMedia.InsertManyAsync(medias);
 		}
 
-		public async Task AddMediasLocal(IEnumerable<MediaCorpus> medias)
-		{
-
-		}
-
 		public async Task<IEnumerable<MediaCorpus>> GetMedias(IEnumerable<FilterDefinition<MediaCorpus>> searchRepository = null, int limit = -1)
 		{
 			try
@@ -52,7 +47,9 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 				var res = await _context.CorpusMedia.FindAsync(filter, options);
 				return res.ToList();
 			}
+#pragma warning disable CS0168 // Variable is declared but never used
 			catch (Exception e)
+#pragma warning restore CS0168 // Variable is declared but never used
 			{
 
 				return null;
@@ -137,7 +134,9 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 				var res = await _context.CorpusMedia.FindAsync(filters, options);
 				return res.ToList();
 			}
+#pragma warning disable CS0168 // Variable is declared but never used
 			catch (Exception e)
+#pragma warning restore CS0168 // Variable is declared but never used
 			{
 
 				return null;

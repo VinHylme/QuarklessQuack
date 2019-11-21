@@ -1,5 +1,4 @@
-﻿using QuarklessContexts.JobClass;
-using System;
+﻿using System;
 
 namespace QuarklessLogic.QueueLogic.Jobs.JobOptions
 {

@@ -86,7 +86,7 @@ namespace QuarklessLogic.ContentSearch.GoogleSearch
 			response.Message = $"SearchViaGoogle failed for  object{JsonConvert.SerializeObject(searchImageQuery)}";
 			return response;
 		}
-		public SearchResponse<Media> SearchSimilarImagesViaGoogle(List<GroupImagesAlike> groupImages, int limit, int offset = 0)
+		public SearchResponse<Media> SearchSimilarImagesViaGoogle(IEnumerable<GroupImagesAlike> groupImages, int limit, int offset = 0)
 		{
 			var response = new SearchResponse<Media>();
 			try

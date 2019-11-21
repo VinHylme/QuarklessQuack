@@ -114,7 +114,7 @@ namespace QuarklessRepositories.ProxyRepository
 				}
 				return false;
 			}
-			catch (Exception ee)
+			catch
 			{
 				return false;
 			}

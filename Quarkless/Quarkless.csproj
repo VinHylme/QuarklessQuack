@@ -1,33 +1,40 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <AWSProjectType>Lambda</AWSProjectType>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <UserSecretsId>aecd18cc-3bf5-4ceb-86b5-280866e45f4b</UserSecretsId>
+    <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
   </PropertyGroup>
   <ItemGroup>
 	<PackageReference Include="AspNetCoreRateLimit" Version="3.0.5" />
-	<PackageReference Include="Hangfire" Version="1.7.5" />
-	<PackageReference Include="Hangfire.Core" Version="1.7.5" />
-	<PackageReference Include="Amazon.AspNetCore.Identity.Cognito" Version="1.0.1" />
-    <PackageReference Include="AWSSDK.CognitoIdentity" Version="3.3.100.49" />
-    <PackageReference Include="AWSSDK.CognitoIdentityProvider" Version="3.3.102.34" />
-    <PackageReference Include="Dapper" Version="1.60.6" />
+	<PackageReference Include="Hangfire" Version="1.7.7" />
+	<PackageReference Include="Hangfire.Core" Version="1.7.7" />
+	<PackageReference Include="Amazon.AspNetCore.Identity.Cognito" Version="1.0.2" />
+    <PackageReference Include="AWSSDK.CognitoIdentity" Version="3.3.101.4" />
+    <PackageReference Include="AWSSDK.CognitoIdentityProvider" Version="3.3.105.2" />
     <PackageReference Include="Hangfire.Redis.StackExchange" Version="1.8.0" />
     <PackageReference Include="Microsoft.AspNet.WebApi.Cors" Version="5.2.7" />
-    <PackageReference Include="Microsoft.AspNetCore.App" Version="2.2.6" />
-    <PackageReference Include="AWSSDK.S3" Version="3.3.104.1" />
-    <PackageReference Include="Amazon.Lambda.AspNetCoreServer" Version="3.1.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.2.6" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.2.6" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="2.2.6">
+    <PackageReference Include="AWSSDK.S3" Version="3.3.107.2" />
+    <PackageReference Include="Amazon.Lambda.AspNetCoreServer" Version="4.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Cors" Version="2.2.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="3.0.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.2.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.0.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.5" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Kubernetes.Tools.Targets" Version="1.0.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.0.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\InstagramApiSharp\InstagramApiSharp.csproj" />
-    <ProjectReference Include="..\Quarkless.Common\Quarkless.Common.csproj" />
+    <ProjectReference Include="..\Quarkless.Common.Clients\Quarkless.Common.Clients.csproj" />
     <ProjectReference Include="..\QuarklessContexts\QuarklessContexts.csproj" />
     <ProjectReference Include="..\QuarklessLogic\QuarklessLogic.csproj" />
   </ItemGroup>

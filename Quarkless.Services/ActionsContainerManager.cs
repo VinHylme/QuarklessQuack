@@ -11,8 +11,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Timers;
 
 namespace Quarkless.Services
 {
@@ -153,19 +151,24 @@ namespace Quarkless.Services
 		}
 		public void TriggerAction(ActionType action, DateTime time)
 		{
-			var lm = actions.FirstOrDefault(ac => ac.Object.ActionType == action).Object.Remaining = time;
+			var first = actions.FirstOrDefault(ac => ac.Object.ActionType == action);
+
+			if (first != null)
+			{
+				var lm = first.Object.Remaining = time;
+			}
 		}
 		public IEnumerable<TimelineEventModel> GetFinishedActions()
 		{
 			return finishedActions.Count>0 ? finishedActions.Dequeue() : null;
 		}		
-		public Range FindActionLimit(CommitContainer actionContainer)
+		public XRange FindActionLimit(CommitContainer actionContainer)
 		{
 			var actionOptionFrame = actionContainer.Options.GetType().GetProperties().Where(_ => _.Name.Equals("TimeFrameSeconds")).FirstOrDefault();
-			var actionFrameValue = (Range)actionOptionFrame.GetValue(actionContainer.Options);
+			var actionFrameValue = (XRange)actionOptionFrame.GetValue(actionContainer.Options);
 			return actionFrameValue;
 		}
-		public Range? FindActionLimit(ActionType actionName)
+		public XRange? FindActionLimit(ActionType actionName)
 		{
 			switch (actionName)
 			{

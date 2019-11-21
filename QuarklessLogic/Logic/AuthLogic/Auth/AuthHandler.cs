@@ -469,12 +469,7 @@ namespace QuarklessLogic.Logic.AuthLogic.Auth
 					}
 				};
 				user.Roles =  tokenClaims.Claims.Where(_=>_.Type.Contains("groups")).Select(s=>s.Value).ToList();
-
-				var updatedUser = await UpdateUser(user);
-
-				if(updatedUser)
-					return true;
-				return false;
+				return await UpdateUser(user);
 			}, nameof(UpdateUserState), login.Username, null);
 		}
 

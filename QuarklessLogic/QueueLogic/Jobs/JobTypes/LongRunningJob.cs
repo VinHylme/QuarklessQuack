@@ -1,7 +1,7 @@
-﻿using QuarklessContexts.Enums;
-using QuarklessContexts.JobClass;
-using QuarklessLogic.Handlers.RestSharpClient;
+﻿using QuarklessLogic.Handlers.RestSharpClient;
 using QuarklessLogic.QueueLogic.Jobs.JobOptions;
+using QuarklessLogic.QueueLogic.Jobs.JobRunner;
+using QuarklessContexts.Enums;
 using System;
 
 namespace QuarklessLogic.QueueLogic.Jobs.JobTypes

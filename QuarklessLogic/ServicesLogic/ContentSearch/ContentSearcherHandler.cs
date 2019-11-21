@@ -231,7 +231,7 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 				(await _container.User.GetFullUserInfoAsync(userId));
 			return userDetailsResp.Succeeded ? userDetailsResp.Value : null;
 		}
-		public async Task<Media> SearchMediaDetailInstagram(List<string> topics, int limit, bool isRecent = false)
+		public async Task<Media> SearchMediaDetailInstagram(IEnumerable<string> topics, int limit, bool isRecent = false)
 		{
 			var medias = new Media();
 			foreach (var topic in topics)
@@ -652,7 +652,7 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 		}
 
 		#region Probably Old 
-		public async Task<Media> SearchMediaInstagram(List<string> topics, InstaMediaType mediaType, int limit)
+		public async Task<Media> SearchMediaInstagram(IEnumerable<string> topics, InstaMediaType mediaType, int limit)
 		{
 			Media mediaresp = new Media();
 			foreach (var topic in topics)
@@ -757,16 +757,16 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 		{
 			return _googleSearchLogic.SearchViaGoogle(searchImageQuery);
 		}
-		public SearchResponse<Media> SearchSimilarImagesViaGoogle(List<GroupImagesAlike> groupImages, int limit, int offset = 0)
+		public SearchResponse<Media> SearchSimilarImagesViaGoogle(IEnumerable<GroupImagesAlike> groupImages, int limit, int offset = 0)
 		{
 			return _googleSearchLogic.SearchSimilarImagesViaGoogle(groupImages, limit, offset);
 		}
 		
-		public SearchResponse<Media> SearchYandexSimilarSafeMode(List<GroupImagesAlike> imagesAlikes, int limit)
+		public SearchResponse<Media> SearchYandexSimilarSafeMode(IEnumerable<GroupImagesAlike> imagesAlikes, int limit)
 		{
 			return _yandexImageSearch.SearchSafeButSlow(imagesAlikes,limit);
 		}
-		public SearchResponse<Media> SearchViaYandexBySimilarImages(List<GroupImagesAlike> imagesSimilarUrls, int limit, int offset = 0)
+		public SearchResponse<Media> SearchViaYandexBySimilarImages(IEnumerable<GroupImagesAlike> imagesSimilarUrls, int limit, int offset = 0)
 		{
 			var images = _yandexImageSearch.SearchRelatedImagesREST(imagesSimilarUrls, limit, offset);
 			images.Result.Medias = images?.Result?.Medias?.Distinct().ToList();

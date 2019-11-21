@@ -1,7 +1,6 @@
 ﻿using System;
 using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
@@ -33,7 +32,7 @@ namespace Quarkless.Filters
 
 		public string ResolveIp()
 		{
-			return "hello gag";
+			return "hello";
 		}
 	}
 }

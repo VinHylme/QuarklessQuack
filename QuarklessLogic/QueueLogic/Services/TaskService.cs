@@ -1,11 +1,11 @@
-﻿using QuarklessContexts.JobClass;
-using QuarklessContexts.Models.Timeline;
+﻿using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.QueueLogic.Jobs.JobOptions;
-using QuarklessLogic.QueueLogic.Jobs.JobTypes;
 using QuarklessRepositories.RedisRepository.TimelineJobRedis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using QuarklessLogic.QueueLogic.Jobs.JobRunner;
+using QuarklessLogic.QueueLogic.Jobs.JobTypes;
 
 namespace QuarklessLogic.QueueLogic.Services
 {

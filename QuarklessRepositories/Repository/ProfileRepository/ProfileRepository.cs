@@ -39,7 +39,7 @@ namespace QuarklessRepositories.ProfileRepository
 				}
 				return false;
 			}
-			catch(Exception ee)
+			catch
 			{
 				return false;
 			}
@@ -52,7 +52,9 @@ namespace QuarklessRepositories.ProfileRepository
 				await _context.Profiles.InsertOneAsync(profile);
 				return profile;
 			}
+#pragma warning disable CS0168 // Variable is declared but never used
 			catch (Exception ee)
+#pragma warning restore CS0168 // Variable is declared but never used
 			{
 				return null;
 			}
@@ -67,7 +69,9 @@ namespace QuarklessRepositories.ProfileRepository
 				var profiles = await _context.Profiles.FindAsync(filter);
 				return profiles.SingleOrDefault();
 			}
+#pragma warning disable CS0168 // Variable is declared but never used
 			catch (Exception ee)
+#pragma warning restore CS0168 // Variable is declared but never used
 			{
 				return null;
 			}
@@ -85,7 +89,9 @@ namespace QuarklessRepositories.ProfileRepository
 				}
 				return null;
 			}
+#pragma warning disable CS0168 // Variable is declared but never used
 			catch(Exception ee)
+#pragma warning restore CS0168 // Variable is declared but never used
 			{
 				return null;
 			}
@@ -110,7 +116,9 @@ namespace QuarklessRepositories.ProfileRepository
 
 				return result.ModifiedCount;
 			}
+#pragma warning disable CS0168 // Variable is declared but never used
 			catch (Exception ee)
+#pragma warning restore CS0168 // Variable is declared but never used
 			{
 				return null;
 			}

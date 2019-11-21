@@ -50,7 +50,7 @@ namespace QuarklessRepositories.RedisRepository.TimelineJobRedis
 						});
 					}
 				}
-				catch(Exception ee)
+				catch
 				{
 					continue;
 				}

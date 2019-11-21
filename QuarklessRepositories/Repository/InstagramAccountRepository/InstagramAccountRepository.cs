@@ -79,7 +79,7 @@ namespace QuarklessRepositories.InstagramAccountRepository
 				await _context.InstagramAccounts.InsertOneAsync(instagramAccount);
 				return instagramAccount;
 			}
-			catch(Exception ee)
+			catch
 			{
 				return null;
 			}
@@ -99,7 +99,9 @@ namespace QuarklessRepositories.InstagramAccountRepository
 
 				return result.ModifiedCount;
 			}
+#pragma warning disable CS0168 // Variable is declared but never used
 			catch(Exception ee)
+#pragma warning restore CS0168 // Variable is declared but never used
 			{
 				return null;
 			}

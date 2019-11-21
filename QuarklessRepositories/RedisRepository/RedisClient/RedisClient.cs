@@ -40,9 +40,9 @@ namespace QuarklessRepositories.RedisRepository.RedisClient
 				_defaultKeyExpiry = options.Value.DefaultKeyExpiry;
 				_DbNumber = options.Value.DatabaseNumber;
 			}
-			catch(Exception ee)
+			catch
 			{
-				return;
+				// ignored
 			}
 		}
 		#region Settings

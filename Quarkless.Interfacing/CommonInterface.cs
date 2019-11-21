@@ -72,8 +72,12 @@ namespace Quarkless.Interfacing
 		/// <typeparam name="T"></typeparam>
 		/// <param name="code"></param>
 		/// <param name="ids"></param>
+		/// <param name="function"></param>
+		/// <param name="accountId"></param>
+		/// <param name="instagramAccountId"></param>
 		/// <returns></returns>
-		public async Task<T> RunCodeWithLoggerExceptionAsync<T>(Func<Task<T>> code, SString function, SString accountId, SString instagramAccountId)
+		public async Task<T> RunCodeWithLoggerExceptionAsync<T>(Func<Task<T>> code, SString function,
+			SString accountId, SString instagramAccountId)
 		{
 			try
 			{
@@ -136,7 +140,6 @@ namespace Quarkless.Interfacing
 					Function = function,
 					SeverityLevel = SeverityLevel.Exception
 				});
-				return;
 			}
 		}
 		public async Task Warn(string message, SString function, SString accountId, SString instagramAccountId)

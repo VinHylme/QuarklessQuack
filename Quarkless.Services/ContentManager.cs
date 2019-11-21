@@ -1,5 +1,4 @@
 ﻿using Quarkless.Services.ContentBuilder.TopicBuilder;
-using Quarkless.Services.Extensions;
 using Quarkless.Services.Interfaces;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.MediaModels;
@@ -7,10 +6,8 @@ using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.Handlers.TextGeneration;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Quarkless.Services

@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Reflection;
+using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web;
@@ -12,12 +9,12 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
-using OpenQA.Selenium.Firefox;
 using OpenQA.Selenium.Remote;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.Options;
 using QuarklessContexts.Models.ResponseModels;
 using QuarklessLogic.ContentSearch.YandexSearch;
+using Cookie = OpenQA.Selenium.Cookie;
 
 namespace QuarklessLogic.ContentSearch.SeleniumClient
 {
@@ -25,57 +22,44 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 	public class SeleniumClient : ISeleniumClient
 	{
 		//internal IWebDriver Driver { get; set; }
-		private readonly ChromeDriverService _chromeService;
-		private ChromeOptions _chromeOptions { get; set; }
+		//private readonly ChromeDriverService _chromeService;
+
+		private readonly object _locker = new object();
+		private readonly string _remoteChromeEndpoint;
+		//public IWebDriver Driver => new ChromeDriver(_chromeService, ChromeOptions);
+		private ChromeOptions ChromeOptions { get; }
+
 		public SeleniumClient(IOptions<SeleniumLaunchOptions> options)
 		{
-			_chromeService = ChromeDriverService.CreateDefaultService(options.Value.ChromePath);
-			_chromeOptions = new ChromeOptions()
+			_remoteChromeEndpoint = options.Value.ChromePath;
+			//_chromeService = ChromeDriverService.CreateDefaultService(options.Value.ChromePath);
+			ChromeOptions = new ChromeOptions()
 			{
 				LeaveBrowserRunning = false,
 				AcceptInsecureCertificates = true,
-				PageLoadStrategy = PageLoadStrategy.Normal
+				PageLoadStrategy = PageLoadStrategy.Normal,
 			};
 		}
-
-		public void SetProxy(Proxy proxy)
+		public void AddArguments(params string[] args)
 		{
-			_chromeOptions.Proxy = proxy;
-		}
-		public void Initialise()
-		{
-			//Driver = new ChromeDriver(_chromeService, _chromeOptions);
-		}
-		public IWebDriver Driver => new ChromeDriver(_chromeService, _chromeOptions);
-		public void ScrollPage(IWebDriver driver, int counter)
-		{
-			const string script =
-				@"window.scrollTo(0,Math.max(document.documentElement.scrollHeight,document.body.scrollHeight,document.documentElement.clientHeight));";
-
-			var count = 0;
-
-			while (count != counter)
+			foreach (var arg in args)
 			{
-				var js = driver as IJavaScriptExecutor;
-				js.ExecuteScript(script);
-
-				Thread.Sleep(500);
-
-				count++;
+				ChromeOptions.AddArgument(arg);
 			}
 		}
-		public void ScrollToElement(IWebDriver driver, int positionX, int positionY)
+		public void SetProxy(Proxy proxy)
 		{
-			var script = $@"window.scrollTo({positionX},{positionY});";
-			var js = driver as IJavaScriptExecutor;
-			js.ExecuteScript(script);
-			Thread.Sleep(500);
+			ChromeOptions.Proxy = proxy;
+		}
+		public IWebDriver CreateDriver()
+		{
+			return new RemoteWebDriver(new Uri(_remoteChromeEndpoint), ChromeOptions);
 		}
 		public IEnumerable<string> DetectLangauge(string url, string targetElement, params string[] data)
 		{
 			try
 			{
-				using (var driver = new ChromeDriver(_chromeService, _chromeOptions))
+				using (var driver = CreateDriver())
 				{
 					var results = new List<string>();
 					foreach (var text in data)
@@ -103,7 +87,7 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 			var results = new List<string>();
 			try
 			{
-				using (IWebDriver driver = new ChromeDriver(ChromeDriverService.CreateDefaultService(@"C:\Users\yousef.alaw\source\repos\QuarklessQuack\Requires\chrome\"), _chromeOptions))
+				using (var driver = CreateDriver())
 				{
 					foreach (var text in data)
 					{
@@ -136,7 +120,7 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 			{
 				var totalCollected = new List<SerpItem>();
 				var response = new SearchResponse<List<SerpItem>>();
-				using (var driver = new ChromeDriver(_chromeService, _chromeOptions))
+				using (var driver = CreateDriver())
 				{
 					driver.Navigate().GoToUrl(url);
 					if (driver.Url.Contains("captcha"))
@@ -164,7 +148,7 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 			try
 			{
 				var urls = new List<string>();
-				using(var driver = new ChromeDriver(_chromeService, _chromeOptions))
+				using (var driver = CreateDriver())
 				{
 					driver.Navigate().GoToUrl(url);
 
@@ -264,8 +248,6 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 			}
 			return total;
 		}
-
-		private object _locker = new object();
 		public SearchResponse<List<SerpItem>> Reader(string url, int limit = 1)
 		{
 			try
@@ -274,7 +256,7 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 				{
 					var totalCollected = new List<SerpItem>();
 					var response = new SearchResponse<List<SerpItem>>();
-					using (var driver = new ChromeDriver(_chromeService, _chromeOptions))
+					using (var driver = CreateDriver())
 					{
 						driver.Navigate().GoToUrl(url);
 						if (driver.Url.Contains("captcha"))
@@ -360,7 +342,7 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 		{
 			try
 			{
-				using(var driver = new ChromeDriver(_chromeService, _chromeOptions))
+				using (var driver = CreateDriver())
 				{
 					driver.Navigate().GoToUrl(baseurl);
 					var souce = driver.PageSource;
@@ -382,7 +364,8 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 		{
 			try
 			{
-				using(var driver = new ChromeDriver(_chromeService, _chromeOptions))
+//				using(var driver = new ChromeDriver(_chromeService, ChromeOptions))
+				using(var driver = CreateDriver())
 				{
 					driver.Navigate().GoToUrl(url);
 					return driver.Manage().Cookies.AllCookies;
@@ -394,12 +377,32 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 				return null;
 			}
 		}
-		public void AddArguments(params string[] args)
+
+		#region JS Functions
+		public void ScrollPage(IWebDriver driver, int counter)
 		{
-			foreach (var arg in args)
+			const string script =
+				@"window.scrollTo(0,Math.max(document.documentElement.scrollHeight,document.body.scrollHeight,document.documentElement.clientHeight));";
+
+			var count = 0;
+
+			while (count != counter)
 			{
-				_chromeOptions.AddArgument(arg);
+				var js = driver as IJavaScriptExecutor;
+				js.ExecuteScript(script);
+
+				Thread.Sleep(500);
+
+				count++;
 			}
 		}
+		public void ScrollToElement(IWebDriver driver, int positionX, int positionY)
+		{
+			var script = $@"window.scrollTo({positionX},{positionY});";
+			var js = driver as IJavaScriptExecutor;
+			js.ExecuteScript(script);
+			Thread.Sleep(500);
+		}
+		#endregion
 	}
 }

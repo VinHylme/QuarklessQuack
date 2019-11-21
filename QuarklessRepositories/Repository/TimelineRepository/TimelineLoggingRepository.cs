@@ -29,7 +29,9 @@ namespace QuarklessRepositories.Repository.TimelineRepository
 					JsonConvert.SerializeObject(timelineEvent), TimeSpan.FromHours(24));
 				//await _context.TimelineLogger.InsertOneAsync(timelineEvent);
 			}
+#pragma warning disable CS0168 // Variable is declared but never used
 			catch(Exception ee)
+#pragma warning restore CS0168 // Variable is declared but never used
 			{
 				// ignored
 			}
@@ -42,7 +44,7 @@ namespace QuarklessRepositories.Repository.TimelineRepository
 				return await _redisClient.GetMembers<TimelineEventLog>(userId,
 					RedisKeys.HashtagGrowKeys.TimelineLog);
 			}
-			catch (Exception ex)
+			catch
 			{
 				return new List<TimelineEventLog>();
 			}

@@ -57,7 +57,6 @@ namespace QuarklessContexts.Extensions
 				var randUint = BitConverter.ToUInt32(data, 0);
 				return randUint / (uint.MaxValue + 1.0);
 			}
-			_rng.Dispose();
 		}
 
 		public override void GetBytes(byte[] data)

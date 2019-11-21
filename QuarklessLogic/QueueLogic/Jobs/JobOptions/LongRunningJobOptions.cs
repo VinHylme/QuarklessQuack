@@ -1,5 +1,4 @@
-﻿using QuarklessContexts.JobClass;
-using QuarklessContexts.Models.Timeline;
+﻿using QuarklessContexts.Models.Timeline;
 using System;
 
 namespace QuarklessLogic.QueueLogic.Jobs.JobOptions

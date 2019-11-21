@@ -1,8 +1,9 @@
-﻿using Quarkless.HeartBeater.__MetadataBuilder__;
+﻿using System;
+using MoreLinq;
+using System.Linq;
+using Quarkless.HeartBeater.__MetadataBuilder__;
 using Quarkless.Services.ContentBuilder.TopicBuilder;
 using QuarklessContexts.Models.InstagramAccounts;
-using QuarklessContexts.Models.Profiles;
-using QuarklessContexts.Models.Proxies;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.Handlers.ClientProvider;
@@ -10,44 +11,17 @@ using QuarklessLogic.Logic.InstagramAccountLogic;
 using QuarklessLogic.Logic.ProfileLogic;
 using QuarklessLogic.Logic.ProxyLogic;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using MoreLinq;
-using Quarkless.HeartBeater.Creator;
-using QuarklessContexts.Extensions;
-using QuarklessContexts.Models.FakerModels;
 using QuarklessLogic.ContentSearch.GoogleSearch;
 using QuarklessLogic.ContentSearch.YandexSearch;
 using QuarklessLogic.Logic.ResponseLogic;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Quarkless.HeartBeater.Interfaces.Enums;
+using Quarkless.HeartBeater.Interfaces.Models;
+using QuarklessContexts.Extensions;
 
 namespace Quarkless.HeartBeater.__Init__
 {
-	#region structures
-	public struct RequestAccountModel
-	{
-		public ShortInstagramAccountModel InstagramAccount { get; set; }
-		public ProfileModel Profile { get; set; } 
-		public ProxyModel ProxyUsing { get; set; }
-	}
-	public struct TopicAss
-	{
-		public string Searchable { get; set; }
-		public string FriendlyName { get; set; }
-	}
-	public struct PopulateAssignments
-	{
-		public List<TopicAss> TopicsAssigned { get; set; }
-		public IAPIClientContainer Worker { get; set; }
-	}
-	public struct Assignments
-	{
-		public IAPIClientContainer Worker { get; set; }
-		public Topics Topic { get; set; }
-		public RequestAccountModel InstagramRequests { get; set; }
-	}
-	#endregion
 	public class Init : IInit
 	{
 		private readonly IResponseResolver _responseResolver;
@@ -57,17 +31,17 @@ namespace Quarkless.HeartBeater.__Init__
 		private readonly IProxyLogic _proxyLogic;
 		private readonly ITopicBuilder _topicBuilder;
 		private readonly IHeartbeatLogic _heartbeatLogic;
-		private readonly ICreator _creator;
 		private readonly IGoogleSearchLogic _googleSearchLogic;
 		private readonly IYandexImageSearch _yandexImageSearch;
 
 		private List<Assignments> Assignments { get; set; }
-		public Init(
-			IResponseResolver responseResolver, IInstagramAccountLogic instagramAccountLogic, 
+
+		public Init(IResponseResolver responseResolver, 
+			IInstagramAccountLogic instagramAccountLogic, 
 			IProfileLogic profileLogic, IProxyLogic proxyLogic,
 			IAPIClientContext context, IHeartbeatLogic heartbeatLogic,
 			ITopicBuilder topicBuilder, IGoogleSearchLogic googleSearchLogic, 
-			IYandexImageSearch yandexImageSearch, ICreator creator)
+			IYandexImageSearch yandexImageSearch)
 		{
 			_responseResolver = responseResolver;
 			_instagramAccountLogic = instagramAccountLogic;
@@ -78,60 +52,10 @@ namespace Quarkless.HeartBeater.__Init__
 			_topicBuilder = topicBuilder;
 			_googleSearchLogic = googleSearchLogic;
 			_yandexImageSearch = yandexImageSearch;
-			_creator = creator;
 			Assignments = new List<Assignments>();
 		}
 
-		public async Task Creator()
-		{
-			var results = new List<Tempo>();
-			try
-			{
-				for (var x = 0; x < 2000; x++)
-				{
-					var proxy = new ProxyModel
-					{
-						Address = "86.141.112.99",
-						Port = 30013,
-						NeedServerAuth = true,
-						Username = "josi",
-						Password = "trialbhw99"
-					};
-					var res = await _creator.CreateInstagramAccountWeb(proxy);
-					if (res != null)
-						results.Add(res);
-					await Task.Delay(TimeSpan.FromMinutes(10));
-				}
-
-//				for (var x = 0; x < 1000; x++)
-//				{
-//					try
-//					{
-//						var proxy = new ProxyModel
-//						{
-//							Address = "37.48.118.4",
-//							Port = 13010
-//						};
-//						var res = await _creator.CreateInstagramAccountWeb(proxy);
-//						if (res != null)
-//							results.Add(res);
-//
-//						await Task.Delay(1200);
-//					}
-//					catch (Exception ee)
-//					{
-//						Console.WriteLine(ee.Message);
-//					}
-//				}
-				Console.WriteLine("wowe i finished");
-				results.ForEach(i=>Console.WriteLine($"{i.FirstName}:{i.Username}:{i.Password}"));
-			}
-			catch (Exception ee)
-			{
-				Console.WriteLine(ee.Message);
-			}
-		}
-		public async Task Populator(CorpusSettings settings)
+		public async Task Populate(CorpusSettings settings)
 		{
 			while (true)
 			{
@@ -356,6 +280,7 @@ namespace Quarkless.HeartBeater.__Init__
 			watch.Stop();
 			Console.WriteLine($"Heartbeat ended : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
 		}
+
 		private async Task<List<RequestAccountModel>> GetActiveInstagramAccountRequests(ActionExecuteType type)
 		{
 			try

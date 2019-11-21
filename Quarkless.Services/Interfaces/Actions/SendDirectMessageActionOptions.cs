@@ -10,11 +10,11 @@ namespace Quarkless.Services.Interfaces.Actions
 		public MessageActionType MessageActionType { get; set; }
 		public int Limit { get; set; }
 		public DateTimeOffset ExecutionTime { get; set; }
-		public static Range TimeFrameSeconds { get; set; } = new Range(300, 360);
+		public static XRange TimeFrameSeconds { get; set; } = new XRange(300, 360);
 		public SendDirectMessageActionOptions(DateTimeOffset executionTime, 
 			MessagingReachType messagingReachType, int limit)
 		{
-			TimeFrameSeconds = new Range(300*limit,360*limit);
+			TimeFrameSeconds = new XRange(300*limit,360*limit);
 			this.ExecutionTime = executionTime;
 			this.MessagingReachType = messagingReachType;
 			this.Limit = limit;

@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Filters;
 using System;
@@ -17,17 +16,12 @@ namespace Quarkless.Extensions
 			
 			var policy = builder.Build();
 
-			var throttlingSettings = app.ApplicationServices.GetService<Microsoft.Extensions.Options.IOptions<MaxConcurrentRequestsOptions>>();
+			var throttlingSettings = app.ApplicationServices
+				.GetService<Microsoft.Extensions.Options.IOptions<MaxConcurrentRequestsOptions>>();
 			if (!throttlingSettings?.Value.Enabled ?? false)
 				return app;
 			
 			return app.UseMiddleware<RequestResponseLoggingMiddleware>(policy);
-		}
-
-		public static IServiceCollection ConfigureRequestThrottleServices(this IServiceCollection services, IConfiguration configuration)
-		{
-			services.Configure<MaxConcurrentRequestsOptions>(configuration.GetSection("MaxConcurrentRequests"));
-			return services;
 		}
 	}
 }

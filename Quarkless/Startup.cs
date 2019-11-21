@@ -2,92 +2,96 @@
 using AspNetCoreRateLimit;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Quarkless.Common;
 using QuarklessLogic.QueueLogic.Jobs.Filters;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.Cors.Internal;
+using Microsoft.Extensions.Hosting;
 using Quarkless.Filters;
 using Quarkless.Extensions;
+using QuarklessContexts.Models.SecurityLayerModels;
+using Quarkless.Common.Clients;
+using QuarklessContexts.Extensions;
+
 namespace Quarkless
 {
 	public class Startup
     {
-		private readonly Accessors _accessors;
-		private const string CorsPolicy = "HashtagGrowCORSPolicy";
+	    private const string CORS_POLICY = "HashtagGrowCORSPolicy";
+	    private const string CLIENT_SECTION = "Client";
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
-			_accessors = new Accessors(configuration);
-		}
-
+        }
         public static IConfiguration Configuration { get; private set; }
 
         public void ConfigureServices(IServiceCollection services)
         {
-			var redis = ConnectionMultiplexer.Connect(_accessors.RedisConnectionString);
-			// needed to load configuration from appsettings.json
-			services.AddOptions();
+	        var cIn = new ClientRequester();
+	        if (!cIn.TryConnect().GetAwaiter().GetResult())
+		        return;
 
-			// needed to store rate limit counters and ip rules
+	        var caller = Configuration.GetSection(CLIENT_SECTION).Get<AvailableClient>();
+	        var validate = cIn.Send(new InitCommandArgs
+	        {
+		        Client = caller,
+		        CommandName = "Validate Client"
+	        });
+	        if (!(bool)validate)
+		        return;
+	        
+	        var servicesAfar = (IServiceCollection) cIn.Send(new BuildCommandArgs()
+	        {
+		        CommandName = "Build Services",
+		        ServiceTypes = new[]
+		        {
+			        ServiceTypes.AddAuthHandlers,
+			        ServiceTypes.AddConfigurators,
+			        ServiceTypes.AddContexts,
+			        ServiceTypes.AddHandlers,
+			        ServiceTypes.AddHangFrameworkServices,
+			        ServiceTypes.AddLogics,
+			        ServiceTypes.AddRepositories,
+			        ServiceTypes.AddRequestLogging
+		        }
+	        });
+	        services.Append(servicesAfar);
+
+	        var endPoints = (EndPoints) cIn.Send(new GetPublicEndpointCommandArgs
+	        {
+		        CommandName = "Get Public Endpoints",
+	        });
+	        var redis = ConnectionMultiplexer.Connect(endPoints.RedisCon);
+
+	        services.AddControllers();
+	        services.AddOptions();
 			services.AddMemoryCache();
-
-			//load general configuration from appsettings.json
-			services.Configure<IpRateLimitOptions>(Configuration.GetSection("IpRateLimiting"));
-
-			//load ip rules from appsettings.json
-			services.Configure<IpRateLimitPolicies>(Configuration.GetSection("IpRateLimitPolicies"));
-
-			//// inject counter and rules stores
-			//services.AddSingleton<IIpPolicyStore, MemoryCacheIpPolicyStore>();
-			//services.AddSingleton<IRateLimitCounterStore, MemoryCacheRateLimitCounterStore>();
-			// inject counter and rules distributed cache stores
-
 			services.AddSingleton<IIpPolicyStore, DistributedCacheIpPolicyStore>();
 			services.AddSingleton<IRateLimitCounterStore,DistributedCacheRateLimitCounterStore>();
 			services.Configure<CookiePolicyOptions>(options =>
 			{
-				// This lambda determines whether user consent for non-essential cookies is needed for a given request.
 				options.CheckConsentNeeded = context => true;
 				options.MinimumSameSitePolicy = SameSiteMode.None;
 			});
-			services.ConfigureRequestThrottleServices(Configuration);
-			services.AddConfigurators(_accessors);
-			services.AddAuthHandlers(_accessors, Configuration.GetAWSOptions());		
 			services.AddHttpContextAccessor();
-			services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
-
-			// https://github.com/aspnet/Hosting/issues/793
-			// the IHttpContextAccessor service is not registered by default.
-			// the clientId/clientIp resolvers use it.
+			services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
 			services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-
-			// configuration (resolvers, counter key builders)
 			services.AddSingleton<IRateLimitConfiguration, CustomRateLimitConfiguration>();
-
-			services.AddLogics();
-			services.AddContexts();
-			services.AddHandlers();
-			services.AddHangFrameworkServices(_accessors);
-			services.AddRepositories();
 			services.AddCors(options=>{
-				options.AddPolicy(CorsPolicy,
+				options.AddPolicy(CORS_POLICY,
 					builder=>
 					{
-						builder.WithOrigins(_accessors.FrontEnd);
+						builder.WithOrigins(endPoints.FrontEnd);
 						builder.AllowAnyOrigin();
 						builder.AllowAnyHeader();
 						builder.AllowAnyMethod();
-					});//.WithOrigins(_accessors.FrontEnd));
+					});
 			});
-			services.Configure<MvcOptions>(options =>
-			{
-				options.Filters.Add(new CorsAuthorizationFilterFactory(CorsPolicy));
-			});
+
 			services.AddHangfire(options =>
 			{
 			//	options.UseFilter(new ProlongExpirationTimeAttribute());
@@ -116,17 +120,15 @@ namespace Quarkless
 					UseTransactions = true
 				});
 			});
-
 			GlobalConfiguration.Configuration.UseActivator(new WorkerActivator(services.BuildServiceProvider(false)));
 			GlobalConfiguration.Configuration.UseSerializerSettings(new Newtonsoft.Json.JsonSerializerSettings()
 			{
 				ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
 			});
 			GlobalJobFilters.Filters.Add(new ProlongExpirationTimeAttribute());
+        }
 
-		}
-
-		public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+		public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
@@ -142,20 +144,27 @@ namespace Quarkless
 				ServerName = $"ISE_{Environment.MachineName}.{Guid.NewGuid().ToString()}",
 				//Activator = new WorkerActivator(services.BuildServiceProvider(false)),
 			};
-			
+
+			app.UseHttpsRedirection();
+			app.UseRouting();
 			//app.UseIpRateLimiting();
-			app.UseCors(CorsPolicy);
+
+			app.UseCors(CORS_POLICY);
 			app.UseHangfireServer(jobServerOptions);
 			app.UseHangfireDashboard();
-			app.UseHttpsRedirection();
 			app.UseStaticFiles();	
 			app.UseDefaultFiles();
 			app.UseCookiePolicy();
 			app.UseAuthentication();
-			app.UseSecurityMiddleware(new SecurityHeadersBuilder()
-				.AddDefaultSecurePolicy()
-				/*.AddCustomHeader("X-Client-ID", "x-key-1-v")*/);
-			app.UseMvc();
+			app.UseAuthorization();
+			app.UseEndpoints(endpoints =>
+			{
+				endpoints.MapControllers();
+			});
+			//	app.UseSecurityMiddleware(new SecurityHeadersBuilder()
+			//		.AddDefaultSecurePolicy()
+			//	/*.AddCustomHeader("X-Client-ID", "x-key-1-v")*/);
+			//app.UseMvc();
 		}
 	}
 	public class WorkerActivator : JobActivator

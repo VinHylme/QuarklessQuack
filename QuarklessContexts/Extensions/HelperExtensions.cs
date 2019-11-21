@@ -10,12 +10,22 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
+using Microsoft.Extensions.DependencyInjection;
 using Exception = System.Exception;
 
 namespace QuarklessContexts.Extensions
 {
 	public static class HelperExtensions
 	{
+		public static IServiceCollection Append(this IServiceCollection @org, IServiceCollection all)
+		{
+			if (all == null || !all.Any()) return org;
+			foreach (var desc in all)
+			{
+				@org.Add(desc);
+			}
+			return org;
+		}
 		public static string ToJsonString<TInput>(this TInput input) => JsonConvert.SerializeObject(input);
 		public static List<CultureInfo> GetSupportedCultures()
 		{
@@ -63,7 +73,9 @@ namespace QuarklessContexts.Extensions
 				var buffer = new Span<byte>(new byte[filter.Length]);
 				return Convert.TryFromBase64String(filter, buffer, out int bytesParsed);
 			}
+#pragma warning disable CS0168 // Variable is declared but never used
 			catch (Exception ee)
+#pragma warning restore CS0168 // Variable is declared but never used
 			{
 				return false;
 			}
@@ -90,7 +102,7 @@ namespace QuarklessContexts.Extensions
 					});
 
 				}
-				catch (Exception ex)
+				catch
 				{
 					//
 				}
@@ -277,7 +289,9 @@ namespace QuarklessContexts.Extensions
 				if(prop == null) return null;
 				return @object.GetType().GetProperty(propName).GetValue(@object)?? null;
 			}
+#pragma warning disable CS0168 // Variable is declared but never used
 			catch(Exception ee)
+#pragma warning restore CS0168 // Variable is declared but never used
 			{
 				return null;
 			}
@@ -287,7 +301,9 @@ namespace QuarklessContexts.Extensions
 			try { 
 				return @object.GetType().GetProperty(propName);
 			}
+#pragma warning disable CS0168 // Variable is declared but never used
 			catch(Exception ee)
+#pragma warning restore CS0168 // Variable is declared but never used
 			{
 				return null;
 			}

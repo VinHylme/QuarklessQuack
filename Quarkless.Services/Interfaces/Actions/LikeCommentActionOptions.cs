@@ -8,7 +8,7 @@ namespace Quarkless.Services.Interfaces.Actions
 	{
 		public LikeCommentActionType LikeActionType { get; set; }
 		public DateTimeOffset ExecutionTime { get; set; }
-		public static Range TimeFrameSeconds { get; set; } = new Range(45, 75);
+		public static XRange TimeFrameSeconds { get; set; } = new XRange(45, 75);
 		public LikeCommentActionOptions(DateTimeOffset executionTime, LikeCommentActionType likeActionType)
 		{
 			this.ExecutionTime = executionTime;

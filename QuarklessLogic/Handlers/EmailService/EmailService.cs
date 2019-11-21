@@ -40,7 +40,7 @@ namespace QuarklessLogic.Handlers.EmailService
 				var proxyLine = string.IsNullOrEmpty(proxy.Username) ? $"http://{proxy.Address}:{proxy.Port}" : $"http://{proxy.Username}:{proxy.Password}@{proxy.Address}:{proxy.Port}";
 				_seleniumClient.AddArguments($"--proxy-server={proxyLine}");
 			}
-			using (var driver = _seleniumClient.Driver)
+			using (var driver = _seleniumClient.CreateDriver())
 			{
 				try
 				{

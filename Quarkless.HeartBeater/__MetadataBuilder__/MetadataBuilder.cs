@@ -1,5 +1,10 @@
-﻿using InstagramApiSharp.Classes.Models;
-using Quarkless.HeartBeater.__Init__;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using Dasync.Collections;
+using InstagramApiSharp.Classes.Models;
+using Quarkless.HeartBeater.Interfaces.Models;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.ResponseModels;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
@@ -10,15 +15,9 @@ using QuarklessLogic.Logic.InstagramAccountLogic;
 using QuarklessLogic.Logic.ProxyLogic;
 using QuarklessLogic.ServicesLogic.ContentSearch;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
-using System;
-using System.Collections.Async;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.Proxies;
 using QuarklessLogic.ContentSearch.GoogleSearch;
-using QuarklessLogic.ContentSearch.SeleniumClient;
 using QuarklessLogic.ContentSearch.YandexSearch;
 using QuarklessLogic.Logic.ResponseLogic;
 
@@ -73,6 +72,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			return ts.ElementAtOrDefault(SecureRandom.Next(@ts.Count() - 1));
 		}
 	}
+
 	public class MetadataBuilder
 	{
 		private readonly List<Assignments> _assignments;
@@ -82,6 +82,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 		private readonly IResponseResolver _responseResolver;
 		private readonly IGoogleSearchLogic _googleSearchLogic;
 		private readonly IYandexImageSearch _yandexImageSearch;
+
 		public MetadataBuilder(List<Assignments> assignments, IAPIClientContext aPIClient, 
 			IHeartbeatLogic heartbeatLogic, IProxyLogic proxyLogic, 
 			IResponseResolver responseResolver, 
@@ -118,7 +119,6 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			};
 			return query;
 		}
-
 		public async Task BuildGoogleImages(int limit = 50, int topicAmount = 1, int cutBy = 1)
 		{
 			Console.WriteLine("Began - BuildGoogleImages");
@@ -406,7 +406,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 
 							var filtered = mediaByTopics.Medias.Where(_ =>
 								!_.IsCommentsDisabled && _.MediaFrom == MediaFrom.Instagram && !_.HasSeen && _.MediaId != null);
-							var mostComments = filtered.OrderByDescending(_ => _.CommentCount).Take(5).ToList();
+							var mostComments = filtered.OrderByDescending(_ => _.CommentCount).Take(5);
 							foreach (var comment in mostComments)
 							{
 								var comments =
@@ -494,15 +494,14 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					topicTotal.AddRange(subtopics);
 					topicTotal.AddRange(related);
 
-					var topicSelect = topicTotal.Distinct().TakeAny(takeTopicAmount).ToList();
+					var topicSelect = topicTotal.Distinct().TakeAny(takeTopicAmount);
 
 					var mediaByTopics = await searcher.SearchMediaDetailInstagram(topicSelect, limit);
 					var recentMedias = await searcher.SearchMediaDetailInstagram(topicSelect, limit, true);
 
 					if (mediaByTopics != null) { 
 						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByTopic, worker.Topic.TopicFriendlyName, proxy:worker.Worker.GetContext.Proxy);
-						var meta = mediaByTopics.CutObjects(cutBy).ToList();
-
+						var meta = mediaByTopics.CutObjects(cutBy);
 						meta.ToList().ForEach(async z => {
 							z.Medias = z.Medias.Where(t => !t.HasLikedBefore && !t.IsCommentsDisabled && !t.HasSeen 
 							&& t.User.Username != worker.InstagramRequests.InstagramAccount.Username).ToList();
@@ -513,7 +512,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					if(recentMedias != null)
 					{
 						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByTopicRecent, worker.Topic.TopicFriendlyName, proxy: worker.Worker.GetContext.Proxy);
-						var meta = recentMedias.CutObjects(cutBy).ToList();
+						var meta = recentMedias.CutObjects(cutBy);
 
 						meta.ToList().ForEach(async z => {
 							z.Medias = z.Medias.Where(t => !t.HasLikedBefore && !t.IsCommentsDisabled && !t.HasSeen && t.User.Username != worker.InstagramRequests.InstagramAccount.Username).ToList();
@@ -529,250 +528,6 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			}
 			watch.Stop();
 			Console.WriteLine($"Ended - BuildBase : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
-		}
-		public async Task BuildUserFromLikers(int cutBy = 1, double sleepTime = 0.05,
-			int takeMediaAmount = 7, int takeUserMediaAmount = 100)
-		{
-			Console.WriteLine("Began - BuildUserFromLikers");
-			var watch = System.Diagnostics.Stopwatch.StartNew();
-			try {
-				await _assignments.ParallelForEachAsync(async worker =>
-				{
-
-					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
-
-					var results = (await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic, worker.Topic.TopicFriendlyName)).ToList();
-					var recentResults = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopicRecent, worker.Topic.TopicFriendlyName);
-					var meta_S = recentResults as __Meta__<Media>[] ?? recentResults.ToArray();
-					if(meta_S.Any())
-						results.AddRange(meta_S);
-
-					await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersViaPostLiked, worker.Topic.TopicFriendlyName, proxy: worker.Worker.GetContext.Proxy);
-					foreach(var v in results.TakeAny(takeMediaAmount))
-					{
-						if (v == null) continue;
-						foreach(var _ in v.ObjectItem.Medias.Where(t=>t.MediaFrom == MediaFrom.Instagram))
-						{
-							var suggested = await searcher.SearchInstagramMediaLikers(_.MediaId);
-							if (suggested == null) return;
-							if (suggested.Count < 1) return;
-							var separateSuggested = suggested.TakeAny(takeUserMediaAmount).ToList().CutObject(cutBy);
-							separateSuggested.ForEach(async s =>
-							{
-								var filtered = s.Where(x => x.Username != worker.InstagramRequests.InstagramAccount.Username).ToList();
-								await _heartbeatLogic.AddMetaData(MetaDataType.FetchUsersViaPostLiked, worker.Topic.TopicFriendlyName,
-									new __Meta__<List<UserResponse<string>>>(filtered));
-							});
-							await Task.Delay(TimeSpan.FromSeconds(sleepTime));
-						}
-					};
-				});
-			}
-			catch(Exception ee)
-			{
-				Console.WriteLine(ee.Message);
-			}
-			watch.Stop();
-			Console.WriteLine($"Ended - BuildUserFromLikers : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
-		}
-		public async Task BuildMediaFromUsersLikers(int limit = 1, int cutBy = 1, double sleepTime = 0.05,
-			int takeMediaAmount = 7, int takeUserMediaAmount = 10)
-		{
-			Console.WriteLine("Began - BuildMediaFromUsersLikers");
-			var watch = System.Diagnostics.Stopwatch.StartNew();
-			try {
-				await _assignments.ParallelForEachAsync(async worker =>
-				{
-
-					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
-
-					var results = (await _heartbeatLogic.GetMetaData<List<UserResponse<string>>>
-					(MetaDataType.FetchUsersViaPostLiked, worker.Topic.TopicFriendlyName)).ToList();
-
-					await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByLikers, worker.Topic.TopicFriendlyName, proxy: worker.Worker.GetContext.Proxy);
-					foreach(var _ in results.TakeAny(takeMediaAmount)) {
-						if (_ == null) continue;
-						foreach(var d in _.ObjectItem)
-						{
-							var suggested = await searcher.SearchUsersMediaDetailInstagram(d.Username, limit);
-							if (suggested != null) { 
-								var sugVCut = suggested.CutObjects(cutBy).ToList();
-								foreach(var z in sugVCut?.TakeAny(takeUserMediaAmount))
-								{
-									z.Medias = z.Medias.Where(t => 
-									!t.HasLikedBefore 
-									&& !t.IsCommentsDisabled
-									&& !t.HasSeen
-									&& t.User.Username != worker.InstagramRequests.InstagramAccount.Username).ToList();
-									await _heartbeatLogic.AddMetaData(MetaDataType.FetchMediaByLikers, worker.Topic.TopicFriendlyName, new __Meta__<Media>(z));
-								};
-							}
-							await Task.Delay(TimeSpan.FromSeconds(sleepTime));
-						};
-					};
-				});
-			}
-			catch(Exception ee)
-			{
-				Console.WriteLine(ee.Message);
-			}
-			watch.Stop();
-			Console.WriteLine($"Ended - BuildMediaFromUsersLikers : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s"); 
-		}
-		public async Task BuildUsersFromCommenters(int limit = 1, int cutBy = 1, double sleepTime = 0.05, 
-			int takeMediaAmount = 7, int takeUserMediaAmount = 100)
-		{
-			Console.WriteLine("Began - BuildUsersFromCommenters");
-			var watch = System.Diagnostics.Stopwatch.StartNew();
-			try
-			{
-				await _assignments.ParallelForEachAsync(async worker =>
-				{
-
-					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
-
-					var results = (await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic, worker.Topic.TopicFriendlyName)).ToList();
-					var recentResults = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopicRecent, worker.Topic.TopicFriendlyName);
-					var meta_S = recentResults as __Meta__<Media>[] ?? recentResults.ToArray();
-					if (meta_S.Any())
-						results.AddRange(meta_S);
-					await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersViaPostCommented, worker.Topic.TopicFriendlyName, proxy: worker.Worker.GetContext.Proxy);
-					foreach(var v in results.TakeAny(takeMediaAmount))
-					{
-						if (v == null) continue;
-						foreach(var _ in v.ObjectItem.Medias)
-						{
-							if (!_.IsCommentsDisabled && _.MediaFrom == MediaFrom.Instagram && _.MediaId!=null) { 
-								var suggested = await searcher.SearchInstagramMediaCommenters(_.MediaId, limit);
-								if(suggested == null) return;
-								if (suggested.Count < 1) return;
-								#region Detail Search (off)
-								//suggested = suggested.Select(check =>
-								//{
-								//	Task.Delay(TimeSpan.FromSeconds(1));
-								//	var details = searcher.SearchInstagramFullUserDetail(check.UserId).GetAwaiter().GetResult();
-								//	if (details != null) { 
-								//		double ratioff = (double)details.UserDetail.FollowerCount / details.UserDetail.FollowingCount;
-								//		if(ratioff > 1 && details.UserDetail.MediaCount > 3)
-								//		{
-								//			return check;
-								//		}
-								//	}
-								//	return null;
-								//}).Where(an => an!=null).ToList();
-								#endregion
-								var separatedCommenter = suggested.TakeAny(takeUserMediaAmount).ToList().CutObject(cutBy);
-								foreach(var s in separatedCommenter)
-								{
-									var filtered = s.Where(x => x.Username != worker.InstagramRequests.InstagramAccount.Username).ToList();
-									await _heartbeatLogic.AddMetaData(MetaDataType.FetchUsersViaPostCommented, 
-										worker.Topic.TopicFriendlyName,
-										new __Meta__<List<UserResponse<InstaComment>>>(filtered));
-								}
-							}
-							await Task.Delay(TimeSpan.FromSeconds(sleepTime));
-						};
-					};
-				});
-			}
-			catch (Exception ee)
-			{
-				Console.WriteLine(ee.Message);
-			}
-			watch.Stop();
-			Console.WriteLine($"Ended - BuildUsersFromCommenters : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
-		}
-		public async Task BuildCommentsFromSpecifiedSource(MetaDataType extractFrom, MetaDataType saveTo,bool includeUser = false, int limit = 1, int cutBy = 1, double secondSleep = 0.05, 
-			int takeMediaAmount = 10, int takeuserAmount = 100)
-		{
-			Console.WriteLine("Began - BuildCommentsFromSpecifiedSource " + saveTo.ToString());
-			var watch = System.Diagnostics.Stopwatch.StartNew();
-			try
-			{
-				await _assignments.ParallelForEachAsync(async worker =>
-				{
-					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
-					
-					var res = await _heartbeatLogic.GetMetaData<Media>(extractFrom, worker.Topic.TopicFriendlyName,includeUser ? worker.InstagramRequests.InstagramAccount.Id:null);
-					if (res != null) { 
-						await _heartbeatLogic.RefreshMetaData(saveTo, worker.Topic.TopicFriendlyName, proxy: worker.Worker.GetContext.Proxy);
-						foreach(var _ in res.TakeAny(takeMediaAmount))
-						{
-							if (_ == null) continue;
-							foreach(var __ in _.ObjectItem.Medias)
-							{
-								if (!__.IsCommentsDisabled && __.MediaFrom == MediaFrom.Instagram && __.MediaId != null && !__.HasSeen)
-								{
-									var suggested = await searcher.SearchInstagramMediaCommenters(__.MediaId, limit);
-
-									if (suggested != null)
-									{
-										var calcutta = suggested.TakeAny(takeuserAmount).ToList().CutObject(cutBy);
-										foreach (var filtered in calcutta.Select(s => s.Where(x => x.Username != worker.InstagramRequests.InstagramAccount.Username).ToList()))
-										{
-											await _heartbeatLogic.AddMetaData(saveTo, worker.Topic.TopicFriendlyName,
-												new __Meta__<List<UserResponse<InstaComment>>>(filtered),
-												includeUser ? worker.InstagramRequests.InstagramAccount.Id : null);
-										}
-									}
-								}
-								await Task.Delay(TimeSpan.FromSeconds(secondSleep));
-							};
-						};
-					}
-				});
-			}
-			catch(Exception ee)
-			{
-				Console.WriteLine(ee.Message);
-			}
-			watch.Stop();
-			Console.WriteLine($"Ended - BuildCommentsFromSpecifiedSource  {saveTo.ToString()} : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
-		}
-		public async Task BuildMediaFromUsersCommenters(int limit = 1, int cutBy = 1, double secondsSleep = 0.05, 
-			int takeMediaAmount = 10, int takeUserMediaAmount = 10)
-		{
-			Console.WriteLine("Began - BuildMediaFromUsersCommenters");
-			var watch = System.Diagnostics.Stopwatch.StartNew();
-			try
-			{
-				await _assignments.ParallelForEachAsync(async worker =>
-				{
-					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
-
-					var results = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>
-					(MetaDataType.FetchUsersViaPostCommented, worker.Topic.TopicFriendlyName)).ToList();
-
-					await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByCommenters, worker.Topic.TopicFriendlyName, proxy: worker.Worker.GetContext.Proxy);
-					foreach(var _ in results.TakeAny(takeMediaAmount)) {
-						if (_ == null) continue;
-						foreach(var d in _.ObjectItem)
-						{	
-							var suggested = await searcher.SearchUsersMediaDetailInstagram(d.Username, limit);								
-							if (suggested != null)
-							{
-								var sugVCut = suggested.CutObjects(cutBy).ToList();
-								foreach(var z in sugVCut.TakeAny(takeUserMediaAmount))
-								{
-									z.Medias = z.Medias.Where(t => 
-										!t.HasLikedBefore && 
-										!t.IsCommentsDisabled &&
-										!t.HasSeen).ToList();
-									var comments = new __Meta__<Media>(z);
-									await _heartbeatLogic.AddMetaData(MetaDataType.FetchMediaByCommenters, worker.Topic.TopicFriendlyName, comments);
-								};
-							}
-							await Task.Delay(TimeSpan.FromSeconds(secondsSleep));
-						};
-					};
-				});
-			}
-			catch (Exception ee)
-			{
-				Console.WriteLine(ee.Message);
-			}
-			watch.Stop();
-			Console.WriteLine($"Ended - BuildMediaFromUsersCommenters : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
 		}
 		public async Task BuildUsersTargetListMedia(int limit = 1, int cutBy = 1)
 		{
@@ -1122,6 +877,258 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 				Console.WriteLine(ee.Message);
 			}
 			Console.WriteLine($"Ended - BuildUsersRecentComments : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+		}
+
+		public async Task BuildUserFromLikers(int cutBy = 1, double sleepTime = 0.05,
+			int takeMediaAmount = 7, int takeUserMediaAmount = 100)
+		{
+			Console.WriteLine("Began - BuildUserFromLikers");
+			var watch = System.Diagnostics.Stopwatch.StartNew();
+			try
+			{
+				await _assignments.ParallelForEachAsync(async worker =>
+				{
+
+					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
+
+					var results = (await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic, worker.Topic.TopicFriendlyName)).ToList();
+					var recentResults = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopicRecent, worker.Topic.TopicFriendlyName);
+					var meta_S = recentResults as __Meta__<Media>[] ?? recentResults.ToArray();
+					if (meta_S.Any())
+						results.AddRange(meta_S);
+
+					await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersViaPostLiked, worker.Topic.TopicFriendlyName, proxy: worker.Worker.GetContext.Proxy);
+					foreach (var v in results.TakeAny(takeMediaAmount))
+					{
+						if (v == null) continue;
+						foreach (var _ in v.ObjectItem.Medias.Where(t => t.MediaFrom == MediaFrom.Instagram))
+						{
+							var suggested = await searcher.SearchInstagramMediaLikers(_.MediaId);
+							if (suggested == null) return;
+							if (suggested.Count < 1) return;
+							var separateSuggested = suggested.TakeAny(takeUserMediaAmount).ToList().CutObject(cutBy);
+							separateSuggested.ForEach(async s =>
+							{
+								var filtered = s.Where(x => x.Username != worker.InstagramRequests.InstagramAccount.Username).ToList();
+								await _heartbeatLogic.AddMetaData(MetaDataType.FetchUsersViaPostLiked, worker.Topic.TopicFriendlyName,
+									new __Meta__<List<UserResponse<string>>>(filtered));
+							});
+							await Task.Delay(TimeSpan.FromSeconds(sleepTime));
+						}
+					};
+				});
+			}
+			catch (Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+			}
+			watch.Stop();
+			Console.WriteLine($"Ended - BuildUserFromLikers : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+		}
+		public async Task BuildMediaFromUsersLikers(int limit = 1, int cutBy = 1, double sleepTime = 0.05,
+			int takeMediaAmount = 7, int takeUserMediaAmount = 10)
+		{
+			Console.WriteLine("Began - BuildMediaFromUsersLikers");
+			var watch = System.Diagnostics.Stopwatch.StartNew();
+			try
+			{
+				await _assignments.ParallelForEachAsync(async worker =>
+				{
+
+					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
+
+					var results = (await _heartbeatLogic.GetMetaData<List<UserResponse<string>>>
+					(MetaDataType.FetchUsersViaPostLiked, worker.Topic.TopicFriendlyName)).ToList();
+
+					await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByLikers, worker.Topic.TopicFriendlyName, proxy: worker.Worker.GetContext.Proxy);
+					foreach (var _ in results.TakeAny(takeMediaAmount))
+					{
+						if (_ == null) continue;
+						foreach (var d in _.ObjectItem)
+						{
+							var suggested = await searcher.SearchUsersMediaDetailInstagram(d.Username, limit);
+							if (suggested != null)
+							{
+								var sugVCut = suggested.CutObjects(cutBy).ToList();
+								foreach (var z in sugVCut?.TakeAny(takeUserMediaAmount))
+								{
+									z.Medias = z.Medias.Where(t =>
+									!t.HasLikedBefore
+									&& !t.IsCommentsDisabled
+									&& !t.HasSeen
+									&& t.User.Username != worker.InstagramRequests.InstagramAccount.Username).ToList();
+									await _heartbeatLogic.AddMetaData(MetaDataType.FetchMediaByLikers, worker.Topic.TopicFriendlyName, new __Meta__<Media>(z));
+								};
+							}
+							await Task.Delay(TimeSpan.FromSeconds(sleepTime));
+						};
+					};
+				});
+			}
+			catch (Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+			}
+			watch.Stop();
+			Console.WriteLine($"Ended - BuildMediaFromUsersLikers : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+		}
+		public async Task BuildUsersFromCommenters(int limit = 1, int cutBy = 1, double sleepTime = 0.05,
+			int takeMediaAmount = 7, int takeUserMediaAmount = 100)
+		{
+			Console.WriteLine("Began - BuildUsersFromCommenters");
+			var watch = System.Diagnostics.Stopwatch.StartNew();
+			try
+			{
+				await _assignments.ParallelForEachAsync(async worker =>
+				{
+
+					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
+
+					var results = (await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic, worker.Topic.TopicFriendlyName)).ToList();
+					var recentResults = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopicRecent, worker.Topic.TopicFriendlyName);
+					var meta_S = recentResults as __Meta__<Media>[] ?? recentResults.ToArray();
+					if (meta_S.Any())
+						results.AddRange(meta_S);
+					await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersViaPostCommented, worker.Topic.TopicFriendlyName, proxy: worker.Worker.GetContext.Proxy);
+					foreach (var v in results.TakeAny(takeMediaAmount))
+					{
+						if (v == null) continue;
+						foreach (var _ in v.ObjectItem.Medias)
+						{
+							if (!_.IsCommentsDisabled && _.MediaFrom == MediaFrom.Instagram && _.MediaId != null)
+							{
+								var suggested = await searcher.SearchInstagramMediaCommenters(_.MediaId, limit);
+								if (suggested == null) return;
+								if (suggested.Count < 1) return;
+								#region Detail Search (off)
+								//suggested = suggested.Select(check =>
+								//{
+								//	Task.Delay(TimeSpan.FromSeconds(1));
+								//	var details = searcher.SearchInstagramFullUserDetail(check.UserId).GetAwaiter().GetResult();
+								//	if (details != null) { 
+								//		double ratioff = (double)details.UserDetail.FollowerCount / details.UserDetail.FollowingCount;
+								//		if(ratioff > 1 && details.UserDetail.MediaCount > 3)
+								//		{
+								//			return check;
+								//		}
+								//	}
+								//	return null;
+								//}).Where(an => an!=null).ToList();
+								#endregion
+								var separatedCommenter = suggested.TakeAny(takeUserMediaAmount).ToList().CutObject(cutBy);
+								foreach (var s in separatedCommenter)
+								{
+									var filtered = s.Where(x => x.Username != worker.InstagramRequests.InstagramAccount.Username).ToList();
+									await _heartbeatLogic.AddMetaData(MetaDataType.FetchUsersViaPostCommented,
+										worker.Topic.TopicFriendlyName,
+										new __Meta__<List<UserResponse<InstaComment>>>(filtered));
+								}
+							}
+							await Task.Delay(TimeSpan.FromSeconds(sleepTime));
+						};
+					};
+				});
+			}
+			catch (Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+			}
+			watch.Stop();
+			Console.WriteLine($"Ended - BuildUsersFromCommenters : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+		}
+		public async Task BuildCommentsFromSpecifiedSource(MetaDataType extractFrom, MetaDataType saveTo, bool includeUser = false, int limit = 1, int cutBy = 1, double secondSleep = 0.05,
+			int takeMediaAmount = 10, int takeuserAmount = 100)
+		{
+			Console.WriteLine("Began - BuildCommentsFromSpecifiedSource " + saveTo.ToString());
+			var watch = System.Diagnostics.Stopwatch.StartNew();
+			try
+			{
+				await _assignments.ParallelForEachAsync(async worker =>
+				{
+					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
+
+					var res = await _heartbeatLogic.GetMetaData<Media>(extractFrom, worker.Topic.TopicFriendlyName, includeUser ? worker.InstagramRequests.InstagramAccount.Id : null);
+					if (res != null)
+					{
+						await _heartbeatLogic.RefreshMetaData(saveTo, worker.Topic.TopicFriendlyName, proxy: worker.Worker.GetContext.Proxy);
+						foreach (var _ in res.TakeAny(takeMediaAmount))
+						{
+							if (_ == null) continue;
+							foreach (var __ in _.ObjectItem.Medias)
+							{
+								if (!__.IsCommentsDisabled && __.MediaFrom == MediaFrom.Instagram && __.MediaId != null && !__.HasSeen)
+								{
+									var suggested = await searcher.SearchInstagramMediaCommenters(__.MediaId, limit);
+
+									if (suggested != null)
+									{
+										var calcutta = suggested.TakeAny(takeuserAmount).ToList().CutObject(cutBy);
+										foreach (var filtered in calcutta.Select(s => s.Where(x => x.Username != worker.InstagramRequests.InstagramAccount.Username).ToList()))
+										{
+											await _heartbeatLogic.AddMetaData(saveTo, worker.Topic.TopicFriendlyName,
+												new __Meta__<List<UserResponse<InstaComment>>>(filtered),
+												includeUser ? worker.InstagramRequests.InstagramAccount.Id : null);
+										}
+									}
+								}
+								await Task.Delay(TimeSpan.FromSeconds(secondSleep));
+							};
+						};
+					}
+				});
+			}
+			catch (Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+			}
+			watch.Stop();
+			Console.WriteLine($"Ended - BuildCommentsFromSpecifiedSource  {saveTo.ToString()} : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+		}
+		public async Task BuildMediaFromUsersCommenters(int limit = 1, int cutBy = 1, double secondsSleep = 0.05,
+			int takeMediaAmount = 10, int takeUserMediaAmount = 10)
+		{
+			Console.WriteLine("Began - BuildMediaFromUsersCommenters");
+			var watch = System.Diagnostics.Stopwatch.StartNew();
+			try
+			{
+				await _assignments.ParallelForEachAsync(async worker =>
+				{
+					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
+
+					var results = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>
+					(MetaDataType.FetchUsersViaPostCommented, worker.Topic.TopicFriendlyName)).ToList();
+
+					await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByCommenters, worker.Topic.TopicFriendlyName, proxy: worker.Worker.GetContext.Proxy);
+					foreach (var _ in results.TakeAny(takeMediaAmount))
+					{
+						if (_ == null) continue;
+						foreach (var d in _.ObjectItem)
+						{
+							var suggested = await searcher.SearchUsersMediaDetailInstagram(d.Username, limit);
+							if (suggested != null)
+							{
+								var sugVCut = suggested.CutObjects(cutBy).ToList();
+								foreach (var z in sugVCut.TakeAny(takeUserMediaAmount))
+								{
+									z.Medias = z.Medias.Where(t =>
+										!t.HasLikedBefore &&
+										!t.IsCommentsDisabled &&
+										!t.HasSeen).ToList();
+									var comments = new __Meta__<Media>(z);
+									await _heartbeatLogic.AddMetaData(MetaDataType.FetchMediaByCommenters, worker.Topic.TopicFriendlyName, comments);
+								};
+							}
+							await Task.Delay(TimeSpan.FromSeconds(secondsSleep));
+						};
+					};
+				});
+			}
+			catch (Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+			}
+			watch.Stop();
+			Console.WriteLine($"Ended - BuildMediaFromUsersCommenters : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
 		}
 	}
 }
