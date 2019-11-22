@@ -53,6 +53,7 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 		}
 		public IWebDriver CreateDriver()
 		{
+			var dbs = Dns.GetHostEntry("localhost");
 			return new RemoteWebDriver(new Uri(_remoteChromeEndpoint), ChromeOptions);
 		}
 		public IEnumerable<string> DetectLangauge(string url, string targetElement, params string[] data)
