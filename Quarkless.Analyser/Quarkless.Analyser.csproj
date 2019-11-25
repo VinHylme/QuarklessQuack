@@ -17,13 +17,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="ImageProcessor.Core">
-      <HintPath>..\..\ImageProcessor.Core-master\src\ImageProcessor.Core\bin\Release\netstandard2.0\ImageProcessor.Core.dll</HintPath>
-    </Reference>
+    <Folder Include="References\" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="References\" />
+    <Reference Include="ImageProcessor.Core">
+      <HintPath>..\Requires\ImageProcessor.Core.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

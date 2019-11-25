@@ -49,8 +49,12 @@ namespace Quarkless.Analyser
 			
 			var p = AppDomain.CurrentDomain.BaseDirectory;
 			var ppc = Assembly.GetAssembly(typeof(VideoEditor)).GetFiles();
+			
 			var bundleAssembly = AppDomain.CurrentDomain.GetAssemblies()
 				.First(x => x.FullName.Contains("Quarkless.Analyser"));
+			
+			var b = bundleAssembly.Location;
+
 			var xsdFullName = bundleAssembly.GetFiles();
 
 
