@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using InstagramApiSharp.Classes.Models;
-using Quarkless.MediaAnalyser;
 using Quarkless.Services.Interfaces;
 using Quarkless.Services.Interfaces.Actions;
 using Quarkless.Services.StrategyBuilders;
@@ -393,9 +392,9 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 								},
 								VideoThumbnail = new InstaImage
 								{
-									ImageBytes = Convert
-										.FromBase64String(templateSelected?.Entity.MediaBytes.Split(',')[1])
-										.GenerateVideoThumbnail().GetAwaiter().GetResult()
+									ImageBytes = directMessageOptions.PostAnalyser.Manipulation.VideoEditor
+										.GenerateVideoThumbnail(Convert.FromBase64String(templateSelected?.Entity.MediaBytes.Split(',')[1]))
+										.GetAwaiter().GetResult()
 								}
 							}
 						};

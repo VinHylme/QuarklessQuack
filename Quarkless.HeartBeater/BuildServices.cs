@@ -20,7 +20,6 @@ namespace Quarkless.HeartBeater
 				.SetBasePath(Directory.GetCurrentDirectory().Split("Quarkless.HeartBeater.")[0] + "Quarkless.HeartBeater")
 				.AddJsonFile("appsettings.json").Build();
 		}
-
 		private IServiceCollection InitialiseClientServices()
 		{
 			var cIn = new ClientRequester();

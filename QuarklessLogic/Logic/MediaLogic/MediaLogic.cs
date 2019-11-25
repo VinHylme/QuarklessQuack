@@ -4,10 +4,10 @@ using InstagramApiSharp.Classes.Models;
 using QuarklessContexts.Models.MediaModels;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.ReportHandler;
-using Quarkless.MediaAnalyser;
 using System;
 using System.Threading.Tasks;
 using System.Linq;
+using Quarkless.Analyser;
 using QuarklessContexts.Extensions;
 
 namespace QuarklessLogic.Logic.MediaLogic
@@ -16,11 +16,12 @@ namespace QuarklessLogic.Logic.MediaLogic
 	{
 		private IReportHandler _reportHandler { get; set; }
 		private readonly IAPIClientContainer _Client;
-
-		public MediaLogic(IReportHandler reportHandler, IAPIClientContainer client)
+		private readonly IPostAnalyser _postAnalyser;
+		public MediaLogic(IReportHandler reportHandler, IAPIClientContainer client, IPostAnalyser postAnalyser)
 		{
 			_reportHandler = reportHandler;
 			_Client = client;
+			_postAnalyser = postAnalyser;
 			_reportHandler.SetupReportHandler("Logic/Comments");
 		}
 		public async Task<IResult<bool>> ArchiveMediaAsync(string mediaId)
@@ -158,12 +159,12 @@ namespace QuarklessLogic.Logic.MediaLogic
 					if (instaAlbumUpload.VideoToUpload != null)
 					{
 						instaAlbumUpload.VideoToUpload.Video.VideoBytes =
-							instaAlbumUpload.VideoToUpload.Video.Uri.DownloadMedia();
+							_postAnalyser.Manager.DownloadMedia(instaAlbumUpload.VideoToUpload.Video.Uri);
 						instaAlbumUpload.VideoToUpload.Video.Uri = string.Empty;
 					}
 					else
 					{
-						instaAlbumUpload.ImageToUpload.ImageBytes = instaAlbumUpload.ImageToUpload.Uri.DownloadMedia();
+						instaAlbumUpload.ImageToUpload.ImageBytes = _postAnalyser.Manager.DownloadMedia(instaAlbumUpload.ImageToUpload.Uri);
 						instaAlbumUpload.ImageToUpload.Uri = string.Empty;
 					}
 				}
@@ -180,7 +181,7 @@ namespace QuarklessLogic.Logic.MediaLogic
 		{
 			try
 			{
-				uploadPhoto.Image.ImageBytes = uploadPhoto.Image.Uri.DownloadMedia();
+				uploadPhoto.Image.ImageBytes = _postAnalyser.Manager.DownloadMedia(uploadPhoto.Image.Uri);
 				uploadPhoto.Image.Uri = string.Empty;
 				return await _Client.Media.UploadPhotoAsync(uploadPhoto.Image, MakeCaption(uploadPhoto.MediaInfo), uploadPhoto.Location);
 			}
@@ -194,7 +195,7 @@ namespace QuarklessLogic.Logic.MediaLogic
 		{
 			try
 			{
-				uploadVideo.Video.Video.VideoBytes = uploadVideo.Video.Video.Uri.DownloadMedia();
+				uploadVideo.Video.Video.VideoBytes = _postAnalyser.Manager.DownloadMedia(uploadVideo.Video.Video.Uri);
 				uploadVideo.Video.Video.Uri = string.Empty;
 				var res =  await  _Client.Media.UploadVideoAsync(uploadVideo.Video, MakeCaption(uploadVideo.MediaInfo), uploadVideo.Location);
 //				if (res.Succeeded)

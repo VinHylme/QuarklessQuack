@@ -47,7 +47,6 @@ namespace Quarkless.MediaAnalyser
 
 			return output;
 		}
-
 		public static byte[] ResizeImage(this byte[] imageData, ResizeMode resizeMode, Size size)
 		{
 			if (imageData == null) return null;

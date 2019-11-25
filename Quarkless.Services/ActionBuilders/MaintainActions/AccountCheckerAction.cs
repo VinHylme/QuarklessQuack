@@ -2,16 +2,13 @@
 using Quarkless.Services.Interfaces.Actions;
 using Quarkless.Services.StrategyBuilders;
 using QuarklessContexts.Models;
-using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessContexts.Models.Timeline;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
-using Quarkless.MediaAnalyser;
 using System.Collections.Generic;
 using System.Linq;
 using InstagramApiSharp.Classes.Models;
-using MoreLinq;
 using QuarklessLogic.Handlers.RequestBuilder.Consts;
 using QuarklessContexts.Classes.Carriers;
 using QuarklessLogic.Logic.StorageLogic;
@@ -61,35 +58,34 @@ namespace Quarkless.Services.ActionBuilders.MaintainActions
 				var currentUsersMedia = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchUserOwnProfile, user.Profile.Topics.TopicFriendlyName, user.Profile.InstagramAccountId)
 										.GetAwaiter().GetResult().ToList();
 
+				var postAnalyser = accountCheckerActionOptions.PostAnalyser;
 				//remove duplicates from user's gallery
 				List<ContainMedia> usersMediaInBytes = new List<ContainMedia>();
-				if (currentUsersMedia != null)
 				{
 					foreach(var userMedia in currentUsersMedia)
 					{
-						if (userMedia != null)
+						if (userMedia == null) continue;
+						var medias = userMedia.ObjectItem.Medias;
+						foreach(var umedia in medias)
 						{
-							var medias = userMedia.ObjectItem.Medias;
-							foreach(var umedia in medias)
+							foreach(var url in umedia.MediaUrl)
 							{
-								foreach(var url in umedia.MediaUrl)
+								usersMediaInBytes.Add(new ContainMedia
 								{
-									usersMediaInBytes.Add(new ContainMedia
-									{
-										mediaData = url.DownloadMedia(),
-										mediaId = umedia.MediaId,
-										mediaType = (int) umedia.MediaType
-									});
-								}
+									mediaData = postAnalyser.Manager.DownloadMedia(url),
+									mediaId = umedia.MediaId,
+									mediaType = (int) umedia.MediaType
+								});
 							}
 						}
 					}
 
 					var images = usersMediaInBytes.Where(a => a.mediaType == (int)InstaMediaType.Image);
-					var duplicates = images.Select(s=>s.mediaData).DuplicateImages(0.95);
-					if(duplicates!=null && duplicates.Count() > 0) { 
+					var duplicates = postAnalyser.Manipulation.ImageEditor.DuplicateImages(images.Select(s=>s.mediaData),0.95);
+					var enumerable = duplicates as byte[][] ?? duplicates.ToArray();
+					if(duplicates!=null && enumerable.Count() > 0) { 
 						List<TimelineEventModel> tosend = new List<TimelineEventModel>();
-						for (int x = 0; x < duplicates.Count(); x++)
+						for (int x = 0; x < enumerable.Count(); x++)
 						{
 							RestModel restModel = new RestModel
 							{
@@ -108,15 +104,6 @@ namespace Quarkless.Services.ActionBuilders.MaintainActions
 						Results.Results = tosend;
 						return Results;
 					}
-				}
-				else
-				{
-					Results.IsSuccesful = false;
-					Results.Info =  new ErrorResponse
-					{
-						Message = $"user's media is empty, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}"
-					};
-					return Results;
 				}
 			}
 			Results.IsSuccesful = false;

@@ -52,21 +52,15 @@ services:
     depends_on:
       - quarkless.redis
       - quarkless.selenium.chrome
-#  quarkless.frontend:
-#    image: quarkless/quarkless.frontend
-#    container_name: quarkless.frontend.now
-#    build:
-#      context: .
-#      dockerfile: Quarkless.FrontEnd/web-v1-quark/Dockerfile
-#    ports:
-#      - 8081:8080
-#    networks:
-#      frontend-network:
-#        aliases:
-#         - quarkless.net.front
-#    volumes:
-#      - .:/app
-#      - /app/node_modules
+  quarkless.automator:
+    image: quarkless/services/automator
+    build:
+      context: .
+      dockerfile: Quarkless.Services/Dockerfile
+    networks:
+      - local-network
+    depends_on:
+      - quarkless.security
   quarkless:
     image: quarkless/api
     container_name: quarkless.api.now
@@ -81,13 +75,10 @@ services:
       - sharedvol:/workspace/static
     depends_on:
       - quarkless.security
-      #- quarkless.frontend
 
 networks:
   local-network:
-  #frontend-network:
 
 volumes:
   sharedvol:
-  #frontvol:
   redisvol:

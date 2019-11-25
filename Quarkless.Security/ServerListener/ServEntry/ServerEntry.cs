@@ -114,7 +114,10 @@ namespace Quarkless.Security.ServerListener.ServEntry
 				IpRateLimitPolicies = a.IpRateLimitPolicies,
 				ImageSearchEndpoint = a.ImageSearchEndpoint,
 				MaxConcurrentRequests = a.MaxConcurrentRequests,
-				SeleniumChromeAddress = a.SeleniumChromeAddress
+				SeleniumChromeAddress = a.SeleniumChromeAddress,
+				TempImagePath = a.TempImagePath,
+				TempVideoPath = a.TempVideoPath,
+				FfmpegPath = a.FfmpegPath
 			};
 		}
 		private IAccessor GetEnvData()

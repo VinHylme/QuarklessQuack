@@ -17,6 +17,23 @@ namespace QuarklessContexts.Extensions
 {
 	public static class HelperExtensions
 	{
+		public static string GetPathByFolderName(this string folderName)
+		{
+			var initialPath = Directory.GetCurrentDirectory();
+			var currentPath = initialPath;
+			while (currentPath != Directory.GetDirectoryRoot(initialPath))
+			{
+				foreach (var directory in Directory.GetDirectories(currentPath))
+				{
+					if (directory.EndsWith(folderName))
+						return directory;
+				}
+
+				currentPath = Directory.GetParent(currentPath).FullName;
+			}
+
+			return string.Empty;
+		}
 		public static IServiceCollection Append(this IServiceCollection @org, IServiceCollection all)
 		{
 			if (all == null || !all.Any()) return org;

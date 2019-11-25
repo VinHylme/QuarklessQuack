@@ -90,6 +90,8 @@ using Amazon;
 using Amazon.CognitoIdentity;
 using Amazon.Extensions.NETCore.Setup;
 using AspNetCoreRateLimit;
+using Quarkless.Analyser;
+using Quarkless.Analyser.Models;
 using QuarklessContexts.Models.APILogger;
 using QuarklessContexts.Models.SecurityLayerModels;
 using QuarklessLogic.QueueLogic.Jobs.JobRunner;
@@ -139,6 +141,10 @@ namespace Quarkless.Common.Clients.Configs
 			services.AddSingleton<IWebHookHandlers, WebHookHandlers>();
 			services.AddSingleton<IGoogleSearchLogic, GoogleSearchLogic>();
 			services.AddSingleton<IYandexImageSearch, YandexImageSearch>();
+
+			services.AddSingleton<IVideoEditor, VideoEditor>();
+			services.AddSingleton<IPostAnalyser, PostAnalyser>();
+			services.AddSingleton<IMediaManipulation, MediaManipulation>();
 		}
 		public static void AddAuthHandlers(this IServiceCollection services, EnvironmentsAccess accessors)
 		{
@@ -284,10 +290,15 @@ namespace Quarkless.Common.Clients.Configs
 				options.YandexAPIKey = accessors.YandexApiKey;
 				options.NaturalLanguageAPIPath = accessors.NaturalLanguageApiPath;
 			});
-
 			services.Configure<SeleniumLaunchOptions>(options =>
 			{
 				options.ChromePath = accessors.SeleniumChromeAddress;
+			});
+			services.Configure<MediaAnalyserOptions>(options =>
+			{
+				options.TempImagePath = accessors.TempImagePath;
+				options.TempVideoPath = accessors.TempVideoPath;
+				options.FfmpegEnginePath = accessors.FfmpegPath;
 			});
 		}
 		public static void AddRepositories(this IServiceCollection services)

@@ -17,6 +17,7 @@ using QuarklessContexts.Models.InstagramAccounts;
 using QuarklessLogic.Logic.ProfileLogic;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using MoreLinq;
+using Quarkless.Analyser;
 using QuarklessLogic.ServicesLogic.AgentLogic;
 using QuarklessContexts.Models.UserAuth.AuthTypes;
 using QuarklessContexts.Enums;
@@ -59,9 +60,11 @@ namespace Quarkless.Services
 		private readonly IAgentLogic _agentLogic;
 		private readonly ILibraryLogic _libraryLogic;
 		private readonly IS3BucketLogic _s3BucketLogic;
+		private readonly IPostAnalyser _postAnalyser;
 		public AgentManager(IInstagramAccountLogic instagramAccountLogic, IProfileLogic profileLogic,
 			IContentManager contentManager, ITimelineLogic timelineLogic, ITimelineEventLogLogic eventLogLogic, IHeartbeatLogic heartbeatLogic, 
-			IAuthHandler authHandler, IAgentLogic agentLogic, ILibraryLogic libraryLogic, IS3BucketLogic s3Bucket)
+			IAuthHandler authHandler, IAgentLogic agentLogic, 
+			ILibraryLogic libraryLogic, IS3BucketLogic s3Bucket, IPostAnalyser postAnalyser)
 		{
 			_agentLogic = agentLogic;
 			_heartbeatLogic = heartbeatLogic;
@@ -73,6 +76,7 @@ namespace Quarkless.Services
 			_authHandler = authHandler;
 			_libraryLogic = libraryLogic;
 			_s3BucketLogic = s3Bucket;
+			_postAnalyser = postAnalyser;
 		}
 
 		private async Task<AddEventResponse> AddToTimeline(TimelineEventModel events, Limits limits)
@@ -424,6 +428,9 @@ namespace Quarkless.Services
 		
 		public async Task Begin()
 		{
+			var video = _postAnalyser.Manager.DownloadMedia("https://r4---sn-aigzrn7l.googlevideo.com/videoplayback?expire=1574704951&ei=18LbXcbdIIOP1gKVz6LwCg&ip=45.9.116.207&id=o-AEfwFEpCKc-kWm3BJCeMUfx95nxcJ7yGt2Dc04IEGwlj&itag=18&source=youtube&requiressl=yes&mime=video%2Fmp4&gir=yes&clen=24421678&ratebypass=yes&dur=375.141&lmt=1570599040161823&fvip=6&fexp=23842630&c=WEB&txp=5531432&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cmime%2Cgir%2Cclen%2Cratebypass%2Cdur%2Clmt&sig=ALgxI2wwRAIgR__77Y4s-bmMJ3UjJfoGf9BcHPVtl7dX6gl0MTEUoHsCIFNFhPwToD97lPxSSSSY08pCCttd3zUxrl6osUv-V5cL&title=+We%27ve+Found+The+Magic+Frequency+%28This+Will+Revolutionize+Our+Future%29+&keepalive=yes&title=We%26%23039%3Bve+Found+The+Magic+Frequency+%28This+Will+Revolutionize+Our+Future%29&cms_redirect=yes&mip=88.98.243.207&mm=31&mn=sn-aigzrn7l&ms=au&mt=1574683290&mv=m&mvi=3&pl=20&lsparams=mip,mm,mn,ms,mv,mvi,pl&lsig=AHylml4wRQIgRAwFphCXw_Rsk-bmtJ_62QGW9IGMTVynf02g3NSzcUYCIQD8o8U_WcS4GsNkOJxiTN_UpjDGBU7Ko5ZcSaDJfT4UDA==");
+			await _postAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(video);
+			while (true) ;
 			// TODO: Need to create a warm up function which does basic routine for 2 days 
 			// TODO: MAKE SURE ALL USERS ARE BUSINESS ACCOUNTS AND USERS OVER 100 FOLLOWERS BASE THEIR POSTING ON WHICH HOUR WAS MOST POPULAR
 			var numberOfWorkers = 0;
@@ -566,11 +573,11 @@ namespace Quarkless.Services
 									.IncludeUser(userStoreDetails);
 								//Initial Execution
 								var likeScheduleOptions = new LikeActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1, 4)), LikeActionType.Any);
-								var postScheduleOptions = new PostActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1, 5))) { ImageFetchLimit = 20 };
+								var postScheduleOptions = new PostActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1, 5)), _postAnalyser) { ImageFetchLimit = 20 };
 								var followScheduleOptions = new FollowActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1, 4)), FollowActionType.Any);
 								var commentScheduleOptions = new CommentingActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1, 4)), CommentingActionType.Any);
 								var likecommentScheduleOptions = new LikeCommentActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(4)), LikeCommentActionType.Any);
-								var sendMessageScheduleoptions = new SendDirectMessageActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1,5)), MessagingReachType.Any, 1);
+								var sendMessageScheduleoptions = new SendDirectMessageActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1,5)), MessagingReachType.Any, 1, _postAnalyser);
 								
 								actionsContainerManager.AddAction(sendMessageAction, sendMessageScheduleoptions, 0.05);
 								actionsContainerManager.AddAction(postAction, postScheduleOptions, 0.05);

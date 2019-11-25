@@ -12,7 +12,6 @@ using StackExchange.Redis;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
 using Quarkless.Filters;
-using Quarkless.Extensions;
 using QuarklessContexts.Models.SecurityLayerModels;
 using Quarkless.Common.Clients;
 using QuarklessContexts.Extensions;

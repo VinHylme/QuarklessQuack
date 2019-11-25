@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
+	<PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationIcon />
     <OutputType>Exe</OutputType>
-    <StartupObject />
+    <StartupObject>Quarkless.Services.Entrance</StartupObject>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,7 +33,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Quarkless.Common.Clients\Quarkless.Common.Clients.csproj" />
-    <ProjectReference Include="..\Quarkless.MediaAnalyser\Quarkless.MediaAnalyser.csproj" />
     <ProjectReference Include="..\Quarkless.Security\Quarkless.Security.csproj" />
     <ProjectReference Include="..\QuarklessLogic\QuarklessLogic.csproj" />
   </ItemGroup>

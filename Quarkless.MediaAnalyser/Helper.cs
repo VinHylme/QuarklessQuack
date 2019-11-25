@@ -41,6 +41,7 @@ namespace Quarkless.MediaAnalyser
 				SetBasePath(settingPath).AddJsonFile("appsettings.json").Build();
 			return Path.GetFullPath(@"..\..\..\..\"+configuration["MediaPath:" + name]);
 		}
+
 		public static bool ImageIsDuplicate(this byte[] image, byte[] targetImage, double scorePerctange)
 		{
 			var ogHash = ImagePhash.ComputeDigest(image.ByteToBitmap().ToLuminanceImage());
@@ -500,7 +501,7 @@ namespace Quarkless.MediaAnalyser
 
 			return reduced;
 		}
-		public static IEnumerable<Bitmap> ReadImagesFromDirectory(string path, string pattern)
+		public static IEnumerable<Bitmap> ReadImagesFromDirectory(this string path, string pattern)
 		{
 			var images = Directory.EnumerateFiles(path, pattern);
 			foreach (var image in images)
@@ -510,6 +511,7 @@ namespace Quarkless.MediaAnalyser
 				yield return new Bitmap(Image.FromStream(meme));
 			}
 		}
+		/*
 		public static async Task<byte[]> GenerateVideoThumbnail(this byte[] video, int specificFrame = 5)
 		{
 			var path = GetFilePathByName("videosTempPath");
@@ -542,6 +544,8 @@ namespace Quarkless.MediaAnalyser
 				return null;
 			}
 		}
+		*/
+		/*
 		public static async Task<string> IsVideoSimilar(this Color profileColor, byte[] video, double threshHold, int frameSkip = 5)
 		{
 			var path = GetFilePathByName("videosTempPath");
@@ -593,6 +597,8 @@ namespace Quarkless.MediaAnalyser
 			DisposeVideos(videoPath);
 			return null;
 		}
+		*/
+		/*
 		public static void DisposeVideos(string loc = null, int retries = 8)
 		{
 			try
@@ -637,6 +643,8 @@ namespace Quarkless.MediaAnalyser
 			}
 		
 		}
+		*/
+		/*
 		static bool IsFileLocked(FileInfo file)
 		{
 			FileStream stream = null;
@@ -661,6 +669,8 @@ namespace Quarkless.MediaAnalyser
 			//file is not locked
 			return false;
 		}
+		*/
+		/*
 		public static byte[] MostSimilarVideo(this Color profileColor, List<byte[]> videos, int frameSkip = 5)
 		{
 			var path = GetFilePathByName("videosTempPath");
@@ -711,5 +721,6 @@ namespace Quarkless.MediaAnalyser
 			Directory.EnumerateFiles(path, "*.mp4").ToList().ForEach(File.Delete);
 			return videos.ElementAtOrDefault(pos);
 		}
+		*/
 	}
 }
