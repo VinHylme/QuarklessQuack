@@ -8,7 +8,7 @@ namespace Quarkless.Security
 		{
 			var server = new ServerListener.ServerNetwork();
 			server.StartAccepting();
-			Console.Read();
+			while (true) ;
 		}
 	}
 }

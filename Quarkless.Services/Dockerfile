@@ -1,8 +1,9 @@
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.0-buster-slim AS base
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.0-nanoserver-1809 AS base
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/core/sdk:3.0-buster AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.0-nanoserver-1809 AS build
 WORKDIR /src
+ADD Quarkless.Analyser/Reference /app
 COPY ["Quarkless.Services/Quarkless.Services.csproj", "Quarkless.Services/"]
 COPY ["QuarklessLogic/QuarklessLogic.csproj", "QuarklessLogic/"]
 COPY ["InstagramApiSharp/InstagramApiSharp.csproj", "InstagramApiSharp/"]

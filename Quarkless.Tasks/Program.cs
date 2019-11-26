@@ -21,7 +21,7 @@ namespace Quarkless.Tasks
 		}
 		private static void InitialiseClientServices()
 		{
-			var cIn = new ClientRequester();
+			var cIn = new ClientRequester("localhost");
 			if (!cIn.TryConnect().GetAwaiter().GetResult())
 				throw new Exception("Invalid Client");
 

@@ -6,6 +6,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="References\ffmpeg.exe" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="References\ffmpeg.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Options" Version="3.0.1" />
     <PackageReference Include="Shipwreck.Phash" Version="0.5.0" />
     <PackageReference Include="Shipwreck.Phash.Bitmaps" Version="0.5.0" />
@@ -17,19 +27,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="References\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Reference Include="ImageProcessor.Core">
-      <HintPath>..\Requires\ImageProcessor.Core.dll</HintPath>
+      <HintPath>..\References\ImageProcessor.Core.dll</HintPath>
     </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="References\ffmpeg.exe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>

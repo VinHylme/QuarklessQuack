@@ -45,6 +45,7 @@ namespace Quarkless.Services
 	public class Entrance
 	{
 		private const string CLIENT_SECTION = "Client";
+		private const string SERVER_IP = "quarkless.net.security";
 		private static IConfiguration MakeConfigurationBuilder()
 		{
 			return new ConfigurationBuilder()
@@ -54,7 +55,7 @@ namespace Quarkless.Services
 
 		private static ServiceReacher InitialiseClientServices()
 		{
-			var cIn = new ClientRequester();
+			var cIn = new ClientRequester(SERVER_IP);
 			if (!cIn.TryConnect().GetAwaiter().GetResult())
 				throw new Exception("Invalid Client");
 

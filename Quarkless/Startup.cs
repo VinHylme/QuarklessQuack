@@ -21,7 +21,8 @@ namespace Quarkless
 	public class Startup
     {
 	    private const string CORS_POLICY = "HashtagGrowCORSPolicy";
-	    private const string CLIENT_SECTION = "Client";
+	    private const string SERVER_IP = "quarkless.net.security";
+		private const string CLIENT_SECTION = "Client";
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -30,7 +31,7 @@ namespace Quarkless
 
         public void ConfigureServices(IServiceCollection services)
         {
-	        var cIn = new ClientRequester();
+	        var cIn = new ClientRequester(SERVER_IP);
 	        if (!cIn.TryConnect().GetAwaiter().GetResult())
 		        return;
 

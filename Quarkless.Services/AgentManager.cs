@@ -428,8 +428,8 @@ namespace Quarkless.Services
 		
 		public async Task Begin()
 		{
-			var video = _postAnalyser.Manager.DownloadMedia("https://r4---sn-aigzrn7l.googlevideo.com/videoplayback?expire=1574704951&ei=18LbXcbdIIOP1gKVz6LwCg&ip=45.9.116.207&id=o-AEfwFEpCKc-kWm3BJCeMUfx95nxcJ7yGt2Dc04IEGwlj&itag=18&source=youtube&requiressl=yes&mime=video%2Fmp4&gir=yes&clen=24421678&ratebypass=yes&dur=375.141&lmt=1570599040161823&fvip=6&fexp=23842630&c=WEB&txp=5531432&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cmime%2Cgir%2Cclen%2Cratebypass%2Cdur%2Clmt&sig=ALgxI2wwRAIgR__77Y4s-bmMJ3UjJfoGf9BcHPVtl7dX6gl0MTEUoHsCIFNFhPwToD97lPxSSSSY08pCCttd3zUxrl6osUv-V5cL&title=+We%27ve+Found+The+Magic+Frequency+%28This+Will+Revolutionize+Our+Future%29+&keepalive=yes&title=We%26%23039%3Bve+Found+The+Magic+Frequency+%28This+Will+Revolutionize+Our+Future%29&cms_redirect=yes&mip=88.98.243.207&mm=31&mn=sn-aigzrn7l&ms=au&mt=1574683290&mv=m&mvi=3&pl=20&lsparams=mip,mm,mn,ms,mv,mvi,pl&lsig=AHylml4wRQIgRAwFphCXw_Rsk-bmtJ_62QGW9IGMTVynf02g3NSzcUYCIQD8o8U_WcS4GsNkOJxiTN_UpjDGBU7Ko5ZcSaDJfT4UDA==");
-			await _postAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(video);
+			var video = _postAnalyser.Manager.DownloadMedia("https://scontent-lhr3-1.cdninstagram.com/v/t50.2886-16/78374597_720309601801214_1259381955971269041_n.mp4?_nc_ht=scontent-lhr3-1.cdninstagram.com&_nc_cat=102&oe=5DDF70BA&oh=e1e75538052c1aa07b0589b38e1c65a2");
+			var m = await _postAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(video);
 			while (true) ;
 			// TODO: Need to create a warm up function which does basic routine for 2 days 
 			// TODO: MAKE SURE ALL USERS ARE BUSINESS ACCOUNTS AND USERS OVER 100 FOLLOWERS BASE THEIR POSTING ON WHICH HOUR WAS MOST POPULAR

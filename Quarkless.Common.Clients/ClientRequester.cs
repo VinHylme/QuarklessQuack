@@ -12,8 +12,10 @@ namespace Quarkless.Common.Clients
 	public class ClientRequester
 	{
 		private readonly Socket _clientSocket;
-		public ClientRequester()
+		private readonly string _host;
+		public ClientRequester(string host)
 		{
+			_host = host;
 			_clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 		}
 
@@ -24,7 +26,7 @@ namespace Quarkless.Common.Clients
 			{
 				try
 				{
-					_clientSocket.Connect("quarkless.net.security", 65115);
+					_clientSocket.Connect(_host, 65115);
 					return true;
 				}
 				catch (SocketException se)

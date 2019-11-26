@@ -22,7 +22,7 @@ namespace Quarkless.HeartBeater
 		}
 		private IServiceCollection InitialiseClientServices()
 		{
-			var cIn = new ClientRequester();
+			var cIn = new ClientRequester("quarkless.net.security");
 			if (!cIn.TryConnect().GetAwaiter().GetResult())
 				throw new Exception("Invalid Client");
 

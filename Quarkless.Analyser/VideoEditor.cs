@@ -18,14 +18,24 @@ namespace Quarkless.Analyser
 		private readonly string _tempVideoPath;
 		private readonly string _tempImagePath;
 		private readonly string _ffmpegEnginePath;
+		private readonly string _assemblyName;
 		public VideoEditor(IOptions<MediaAnalyserOptions> options)
 		{
-			if (options.Value.Equals(null))
-				throw new NullReferenceException();
-			_ffmpegEnginePath = options.Value.FfmpegEnginePath;
+//			if (options.Value.Equals(null))
+//				throw new NullReferenceException();
+//			if (!options.Value.FfmpegEnginePath.Contains(','))
+//			{
+//				throw new DirectoryNotFoundException("Please include the assembly name as well, e.g. {SolutionName}.{Project Name}");
+//
+//			}
+//
+//			var splitPath = options.Value.FfmpegEnginePath.Split(',');
+			//_assemblyName = splitPath[0];
+			
+			_ffmpegEnginePath = GetPathByFolderName("References", AppDomain.CurrentDomain.BaseDirectory) + "/ffmpeg.exe"; //splitPath[1];
+			//CreateFfmpegPathIfDoesNotExist();
 			_tempImagePath = options.Value.TempImagePath;
 			_tempVideoPath = options.Value.TempVideoPath;
-			GetFfmpegFullPath();
 		}
 		public string GetPathByFolderName( string folderName,string initFolder = null)
 		{
@@ -44,21 +54,29 @@ namespace Quarkless.Analyser
 
 			return string.Empty;
 		}
-		private void GetFfmpegFullPath()
+		private byte[] ExtractResource(string project, string filename)
 		{
-			
-			var p = AppDomain.CurrentDomain.BaseDirectory;
-			var ppc = Assembly.GetAssembly(typeof(VideoEditor)).GetFiles();
-			
 			var bundleAssembly = AppDomain.CurrentDomain.GetAssemblies()
-				.First(x => x.FullName.Contains("Quarkless.Analyser"));
-			
-			var b = bundleAssembly.Location;
-
-			var xsdFullName = bundleAssembly.GetFiles();
-
-
-			var again = GetPathByFolderName("References", p);
+				.First(x => x.FullName.Contains(project));
+			var name = bundleAssembly.GetManifestResourceNames()
+				.First(x => x.EndsWith(filename));
+		
+			using (Stream manifestResourceStream = bundleAssembly.GetManifestResourceStream(name))
+			{
+				if (manifestResourceStream == null) return null;
+				var ba = new byte[manifestResourceStream.Length];
+				manifestResourceStream.Read(ba, 0, ba.Length);
+				return ba;
+			}
+		}
+		private void CreateFfmpegPathIfDoesNotExist()
+		{
+			if (File.Exists(_ffmpegEnginePath))
+			{
+				return;
+			}
+			var bx = ExtractResource(_assemblyName, _ffmpegEnginePath);
+			File.WriteAllBytes(_ffmpegEnginePath, bx);
 		}
 		public async Task<bool> IsVideoGood(byte[] bytes, Color profileColor, double threshHold, int frameSkip = 5)
 		{
@@ -66,27 +84,33 @@ namespace Quarkless.Analyser
 			var simPath = await IsVideoSimilar(profileColor, bytes, threshHold, frameSkip);
 			return !string.IsNullOrEmpty(simPath);
 		}
-		private void CreateDirectoryIfDoesNotExist(string path)
+		private void CreateDirectoryIfDoesNotExist(params string[] paths)
 		{
-			if (!Directory.Exists(path))
-				Directory.CreateDirectory(path);
+			foreach (var path in paths)
+			{
+				if (!Directory.Exists(path))
+					Directory.CreateDirectory(path);
+			}
 		}
 		public async Task<byte[]> GenerateVideoThumbnail(byte[] video, int specificFrame = 5)
 		{
-			var videoPath = string.Format(_tempVideoPath + "video_{0}_{1}.mp4", Guid.NewGuid(), DateTime.UtcNow.Ticks);
-			CreateDirectoryIfDoesNotExist(videoPath);
-			var imagePath = string.Format(_tempImagePath + "image_{0}_{1}.jpeg", Guid.NewGuid(), DateTime.UtcNow.Ticks);
-			CreateDirectoryIfDoesNotExist(imagePath);
+			CreateDirectoryIfDoesNotExist(_tempVideoPath, _tempImagePath);
+
+			var videoPath = string.Format(_tempVideoPath + "temp_video_{0}_{1}.mp4", Guid.NewGuid(), DateTime.UtcNow.Ticks);
+			var imagePath = string.Format(_tempImagePath + "temp_image_{0}_{1}.jpeg", Guid.NewGuid(), DateTime.UtcNow.Ticks);
 
 			File.WriteAllBytes(videoPath, video);
 			try
 			{
-				var mediaFile = new MediaFile(videoPath);
 				var engine = new Engine(_ffmpegEnginePath);
-				var opt = new ConversionOptions { Seek = TimeSpan.FromSeconds(specificFrame) };
-				var outputFile = new MediaFile(imagePath);
-
-				await engine.GetThumbnailAsync(mediaFile, outputFile, opt);
+				
+				await engine.GetThumbnailAsync(
+					new MediaFile(videoPath),
+					new MediaFile(imagePath),
+					new ConversionOptions
+					{
+						Seek = TimeSpan.FromSeconds(specificFrame)
+					});
 
 				var image = File.ReadAllBytes(imagePath);
 
