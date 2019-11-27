@@ -1,8 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <ApplicationIcon />
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>    
+	<GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
+	<ApplicationIcon />
     <OutputType>Exe</OutputType>
     <StartupObject>Quarkless.Services.Entrance</StartupObject>
     <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
@@ -10,10 +11,14 @@
 
   <ItemGroup>
     <None Remove="appsettings.json" />
+    <None Remove="Quarkless.Services.runtimeconfig.json" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Quarkless.Services.runtimeconfig.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

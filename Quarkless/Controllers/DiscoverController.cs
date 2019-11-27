@@ -1,5 +1,4 @@
-﻿using System;
-using InstagramApiSharp.Classes.Models;
+﻿using InstagramApiSharp.Classes.Models;
 using Microsoft.AspNetCore.Mvc;
 using QuarklessContexts.Contexts;
 using QuarklessContexts.Models.UserAuth.AuthTypes;

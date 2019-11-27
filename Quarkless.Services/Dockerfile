@@ -3,7 +3,7 @@ WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/core/sdk:3.0-nanoserver-1809 AS build
 WORKDIR /src
-ADD Quarkless.Analyser/Reference /app
+ADD Quarkless.Analyser/References /app
 COPY ["Quarkless.Services/Quarkless.Services.csproj", "Quarkless.Services/"]
 COPY ["QuarklessLogic/QuarklessLogic.csproj", "QuarklessLogic/"]
 COPY ["InstagramApiSharp/InstagramApiSharp.csproj", "InstagramApiSharp/"]

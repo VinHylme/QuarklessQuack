@@ -428,9 +428,6 @@ namespace Quarkless.Services
 		
 		public async Task Begin()
 		{
-			var video = _postAnalyser.Manager.DownloadMedia("https://scontent-lhr3-1.cdninstagram.com/v/t50.2886-16/78374597_720309601801214_1259381955971269041_n.mp4?_nc_ht=scontent-lhr3-1.cdninstagram.com&_nc_cat=102&oe=5DDF70BA&oh=e1e75538052c1aa07b0589b38e1c65a2");
-			var m = await _postAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(video);
-			while (true) ;
 			// TODO: Need to create a warm up function which does basic routine for 2 days 
 			// TODO: MAKE SURE ALL USERS ARE BUSINESS ACCOUNTS AND USERS OVER 100 FOLLOWERS BASE THEIR POSTING ON WHICH HOUR WAS MOST POPULAR
 			var numberOfWorkers = 0;
