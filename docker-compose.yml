@@ -25,15 +25,6 @@ services:
           - quarkless.api
     depends_on:
       - quarklessSecurity
-  quarklessAutomator:
-    image: quarkless/quarkless.services.automator
-    build:
-      context: .
-      dockerfile: Quarkless.Services/Dockerfile
-    networks:
-      - local-network
-    depends_on:
-      - quarklessSecurity
 
 networks:
   local-network:

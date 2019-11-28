@@ -1,0 +1,17 @@
+version: '3.4'
+
+services:
+  quarklessAutomator:
+    image: quarkless/quarkless.services.automator
+    build:
+      context: .
+      dockerfile: Quarkless.Services/Dockerfile
+    networks:
+      - local-network
+    depends_on:
+      - quarklessSecurity
+  
+networks:
+  local-network:
+    driver: overlay
+    attachable: true

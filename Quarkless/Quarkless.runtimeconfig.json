@@ -1,5 +1,6 @@
 {
   "runtimeOptions": {
+	"applyPatches": false,
 	"tfm": "netcoreapp3.0",
 	"frameworks": [
 	  {

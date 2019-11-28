@@ -4,6 +4,7 @@ EXPOSE 80
 
 FROM mcr.microsoft.com/dotnet/core/sdk:3.0-nanoserver-1809 AS build
 WORKDIR /src
+
 COPY ["Quarkless/Quarkless.csproj", "Quarkless/"]
 COPY ["QuarklessLogic/QuarklessLogic.csproj", "QuarklessLogic/"]
 COPY ["InstagramApiSharp/InstagramApiSharp.csproj", "InstagramApiSharp/"]
@@ -12,13 +13,16 @@ COPY ["QuarklessContexts/QuarklessContexts.csproj", "QuarklessContexts/"]
 COPY ["Quarkless.Interfacing/Quarkless.Interfacing.csproj", "Quarkless.Interfacing/"]
 COPY ["Quarkless.Analyser/Quarkless.Analyser.csproj", "Quarkless.Analyser/"]
 COPY ["Quarkless.Common.Clients/Quarkless.Common.Clients.csproj", "Quarkless.Common.Clients/"]
+
 RUN dotnet restore "Quarkless/Quarkless.csproj"
+
 COPY . .
 WORKDIR "/src/Quarkless"
 RUN dotnet build "Quarkless.csproj" -c Release -o /app/build
 
 FROM build AS publish
 RUN dotnet publish "Quarkless.csproj" -c Release -o /app/publish
+
 ENV ASPNETCORE_URLS http://+:51518
 FROM base AS final
 WORKDIR /app

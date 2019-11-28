@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 using Amazon.CognitoIdentityProvider;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
-using Nancy;
 using QuarklessContexts.Contexts.AccountContext;
 using QuarklessContexts.Models.UserAuth.Auth;
 using QuarklessContexts.Models.UserAuth.AuthTypes;
@@ -34,7 +34,7 @@ namespace Quarkless.Controllers
 			{
 				return Unauthorized(new
 				{
-					Status = (int) HttpStatusCode.Checkpoint
+					Status = (int) HttpStatusCode.Unauthorized
 				});
 			}
 			if (results.Results == null) return NotFound(results);

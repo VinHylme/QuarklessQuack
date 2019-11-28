@@ -27,15 +27,6 @@ services:
           - quarkless.api
     depends_on:
       - quarklessSecurity
-  quarklessAutomator:
-    image: quarkless/quarkless.services.automator
-    build:
-      context: .
-      dockerfile: Quarkless.Services/Dockerfile
-    networks:
-      - local-network
-    depends_on:
-      - quarklessSecurity
   hub:
     image: selenium/hub:3.141.59-xenon
     ports:
@@ -65,5 +56,3 @@ services:
           - quarkless.net.redis-01 
 networks:
   local-network:
-    driver: overlay
-    attachable: true
