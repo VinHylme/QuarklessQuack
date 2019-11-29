@@ -8,10 +8,11 @@ services:
       dockerfile: Quarkless.Services/Dockerfile
     networks:
       - local-network
+      - linux-services-net
     depends_on:
       - quarklessSecurity
   
 networks:
   local-network:
-    driver: overlay
-    attachable: true
+  linux-services-net:
+    external: true
