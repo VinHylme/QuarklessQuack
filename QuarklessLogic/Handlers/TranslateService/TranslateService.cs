@@ -68,16 +68,7 @@ namespace QuarklessLogic.Handlers.TranslateService
 			_naturalLanguageProcessingAPI = tOptions.Value.NaturalLanguageAPIPath;
 			_seleniumClient.AddArguments(
 				"--headless",
-				"--no-sandbox",
-				"--disable-web-security",
-				"--allow-running-insecure-content",
-				"--enable-features=NetworkService",
-				"--log-level=3",
-				"--silent",
-				"--disable-extensions",
-				"test-type",
-				"--ignore-certificate-errors",
-				"--disable-logging"
+				"--enable-features=NetworkService"
 			);
 		}
 		static int pos = 0;

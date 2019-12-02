@@ -12,7 +12,7 @@ using InstagramApiSharp.Converters.Users;
 
 namespace InstagramApiSharp.Converters
 {
-    internal class ConvertersFabric
+    public class ConvertersFabric
     {
         private static readonly Lazy<ConvertersFabric> LazyInstance =
             new Lazy<ConvertersFabric>(() => new ConvertersFabric());
@@ -1062,6 +1062,24 @@ namespace InstagramApiSharp.Converters
             InstaPendingRequestResponse response)
         {
             return new InstaPendingRequestConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaTrustedDevice, InstaTrustedDeviceResponse> GetTrustedDeviceConverter(
+            InstaTrustedDeviceResponse response)
+        {
+            return new InstaTrustedDeviceConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaAccountSecuritySettings, InstaAccountSecuritySettingsResponse> GetSecuritySettingsConverter(
+            InstaAccountSecuritySettingsResponse response)
+        {
+            return new InstaAccountSecuritySettingsConverter { SourceObject = response };
+        }
+
+        public IObjectConverter<InstaTVBrowseFeed, InstaTVBrowseFeedResponse> GetTVBrowseFeedConverter(
+            InstaTVBrowseFeedResponse response)
+        {
+            return new InstaTVBrowseFeedConverter { SourceObject = response };
         }
     }
 }

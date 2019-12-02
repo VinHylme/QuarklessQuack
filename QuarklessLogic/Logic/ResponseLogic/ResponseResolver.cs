@@ -263,6 +263,8 @@ namespace QuarklessLogic.Logic.ResponseLogic
 				case ResponseType.SentryBlock:
 					break;
 				case ResponseType.Unknown:
+					await _client.GetContext.ActionClient.GetLoggedInChallengeDataInfoAsync();
+					await _client.GetContext.ActionClient.AcceptChallengeAsync();
 					break;
 				case ResponseType.WrongRequest:
 					break;
@@ -378,6 +380,8 @@ namespace QuarklessLogic.Logic.ResponseLogic
 				case ResponseType.SentryBlock:
 					break;
 				case ResponseType.Unknown:
+					await _client.GetContext.ActionClient.GetLoggedInChallengeDataInfoAsync();
+					await _client.GetContext.ActionClient.AcceptChallengeAsync();
 					break;
 				case ResponseType.WrongRequest:
 					break;
@@ -464,7 +468,7 @@ namespace QuarklessLogic.Logic.ResponseLogic
 		{
 			try
 			{
-				return _client.GetContext.ActionClient.GetChallengeLoginInfo;
+				return _client.GetContext.ActionClient.ChallengeLoginInfo;
 			}
 			catch (Exception ee)
 			{

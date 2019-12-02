@@ -4,8 +4,10 @@ using InstagramApiSharp.Classes;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using QuarklessContexts.Contexts;
+using QuarklessContexts.Enums;
 using QuarklessContexts.Models.InstagramAccounts;
 using QuarklessContexts.Models.UserAuth.AuthTypes;
+using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Logic.InstagramAccountLogic;
 using QuarklessLogic.Logic.InstaUserLogic;
 using QuarklessLogic.Logic.ResponseLogic;
@@ -24,13 +26,17 @@ namespace Quarkless.Controllers
 		private readonly IInstaUserLogic _instaUserLogic;
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
 		private readonly IResponseResolver _responseResolver;
-		public InstagramAccountController(IUserContext userContext, IInstagramAccountLogic instagramAccountLogic, 
-			IInstaUserLogic instaUserLogic, IResponseResolver responseResolver)
+		private readonly IAPIClientContext _clientContext;
+		public InstagramAccountController(IUserContext userContext, 
+			IInstagramAccountLogic instagramAccountLogic, 
+			IInstaUserLogic instaUserLogic, 
+			IResponseResolver responseResolver, IAPIClientContext clientContext)
 		{
 			_userContext = userContext;
 			_instagramAccountLogic = instagramAccountLogic;
 			_instaUserLogic = instaUserLogic;
 			_responseResolver = responseResolver;
+			_clientContext = clientContext;
 		}
 
 		[HttpPut]
@@ -119,7 +125,11 @@ namespace Quarkless.Controllers
 				var instaDetails = await _instagramAccountLogic.GetInstagramAccount(_userContext.CurrentUser,instagramAccountId);
 				if (instaDetails == null || string.IsNullOrEmpty(instaDetails.Username))
 					return NotFound("Could not find account");
-				var loginRes = await _instaUserLogic.TryLogin(instaDetails.Username, instaDetails.Password);
+				var loginRes = await _responseResolver
+					.WithClient(new APIClientContainer(_clientContext, _userContext.CurrentUser, instagramAccountId))
+					.WithResolverAsync(await _instaUserLogic.TryLogin(instaDetails.Username, instaDetails.Password), 
+						ActionType.RefreshLogin, instagramAccountId);
+				
 				if (loginRes == null) return Ok(false);
 				if (!loginRes.Succeeded) return NotFound(loginRes.Info);
 				var newState = JsonConvert.DeserializeObject<StateData>(await _instaUserLogic.GetStateDataFromString());

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -21,12 +22,9 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 
 	public class SeleniumClient : ISeleniumClient
 	{
-		//internal IWebDriver Driver { get; set; }
 		//private readonly ChromeDriverService _chromeService;
-
 		private readonly object _locker = new object();
 		private readonly string _remoteChromeEndpoint;
-		//public IWebDriver Driver => new ChromeDriver(_chromeService, ChromeOptions);
 		private ChromeOptions ChromeOptions { get; }
 
 		public SeleniumClient(IOptions<SeleniumLaunchOptions> options)
@@ -39,6 +37,7 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 				AcceptInsecureCertificates = true,
 				PageLoadStrategy = PageLoadStrategy.Normal,
 			};
+			AddArguments("no-sandbox", "--disable-dev-shm-usage", "--log-level=3");
 		}
 		public void AddArguments(params string[] args)
 		{
@@ -53,7 +52,7 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 		}
 		public IWebDriver CreateDriver()
 		{
-			var dbs = Dns.GetHostEntry("localhost");
+			//return new ChromeDriver(_chromeService, ChromeOptions);
 			return new RemoteWebDriver(new Uri(_remoteChromeEndpoint), ChromeOptions);
 		}
 		public IEnumerable<string> DetectLangauge(string url, string targetElement, params string[] data)

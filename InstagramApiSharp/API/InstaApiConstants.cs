@@ -35,8 +35,17 @@ namespace InstagramApiSharp.API
 
         public const string DIRECT_THREAD_VIDEOCALLS_MUTE = API_SUFFIX + "/direct_v2/threads/{0}/mute_video_call/";
         public const string DIRECT_THREAD_VIDEOCALLS_UNMUTE = API_SUFFIX + "/direct_v2/threads/{0}/unmute_video_call/";
+        public const string DIRECT_THREAD_REMOVE_ALL_USERS = API_SUFFIX + "/direct_v2/threads/{0}/remove_all_users/";
+        public const string DIRECT_THREAD_APPROVAL_REQUIRED_FOR_NEW_MEMBERS = API_SUFFIX + "/direct_v2/threads/{0}/approval_required_for_new_members/";
+        public const string DIRECT_THREAD_APPROVAL_NOT_REQUIRED_FOR_NEW_MEMBERS = API_SUFFIX + "/direct_v2/threads/{0}/approval_not_required_for_new_members/";
+        public const string DIRECT_THREAD_ADD_ADMINS = API_SUFFIX + "/direct_v2/threads/{0}/add_admins/";
+        public const string DIRECT_THREAD_REMOVE_ADMINS = API_SUFFIX + "/direct_v2/threads/{0}/remove_admins/";
+        public const string DIRECT_THREAD_REMOVE_USERS = API_SUFFIX + "/direct_v2/threads/{0}/remove_users/";
+
+        public const string DIRECT_THREAD_BY_PARTICIPANTS = API_SUFFIX + "/direct_v2/threads/get_by_participants/?recipient_users=[{0}]&limit={1}";
 
 
+        public const string DISCOVER_DISMISS_USER_SUGGESTION = API_SUFFIX + "/discover/aysf_dismiss/";
         public const string EXPLORE_CHANNEL_VIEWER = API_SUFFIX + "/channels/viewer/discover_videos/{0}/";
 
 
@@ -64,6 +73,13 @@ namespace InstagramApiSharp.API
         public const string HEADER_X_IG_BANDWIDTH_TOTALTIME_MS = "X-IG-Bandwidth-TotalTime-MS";
 
 
+ 
+        public const string HEADER_X_IG_EXTENDED_CDN_THUMBNAIL_CACHE_BUSTING_VALUE = "X-IG-Extended-CDN-Thumbnail-Cache-Busting-Value";
+        public const string HEADER_X_IG_BLOKS_VERSION_ID = "X-Bloks-Version-Id";
+        public const string HEADER_X_IG_BLOKS_IS_LAYOUT_RTL = "X-Bloks-Is-Layout-RTL";
+        public const string HEADER_X_IG_DEVICE_ID = "X-IG-Device-ID";
+        public const string HEADER_X_IG_ANDROID_ID = "X-IG-Android-ID";
+        public const string CURRENT_BLOKS_VERSION_ID = "15f3ececf8692b1eddb3a12f1ffb072cc9e9109aac995e30f1f500b68d9917eb";
 
         public const string ACCEPT_ENCODING = "gzip, deflate, sdch";
         public const string API = "/api";
@@ -358,6 +374,7 @@ namespace InstagramApiSharp.API
         public const string ACCOUNTS_GET_PRESENCE = API_SUFFIX + "/accounts/get_presence_disabled/";
         public const string ACCOUNTS_GET_BLOCKED_COMMENTERS = API_SUFFIX + "/accounts/get_blocked_commenters/";
         public const string ACCOUNTS_SET_BLOCKED_COMMENTERS = API_SUFFIX + "/accounts/set_blocked_commenters/";
+        public const string ACCOUNTS_REMOVE_TRUSTED_DEVICE = API_SUFFIX + "/accounts/remove_trusted_device/";
 
         #endregion Account endpoint constants
 
@@ -536,6 +553,7 @@ namespace InstagramApiSharp.API
   
         public const string FRIENDSHIPS_FOLLOW_USER = API_SUFFIX + "/friendships/create/{0}/";
         public const string FRIENDSHIPS_IGNORE = API_SUFFIX + "/friendships/ignore/{0}/";
+        public const string FRIENDSHIPS_RECENT_FOLLOWERS = API_SUFFIX + "/friendships/recent_followers/";
 
 
         public const string FRIENDSHIPS_PENDING_REQUESTS = API_SUFFIX + "/friendships/pending/";//?rank_mutual=0&rank_token={0}";
@@ -596,9 +614,11 @@ namespace InstagramApiSharp.API
 
         public const string IGTV_CHANNEL = API_SUFFIX + "/igtv/channel/";
         public const string IGTV_SEARCH = API_SUFFIX + "/igtv/search/?query={0}";
-        public const string IGTV_SUGGESTED_SEARCHES = API_SUFFIX + "/igtv/suggested_searches/";
+        public const string IGTV_SUGGESTED_SEARCHES = API_SUFFIX + "/igtv/suggested_searches/?query=";
         public const string IGTV_TV_GUIDE = API_SUFFIX + "/igtv/tv_guide/";
         public const string MEDIA_CONFIGURE_TO_IGTV = API_SUFFIX + "/media/configure_to_igtv/?video=1";
+        public const string IGTV_BROWSE_FEED = API_SUFFIX + "/igtv/browse_feed/";
+        public const string IGTV_WRITE_SEEN = API_SUFFIX + "/igtv/write_seen_state/";
 
         #endregion IgTv (instagram tv) endpoints constants
 
@@ -664,7 +684,7 @@ namespace InstagramApiSharp.API
         public const string DISABLE_MEDIA_COMMENTS = API_SUFFIX + "/media/{0}/disable_comments/";
         public const string EDIT_MEDIA = API_SUFFIX + "/media/{0}/edit_media/";
         public const string GET_MEDIA = API_SUFFIX + "/media/{0}/info/";
-        public const string GET_SHARE_LINK = API_SUFFIX + "/media/{0}/permalink/";
+        public const string GET_SHARE_LINK = API_SUFFIX + "/media/{0}/permalink/?share_to_app=copy_link";
         public const string LIKE_COMMENT = API_SUFFIX + "/media/{0}/comment_like/";
         public const string LIKE_MEDIA = API_SUFFIX + "/media/{0}/like/";
         public const string MAX_MEDIA_ID_POSTFIX = "/media/?max_id=";
@@ -779,7 +799,7 @@ namespace InstagramApiSharp.API
         public const string USERS_NAMETAG_CONFIG = API_SUFFIX + "/users/nametag_config/";
         public const string USERS_REEL_SETTINGS = API_SUFFIX + "/users/reel_settings/";
         public const string USERS_REPORT = API_SUFFIX + "/users/{0}/flag_user/";
-        public const string USERS_SEARCH = API_SUFFIX + "/users/search/?timezone_offset={0}&q={1}&count={2}";
+        public const string USERS_SEARCH = API_SUFFIX + "/users/search/?search_surface=user_search_page&timezone_offset={0}&q={1}&count={2}";
         public const string USERS_SET_REEL_SETTINGS = API_SUFFIX + "/users/set_reel_settings/";
         public const string USERS_FOLLOWING_TAG_INFO = API_SUFFIX + "/users/{0}/following_tags_info/";
         public const string USERS_FULL_DETAIL_INFO = API_SUFFIX + "/users/{0}/full_detail_info/";

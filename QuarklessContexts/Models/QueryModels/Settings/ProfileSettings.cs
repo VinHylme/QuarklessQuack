@@ -1,23 +1,19 @@
-﻿using QuarklessContexts.Models.Topics;
+﻿using System;
+using QuarklessContexts.Models.Topics;
 using System.Collections.Generic;
 
 namespace QuarklessContexts.Models.QueryModels.Settings
 {
+	[Serializable]
 	public class ProfileConfiguration
 	{
-		public IEnumerable<TopicCategories> Topics;
-		public Dictionary<string,string> Languages;
-		public IEnumerable<string> ColorsAllowed;
-		public bool CanUserEditProfile = true;
-		public IEnumerable<string> ImageTypes;
-		public IEnumerable<string> Orientations;
-		public IEnumerable<string> SizeTypes;
-		public IEnumerable<string> SearchTypes;
-		public ProfileConfiguration()
-		{
-		}
-	}
-	public class ProfileSettings
-	{
+		public IEnumerable<TopicCategories> Topics { get; set; }
+		public Dictionary<string,string> Languages { get; set; }
+		public IEnumerable<string> ColorsAllowed { get; set; }
+		public bool CanUserEditProfile { get; set; } = true;
+		public IEnumerable<string> ImageTypes { get; set; }
+		public IEnumerable<string> Orientations { get; set; }
+		public IEnumerable<string> SizeTypes { get; set; }
+		public IEnumerable<string> SearchTypes { get; set; }
 	}
 }

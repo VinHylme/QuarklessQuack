@@ -103,8 +103,6 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                 "htc10",
                 new AndroidDevice
                 {
-					//[DeviceBrand]|[FirmwareBrand]|[{OS_NAME ?}:OS_VERSION]|[Framework_Version/PDA/AP Version:*user*]/release-keys
-
                     AndroidBoardName = "msm8996",
                     AndroidBootloader = "1.0.0.0000",
                     DeviceBrand = "HTC",
@@ -558,7 +556,7 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
             device.PigeonSessionId = Guid.NewGuid();
             device.PushDeviceGuid = Guid.NewGuid();
             device.FamilyDeviceGuid = Guid.NewGuid();
-            device.IGBandwidthSpeedKbps = string.Format("{0}.{1}", Rnd.Next(1233, 1567), Rnd.Next(100, 999));
+            device.IGBandwidthSpeedKbps = $"{Rnd.Next(1233, 1567)}.{Rnd.Next(100, 999)}";
             device.IGBandwidthTotalTimeMS = Rnd.Next(781, 999).ToString();
             device.IGBandwidthTotalBytesB = ((int)((double.Parse(device.IGBandwidthSpeedKbps) * double.Parse(device.IGBandwidthTotalTimeMS)) + Rnd.Next(100, 999))).ToString();
 

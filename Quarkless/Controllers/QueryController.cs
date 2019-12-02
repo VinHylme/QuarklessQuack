@@ -30,7 +30,6 @@ namespace Quarkless.Controllers
 		{
 			if(string.IsNullOrEmpty(_userContext.CurrentUser))
 				return BadRequest("Invalid Request");
-
 			return Ok(await _queryLogic.GetProfileConfig());
 		}
 

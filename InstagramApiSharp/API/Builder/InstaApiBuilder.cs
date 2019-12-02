@@ -81,7 +81,7 @@ namespace InstagramApiSharp.API.Builder
                     new HttpRequestProcessor(_delay, _httpClient, _httpHandler, _requestMessage, _logger);
 
             if (_apiVersionType == null)
-                _apiVersionType = InstaApiVersionType.Version100;
+                _apiVersionType = InstaApiVersionType.Version113;
 
             var instaApi = new InstaApi(_user, _logger, _device, _httpRequestProcessor, _apiVersionType.Value, _configureMediaDelay);
             if (_sessionHandler != null)
@@ -114,6 +114,9 @@ namespace InstagramApiSharp.API.Builder
         /// </returns>
         public IInstaApiBuilder UseHttpClient(HttpClient httpClient)
         {
+            if (httpClient != null)
+                httpClient.BaseAddress = new Uri(InstaApiConstants.INSTAGRAM_URL);
+                
             _httpClient = httpClient;
             return this;
         }
@@ -235,6 +238,11 @@ namespace InstagramApiSharp.API.Builder
         /// </returns>
         public IInstaApiBuilder SetHttpRequestProcessor(IHttpRequestProcessor httpRequestProcessor)
         {
+            if (httpRequestProcessor.Client != null)
+                httpRequestProcessor.Client.BaseAddress = new Uri(InstaApiConstants.INSTAGRAM_URL);
+            if (httpRequestProcessor.HttpHandler != null)
+                httpRequestProcessor.HttpHandler.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
+
             _httpRequestProcessor = httpRequestProcessor;
             return this;
         }

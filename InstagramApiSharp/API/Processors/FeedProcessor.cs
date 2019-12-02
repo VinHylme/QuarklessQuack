@@ -390,7 +390,7 @@ namespace InstagramApiSharp.API.Processors
                 paginationParameters.NextMaxId = feed.NextMaxId;
                 paginationParameters.PagesLoaded++;
 
-                while (feedResponse.MoreAvailable
+                while (feed.MoreAvailable
                        && !string.IsNullOrEmpty(paginationParameters.NextMaxId)
                        && paginationParameters.PagesLoaded <= paginationParameters.MaximumPagesToLoad)
                 {
@@ -401,7 +401,7 @@ namespace InstagramApiSharp.API.Processors
                     var convertedFeed = Convert(nextFeed.Value);
                     feed.Medias.AddRange(convertedFeed.Medias);
                     feed.Stories.AddRange(convertedFeed.Stories);
-                    feedResponse.MoreAvailable = nextFeed.Value.MoreAvailable;
+                    feed.MoreAvailable = nextFeed.Value.MoreAvailable;
                     paginationParameters.NextMaxId = nextFeed.Value.NextMaxId;
                     paginationParameters.PagesLoaded++;
                 }
@@ -724,6 +724,7 @@ namespace InstagramApiSharp.API.Processors
             }
         }
 
+        private string TopicalSessionId = null;
         private async Task<IResult<InstaTopicalExploreFeedResponse>> GetTopicalExploreFeed(PaginationParameters paginationParameters, string clusterId)
         {
             try
@@ -731,9 +732,11 @@ namespace InstagramApiSharp.API.Processors
                 if (string.IsNullOrEmpty(clusterId))
                     clusterId = "explore_all:0";
 
-                var exploreUri = UriCreator.GetTopicalExploreUri(Guid.NewGuid().ToString(), paginationParameters?.NextMaxId, clusterId);
+                if (string.IsNullOrEmpty(TopicalSessionId))
+                    TopicalSessionId = Guid.NewGuid().ToString();
+                var exploreUri = UriCreator.GetTopicalExploreUri(TopicalSessionId, paginationParameters?.NextMaxId, clusterId);
                 var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, exploreUri, _deviceInfo);
-                var response = await _httpRequestProcessor.SendAsync(request);
+                var response = await _httpRequestProcessor.SendAsync(request, true);
                 var json = await response.Content.ReadAsStringAsync();
 
                 if (response.StatusCode != HttpStatusCode.OK)

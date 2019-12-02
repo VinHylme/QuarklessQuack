@@ -45,6 +45,38 @@ namespace InstagramApiSharp.API.Processors
         }
 
 
+
+        /// <summary>
+        ///     Get recent followers.
+        /// </summary>
+        public async Task<IResult<InstaPendingRequest>> GetRecentFollowersAsync()
+        {
+            UserAuthValidator.Validate(_userAuthValidate);
+            try
+            {
+                var instaUri = UriCreator.GetRecentFollowersUri();
+                var request = _httpHelper.GetDefaultRequest(HttpMethod.Get, instaUri, _deviceInfo);
+                var response = await _httpRequestProcessor.SendAsync(request);
+                var json = await response.Content.ReadAsStringAsync();
+
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    var obj = JsonConvert.DeserializeObject<InstaPendingRequestResponse>(json);
+                    return Result.Success(ConvertersFabric.Instance.GetPendingRequestConverter(obj).Convert());
+                }
+
+                return Result.UnExpectedResponse<InstaPendingRequest>(response, json);
+            }
+            catch (HttpRequestException httpException)
+            {
+                _logger?.LogException(httpException);
+                return Result.Fail(httpException, default(InstaPendingRequest), ResponseType.NetworkProblem);
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail<InstaPendingRequest>(ex);
+            }
+        }
         public async Task<IResult<InstaMutualUsers>> GetMutualFriendsOrSuggestionAsync(long userId)
         {
             var mutual = new InstaMutualUsers();

@@ -1,27 +1,15 @@
 version: '3.4'
 
 services:
-  hub:
-    image: selenium/hub:3.141.59-xenon
-    hostname: quarkless.selenium.hub
+  chrome:
+    image: selenium/standalone-chrome:latest
+    hostname: quarkless.selenium.chrome
     ports:
       - 4444:4444
     networks:
       linux-services-net:
         aliases:
-          - quarkless.selenium.hub
-  chrome:
-    image: selenium/node-chrome:3.141.59-xenon
-    hostname: quarkless.selenium.chrome
-    depends_on:
-      - hub
-    environment:
-      - HUB_HOST=hub
-      - HUB_PORT=4444
-    networks:
-      linux-services-net:
-        aliases:
-          - quarkless.selenium.chrome
+          - selenium.hub.chrome
   redisll:
     image: redis:latest
     hostname: quarkless.db.redis

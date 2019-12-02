@@ -986,6 +986,12 @@ export default {
 </script>
 
 <style lang="scss">
+.dialog{
+    .modal-card-body{
+      background:transparent;
+      padding:0;
+  }
+}
 .recent-comment-container{
 	display: flex;  
 	flex-direction: row; /* let the content flow to the next row */

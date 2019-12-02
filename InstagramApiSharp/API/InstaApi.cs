@@ -57,6 +57,15 @@ namespace InstagramApiSharp.API
         string _waterfallIdReg = "", _deviceIdReg = "", _phoneIdReg = "", _guidReg = "";
         InstaAccountRegistrationPhoneNumber _signUpPhoneNumberInfo;
 
+        /// <summary>
+        ///     Gets or sets challenge login info
+        /// </summary>
+        public InstaChallengeLoginInfo ChallengeLoginInfo { get { return _challengeinfo; } set { _challengeinfo = value; } }
+        /// <summary>
+        ///     Gets or sets two factor login info
+        /// </summary>
+        public InstaTwoFactorLoginInfo TwoFactorLoginInfo { get { return _twoFactorInfo; } set { _twoFactorInfo = value; } }
+
         private bool _isUserAuthenticated;
         /// <summary>
         ///     Indicates whether user authenticated or not
@@ -82,7 +91,8 @@ namespace InstagramApiSharp.API
         public IHttpRequestProcessor HttpRequestProcessor => _httpRequestProcessor;
 
 		#endregion Variables and properties
-		public string Username { get { return _user.UserName; } }
+		public string Username => _user.UserName;
+
 		/// <summary>
 		/// Checks if user is validated
 		/// </summary>
@@ -101,6 +111,7 @@ namespace InstagramApiSharp.API
 				return false;
 			}
 		}
+
 		#region SessionHandler
 		private ISessionHandler _sessionHandler;
         public ISessionHandler SessionHandler { get => _sessionHandler; set => _sessionHandler = value; }
@@ -693,7 +704,7 @@ namespace InstagramApiSharp.API
         /// <param name="email">Email</param>
         /// <param name="firstName">First name (optional)</param>
         /// <param name="delay">Delay between requests. null = 2.5 seconds</param>
-        public async Task<IResult<InstaAccountCreation>> CreateNewAccountAsync(string username, string password, string email, string firstName = "", TimeSpan? delay = null)
+        private async Task<IResult<InstaAccountCreation>> CreateNewAccountAsync(string username, string password, string email, string firstName = "", TimeSpan? delay = null)
         {
             try
             {
@@ -944,7 +955,7 @@ namespace InstagramApiSharp.API
         /// </summary>
         /// <param name="Challenge"></param>
         public void SetChallengeInfo(InstaChallengeLoginInfo Challenge) => _challengeinfo = Challenge;
-		public InstaChallengeLoginInfo GetChallengeLoginInfo => _challengeinfo;
+
         /// <summary>
         ///     Accept consent required (only for GDPR countries)
         /// </summary>
@@ -1066,6 +1077,10 @@ namespace InstagramApiSharp.API
                     if (loginFailReason.ErrorType == "inactive user" || loginFailReason.ErrorType == "inactive_user")
                     {
                         return Result.Fail($"{loginFailReason.Message}\r\nHelp url: {loginFailReason.HelpUrl}", InstaLoginResult.InactiveUser);
+                    }
+                    if (loginFailReason.ErrorType == "unusable_password")
+                    {
+                        return Result.Fail($"{loginFailReason.Message}", InstaLoginResult.UnusablePassword);
                     }
                     if (loginFailReason.ErrorType == "checkpoint_logged_out")
                     {
@@ -1191,13 +1206,14 @@ namespace InstagramApiSharp.API
         /// </summary>
         /// <param name="verificationCode">Verification Code sent to your phone number</param>
         /// <param name="trustThisDevice">Trust this device or not?!</param>
+        /// <param name="twoFactorVerifyOptions">Two factor verification option</param>
         /// <returns>
         ///     Success --> is succeed
         ///     InvalidCode --> The code is invalid
         ///     CodeExpired --> The code is expired, please request a new one.
         ///     Exception --> Something wrong happened
         /// </returns>
-        public async Task<IResult<InstaLoginTwoFactorResult>> TwoFactorLoginAsync(string verificationCode, bool trustThisDevice = false)
+        public async Task<IResult<InstaLoginTwoFactorResult>> TwoFactorLoginAsync(string verificationCode, bool trustThisDevice = false, InstaTwoFactorVerifyOptions twoFactorVerifyOptions = InstaTwoFactorVerifyOptions.SmsCode)
         {
             if (_twoFactorInfo == null)
                 return Result.Fail<InstaLoginTwoFactorResult>("Re-login required");
@@ -1216,7 +1232,8 @@ namespace InstagramApiSharp.API
                 var twoFactorRequestMessage = new ApiTwoFactorRequestMessage(verificationCode,
                     _httpRequestProcessor.RequestMessage.Username,
                     _httpRequestProcessor.RequestMessage.DeviceId,
-                    _twoFactorInfo.TwoFactorIdentifier,_user.CsrfToken, _deviceInfo.DeviceGuid.ToString(), Convert.ToInt16(trustThisDevice));
+                    _twoFactorInfo.TwoFactorIdentifier,_user.CsrfToken, _deviceInfo.DeviceGuid.ToString(), Convert.ToInt16(trustThisDevice),
+                    (int)twoFactorVerifyOptions, FbAccessToken);
 
                 var instaUri = UriCreator.GetTwoFactorLoginUri();
                 var signature =
@@ -1247,7 +1264,7 @@ namespace InstagramApiSharp.API
                     var converter = ConvertersFabric.Instance.GetUserShortConverter(loginInfo.User);
                     _user.LoggedInUser = converter.Convert();
                     _user.RankToken = $"{_user.LoggedInUser.Pk}_{_httpRequestProcessor.RequestMessage.PhoneId}";
-
+                    InvalidateProcessors();
                     return Result.Success(InstaLoginTwoFactorResult.Success);
                 }
 
@@ -1977,6 +1994,7 @@ namespace InstagramApiSharp.API
         #endregion Authentication and challenge functions
 
         #region ORIGINAL FACEBOOK LOGIN
+        private string FbAccessToken = null;
 
         /// <summary>
         ///     Login with Facebook access token
@@ -2019,7 +2037,7 @@ namespace InstagramApiSharp.API
 
                 if (waterfallId.IsEmpty())
                     waterfallId = Guid.NewGuid().ToString();
-
+                FbAccessToken = fbAccessToken;
                 var instaUri = UriCreator.GetFacebookSignUpUri();
 
                 var data = new JObject
@@ -2053,6 +2071,7 @@ namespace InstagramApiSharp.API
                     if (loginFailReason.TwoFactorRequired)
                     {
                         _twoFactorInfo = loginFailReason.TwoFactorLoginInfo;
+                        SetUser(_twoFactorInfo.Username, "ALAKIMASALAN");
                         _httpRequestProcessor.RequestMessage.Username = _twoFactorInfo.Username;
                         _httpRequestProcessor.RequestMessage.DeviceId = _deviceInfo.DeviceId;
                         return Result.Fail("Two Factor Authentication is required", InstaLoginResult.TwoFactorRequired);
@@ -2971,9 +2990,9 @@ namespace InstagramApiSharp.API
             }
 
             if (data.InstaApiVersion == null)
-                data.InstaApiVersion = InstaApiVersionType.Version100;
+                data.InstaApiVersion = InstaApiVersionType.Version113;
             if(!LoadApiVersionFromSessionFile)
-                data.InstaApiVersion = InstaApiVersionType.Version100;
+                data.InstaApiVersion = InstaApiVersionType.Version113;
             _apiVersionType = data.InstaApiVersion.Value;
             _apiVersion = InstaApiVersionList.GetApiVersionList().GetApiVersion(_apiVersionType);
             _httpHelper = new HttpHelper(_apiVersion);
@@ -3013,9 +3032,9 @@ namespace InstagramApiSharp.API
             }
 
             if (data.InstaApiVersion == null)
-                data.InstaApiVersion = InstaApiVersionType.Version100;
+                data.InstaApiVersion = InstaApiVersionType.Version113;
             if (!LoadApiVersionFromSessionFile)
-                data.InstaApiVersion = InstaApiVersionType.Version100;
+                data.InstaApiVersion = InstaApiVersionType.Version113;
             _apiVersionType = data.InstaApiVersion.Value;
             _apiVersion = InstaApiVersionList.GetApiVersionList().GetApiVersion(_apiVersionType);
             _httpHelper = new HttpHelper(_apiVersion);
@@ -3057,9 +3076,9 @@ namespace InstagramApiSharp.API
             }
 
             if (stateData.InstaApiVersion == null)
-                stateData.InstaApiVersion = InstaApiVersionType.Version100;
+                stateData.InstaApiVersion = InstaApiVersionType.Version113;
             if (!LoadApiVersionFromSessionFile)
-                stateData.InstaApiVersion = InstaApiVersionType.Version100;
+                stateData.InstaApiVersion = InstaApiVersionType.Version113;
             _apiVersionType = stateData.InstaApiVersion.Value;
             _apiVersion = InstaApiVersionList.GetApiVersionList().GetApiVersion(_apiVersionType);
             _httpHelper = new HttpHelper(_apiVersion);
@@ -3183,12 +3202,12 @@ namespace InstagramApiSharp.API
         {
             try
             {
-                //GetNotificationBadge();
-                GetContactPointPrefill();
-                GetReadMsisdnHeader();
-                GetPrefillCandidates();
-                LauncherSyncPrivate();
-                QeSync();
+                //await GetNotificationBadge();
+                await GetContactPointPrefill();
+                await GetReadMsisdnHeader();
+                await GetPrefillCandidates();
+                await LauncherSyncPrivate();
+                await QeSync();
                 await Task.Delay(1000);
                 return Result.Success(true);
             }
@@ -3210,8 +3229,8 @@ namespace InstagramApiSharp.API
         {
             try
             {
-                LauncherSyncPrivate();
-                QeSync();
+                await LauncherSyncPrivate();
+                await QeSync();
                 await PushProcessor.RegisterPushAsync();
 
                 await Task.Delay(1000);
@@ -3228,7 +3247,7 @@ namespace InstagramApiSharp.API
                 return Result.Fail<bool>(exception);
             }
         }
-        private async void GetNotificationBadge()
+        private async Task GetNotificationBadge()
         {
             try
             {
@@ -3258,7 +3277,7 @@ namespace InstagramApiSharp.API
                 _logger?.LogException(exception);
             }
         }
-        private async void GetContactPointPrefill()
+        private async Task GetContactPointPrefill()
         {
             try
             {
@@ -3282,7 +3301,7 @@ namespace InstagramApiSharp.API
                 _logger?.LogException(exception);
             }
         }
-        private async void GetReadMsisdnHeader()
+        private async Task GetReadMsisdnHeader()
         {
             try
             {
@@ -3306,7 +3325,7 @@ namespace InstagramApiSharp.API
                 _logger?.LogException(exception);
             }
         }
-        private async void GetPrefillCandidates()
+        private async Task GetPrefillCandidates()
         {
             try
             {
@@ -3333,7 +3352,7 @@ namespace InstagramApiSharp.API
                 _logger?.LogException(exception);
             }
         }
-        private async void LauncherSyncPrivate()
+        private async Task LauncherSyncPrivate()
         {
             try
             {
@@ -3363,7 +3382,7 @@ namespace InstagramApiSharp.API
                 _logger?.LogException(exception);
             }
         }
-        private async void QeSync()
+        private async Task QeSync()
         {
             try
             {

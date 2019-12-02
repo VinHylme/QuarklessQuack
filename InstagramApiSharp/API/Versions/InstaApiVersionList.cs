@@ -160,6 +160,27 @@ namespace InstagramApiSharp.API.Versions
                          Capabilities = "3brTvw==",
                          SignatureKey = "e0767f8a7ae9f6c1f9d3674be35d96117f0589960bf3dbd2921f020b33ca4b9f"
                     }
+                },
+                {
+                    InstaApiVersionType.Version105,
+                    new InstaApiVersion
+                    {
+                         AppApiVersionCode = "166149717",
+                         AppVersion = "105.0.0.18.119",
+                         Capabilities = "3brTvwE=",
+                         SignatureKey = "d9af03055a2774b684c870c47b05abb1ac96f590820e370356d402e68bd9411f"
+                    }
+                },
+                {
+                    InstaApiVersionType.Version113,
+                    new InstaApiVersion
+                    {
+                         AppApiVersionCode = "175574628",
+                         AppVersion = "113.0.0.39.122",
+                         Capabilities = "3brTvwE=",
+                         SignatureKey = "8013dff8e97c16461a8881071210e8271c8fb0cf604d3c7d8f798df621435a18",
+                         BloksVersionId = "15f3ececf8692b1eddb3a12f1ffb072cc9e9109aac995e30f1f500b68d9917eb"
+                    }
                 }
             };
         }

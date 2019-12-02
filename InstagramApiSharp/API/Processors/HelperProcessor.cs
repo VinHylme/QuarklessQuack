@@ -607,7 +607,7 @@ namespace InstagramApiSharp.API.Processors
                         {"video_result", ""},
                         {"_uid", _user.LoggedInUser.Pk.ToString()},
                         {"_uuid", _deviceInfo.DeviceGuid.ToString()},
-                        {"caption", caption ?? string.Empty},
+                        //{"caption", caption ?? string.Empty},
                         {"date_time_original", DateTime.Now.ToString("yyyy-dd-MMTh:mm:ss-0fffZ")},
                         {"capture_type", "normal"},
                         {"mas_opt_in", "NOT_PROMPTED"},
@@ -667,7 +667,16 @@ namespace InstagramApiSharp.API.Processors
                             {
                                 new JObject
                                 {
-                                    {"webUri", uri.ToString()}
+                                    {"linkType", 1},
+                                    {"webUri", uri.ToString()},
+                                    {"androidClass", ""},
+                                    {"package", ""},
+                                    {"deeplinkUri", ""},
+                                    {"callToActionTitle", ""},
+                                    {"redirectUri", null},
+                                    {"leadGenFormId", ""},
+                                    {"igUserId", ""},
+                                    {"appInstallObjectiveInvalidationBehavior", null}
                                 }
                             };
                             var storyCta = new JArray
@@ -1266,7 +1275,12 @@ namespace InstagramApiSharp.API.Processors
                 request.Headers.Add("retry_context", retryContext);
                 var response = await _httpRequestProcessor.SendAsync(request);
                 var json = await response.Content.ReadAsStringAsync();
-                
+                if (!response.IsSuccessStatusCode)
+                {
+                    upProgress.UploadState = InstaUploadState.Error;
+                    progress?.Invoke(upProgress);
+                    return Result.UnExpectedResponse<InstaMedia>(response, json);
+                }
                 var mediaResponse =
                      JsonConvert.DeserializeObject<InstaMediaItemResponse>(json, new InstaMediaDataConverter());
                 var converter = ConvertersFabric.Instance.GetSingleMediaConverter(mediaResponse);

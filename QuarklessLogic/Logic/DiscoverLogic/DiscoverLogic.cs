@@ -213,7 +213,7 @@ namespace QuarklessLogic.Logic.DiscoverLogic
 		{
 			try
 			{
-				return await Client.Discover.SearchPeopleAsync(search,count);
+				return await Client.Discover.SearchPeopleAsync(search, PaginationParameters.MaxPagesToLoad(count));
 			}
 			catch (Exception ee)
 			{

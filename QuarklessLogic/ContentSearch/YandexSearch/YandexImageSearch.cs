@@ -192,11 +192,7 @@ namespace QuarklessLogic.ContentSearch.YandexSearch
 			_seleniumClient.AddArguments(
 				"headless",
 				"--log-level=3",
-				"--silent",
-				"--disable-extensions",
-				"test-type",
-				"--ignore-certificate-errors",
-				"no-sandbox");
+				"--ignore-certificate-errors");
 		}
 
 		public void WithProxy(ProxyModel proxy)

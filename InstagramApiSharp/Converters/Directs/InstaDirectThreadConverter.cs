@@ -128,6 +128,13 @@ namespace InstagramApiSharp.Converters
                 }
                 catch { }
             }
+            if (SourceObject.AdminUserIds?.Count > 0)
+                try
+                {
+                    foreach (var item in SourceObject.AdminUserIds)
+                        thread.AdminUserIds.Add(item);
+                }
+                catch { }
 
             return thread;
         }

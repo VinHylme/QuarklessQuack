@@ -33,16 +33,25 @@ namespace InstagramApiSharp.API
     /// </summary>
     public interface IInstaApi
     {
-		#region Custom
-		string Username { get; }
-		bool IsUserValidated();
+	    #region Custom
+	    string Username { get; }
+	    bool IsUserValidated();
 
-		#endregion
+	    #endregion
+
 		#region Properties
 		/// <summary>
-		///     Get HttpHelper class
+		///     Gets or sets two factor login info
 		/// </summary>
-		HttpHelper HttpHelper { get; }
+		InstaTwoFactorLoginInfo TwoFactorLoginInfo { get; set; }
+        /// <summary>
+        ///     Gets or sets challenge login info
+        /// </summary>
+        InstaChallengeLoginInfo ChallengeLoginInfo { get; set; }
+        /// <summary>
+        ///     Get HttpHelper class
+        /// </summary>
+        HttpHelper HttpHelper { get; }
         /// <summary>
         ///     Current <see cref="IHttpRequestProcessor"/>
         /// </summary>
@@ -353,18 +362,18 @@ namespace InstagramApiSharp.API
         //////////////////////////////////////////////////////////////////////////////////////////////////
         /////////////////////////////////// Challenge for logged in user /////////////////////////////////
 
+        [Obsolete("Deprecated. Please use IInstaApi.ChallengeLoginInfo property instead.")]
         /// <summary>
         ///     Set Challenge Info when server asks for a challenge on calling functions
         /// </summary>
         /// <param name="Challenge">Challenge info</param>
         void SetChallengeInfo(InstaChallengeLoginInfo Challenge);
-		InstaChallengeLoginInfo GetChallengeLoginInfo { get; }
 
-		/// <summary>
-		///     Get challenge data for logged in user
-		///     <para>This will pop-on, if some suspecious login happend</para>
-		/// </summary>
-		Task<IResult<InstaLoggedInChallengeDataInfo>> GetLoggedInChallengeDataInfoAsync();
+        /// <summary>
+        ///     Get challenge data for logged in user
+        ///     <para>This will pop-on, if some suspecious login happend</para>
+        /// </summary>
+        Task<IResult<InstaLoggedInChallengeDataInfo>> GetLoggedInChallengeDataInfoAsync();
 
         /// <summary>
         ///     Accept challlenge, it is THIS IS ME feature!!!!
@@ -452,9 +461,6 @@ namespace InstagramApiSharp.API
         /// <param name="password">Password to set</param>
         /// <param name="firstName">First name to set</param>
         Task<IResult<InstaAccountCreation>> ValidateNewAccountWithPhoneNumberAsync(string phoneNumber, string verificationCode, string username, string password, string firstName);
-
-        Task<IResult<InstaAccountCreation>> CreateNewAccountAsync(string username, string password, string email,
-	        string firstName = "", TimeSpan? delay = null);
         /// <summary>
         ///     Create a new instagram account
         /// </summary>
@@ -520,13 +526,14 @@ namespace InstagramApiSharp.API
         /// </summary>
         /// <param name="verificationCode">Verification Code sent to your phone number</param>
         /// <param name="trustThisDevice">Trust this device or not?!</param>
+        /// <param name="twoFactorVerifyOptions">Two factor verification option</param>
         /// <returns>
         ///     Success --> is succeed
         ///     InvalidCode --> The code is invalid
         ///     CodeExpired --> The code is expired, please request a new one.
         ///     Exception --> Something wrong happened
         /// </returns>
-        Task<IResult<InstaLoginTwoFactorResult>> TwoFactorLoginAsync(string verificationCode, bool trustThisDevice = false);
+        Task<IResult<InstaLoginTwoFactorResult>> TwoFactorLoginAsync(string verificationCode, bool trustThisDevice = false, InstaTwoFactorVerifyOptions twoFactorVerifyOptions = InstaTwoFactorVerifyOptions.SmsCode);
 
         /// <summary>
         ///     Get Two Factor Authentication details

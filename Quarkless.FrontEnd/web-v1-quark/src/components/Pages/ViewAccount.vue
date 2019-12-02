@@ -1,7 +1,7 @@
 <template>
 <div class="timeline_layout">
   <div class="columns is-mobile is-gapless">
-    <div :class="$store.state.showingLogs ?'column is-3':'column is-0'" class="activity-log-container">
+    <div :class="$store.state.showingLogs ?'column is-4':'column is-0'" class="activity-log-container">
         <p class="title">Activity</p>
       <div v-for="(timelineLog,index) in timelineLogs" :key="timelineLog+'_'+index" class="card-acticity-log">
         <div class="card-activity-header">
@@ -27,7 +27,7 @@
         </div>
       </div>
     </div>
-    <div :class="$store.state.showingLogs ?'column is-9':'column is-12'">
+    <div :class="$store.state.showingLogs ?'column is-8':'column is-12'">
       <div class="timeline_container">
         <vue-scheduler @CreatePost="OnCreatePost" :events="this.$store.getters.UserTimeline" :event-display="eventDisplay"/>
         <div id="scheduler" class="overlay_timeline">

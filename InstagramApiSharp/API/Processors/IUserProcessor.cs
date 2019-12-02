@@ -12,6 +12,10 @@ namespace InstagramApiSharp.API.Processors
     public interface IUserProcessor
     {
         /// <summary>
+        ///     Get recent followers.
+        /// </summary>
+        Task<IResult<InstaPendingRequest>> GetRecentFollowersAsync();
+        /// <summary>
         ///     Get mutual friends or suggestions for an specific id
         /// </summary>
         /// <param name="userId">User id/pk</param>

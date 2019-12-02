@@ -146,7 +146,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return Client.EmptyClient.ReturnClient.GetChallengeLoginInfo;
+				return Client.EmptyClient.ReturnClient.ChallengeLoginInfo;
 			}
 			catch (Exception ee)
 			{

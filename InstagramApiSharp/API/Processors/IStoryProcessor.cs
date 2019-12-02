@@ -374,6 +374,12 @@ namespace InstagramApiSharp.API.Processors
             InstaStoryType storyType = InstaStoryType.SelfStory, InstaStoryUploadOptions uploadOptions = null, params string[] threadIds);
 
         /// <summary>
+        ///     Validate uri for adding to story link
+        /// </summary>
+        /// <param name="uri">Uri address</param>
+        Task<IResult<bool>> ValidateUriAsync(Uri uri);
+
+        /// <summary>
         ///     Vote to an story poll
         /// </summary>
         /// <param name="storyMediaId">Story media id</param>

@@ -45,9 +45,9 @@ namespace QuarklessLogic.Logic.MessagingLogic
 		Task<IResult<bool>> SendDirectHashtagAsync(string text, string hashtag, params string[] threadIds);
 		Task<IResult<bool>> SendDirectHashtagAsync(string text, string hashtag, string[] threadIds, string[] recipients);
 		Task<IResult<bool>> SendDirectHashtagToRecipientsAsync(string text, string hashtag, params string[] recipients);
-		Task<IResult<bool>> SendDirectLinkAsync(string text, string link, params string[] threadIds);
-		Task<IResult<bool>> SendDirectLinkAsync(string text, string link, string[] threadIds, string[] recipients);
-		Task<IResult<bool>> SendDirectLinkToRecipientsAsync(string text, string link, params string[] recipients);
+		Task<IResult<InstaDirectRespondPayload>> SendDirectLinkAsync(string text, string link, params string[] threadIds);
+		Task<IResult<InstaDirectRespondPayload>> SendDirectLinkAsync(string text, string link, string[] threadIds, string[] recipients);
+		Task<IResult<InstaDirectRespondPayload>> SendDirectLinkToRecipientsAsync(string text, string link, params string[] recipients);
 		Task<IResult<bool>> SendDirectLocationAsync(string externalId, params string[] threadIds);
 		Task<IResult<bool>> SendDirectPhotoAsync(InstaImage image, string threadId);
 		Task<IResult<bool>> SendDirectPhotoAsync(Action<InstaUploaderProgress> progress, InstaImage image, string threadId);

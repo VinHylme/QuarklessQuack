@@ -366,7 +366,7 @@ namespace QuarklessLogic.Logic.MessagingLogic
 				return null;
 			}
 		}
-		public async Task<IResult<bool>> SendDirectLinkAsync(string text, string link, params string[] threadIds)
+		public async Task<IResult<InstaDirectRespondPayload>> SendDirectLinkAsync(string text, string link, params string[] threadIds)
 		{
 			try
 			{
@@ -378,7 +378,7 @@ namespace QuarklessLogic.Logic.MessagingLogic
 				return null;
 			}
 		}
-		public async Task<IResult<bool>> SendDirectLinkAsync(string text, string link, string[] threadIds, string[] recipients)
+		public async Task<IResult<InstaDirectRespondPayload>> SendDirectLinkAsync(string text, string link, string[] threadIds, string[] recipients)
 		{
 			try
 			{
@@ -390,7 +390,7 @@ namespace QuarklessLogic.Logic.MessagingLogic
 				return null;
 			}
 		}
-		public async Task<IResult<bool>> SendDirectLinkToRecipientsAsync(string text, string link, params string[] recipients)
+		public async Task<IResult<InstaDirectRespondPayload>> SendDirectLinkToRecipientsAsync(string text, string link, params string[] recipients)
 		{
 			try
 			{

@@ -14,9 +14,11 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
     {
         readonly static Random Rnd = new Random();
         [JsonProperty("country_codes")]
-        public string CountryCodes { get; set; } = "[{\"country_code\":\"1\",\"source\":[\"default\"]},{\"country_code\":\"98\",\"source\":[\"uig_via_phone_id\"]}]";
+        public string CountryCodes { get; set; } = "[{\"country_code\":\"1\",\"source\":[\"default\"]}]";
         [JsonProperty("phone_id")]
         public string PhoneId { get; set; }
+        [JsonProperty("enc_password")]
+        public string EncPassword { get; set; }
         [JsonProperty("username")]
         public string Username { get; set; }
         [JsonProperty("adid")]
@@ -51,7 +53,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                 PhoneId = PhoneId,
                 Username = Username,
                 AdId = AdId,
-                CountryCodes = CountryCodes
+                CountryCodes = CountryCodes,
+                EncPassword = Password
             };
             var json = JsonConvert.SerializeObject(api);
             return json;
@@ -87,7 +90,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                 PhoneId = PhoneId,
                 Username = Username,
                 AdId = AdId,
-                CountryCodes = CountryCodes
+                CountryCodes = CountryCodes,
+                EncPassword = Password
             };
             var res = CryptoHelper.CalculateHash(signatureKey,
                 JsonConvert.SerializeObject(api));

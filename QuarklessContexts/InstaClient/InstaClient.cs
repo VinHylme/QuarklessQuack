@@ -29,7 +29,7 @@ namespace QuarklessContexts.InstaClient
 			.UseLogger(new DebugLogger(LogLevel.All))
 			.SetRequestDelay(RequestDelay.FromSeconds(0, 2))
 			.Build();
-			_client.SetApiVersion(InstaApiVersionType.Version100);
+			_client.SetApiVersion(InstaApiVersionType.Version113);
 			return this;
 		}
 
@@ -44,7 +44,7 @@ namespace QuarklessContexts.InstaClient
 			if(genDevice)
 				_client.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
 
-			_client.SetApiVersion(InstaApiVersionType.Version100);
+			_client.SetApiVersion(InstaApiVersionType.Version113);
 			_client.UseHttpClientHandler(SetupProxy(proxy));
 			return this;
 		}
@@ -84,7 +84,7 @@ namespace QuarklessContexts.InstaClient
 					.SetRequestDelay(RequestDelay.FromSeconds(1, 2))
 					.Build();
 				instancenew.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
-				instancenew.SetApiVersion(InstagramApiSharp.Enums.InstaApiVersionType.Version100);
+				instancenew.SetApiVersion(InstagramApiSharp.Enums.InstaApiVersionType.Version113);
 				instancenew.SetUser(new UserSessionData { UserName = instagramAccount.InstagramAccount.Username, Password = instagramAccount.InstagramAccount.Password});
 				if (instagramAccount.Proxy != null)
 					instancenew.UseHttpClientHandler(SetupProxy(instagramAccount.Proxy));
@@ -111,7 +111,7 @@ namespace QuarklessContexts.InstaClient
 					.SetRequestDelay(RequestDelay.FromSeconds(1,2))
 					.Build();
 
-				instance.SetApiVersion(InstagramApiSharp.Enums.InstaApiVersionType.Version100);
+				instance.SetApiVersion(InstagramApiSharp.Enums.InstaApiVersionType.Version113);
 				instance.SetDevice(instagramAccount.InstagramAccount.State.DeviceInfo);
 
 				if(instagramAccount.Proxy!=null)
@@ -202,7 +202,7 @@ namespace QuarklessContexts.InstaClient
 				Password = password,
 				UserName = username
 			});
-			_client.SetApiVersion(InstagramApiSharp.Enums.InstaApiVersionType.Version100);
+			_client.SetApiVersion(InstaApiVersionType.Version113);
 			return await _client.GetChallengeRequireVerifyMethodAsync();
 		}
 		public async Task<IResult<InstaLoginResult>> SubmitChallangeCode(string username, string password, InstaChallengeLoginInfo instaChallengeLoginInfo, string code)
@@ -213,8 +213,8 @@ namespace QuarklessContexts.InstaClient
 				Password = password,
 				UserName = username
 			});
-			_client.SetChallengeInfo(instaChallengeLoginInfo);
-			_client.SetApiVersion(InstagramApiSharp.Enums.InstaApiVersionType.Version100);
+			_client.ChallengeLoginInfo = instaChallengeLoginInfo;
+			_client.SetApiVersion(InstaApiVersionType.Version113);
 			return await _client.VerifyCodeForChallengeRequireAsync(code);
 		}
 		#endregion
@@ -228,7 +228,7 @@ namespace QuarklessContexts.InstaClient
 				Password = password
 			};
 			_client.SetUser(userSessionData);
-			_client.SetApiVersion(InstagramApiSharp.Enums.InstaApiVersionType.Version100);
+			_client.SetApiVersion(InstaApiVersionType.Version113);
 
 			return await _client.LoginAsync();
 		}

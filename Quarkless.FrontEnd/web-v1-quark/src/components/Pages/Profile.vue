@@ -502,7 +502,7 @@ export default {
       //  return this.searchReleatedTopic.filter((val,index)=> {
       //    return subtopics.indexOf((ob) => ob.topicName.toLowerCase() == val.toLowerCase()) == -1
       //  });
-      // //return this.searchReleatedTopic.filter(val=>!this.profile.topics.subTopics.includes(val))
+      //return this.searchReleatedTopic.filter(val=>!this.profile.topics.subTopics.includes(val))
       var index;
       for(var x = 0 ; x < this.profile.topics.subTopics.length; x++){
         index = this.searchReleatedTopic.indexOf(this.profile.topics.subTopics[x].topicName);
@@ -517,6 +517,7 @@ export default {
     saveProfile(){
       this.savingProfile = true;
       let contains = false;
+      console.log(this.config);
       this.config.topics.forEach((topic)=>{
         if(topic.subCategories.includes(this.profile.topics.topicFriendlyName)){
           contains = true;

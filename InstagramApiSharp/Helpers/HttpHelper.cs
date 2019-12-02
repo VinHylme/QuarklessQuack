@@ -36,6 +36,16 @@ namespace InstagramApiSharp.Helpers
             request.Headers.Add(InstaApiConstants.HEADER_X_IG_BANDWIDTH_SPEED_KBPS, deviceInfo.IGBandwidthSpeedKbps);
             request.Headers.Add(InstaApiConstants.HEADER_X_IG_BANDWIDTH_TOTALBYTES_B, deviceInfo.IGBandwidthTotalBytesB);
             request.Headers.Add(InstaApiConstants.HEADER_X_IG_BANDWIDTH_TOTALTIME_MS, deviceInfo.IGBandwidthTotalTimeMS);
+
+            request.Headers.Add(InstaApiConstants.HEADER_X_IG_EXTENDED_CDN_THUMBNAIL_CACHE_BUSTING_VALUE, "1000");
+            if (!string.IsNullOrEmpty(_apiVersion.BloksVersionId))
+                request.Headers.Add(InstaApiConstants.HEADER_X_IG_BLOKS_VERSION_ID, _apiVersion.BloksVersionId);
+            else
+                request.Headers.Add(InstaApiConstants.HEADER_X_IG_BLOKS_VERSION_ID, InstaApiConstants.CURRENT_BLOKS_VERSION_ID);
+            request.Headers.Add(InstaApiConstants.HEADER_X_IG_BLOKS_IS_LAYOUT_RTL, "false");
+            request.Headers.Add(InstaApiConstants.HEADER_X_IG_DEVICE_ID, deviceInfo.DeviceGuid.ToString());
+            request.Headers.Add(InstaApiConstants.HEADER_X_IG_ANDROID_ID, deviceInfo.DeviceId);
+
             request.Headers.Add(InstaApiConstants.HEADER_IG_CONNECTION_TYPE, InstaApiConstants.IG_CONNECTION_TYPE);
             request.Headers.Add(InstaApiConstants.HEADER_IG_CAPABILITIES, _apiVersion.Capabilities);
             request.Headers.Add(InstaApiConstants.HEADER_IG_APP_ID, InstaApiConstants.IG_APP_ID);
@@ -60,8 +70,13 @@ namespace InstagramApiSharp.Helpers
             text = text.TrimEnd('&');
             byte[] jsonBytes = Encoding.UTF8.GetBytes(text);
             MemoryStream ms = new MemoryStream();
-            using (GZipStream gzip = new GZipStream(ms, CompressionMode.Compress, true))
+//#if !WINDOWS_UWP
+//            using (GZipStream gzip = new GZipStream(ms, CompressionMode.Compress, true))
+//                await gzip.WriteAsync(jsonBytes, 0, jsonBytes.Length);
+//#else
+            using (Ionic.Zlib.GZipStream gzip = new Ionic.Zlib.GZipStream(ms, Ionic.Zlib.CompressionMode.Compress, true))
                 await gzip.WriteAsync(jsonBytes, 0, jsonBytes.Length);
+//#endif
             ms.Position = 0;
             byte[] compressed = new byte[ms.Length];
 
@@ -207,7 +222,9 @@ namespace InstagramApiSharp.Helpers
             var request = GetDefaultRequest(HttpMethod.Post, uri, deviceInfo);
             byte[] jsonBytes = Encoding.UTF8.GetBytes(signature);
             MemoryStream ms = new MemoryStream();
-            using (GZipStream gzip = new GZipStream(ms, CompressionMode.Compress, true))
+            //using (GZipStream gzip = new GZipStream(ms, CompressionMode.Compress, true))
+            //    await gzip.WriteAsync(jsonBytes, 0, jsonBytes.Length);
+            using (Ionic.Zlib.GZipStream gzip = new Ionic.Zlib.GZipStream(ms, Ionic.Zlib.CompressionMode.Compress, true))
                 await gzip.WriteAsync(jsonBytes, 0, jsonBytes.Length);
             ms.Position = 0;
             byte[] compressed = new byte[ms.Length];
