@@ -1,5 +1,5 @@
 @echo off
-cd /d "C:\Users\yousef.alaw\source\repos\QuarklessQuack"
+cd /d ".."
 timeout 1
 FOR /f "tokens=*" %%i IN ('docker ps -q') DO docker stop %%i
 FOR /f "tokens=*" %%i IN ('docker ps -q') DO docker rm %%i

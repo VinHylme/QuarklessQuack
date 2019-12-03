@@ -1,5 +1,5 @@
 @echo off
-cd /d "C:\Users\yousef.alaw\source\repos\QuarklessQuack"
+cd /d ".."
 timeout 5
 docker-compose -f docker-compose.yml up
 timeout 15

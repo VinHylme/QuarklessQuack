@@ -1,5 +1,5 @@
 @echo off
-cd /d "C:\Users\yousef.alaw\source\repos\QuarklessQuack"
+cd /d ".."
 timeout 5
 docker create --network=transport-net --name heartbeat.base heartbeat/base.extract:latest
 docker network connect linux-services-net heartbeat.base
