@@ -10,17 +10,19 @@ services:
       linux-services-net:
         aliases:
           - selenium.hub.chrome
-  redisll:
+  redis:
+    environment:
+      - COMPOSE_CONVERT_WINDOWS_PATHS=1
     image: redis:latest
     hostname: quarkless.db.redis
     ports:
       - 6379:6379
-    volumes:
-      - ../db/redis-data:/data
     networks:
       linux-services-net:
         aliases:
           - quarkless.net.redis-01
+    volumes:
+      - ../db/redis-data:/data
  
 networks:
   linux-services-net:

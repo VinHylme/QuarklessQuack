@@ -14,15 +14,17 @@ namespace Quarkless.HeartBeater
 	public class BuildServices
 	{
 		private const string CLIENT_SECTION = "Client";
+		private const string SERVER_IP = "quarkless.security";
+
 		private IConfiguration MakeConfigurationBuilder()
 		{
 			return new ConfigurationBuilder()
-				.SetBasePath(Directory.GetCurrentDirectory().Split("Quarkless.HeartBeater.")[0] + "Quarkless.HeartBeater")
+				.SetBasePath(Directory.GetCurrentDirectory())
 				.AddJsonFile("appsettings.json").Build();
 		}
 		private IServiceCollection InitialiseClientServices()
 		{
-			var cIn = new ClientRequester("quarkless.security");
+			var cIn = new ClientRequester(SERVER_IP);
 			if (!cIn.TryConnect().GetAwaiter().GetResult())
 				throw new Exception("Invalid Client");
 

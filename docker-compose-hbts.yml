@@ -1,0 +1,18 @@
+version: '3.4'
+
+services:
+  quarkless_heart_base:
+    image: quarkless.heart.base
+    hostname: quarkless.heart.base01
+    build:
+      context: .
+      dockerfile: Quarkless.HeartBeater.BaseExtract\Dockerfile
+    networks:
+      linux-services-net:
+      transport-net:
+
+networks:
+  transport-net:
+    external: true
+  linux-services-net:
+    external: true
