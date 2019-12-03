@@ -1,5 +1,6 @@
 import Api from './Api'
 import axios from 'axios';
+const base_url = 'http://localhost:51518';
 export default {
   Login(params){
     return Api(false).post('auth/loginaccount', params)
@@ -11,7 +12,7 @@ export default {
     return Api(false).put('auth/resendConfirmation/'+username);
   },
   ChangeProfilePicture(instagramAccountId, formData){
-    return axios.put('http://localhost:51518/api/account/changepp/', formData.formData, {
+    return axios.put(base_url+'/api/account/changepp/', formData.formData, {
       headers:{
         'Content-Type': 'multipart/form-data',
         'Authorization': 'Bearer '+  axios.defaults.headers.common['Authorization'],
@@ -47,7 +48,7 @@ export default {
     return Api(true).get('insta/refreshLogin/'+id)
   },
   UploadFile(instaId,profileId,formData){
-    return axios.put('http://localhost:51518/api/storage/upload/'+instaId+'/'+profileId, formData, 
+    return axios.put(base_url+'/api/storage/upload/'+instaId+'/'+profileId, formData, 
     {
       headers:{
         'Content-Type': 'multipart/form-data',
