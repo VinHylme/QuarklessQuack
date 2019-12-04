@@ -6,7 +6,7 @@ import router from "./Route";
 import store from "./State";
 import VueResource from 'vue-resource';
 import Axios from 'axios'
-import VueScheduler from '../references/v-calendar-scheduler/index';
+import VueScheduler from '../references/calendar-scheduler/index';
 import LazyLoadDirective from "./directives/LazyLoadDirective";
 import EventBus from "./Plugins/EventBus"
 // optionally import default styles
