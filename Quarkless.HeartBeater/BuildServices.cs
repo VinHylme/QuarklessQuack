@@ -14,7 +14,7 @@ namespace Quarkless.HeartBeater
 	public class BuildServices
 	{
 		private const string CLIENT_SECTION = "Client";
-		private const string SERVER_IP = "quarkless.security";
+		private const string SERVER_IP = "security.quark";
 
 		private IConfiguration MakeConfigurationBuilder()
 		{

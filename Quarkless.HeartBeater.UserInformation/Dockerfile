@@ -21,10 +21,10 @@ COPY ["Quarkless.Security/Quarkless.Security.csproj", "Quarkless.Security/"]
 RUN dotnet restore "Quarkless.HeartBeater.UserInformation/Quarkless.HeartBeater.UserInformation.csproj"
 COPY . .
 WORKDIR "/src/Quarkless.HeartBeater.UserInformation"
-RUN dotnet build "Quarkless.HeartBeater.UserInformation.csproj" -c Release -o /app/build
+RUN dotnet build "Quarkless.HeartBeater.UserInformation.csproj" -c Debug -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "Quarkless.HeartBeater.UserInformation.csproj" -c Release -o /app/publish
+RUN dotnet publish "Quarkless.HeartBeater.UserInformation.csproj" -c Debug -o /app/publish
 
 FROM base AS final
 WORKDIR /app

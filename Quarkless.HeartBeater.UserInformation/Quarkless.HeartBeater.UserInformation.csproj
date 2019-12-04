@@ -4,8 +4,8 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
 	  <GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
-
-	<DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
+	  <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
+	  <DockerfileRunArguments>--network nat --name heartbeat.userinfo.quark --hostname quarkless.heartbeat.userinfo</DockerfileRunArguments>
   </PropertyGroup>
 
   <ItemGroup>

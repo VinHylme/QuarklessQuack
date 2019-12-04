@@ -1,0 +1,13 @@
+version: '3.4'
+
+services:
+  quarkless:
+    image: quarkless/quarkless.api
+    hostname: quarkless.api.main
+    container_name: api.quark
+    build:
+      context: .
+      dockerfile: Quarkless/Dockerfile.prod
+    ports:
+      - 51518:80
+    network_mode: nat

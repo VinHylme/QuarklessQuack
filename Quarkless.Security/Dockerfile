@@ -10,10 +10,10 @@ COPY ["InstagramApiSharp/InstagramApiSharp.csproj", "InstagramApiSharp/"]
 RUN dotnet restore "Quarkless.Security/Quarkless.Security.csproj"
 COPY . .
 WORKDIR "/src/Quarkless.Security"
-RUN dotnet build "Quarkless.Security.csproj" -c Release -o /app/build
+RUN dotnet build "Quarkless.Security.csproj" -c Debug -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "Quarkless.Security.csproj" -c Release -o /app/publish
+RUN dotnet publish "Quarkless.Security.csproj" -c Debug -o /app/publish
 
 FROM base AS final
 WORKDIR /app

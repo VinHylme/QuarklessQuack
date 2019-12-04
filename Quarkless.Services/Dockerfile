@@ -20,10 +20,10 @@ RUN dotnet restore "Quarkless.Services/Quarkless.Services.csproj"
 
 COPY . .
 WORKDIR "/src/Quarkless.Services"
-RUN dotnet build "Quarkless.Services.csproj" -c Release -o /app/build
+RUN dotnet build "Quarkless.Services.csproj" -c Debug -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "Quarkless.Services.csproj" -c Release -o /app/publish
+RUN dotnet publish "Quarkless.Services.csproj" -c Debug -o /app/publish
 
 FROM base AS final
 WORKDIR /app

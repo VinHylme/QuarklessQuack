@@ -18,10 +18,10 @@ RUN dotnet restore "Quarkless/Quarkless.csproj"
 
 COPY . .
 WORKDIR "/src/Quarkless"
-RUN dotnet build "Quarkless.csproj" -c Release -o /app/build
+RUN dotnet build "Quarkless.csproj" -c Debug -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "Quarkless.csproj" -c Release -o /app/publish
+RUN dotnet publish "Quarkless.csproj" -c Debug -o /app/publish
 
 ENV ASPNETCORE_URLS http://+:51518
 FROM base AS final

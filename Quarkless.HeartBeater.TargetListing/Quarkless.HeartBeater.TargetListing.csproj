@@ -5,6 +5,7 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
 	  <GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
 	  <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
+	  <DockerfileRunArguments>--network nat --name heartbeat.target.quark --hostname quarkless.heartbeat.target</DockerfileRunArguments>
   </PropertyGroup>
 
   <ItemGroup>

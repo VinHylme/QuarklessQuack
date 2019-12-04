@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Net;
 using AspNetCoreRateLimit;
 using Hangfire;
-using Hangfire.Dashboard;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -62,6 +59,7 @@ namespace Quarkless
 			        ServiceTypes.AddRequestLogging
 		        }
 	        });
+
 	        services.Append(servicesAfar);
 
 	        var endPoints = (EndPoints) cIn.Send(new GetPublicEndpointCommandArgs
