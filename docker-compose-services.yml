@@ -6,13 +6,3 @@ services:
     build:
       context: .
       dockerfile: Quarkless.Services/Dockerfile
-    networks:
-      - local-network
-      - linux-services-net
-    depends_on:
-      - quarklessSecurity
-  
-networks:
-  local-network:
-  linux-services-net:
-    external: true

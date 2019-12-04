@@ -45,7 +45,7 @@ namespace Quarkless.Services
 	public class Entrance
 	{
 		private const string CLIENT_SECTION = "Client";
-		private const string SERVER_IP = "quarkless.security";
+		private const string SERVER_IP = "security.quark";
 		private static IConfiguration MakeConfigurationBuilder()
 		{
 			return new ConfigurationBuilder()

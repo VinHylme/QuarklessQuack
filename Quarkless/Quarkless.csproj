@@ -6,6 +6,7 @@
 	<GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
 	<UserSecretsId>aecd18cc-3bf5-4ceb-86b5-280866e45f4b</UserSecretsId>
     <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
+    <DockerfileRunArguments>--network nat --name api.quark --hostname quarkless.api.main -p 51518:80</DockerfileRunArguments>
   </PropertyGroup>
   <ItemGroup>
 	<PackageReference Include="AspNetCoreRateLimit" Version="3.0.5" />

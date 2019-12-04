@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using AspNetCoreRateLimit;
 using Hangfire;
 using Microsoft.AspNetCore.Builder;
@@ -21,7 +22,7 @@ namespace Quarkless
 	public class Startup
     {
 	    private const string CORS_POLICY = "HashtagGrowCORSPolicy";
-	    private const string SERVER_IP = "quarkless.security";
+	    private const string SERVER_IP = "security.quark";
 		private const string CLIENT_SECTION = "Client";
         public Startup(IConfiguration configuration)
         {
@@ -31,6 +32,7 @@ namespace Quarkless
 
         public void ConfigureServices(IServiceCollection services)
         {
+			//var hosts = Dns.GetHostEntry("quarkless.security.transport");
 	        var cIn = new ClientRequester(SERVER_IP);
 	        if (!cIn.TryConnect().GetAwaiter().GetResult())
 		        return;

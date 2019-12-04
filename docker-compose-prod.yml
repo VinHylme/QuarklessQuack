@@ -1,0 +1,38 @@
+version: '3.4'
+
+services:
+  quarklessSecurity:
+    image: quarkless/quarkless.security
+    hostname: quarkless.security.transport
+    build:
+      context: .
+      dockerfile: Quarkless.Security/Dockerfile
+    ports:
+      - 65115:80
+    networks:
+      transport-net:
+        aliases:
+          - quarkless.security
+  quarkless:
+    image: quarkless/quarkless.api
+    hostname: quarkless.api.main
+    build:
+      context: .
+      dockerfile: Quarkless/Dockerfile
+    ports:
+      - 51518:80
+    networks:
+      linux-services-net:
+      transport-net:
+      local-network:
+         aliases:
+          - quarkless.api
+    depends_on:
+      - quarklessSecurity
+
+networks:
+  local-network:
+  transport-net:
+    external: true
+  linux-services-net:
+    external: true
