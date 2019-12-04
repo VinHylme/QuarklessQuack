@@ -163,7 +163,7 @@ export default {
 </script>
 
 <style lang="scss">
-@import "../../../references/v-calendar-scheduler/scss/variables";
+@import "../../../references/calendar-scheduler/scss/variables";
 @import url('https://fonts.googleapis.com/css?family=Roboto:300&display=swap');
 
 //  Set your variables
@@ -210,7 +210,7 @@ $v-cal-button-disabled-bg	:#f0f0f0;
 $v-cal-button-disabled-color	:#d0d0d0;
 $v-cal-button-disabled-cursor	:not-allowed;
 
-@import "../../../references/v-calendar-scheduler/scss/main";
+@import "../../../references/calendar-scheduler/scss/main";
 .timeline_container{
   overflow: auto;
   color: white;
