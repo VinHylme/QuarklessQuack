@@ -2,6 +2,7 @@
 using System.Net;
 using AspNetCoreRateLimit;
 using Hangfire;
+using Hangfire.Dashboard;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
@@ -153,7 +154,10 @@ namespace Quarkless
 
 			app.UseCors(CORS_POLICY);
 			app.UseHangfireServer(jobServerOptions);
-			app.UseHangfireDashboard();
+			app.UseHangfireDashboard("/configs/hangfire", new DashboardOptions
+			{
+				Authorization = new[] { new HangfireAllowAllConnectionsFilter() }
+			});
 			app.UseStaticFiles();	
 			app.UseDefaultFiles();
 			app.UseCookiePolicy();
