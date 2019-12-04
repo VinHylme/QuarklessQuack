@@ -1,5 +1,5 @@
 @echo off
-cd /d ".."
+cd /d "C:\Users\yousef.alaw\source\repos\QuarklessQuack"
 timeout 5
 docker build -t heartbeat/base.extract --file Quarkless.Heartbeater.BaseExtract/Dockerfile .
 docker build -t heartbeat/external.extract --file Quarkless.Heartbeater.ExternalExtract/Dockerfile .

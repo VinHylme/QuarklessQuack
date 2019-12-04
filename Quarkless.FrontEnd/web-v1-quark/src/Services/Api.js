@@ -1,14 +1,13 @@
 import axios from 'axios'
 import store from '../State'
 import router from '../Route'
-
-const url = 'http://localhost:51518/api';
+import { Calling } from './constants'
 let defaultHeaders = {
   'Accept': 'application/json',
   'Content-Type': 'application/json',
 }
 var instance = axios.create({
-  baseURL: url,
+  baseURL: Calling.base_path + '/api',
   withCredentials:false,
   headers: defaultHeaders
 });
