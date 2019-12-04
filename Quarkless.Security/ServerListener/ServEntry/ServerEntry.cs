@@ -128,11 +128,13 @@ namespace Quarkless.Security.ServerListener.ServEntry
 		}
 		private IConfigurationBuilder MakeConfigurationBuilder(string name = "prod")
 		{
+
 #if DEBUG
-			name = "";
+			name = name.Equals(".init") ? name : "";
 #endif
+			var files = Directory.GetFiles(Directory.GetCurrentDirectory());
 			return new ConfigurationBuilder()
-				.SetBasePath(Directory.GetCurrentDirectory().Split("bin")[0])
+				.SetBasePath(Directory.GetCurrentDirectory())
 				.AddJsonFile(string.Format(_fileName, name));
 		}
 	}

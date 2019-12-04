@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Common.Clients;
@@ -19,7 +20,7 @@ namespace Quarkless.HeartBeater
 		private IConfiguration MakeConfigurationBuilder()
 		{
 			return new ConfigurationBuilder()
-				.SetBasePath(Directory.GetCurrentDirectory())
+				.SetBasePath(Directory.GetParent(Assembly.GetExecutingAssembly().Location).FullName)
 				.AddJsonFile("appsettings.json").Build();
 		}
 		private IServiceCollection InitialiseClientServices()

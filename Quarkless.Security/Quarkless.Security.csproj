@@ -6,6 +6,7 @@
     <OutputType>Exe</OutputType>
     <StartupObject />
     <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
+    <DockerfileRunArguments>--network nat --name security.quark --hostname quarkless.security.transport -p 65115:65115</DockerfileRunArguments>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,13 +16,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
     <Content Include="appsettings.prod.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="appsettings.init.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
