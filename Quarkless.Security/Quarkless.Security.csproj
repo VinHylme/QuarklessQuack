@@ -11,9 +11,13 @@
   <ItemGroup>
     <None Remove="appsettings.init.json" />
     <None Remove="appsettings.json" />
+    <None Remove="appsettings.prod.json" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="appsettings.prod.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="appsettings.init.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

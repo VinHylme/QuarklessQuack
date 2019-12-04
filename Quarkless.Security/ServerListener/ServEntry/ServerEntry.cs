@@ -126,8 +126,11 @@ namespace Quarkless.Security.ServerListener.ServEntry
 				return new Accessor(MakeConfigurationBuilder().Unlock(0).Build());
 			throw new Exception("Invalid Client");
 		}
-		private IConfigurationBuilder MakeConfigurationBuilder(string name = "")
+		private IConfigurationBuilder MakeConfigurationBuilder(string name = "prod")
 		{
+#if DEBUG
+			name = "";
+#endif
 			return new ConfigurationBuilder()
 				.SetBasePath(Directory.GetCurrentDirectory().Split("bin")[0])
 				.AddJsonFile(string.Format(_fileName, name));
