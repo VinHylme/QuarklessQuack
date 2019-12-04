@@ -1,0 +1,197 @@
+.v-cal-dialog {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 999;
+  box-sizing: border-box;
+
+  * {
+    box-sizing: inherit;
+  }
+
+  .v-cal-dialog__bg {
+    background-color: $v-cal-dialog-bg;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+  }
+
+  .v-cal-dialog-card {
+    position: absolute;
+    //background: $v-cal-dialog-card-bg;
+    width: 100%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: $v-cal-dialog-shadow;
+  }
+
+  .v-cal-dialog-card__header {
+    display: flex;
+    align-items: center;
+    padding: $v-cal-dialog-header-padding;
+    border-bottom: 1px solid $v-cal-dialog-header-border-color;
+    color:#d9d9d9;
+    .v-cal-dialog__title {
+      font-size: $v-cal-dialog-title-font-size;
+      margin: 0;
+      color:#d9d9d9;
+    }
+
+    .v-cal-dialog__close {
+      @include delete;
+      padding: 0;
+      margin-left: auto;
+    }
+  }
+
+  .v-cal-dialog-card__body {
+    max-height: 550px;
+    overflow: auto;
+    padding: $v-cal-dialog-body-padding;
+    color:#d9d9d9;
+  }
+
+  .v-cal-fields {
+    display: flex;
+    flex-wrap: wrap;
+
+    .v-cal-input-group {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 10px;
+      width: 100%;
+
+      & > label {
+        width: 100%;
+        margin-bottom: 5px;
+
+        input[type="checkbox"],
+        input[type="radio"] {
+          margin-right: 5px;
+        }
+      }
+
+      .v-cal-input {
+        width: auto;
+        flex: 1;
+
+        &:first-of-type {
+          padding-left: 0;
+        }
+
+        &:last-of-type {
+          padding-right: 0;
+        }
+      }
+    }
+
+    .v-cal-input {
+      padding: 10px;
+      width: 100%;
+
+      &.is-inline {
+        label {
+          margin-bottom: 0;
+        }
+      }
+
+      &.is-radio,
+      &.is-checkbox {
+        input {
+          margin-right: 5px;
+        }
+      }
+
+      label {
+        display: inline-block;
+        margin-bottom: 10px;
+      }
+
+      input[type="text"],
+      input[type="email"],
+      input[type="password"],
+      input[type="date"],
+      input[type="time"],
+      textarea,
+      select {
+        @include soft_transition;
+        display: block;
+        font-family: inherit;
+        width: 100%;
+        border: 1px solid $v-cal-field-idle-border-color;
+        border-radius: $v-cal-field-border-radius;
+        padding: $v-cal-field-padding;
+
+        //  States
+
+        &:hover {
+          border-color: $v-cal-field-hover-border-color;
+        }
+
+        &:focus, &:active {
+          border-color: $v-cal-field-active-border-color;
+        }
+      }
+
+      textarea {
+        resize: none;
+        min-width: 100%;
+        max-width: 100%;
+        min-height: 100px;
+        max-height: 150px;
+      }
+    }
+  }
+
+  .v-cal-dialog-card__footer {
+    display: flex;
+    align-items: center;
+    padding: $v-cal-dialog-footer-padding;
+    border-top: 1px solid $v-cal-dialog-footer-border-color;
+    justify-content: flex-end;
+  }
+  input{
+    background:#121212 !important;
+    border:none !important;
+    color:#d9d9d9 !important;
+    &:focus{
+      color:#d9d9d9 !important;
+      box-shadow: 0;
+      border:none !important;
+    }
+    &:hover{
+      background:#212121 !important;
+    }
+  }
+  ::placeholder{
+    color:#d8d8d8 !important;
+  }
+  label{
+    color:#d9d9d9;
+  }
+  .taginput{
+    padding:0;
+    margin:0;
+    background:transparent;
+    border:none !important;
+    color:white;
+     &:hover{
+      background:#212121 !important;
+    }
+  }
+  .input, .taginput .taginput-container.is-focusable, .textarea{
+    resize: none;
+    background:#121212;
+    border:none;
+    color:#d9d9d9;
+     &:hover{
+      background:#212121 !important;
+    }
+  }
+  $bg: #292929;
+  $barsize: 25px;
+  
+}
