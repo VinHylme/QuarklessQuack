@@ -1,8 +1,17 @@
 version: '3.4'
 
 services:
-  quarklessAutomator:
+  quarkless_automator:
     image: quarkless/quarkless.services.automator
+    container_name: automator.quark
     build:
       context: .
       dockerfile: Quarkless.Services/Dockerfile
+    networks:
+      localnet:
+        aliases: 
+          - quarkless.local.automator
+
+networks:
+  localnet:
+    external: true

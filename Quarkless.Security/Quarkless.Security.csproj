@@ -6,7 +6,7 @@
     <OutputType>Exe</OutputType>
     <StartupObject />
     <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
-    <DockerfileRunArguments>--network nat --name security.quark --hostname quarkless.security.transport -p 65115:65115</DockerfileRunArguments>
+    <DockerfileRunArguments>--network name=localnet,alias=quarkless.local.security --name security.quark -p 65115:65115</DockerfileRunArguments>
   </PropertyGroup>
 
   <ItemGroup>

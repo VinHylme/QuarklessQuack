@@ -22,7 +22,6 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 
 	public class SeleniumClient : ISeleniumClient
 	{
-		//private readonly ChromeDriverService _chromeService;
 		private readonly object _locker = new object();
 		private readonly string _remoteChromeEndpoint;
 		private ChromeOptions ChromeOptions { get; }
@@ -30,7 +29,6 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 		public SeleniumClient(IOptions<SeleniumLaunchOptions> options)
 		{
 			_remoteChromeEndpoint = options.Value.ChromePath;
-			//_chromeService = ChromeDriverService.CreateDefaultService(options.Value.ChromePath);
 			ChromeOptions = new ChromeOptions()
 			{
 				LeaveBrowserRunning = false,
@@ -52,10 +50,9 @@ namespace QuarklessLogic.ContentSearch.SeleniumClient
 		}
 		public IWebDriver CreateDriver()
 		{
-			//return new ChromeDriver(_chromeService, ChromeOptions);
 			return new RemoteWebDriver(new Uri(_remoteChromeEndpoint), ChromeOptions);
 		}
-		public IEnumerable<string> DetectLangauge(string url, string targetElement, params string[] data)
+		public IEnumerable<string> DetectLanguage(string url, string targetElement, params string[] data)
 		{
 			try
 			{

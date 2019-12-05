@@ -3,19 +3,42 @@ version: '3.4'
 services:
   chrome:
     image: selenium/standalone-chrome:latest
-    hostname: quarkless.selenium.chrome
     container_name: chrome.quark
     ports:
       - 4444:4444
-    network_mode: nat
+    networks:
+      localnet:
+        aliases: 
+          - quarkless.local.chrome
   redis:
     environment:
       - COMPOSE_CONVERT_WINDOWS_PATHS=1
     image: redis:latest
-    hostname: quarkless.db.redis
     container_name: redis.quark
     ports:
       - 6379:6379
-    network_mode: nat
+    networks:
+      localnet:
+        aliases: 
+          - quarkless.local.redis
     volumes:
       - ../db/redis-data:/data
+  mongo:
+    image: mongo
+    hostname: quarkless.db.mongo
+    container_name: mongo.quark
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: rwuser
+      MONGO_INITDB_ROOT_PASSWORD: Lka913ND_1J3jdabvaCxX123000@jga
+    ports:
+      - 27017:27017
+    networks:
+      localnet:
+        aliases: 
+          - quarkless.local.mongo
+    volumes:
+      - ../db/mongo-data:C:\data\db
+
+networks:
+  localnet:
+    external: true

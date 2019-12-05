@@ -332,5 +332,6 @@ ASALocalRun/
 /Requires/Datas/data_bk/Comments
 /Requires/Datas/data_bk/Captions
 /Requires/Datas/data_bk/Bios
+/db/*
 /Quarkless.Python/LanguageProcessing/MicroServices/Generator/Data
 /Quarkless.Python/LanguageProcessing/MicroServices/Generator/zip

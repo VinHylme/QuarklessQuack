@@ -3,11 +3,17 @@ version: '3.4'
 services:
   quarkless_security:
     image: quarkless/quarkless.security
-    hostname: quarkless.security.transport
     container_name: security.quark
     build:
       context: .
       dockerfile: Quarkless.Security/Dockerfile
     ports:
       - 65115:65115
-    network_mode: nat
+    networks:
+      localnet:
+        aliases: 
+          - quarkless.local.security
+
+networks:
+  localnet:
+    external: true
