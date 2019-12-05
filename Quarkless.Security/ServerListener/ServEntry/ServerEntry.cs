@@ -132,9 +132,8 @@ namespace Quarkless.Security.ServerListener.ServEntry
 #if DEBUG
 			name = name.Equals(".init") ? name : "";
 #endif
-			var files = Directory.GetFiles(Directory.GetCurrentDirectory());
 			return new ConfigurationBuilder()
-				.SetBasePath(Directory.GetCurrentDirectory())
+				.SetBasePath(Directory.GetCurrentDirectory().Split("bin")[0])
 				.AddJsonFile(string.Format(_fileName, name));
 		}
 	}

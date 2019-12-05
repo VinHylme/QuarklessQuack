@@ -21,7 +21,7 @@ namespace Quarkless.HeartBeater
 		{
 			return new ConfigurationBuilder()
 				.SetBasePath(Directory.GetParent(Assembly.GetExecutingAssembly().Location).FullName)
-				.AddJsonFile("appsettings.json").Build();
+				.AddJsonFile("appsettings.hbt.json").Build();
 		}
 		private IServiceCollection InitialiseClientServices()
 		{
