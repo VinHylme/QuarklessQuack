@@ -232,7 +232,7 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 			});
 		}
 
-		public async Task RefreshMetaData(MetaDataType metaDataType, string topic, string userId = null, ProxyModel proxy = null)
+		public async Task RefreshMetaData(MetaDataType metaDataType, string topic, string userId = null)
 		{
 			try {
 

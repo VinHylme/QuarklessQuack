@@ -9,7 +9,7 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 {
 	public interface IHeartbeatLogic
 	{
-		Task RefreshMetaData(MetaDataType metaDataType, string topic, string userId = null, ProxyModel proxy = null);
+		Task RefreshMetaData(MetaDataType metaDataType, string topic, string userId = null);
 		Task AddMetaData<T>(MetaDataType metaDataType, string topic, __Meta__<T> data, string userId = null);
 		Task UpdateMetaData<T>(MetaDataType metaDataType, string topic, __Meta__<T> data, string userId = null);
 		Task<IEnumerable<__Meta__<T>>> GetMetaData<T>(MetaDataType metaDataType, string topic, string userId = null);

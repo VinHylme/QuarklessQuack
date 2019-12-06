@@ -21,7 +21,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.HeartBeater", "Qu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Interfacing", "Quarkless.Interfacing\Quarkless.Interfacing.csproj", "{94E3E824-31BC-41E9-9B8C-954A3D224CB6}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Service-Automator", "Service-Automator", "{D779DD59-6EB7-407F-B623-8BD381F042B7}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Services", "Services", "{D779DD59-6EB7-407F-B623-8BD381F042B7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Heartbeat-App", "Heartbeat-App", "{794EB5CB-9297-4343-9FEC-287087EC3AE7}"
 EndProject
@@ -60,6 +60,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Analyser", "Quarkless.Analyser\Quarkless.Analyser.csproj", "{B5D8D170-21F2-4F7E-B359-FE94DECEEC68}"
 EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{A63187AB-1F7E-445C-855B-E1115E794927}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quarkless.Services.Heartbeat", "Quarkless.Services.Heartbeat\Quarkless.Services.Heartbeat.csproj", "{38BF7F0A-9BE0-4A5A-A82F-66B182BA1E85}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -139,6 +141,10 @@ Global
 		{A63187AB-1F7E-445C-855B-E1115E794927}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A63187AB-1F7E-445C-855B-E1115E794927}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A63187AB-1F7E-445C-855B-E1115E794927}.Release|Any CPU.Build.0 = Release|Any CPU
+		{38BF7F0A-9BE0-4A5A-A82F-66B182BA1E85}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{38BF7F0A-9BE0-4A5A-A82F-66B182BA1E85}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{38BF7F0A-9BE0-4A5A-A82F-66B182BA1E85}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{38BF7F0A-9BE0-4A5A-A82F-66B182BA1E85}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -163,6 +169,7 @@ Global
 		{A1EF60D8-B5FC-4BA2-A08D-1405C7D066F8} = {D746071B-0994-4094-B83E-A72CBFC6F934}
 		{292CF3BA-5091-491C-80CA-6B3F8EDFCFE1} = {A1EF60D8-B5FC-4BA2-A08D-1405C7D066F8}
 		{B5D8D170-21F2-4F7E-B359-FE94DECEEC68} = {88B02AAC-1268-45DB-A227-294CC767E410}
+		{38BF7F0A-9BE0-4A5A-A82F-66B182BA1E85} = {D779DD59-6EB7-407F-B623-8BD381F042B7}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D3E4C3A5-ADB4-4A48-9A99-78BD4FDE9AE6}

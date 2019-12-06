@@ -220,23 +220,23 @@ namespace Quarkless.HeartBeater.__Init__
 				switch (settings.ActionExecute)
 				{
 					case ActionExecuteType.Base:
-						var buildBase = Task.Run(async () => await metadataBuilder.BuildBase(5));
+						var buildBase = Task.Run(async () => await metadataBuilder.BuildBase(3));
 						Task.WaitAll(buildBase);
 
 						var liker = Task.Run(async () =>
-							await metadataBuilder.BuildUserFromLikers(takeMediaAmount: 20, takeUserMediaAmount: 400));
+							await metadataBuilder.BuildUserFromLikers(takeMediaAmount: 15, takeUserMediaAmount: 400));
 						var commenter = Task.Run(async () =>
-							await metadataBuilder.BuildUsersFromCommenters(takeMediaAmount: 20, takeUserMediaAmount: 400));
+							await metadataBuilder.BuildUsersFromCommenters(takeMediaAmount: 15, takeUserMediaAmount: 400));
 
 						Task.WaitAll(liker, commenter);
-						var mediaLiker = metadataBuilder.BuildMediaFromUsersLikers(takeMediaAmount: 20, takeUserMediaAmount: 50);
-						var mediaCommenter = metadataBuilder.BuildMediaFromUsersCommenters(takeMediaAmount: 20, takeUserMediaAmount: 50);
+						var mediaLiker = metadataBuilder.BuildMediaFromUsersLikers(takeMediaAmount: 15, takeUserMediaAmount: 50);
+						var mediaCommenter = metadataBuilder.BuildMediaFromUsersCommenters(takeMediaAmount: 15, takeUserMediaAmount: 50);
 
 						Task.WaitAll(mediaLiker, mediaCommenter);
 						var commentMediaLiker = metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByLikers, 
-							MetaDataType.FetchCommentsViaPostsLiked, limit: 2, takeMediaAmount: 20, takeuserAmount: 400);
+							MetaDataType.FetchCommentsViaPostsLiked, limit: 2, takeMediaAmount: 15, takeuserAmount: 400);
 						var commentMediaCommenter = metadataBuilder.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByCommenters, 
-							MetaDataType.FetchCommentsViaPostCommented, limit: 2, takeMediaAmount: 20, takeuserAmount: 400);
+							MetaDataType.FetchCommentsViaPostCommented, limit: 2, takeMediaAmount: 15, takeuserAmount: 400);
 
 						Task.WaitAll(commentMediaLiker, commentMediaCommenter);
 						break;

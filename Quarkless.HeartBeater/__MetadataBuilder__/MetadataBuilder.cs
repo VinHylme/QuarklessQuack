@@ -159,7 +159,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 							if (go != null) { 
 								if (go.StatusCode == ResponseCode.Success)
 								{
-									await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaForSpecificUserGoogle, worker.Topic.TopicFriendlyName, worker.InstagramRequests.InstagramAccount.Id, proxy: worker.Worker.GetContext.Proxy);
+									await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaForSpecificUserGoogle, worker.Topic.TopicFriendlyName, worker.InstagramRequests.InstagramAccount.Id);
 								
 									var cut = go.Result.CutObjects(cutBy).ToList();
 									cut.ForEach(async x =>
@@ -246,7 +246,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 								{
 									case ResponseCode.Success:
 									{
-										await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaForSepcificUserYandexQuery, worker.Topic.TopicFriendlyName, worker.InstagramRequests.InstagramAccount.Id, proxy: worker.Worker.GetContext.Proxy);
+										await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaForSepcificUserYandexQuery, worker.Topic.TopicFriendlyName, worker.InstagramRequests.InstagramAccount.Id);
 										var cut = yan.Result.CutObjects(cutBy).ToList();
 										cut.ForEach(async x =>
 										{
@@ -323,7 +323,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 							{
 								case ResponseCode.Success:
 								{
-									await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaForSpecificUserYandex, worker.Topic.TopicFriendlyName, worker.InstagramRequests.InstagramAccount.Id, proxy: worker.Worker.GetContext.Proxy);
+									await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaForSpecificUserYandex, worker.Topic.TopicFriendlyName, worker.InstagramRequests.InstagramAccount.Id);
 									var cut = yan.Result.CutObjects(cutBy).ToList();
 									cut.ForEach(async x =>
 									{
@@ -340,7 +340,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 								{
 									if (yan.Result?.Medias?.Count > 0)
 									{
-										await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaForSpecificUserYandex, worker.Topic.TopicFriendlyName, worker.InstagramRequests.InstagramAccount.Id, proxy: worker.Worker.GetContext.Proxy);
+										await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaForSpecificUserYandex, worker.Topic.TopicFriendlyName, worker.InstagramRequests.InstagramAccount.Id);
 										var cut = yan.Result.CutObjects(cutBy).ToList();
 										cut.ForEach(async x =>
 										{
@@ -483,7 +483,6 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 			try {
 				await _assignments.ParallelForEachAsync(async worker =>
 				{
-
 					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
 
 					var topicTotal = new List<string>();
@@ -500,22 +499,25 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					var recentMedias = await searcher.SearchMediaDetailInstagram(topicSelect, limit, true);
 
 					if (mediaByTopics != null) { 
-						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByTopic, worker.Topic.TopicFriendlyName, proxy:worker.Worker.GetContext.Proxy);
+						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByTopic, worker.Topic.TopicFriendlyName);
 						var meta = mediaByTopics.CutObjects(cutBy);
+
 						meta.ToList().ForEach(async z => {
-							z.Medias = z.Medias.Where(t => !t.HasLikedBefore && !t.IsCommentsDisabled && !t.HasSeen 
+							z.Medias = z.Medias.Where(t => !t.HasLikedBefore && !t.HasSeen 
 							&& t.User.Username != worker.InstagramRequests.InstagramAccount.Username).ToList();
+
 							await _heartbeatLogic.AddMetaData(MetaDataType.FetchMediaByTopic, worker.Topic.TopicFriendlyName, 
 								new __Meta__<Media>(z));
 						});
 					}
 					if(recentMedias != null)
 					{
-						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByTopicRecent, worker.Topic.TopicFriendlyName, proxy: worker.Worker.GetContext.Proxy);
+						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByTopicRecent, worker.Topic.TopicFriendlyName);
 						var meta = recentMedias.CutObjects(cutBy);
 
 						meta.ToList().ForEach(async z => {
-							z.Medias = z.Medias.Where(t => !t.HasLikedBefore && !t.IsCommentsDisabled && !t.HasSeen && t.User.Username != worker.InstagramRequests.InstagramAccount.Username).ToList();
+							z.Medias = z.Medias.Where(t => !t.HasLikedBefore && !t.HasSeen && t.User.Username != worker.InstagramRequests.InstagramAccount.Username).ToList();
+							
 							await _heartbeatLogic.AddMetaData(MetaDataType.FetchMediaByTopicRecent, worker.Topic.TopicFriendlyName,
 								new __Meta__<Media>(z));
 						});
@@ -547,7 +549,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 						{
 							var fetchUsersMedia = await searcher.SearchUsersMediaDetailInstagram(theUser, limit);
 							if (fetchUsersMedia == null) continue;
-							await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByUserTargetList, worker.Topic.TopicFriendlyName, user.Id, proxy: worker.Worker.GetContext.Proxy);
+							await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByUserTargetList, worker.Topic.TopicFriendlyName, user.Id);
 							foreach(var s in fetchUsersMedia.CutObjects(cutBy))
 							{
 								s.Medias = s.Medias.Where(t => 
@@ -592,7 +594,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 								fetchUsersMedia.Medias.AddRange(recentUserMedia.Medias);
 							}
 							if (fetchUsersMedia == null) continue;
-							await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByUserLocationTargetList, worker.Topic.TopicFriendlyName, user.Id, proxy: worker.Worker.GetContext.Proxy);
+							await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByUserLocationTargetList, worker.Topic.TopicFriendlyName, user.Id);
 							foreach(var s in fetchUsersMedia.CutObjects(cutBy))
 							{
 								s.Medias = s.Medias.Where(t => 
@@ -626,7 +628,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					var fetchUsersMedia = await searcher.SearchUsersMediaDetailInstagram(user.Username,limit);
 					if (fetchUsersMedia != null)
 					{
-						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUserOwnProfile, worker.Topic.TopicFriendlyName, user.Id, proxy: worker.Worker.GetContext.Proxy);
+						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUserOwnProfile, worker.Topic.TopicFriendlyName, user.Id);
 						foreach(var s in fetchUsersMedia.CutObjects(cutBy))
 						{
 							await _heartbeatLogic.AddMetaData(MetaDataType.FetchUserOwnProfile, worker.Topic.TopicFriendlyName,
@@ -698,12 +700,11 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					searcher.ChangeUser(worker.Worker);
 					if (fetchUsersMedia != null)
 					{
-						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersFeed, worker.Topic.TopicFriendlyName, user.Id, proxy: worker.Worker.GetContext.Proxy);
+						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersFeed, worker.Topic.TopicFriendlyName, user.Id);
 						foreach(var s in fetchUsersMedia.CutObjects(cutBy))
 						{
 							s.Medias = s.Medias.Where(_=>
 								!_.HasLikedBefore 
-								&& !_.IsCommentsDisabled 
 								&& !_.HasSeen
 								&& _.User.Username!=user.Username).ToList();
 							
@@ -733,7 +734,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					var fetchUsersMedia = await searcher.GetUserFollowingList(user.Username, limit);
 					if (fetchUsersMedia != null)
 					{
-						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersFollowingList, worker.Topic.TopicFriendlyName, user.Id, proxy: worker.Worker.GetContext.Proxy);
+						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersFollowingList, worker.Topic.TopicFriendlyName, user.Id);
 						foreach(var s in fetchUsersMedia.ToList().CutObject(cutBy))
 						{
 							await _heartbeatLogic.AddMetaData(MetaDataType.FetchUsersFollowingList, worker.Topic.TopicFriendlyName,
@@ -762,7 +763,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					var fetchUsersMedia = await searcher.GetUsersFollowersList(user.Username, limit);
 					if (fetchUsersMedia != null)
 					{
-						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersFollowerList, worker.Topic.TopicFriendlyName, user.Id, proxy: worker.Worker.GetContext.Proxy);
+						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersFollowerList, worker.Topic.TopicFriendlyName, user.Id);
 						foreach(var s in fetchUsersMedia.ToList().CutObject(cutBy))
 						{
 							await _heartbeatLogic.AddMetaData(MetaDataType.FetchUsersFollowerList, worker.Topic.TopicFriendlyName,
@@ -793,7 +794,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					searcher.ChangeUser(worker.Worker);
 					if (fetchUsersMedia != null)
 					{
-						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersFollowSuggestions, worker.Topic.TopicFriendlyName, user.Id, proxy: worker.Worker.GetContext.Proxy);
+						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersFollowSuggestions, worker.Topic.TopicFriendlyName, user.Id);
 						foreach(var s in fetchUsersMedia.ToList().CutObject(cutObjectBy))
 						{
 							await _heartbeatLogic.AddMetaData(MetaDataType.FetchUsersFollowSuggestions, worker.Topic.TopicFriendlyName,
@@ -826,7 +827,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					
 					if (fetchUserInbox != null)
 					{
-						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUserDirectInbox, worker.Topic.TopicFriendlyName, user.Id, proxy: worker.Worker.GetContext.Proxy);
+						await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUserDirectInbox, worker.Topic.TopicFriendlyName, user.Id);
 
 						await _heartbeatLogic.AddMetaData(MetaDataType.FetchUserDirectInbox,
 							worker.Topic.TopicFriendlyName, new __Meta__<InstaDirectInboxContainer>(fetchUserInbox),
@@ -852,8 +853,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					var searcher = CreateSearch(worker.Worker, worker.Worker.GetContext.Proxy);
 
 					var user = worker.InstagramRequests.InstagramAccount;
-					await _heartbeatLogic.RefreshMetaData(MetaDataType.UsersRecentComments, worker.Topic.TopicFriendlyName, user.Id, 
-						proxy: worker.Worker.GetContext.Proxy);
+					await _heartbeatLogic.RefreshMetaData(MetaDataType.UsersRecentComments, worker.Topic.TopicFriendlyName, user.Id);
 
 					var mediasForUser = (await _heartbeatLogic.GetMetaData<Media>
 						(MetaDataType.FetchUserOwnProfile, worker.Topic.TopicFriendlyName, user.Id))
@@ -897,7 +897,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					if (meta_S.Any())
 						results.AddRange(meta_S);
 
-					await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersViaPostLiked, worker.Topic.TopicFriendlyName, proxy: worker.Worker.GetContext.Proxy);
+					await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersViaPostLiked, worker.Topic.TopicFriendlyName);
 					foreach (var v in results.TakeAny(takeMediaAmount))
 					{
 						if (v == null) continue;
@@ -940,7 +940,7 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					var results = (await _heartbeatLogic.GetMetaData<List<UserResponse<string>>>
 					(MetaDataType.FetchUsersViaPostLiked, worker.Topic.TopicFriendlyName)).ToList();
 
-					await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByLikers, worker.Topic.TopicFriendlyName, proxy: worker.Worker.GetContext.Proxy);
+					await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByLikers, worker.Topic.TopicFriendlyName);
 					foreach (var _ in results.TakeAny(takeMediaAmount))
 					{
 						if (_ == null) continue;
@@ -954,7 +954,6 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 								{
 									z.Medias = z.Medias.Where(t =>
 									!t.HasLikedBefore
-									&& !t.IsCommentsDisabled
 									&& !t.HasSeen
 									&& t.User.Username != worker.InstagramRequests.InstagramAccount.Username).ToList();
 									await _heartbeatLogic.AddMetaData(MetaDataType.FetchMediaByLikers, worker.Topic.TopicFriendlyName, new __Meta__<Media>(z));
@@ -989,13 +988,13 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					var meta_S = recentResults as __Meta__<Media>[] ?? recentResults.ToArray();
 					if (meta_S.Any())
 						results.AddRange(meta_S);
-					await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersViaPostCommented, worker.Topic.TopicFriendlyName, proxy: worker.Worker.GetContext.Proxy);
+					await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchUsersViaPostCommented, worker.Topic.TopicFriendlyName);
 					foreach (var v in results.TakeAny(takeMediaAmount))
 					{
 						if (v == null) continue;
 						foreach (var _ in v.ObjectItem.Medias)
 						{
-							if (!_.IsCommentsDisabled && _.MediaFrom == MediaFrom.Instagram && _.MediaId != null)
+							if (!_.IsCommentsDisabled && int.TryParse(_.CommentCount, out var count) && count > 0 && _.MediaFrom == MediaFrom.Instagram && _.MediaId != null)
 							{
 								var suggested = await searcher.SearchInstagramMediaCommenters(_.MediaId, limit);
 								if (suggested == null) return;
@@ -1050,13 +1049,13 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					var res = await _heartbeatLogic.GetMetaData<Media>(extractFrom, worker.Topic.TopicFriendlyName, includeUser ? worker.InstagramRequests.InstagramAccount.Id : null);
 					if (res != null)
 					{
-						await _heartbeatLogic.RefreshMetaData(saveTo, worker.Topic.TopicFriendlyName, proxy: worker.Worker.GetContext.Proxy);
+						await _heartbeatLogic.RefreshMetaData(saveTo, worker.Topic.TopicFriendlyName);
 						foreach (var _ in res.TakeAny(takeMediaAmount))
 						{
 							if (_ == null) continue;
 							foreach (var __ in _.ObjectItem.Medias)
 							{
-								if (!__.IsCommentsDisabled && __.MediaFrom == MediaFrom.Instagram && __.MediaId != null && !__.HasSeen)
+								if (!__.IsCommentsDisabled && int.TryParse(__.CommentCount, out var count) && count > 0 && __.MediaFrom == MediaFrom.Instagram && __.MediaId != null && !__.HasSeen)
 								{
 									var suggested = await searcher.SearchInstagramMediaCommenters(__.MediaId, limit);
 
@@ -1098,13 +1097,13 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 					var results = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>
 					(MetaDataType.FetchUsersViaPostCommented, worker.Topic.TopicFriendlyName)).ToList();
 
-					await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByCommenters, worker.Topic.TopicFriendlyName, proxy: worker.Worker.GetContext.Proxy);
+					await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaByCommenters, worker.Topic.TopicFriendlyName);
 					foreach (var _ in results.TakeAny(takeMediaAmount))
 					{
 						if (_ == null) continue;
-						foreach (var d in _.ObjectItem)
+						foreach (var commenter in _.ObjectItem)
 						{
-							var suggested = await searcher.SearchUsersMediaDetailInstagram(d.Username, limit);
+							var suggested = await searcher.SearchUsersMediaDetailInstagram(commenter.Username, limit);
 							if (suggested != null)
 							{
 								var sugVCut = suggested.CutObjects(cutBy).ToList();
@@ -1112,7 +1111,6 @@ namespace Quarkless.HeartBeater.__MetadataBuilder__
 								{
 									z.Medias = z.Medias.Where(t =>
 										!t.HasLikedBefore &&
-										!t.IsCommentsDisabled &&
 										!t.HasSeen).ToList();
 									var comments = new __Meta__<Media>(z);
 									await _heartbeatLogic.AddMetaData(MetaDataType.FetchMediaByCommenters, worker.Topic.TopicFriendlyName, comments);
