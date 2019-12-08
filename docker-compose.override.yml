@@ -7,8 +7,4 @@ services:
     ports:
       - "80"
     volumes:
-      - ${APPDATA}/Microsoft/UserSecrets:C:\Users\ContainerUser\AppData\Roaming\Microsoft\UserSecrets:ro
-networks:
-  default:
-    external:
-      name: nat
+      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro

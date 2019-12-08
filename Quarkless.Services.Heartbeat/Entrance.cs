@@ -67,7 +67,7 @@ namespace Quarkless.Services.Heartbeat
 			IServiceCollection services = new ServiceCollection();
 
 			services.AddSingleton<IHeartbeatService, HeartbeatService>();
-			services.AddSingleton<IMetadataExtract, MetadataExtract>();
+			//services.AddSingleton<IMetadataExtract, MetadataExtract>();
 
 			services.Append(InitialiseClientServices());
 

@@ -24,20 +24,18 @@ services:
     volumes:
       - ../db/redis-data:/data
   mongo:
-    image: mongo
+    image: mongo:latest
     hostname: quarkless.db.mongo
     container_name: mongo.quark
     environment:
-      MONGO_INITDB_ROOT_USERNAME: rwuser
-      MONGO_INITDB_ROOT_PASSWORD: Lka913ND_1J3jdabvaCxX123000@jga
+      MONGO_INITDB_ROOT_USERNAME: rwuserm
+      MONGO_INITDB_ROOT_PASSWORD: Lka913ND_1J3jdabvaCxX123000@jga2
     ports:
       - 27017:27017
     networks:
       localnet:
         aliases: 
           - quarkless.local.mongo
-    volumes:
-      - ../db/mongo-data:C:\data\db
 
 networks:
   localnet:

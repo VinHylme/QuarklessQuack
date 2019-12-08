@@ -6,7 +6,7 @@
 	<ApplicationIcon />
     <OutputType>Exe</OutputType>
     <StartupObject>Quarkless.Services.Entrance</StartupObject>
-    <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 	<DockerfileRunArguments>--network name=localnet,alias=quarkless.local.automator --name automator.quark</DockerfileRunArguments>
 	</PropertyGroup>
 

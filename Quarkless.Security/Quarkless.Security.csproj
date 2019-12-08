@@ -5,7 +5,7 @@
     <ApplicationIcon />
     <OutputType>Exe</OutputType>
     <StartupObject />
-    <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileRunArguments>--network name=localnet,alias=quarkless.local.security --name security.quark -p 65115:65115</DockerfileRunArguments>
   </PropertyGroup>
 

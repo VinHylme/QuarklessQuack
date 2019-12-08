@@ -2,7 +2,7 @@
 cd ..
 
 @echo creating network...
-docker network create localnet -d nat
+docker network create localnet -d bridge
 
 @echo starting quarkless.security...
 docker-compose -f docker-compose-security.yml up -d

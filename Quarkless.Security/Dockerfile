@@ -1,8 +1,7 @@
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.0-nanoserver-1809 AS base
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.0-buster-slim AS base
 WORKDIR /app
-EXPOSE 65115/tcp
 
-FROM mcr.microsoft.com/dotnet/core/sdk:3.0-nanoserver-1809 AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.0-buster AS build
 WORKDIR /src
 COPY ["Quarkless.Security/Quarkless.Security.csproj", "Quarkless.Security/"]
 COPY ["QuarklessContexts/QuarklessContexts.csproj", "QuarklessContexts/"]

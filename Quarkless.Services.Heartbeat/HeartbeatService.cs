@@ -7,9 +7,15 @@ using System.Threading.Tasks;
 using System.Timers;
 using Dasync.Collections;
 using QuarklessContexts.Models.InstagramAccounts;
+using QuarklessLogic.ContentSearch.GoogleSearch;
+using QuarklessLogic.ContentSearch.YandexSearch;
+using QuarklessLogic.Handlers.ClientProvider;
+using QuarklessLogic.Logic.InstagramAccountLogic;
 using QuarklessLogic.Logic.ProfileLogic;
 using QuarklessLogic.Logic.ProxyLogic;
+using QuarklessLogic.Logic.ResponseLogic;
 using QuarklessLogic.ServicesLogic.AgentLogic;
+using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 
 namespace Quarkless.Services.Heartbeat
 {
@@ -20,17 +26,33 @@ namespace Quarkless.Services.Heartbeat
 		private readonly IAgentLogic _agentLogic;
 		private readonly IProfileLogic _profileLogic;
 		private readonly IProxyLogic _proxyLogic;
-		private readonly IMetadataExtract _metadataExtract;
+		private readonly IHeartbeatLogic _heartbeatLogic;
+		private readonly IAPIClientContext _context;
+		private readonly IResponseResolver _responseResolver;
+		private readonly IGoogleSearchLogic _googleSearchLogic;
+		private readonly IYandexImageSearch _yandexImageSearch;
+		private readonly IInstagramAccountLogic _instagramAccountLogic;
+
+		//private readonly IMetadataExtract _metadataExtract;
 		private ConcurrentQueue<FullUserDetail> Customers { get; set; }
 		private ConcurrentQueue<FullUserDetail> WorkingCustomers { get; set; }
 		private List<Worker> Workers { get; set; }
 		public HeartbeatService(IAgentLogic agentLogic, IProfileLogic profileLogic, 
-			IProxyLogic proxyLogic, IMetadataExtract metadataExtract)
+			IProxyLogic proxyLogic, IAPIClientContext context, IHeartbeatLogic heartbeatLogic,
+			IResponseResolver responseResolver,
+			IGoogleSearchLogic googleSearchLogic, IYandexImageSearch yandexImageSearch,
+			IInstagramAccountLogic accountLogic)
 		{
 			_agentLogic = agentLogic;
 			_profileLogic = profileLogic;
 			_proxyLogic = proxyLogic;
-			_metadataExtract = metadataExtract;
+			_context = context;
+			_heartbeatLogic = heartbeatLogic;
+			_responseResolver = responseResolver;
+			_googleSearchLogic = googleSearchLogic;
+			_yandexImageSearch = yandexImageSearch;
+			_instagramAccountLogic = accountLogic;
+			//_metadataExtract = metadataExtract;
 		}
 
 		/// <summary>
@@ -115,19 +137,22 @@ namespace Quarkless.Services.Heartbeat
 		public async Task Start()
 		{
 			WorkingCustomers = new ConcurrentQueue<FullUserDetail>();
-			await RefreshCustomerAccounts();
-			await RefreshWorkers();
+			//await RefreshCustomerAccounts();
+			//await RefreshWorkers();
 
-			var checkCustomerTimer = new Timer(TimeSpan.FromMinutes(1).TotalMilliseconds);
-			checkCustomerTimer.Start();
-			checkCustomerTimer.Elapsed += async (o, e) => await RefreshCustomerAccounts();
-
-			var checkWorkersTimer = new Timer(TimeSpan.FromMinutes(1).TotalMilliseconds);
-			checkWorkersTimer.Start();
-			checkWorkersTimer.Elapsed += async (o, e) => await RefreshWorkers();
+//			var checkCustomerTimer = new Timer(TimeSpan.FromMinutes(1).TotalMilliseconds);
+//			checkCustomerTimer.Start();
+//			checkCustomerTimer.Elapsed += async (o, e) => await RefreshCustomerAccounts();
+//
+//			var checkWorkersTimer = new Timer(TimeSpan.FromMinutes(1).TotalMilliseconds);
+//			checkWorkersTimer.Start();
+//			checkWorkersTimer.Elapsed += async (o, e) => await RefreshWorkers();
 
 			while (true)
 			{
+				await RefreshCustomerAccounts();
+				await RefreshWorkers();
+
 				var assignWorker = Workers.FirstOrDefault(w => !w.IsCurrentlyAssigned);
 				if (assignWorker == null)
 					continue;
@@ -142,7 +167,7 @@ namespace Quarkless.Services.Heartbeat
 
 				WorkingCustomers.Enqueue(customer);
 				PerformTask(customer, assignWorker);
-				await Task.Delay(TimeSpan.FromSeconds(.25));
+				await Task.Delay(TimeSpan.FromSeconds(1));
 			}
 		}
 
@@ -154,7 +179,8 @@ namespace Quarkless.Services.Heartbeat
 				CustomerTopic = customer.Profile.Topics,
 				Worker = assignWorker
 			};
-			var metaBuilder = new MetadataBuilderManager(_metadataExtract, assignment);
+			var metaBuilder = new MetadataBuilderManager(assignment, _context, _heartbeatLogic, _responseResolver,
+				_googleSearchLogic, _yandexImageSearch, _instagramAccountLogic);
 
 			Task.Run(() =>
 			{
@@ -166,7 +192,7 @@ namespace Quarkless.Services.Heartbeat
 				Task.WaitAll(baseExtract, userInfo, externalExtract, targetListing);
 			}).ContinueWith(async c =>
 			{
-				await Task.Delay(TimeSpan.FromMinutes(1)); // Sleep for one minute before requeue
+				await Task.Delay(TimeSpan.FromMinutes(5)); // Sleep for one minute before requeue
 				Console.WriteLine("Finished with customer {0}", customer.InstagramAccount.Username);
 				Customers.Enqueue(customer);
 				WorkingCustomers = new ConcurrentQueue<FullUserDetail>

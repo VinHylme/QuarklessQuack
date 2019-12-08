@@ -54,6 +54,7 @@ namespace Quarkless.Analyser
 
 			return string.Empty;
 		}
+
 		private byte[] ExtractResource(string project, string filename)
 		{
 			var bundleAssembly = AppDomain.CurrentDomain.GetAssemblies()
@@ -216,6 +217,5 @@ namespace Quarkless.Analyser
 				Console.WriteLine($"File locked: {exception}");
 			}
 		}
-
 	}
 }

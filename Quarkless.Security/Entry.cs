@@ -1,5 +1,4 @@
-﻿using System;
-
+﻿
 namespace Quarkless.Security
 {
 	public class Entry

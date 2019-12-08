@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
 	<AWSProjectType>Lambda</AWSProjectType>
-	<DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
+	<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 	<GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
 	<UserSecretsId>aecd18cc-3bf5-4ceb-86b5-280866e45f4b</UserSecretsId>
     <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>

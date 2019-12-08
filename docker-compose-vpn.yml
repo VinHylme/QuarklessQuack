@@ -1,0 +1,29 @@
+version: "3.4"
+
+services:
+    vpn:
+        image: azinchen/nordvpn
+        cap_add:
+          - net_admin
+        devices:
+          - /dev/net/tun
+        environment:
+          - USER=silviuandre@yahoo.com
+          - PASS='IYVunLc0dzjovj0='
+          - COUNTRY=United_States
+          - PROTOCOL=UDP
+          - CATEGORY=Dedicated IP
+          #- NETWORK=192.168.1.0/24
+          - OPENVPN_OPTS=--pull-filter ignore "ping-restart" --ping-exit 180
+          - TZ=America/Denver
+        ports:
+          - 8080:80
+        restart: unless-stopped
+        networks:
+            localnet:
+                aliases:
+                    - quarkless.local.vpn
+
+networks:
+    localnet:
+        external: true
