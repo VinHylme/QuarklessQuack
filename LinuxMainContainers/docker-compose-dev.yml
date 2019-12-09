@@ -36,7 +36,12 @@ services:
       localnet:
         aliases: 
           - quarkless.local.mongo
-
+    volumes:
+      - data:/data/db
 networks:
   localnet:
+    external: true
+
+volumes:
+  data:
     external: true

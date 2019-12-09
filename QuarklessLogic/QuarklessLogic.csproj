@@ -10,13 +10,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Amazon.AspNetCore.Identity.Cognito" Version="1.0.2" />
-    <PackageReference Include="AWSSDK.S3" Version="3.3.107.2" />
-    <PackageReference Include="Bogus" Version="28.4.1" />
+    <PackageReference Include="Amazon.AspNetCore.Identity.Cognito" Version="1.0.3" />
+    <PackageReference Include="AWSSDK.S3" Version="3.3.109" />
+    <PackageReference Include="Bogus" Version="28.4.3" />
     <PackageReference Include="morelinq" Version="3.2.0" />
     <PackageReference Include="Selenium.Chrome.WebDriver" Version="77.0.0" />
     <PackageReference Include="Selenium.WebDriver" Version="3.141.0" />
-    <PackageReference Include="Stripe.net" Version="33.4.0" />
+    <PackageReference Include="Stripe.net" Version="34.1.0" />
     <PackageReference Include="TextCopy" Version="1.7.1" />
   </ItemGroup>
 
@@ -25,12 +25,6 @@
     <ProjectReference Include="..\Quarkless.Analyser\Quarkless.Analyser.csproj" />
     <ProjectReference Include="..\Quarkless.Interfacing\Quarkless.Interfacing.csproj" />
     <ProjectReference Include="..\QuarklessRepositories\QuarklessRepositories.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="Microsoft.AspNetCore.Authorization">
-      <HintPath>..\..\..\..\..\..\Program Files\dotnet\sdk\NuGetFallbackFolder\microsoft.aspnetcore.authorization\2.2.0\lib\netstandard2.0\Microsoft.AspNetCore.Authorization.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
 </Project>

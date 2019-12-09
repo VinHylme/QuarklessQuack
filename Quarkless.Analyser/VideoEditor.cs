@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
-using FFmpeg.NET;
-using Microsoft.Extensions.Options;
 using Quarkless.Analyser.Extensions;
 using Quarkless.Analyser.Models;
 
@@ -19,25 +17,86 @@ namespace Quarkless.Analyser
 		private readonly string _tempImagePath;
 		private readonly string _ffmpegEnginePath;
 		private readonly string _assemblyName;
-		public VideoEditor(IOptions<MediaAnalyserOptions> options)
+		private readonly bool _isWindowsOS;
+		public VideoEditor(MediaAnalyserOptions options)
 		{
-//			if (options.Value.Equals(null))
-//				throw new NullReferenceException();
-//			if (!options.Value.FfmpegEnginePath.Contains(','))
-//			{
-//				throw new DirectoryNotFoundException("Please include the assembly name as well, e.g. {SolutionName}.{Project Name}");
-//
-//			}
-//
-//			var splitPath = options.Value.FfmpegEnginePath.Split(',');
-			//_assemblyName = splitPath[0];
-			
-			_ffmpegEnginePath = GetPathByFolderName("References", AppDomain.CurrentDomain.BaseDirectory) + "/ffmpeg.exe"; //splitPath[1];
-			//CreateFfmpegPathIfDoesNotExist();
-			_tempImagePath = options.Value.TempImagePath;
-			_tempVideoPath = options.Value.TempVideoPath;
+			_tempImagePath = options.TempImagePath;
+			_tempVideoPath = options.TempVideoPath;
+			_isWindowsOS = options.IsOnWindows;
+			_ffmpegEnginePath = _isWindowsOS ? $"{options.FfmpegEnginePath}ffmpeg.exe" 
+				: $"{options.FfmpegEnginePath}ffmpeg";
 		}
-		public string GetPathByFolderName( string folderName,string initFolder = null)
+		private string RunProcess(string filePath, string parameters)
+		{
+			var result = string.Empty;
+			var proc = new Process
+			{
+				StartInfo =
+				{
+					UseShellExecute = false,
+					CreateNoWindow = true,
+					RedirectStandardOutput = true,
+					RedirectStandardError = true,
+					RedirectStandardInput = true,
+					FileName = filePath,
+					Arguments = parameters
+				},
+			};
+			proc.OutputDataReceived += (sender, args) =>
+			{
+				//Console.WriteLine(args.Data);
+				result += args.Data;
+			};
+			proc.ErrorDataReceived += (sender, args) =>
+			{
+				//Console.WriteLine(args.Data); 
+				result += args.Data;
+			};
+
+			proc.Start();
+			proc.BeginOutputReadLine();
+			proc.BeginErrorReadLine();
+			proc.WaitForExit();
+
+			return result;
+		}
+		private TimeSpan GetVideoDuration(string videoPath)
+		{
+			var results = RunProcess(_ffmpegEnginePath, $"-i {videoPath}");
+			if (string.IsNullOrEmpty(results))
+				return TimeSpan.Zero;
+			var durationString = new Regex(@"Duration:[\s\d\:\.]*")
+				.Matches(results)
+				.FirstOrDefault()
+				?.Value.Split(": ")[1];
+
+			return string.IsNullOrEmpty(durationString) ? TimeSpan.Zero : TimeSpan.Parse(durationString);
+		}
+		private bool GetAllVideoThumbnailFromProcess(string videoPath, string output)
+		{
+			try
+			{
+				RunProcess(_ffmpegEnginePath, $"-i {videoPath} -vf fps=1 {output} -hide_banner");
+				return true;
+			}
+			catch
+			{
+				return false;
+			}
+		}
+		private bool GetVideoThumbnailFromProcess(string videoPath, string outPutPath, int frame)
+		{
+			try
+			{
+				RunProcess(_ffmpegEnginePath, $"-i {videoPath} -ss {frame} -vframes 1 {outPutPath}");
+				return true;
+			}
+			catch
+			{
+				return false;
+			}
+		}
+		public string GetPathByFolderName(string folderName,string initFolder = null)
 		{
 			var initialPath = initFolder ?? Directory.GetCurrentDirectory();
 			var currentPath = initialPath;
@@ -53,6 +112,15 @@ namespace Quarkless.Analyser
 			}
 
 			return string.Empty;
+		}
+		private void CreateFfmpegPathIfDoesNotExist()
+		{
+			if (File.Exists(_ffmpegEnginePath))
+			{
+				return;
+			}
+			var bx = ExtractResource(_assemblyName, _ffmpegEnginePath);
+			File.WriteAllBytes(_ffmpegEnginePath, bx);
 		}
 
 		private byte[] ExtractResource(string project, string filename)
@@ -70,19 +138,10 @@ namespace Quarkless.Analyser
 				return ba;
 			}
 		}
-		private void CreateFfmpegPathIfDoesNotExist()
-		{
-			if (File.Exists(_ffmpegEnginePath))
-			{
-				return;
-			}
-			var bx = ExtractResource(_assemblyName, _ffmpegEnginePath);
-			File.WriteAllBytes(_ffmpegEnginePath, bx);
-		}
-		public async Task<bool> IsVideoGood(byte[] bytes, Color profileColor, double threshHold, int frameSkip = 5)
+		public bool IsVideoGood(byte[] bytes, Color profileColor, double threshHold, int frameSkip = 5)
 		{
 			if (bytes == null) return false;
-			var simPath = await IsVideoSimilar(profileColor, bytes, threshHold, frameSkip);
+			var simPath = IsVideoSimilar(profileColor, bytes, threshHold, frameSkip);
 			return !string.IsNullOrEmpty(simPath);
 		}
 		private void CreateDirectoryIfDoesNotExist(params string[] paths)
@@ -93,7 +152,7 @@ namespace Quarkless.Analyser
 					Directory.CreateDirectory(path);
 			}
 		}
-		public async Task<byte[]> GenerateVideoThumbnail(byte[] video, int specificFrame = 5)
+		public byte[] GenerateVideoThumbnail(byte[] video, int specificFrame = 5)
 		{
 			CreateDirectoryIfDoesNotExist(_tempVideoPath, _tempImagePath);
 
@@ -103,16 +162,7 @@ namespace Quarkless.Analyser
 			File.WriteAllBytes(videoPath, video);
 			try
 			{
-				var engine = new Engine(_ffmpegEnginePath);
-				
-				await engine.GetThumbnailAsync(
-					new MediaFile(videoPath),
-					new MediaFile(imagePath),
-					new ConversionOptions
-					{
-						Seek = TimeSpan.FromSeconds(specificFrame)
-					});
-
+				GetVideoThumbnailFromProcess(videoPath, imagePath, specificFrame);
 				var image = File.ReadAllBytes(imagePath);
 
 				File.Delete(videoPath);
@@ -126,7 +176,7 @@ namespace Quarkless.Analyser
 				return null;
 			}
 		}
-		public async Task<string> IsVideoSimilar(Color profileColor, byte[] video, double threshHold, int frameSkip = 5)
+		public string IsVideoSimilar(Color profileColor, byte[] video, double threshHold, int frameSkip = 5)
 		{
 			var videoPath = string.Format(_tempVideoPath + "video_{0}.mp4", Guid.NewGuid());
 			CreateDirectoryIfDoesNotExist(videoPath);
@@ -135,17 +185,8 @@ namespace Quarkless.Analyser
 			File.WriteAllBytes(videoPath, video);
 			try
 			{
-				var mediaFile = new MediaFile(videoPath);
-				var engine = new Engine(_ffmpegEnginePath);
-				var meta = engine.GetMetaDataAsync(mediaFile).GetAwaiter().GetResult();
-				var i = 0;
-				while (i < meta.Duration.Seconds)
-				{
-					var opt = new ConversionOptions { Seek = TimeSpan.FromSeconds(frameSkip) };
-					var outputFile = new MediaFile(($@"{_tempImagePath}image-{i}_{Guid.NewGuid()}.jpeg"));
-					await engine.GetThumbnailAsync(mediaFile, outputFile, opt);
-					i++;
-				}
+				var outputFormat = $"{_tempImagePath}image-%04d_{Guid.NewGuid()}.jpeg";
+				GetAllVideoThumbnailFromProcess(videoPath, outputFormat);
 				var videoFrames = _tempImagePath.ReadImagesFromDirectory("*.jpeg").ToList();
 				var videoColorsAvg = new List<Color>();
 

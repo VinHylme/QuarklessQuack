@@ -146,7 +146,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 									},
 									VideoThumbnail = new InstaImage
 									{
-										Uri = await UploadToS3(await _postAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(_postAnalyser.Manager.DownloadMedia(urlToSend)), $"user_self_videoThumb_{Guid.NewGuid()}")
+										Uri = await UploadToS3(_postAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(_postAnalyser.Manager.DownloadMedia(urlToSend)), $"user_self_videoThumb_{Guid.NewGuid()}")
 									}
 								},
 								Location = dataMediaSubmit.Location != null
@@ -180,7 +180,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 										},
 										VideoThumbnail = new InstaImage
 										{
-											Uri = UploadToS3(_postAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(_postAnalyser.Manager.DownloadMedia(x.UrlToSend)).GetAwaiter().GetResult(),
+											Uri = UploadToS3(_postAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(_postAnalyser.Manager.DownloadMedia(x.UrlToSend)),
 												$"user_self_videoThumb_{Guid.NewGuid()}").GetAwaiter().GetResult()
 										}
 									}
@@ -329,7 +329,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 
 							model.Video.VideoThumbnail = new InstaImage
 							{
-								ImageBytes = await _postAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(model.Video.Video.VideoBytes)
+								ImageBytes = _postAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(model.Video.Video.VideoBytes)
 							};
 							options.ActionName = ActionType.SendDirectMessageVideo.GetDescription();
 							options.Rest.JsonBody = model.ToJsonString();

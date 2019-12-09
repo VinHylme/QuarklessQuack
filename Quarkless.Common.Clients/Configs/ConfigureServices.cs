@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Amazon.CognitoIdentityProvider;
 using Amazon.Extensions.CognitoAuthentication;
 using Amazon.S3;
@@ -90,6 +91,7 @@ using Amazon;
 using Amazon.CognitoIdentity;
 using Amazon.Extensions.NETCore.Setup;
 using AspNetCoreRateLimit;
+using MongoDB.Driver;
 using Quarkless.Analyser;
 using Quarkless.Analyser.Models;
 using QuarklessContexts.Models.APILogger;
@@ -102,6 +104,8 @@ namespace Quarkless.Common.Clients.Configs
 {
 	public static class ConfigureServices
 	{
+		private static bool _isWindows =
+			System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 		public static void AddHangFrameworkServices(this IServiceCollection serviceCollection)
 		{
 			serviceCollection.AddTransient<ITaskService, TaskService>();
@@ -141,8 +145,6 @@ namespace Quarkless.Common.Clients.Configs
 			services.AddSingleton<IWebHookHandlers, WebHookHandlers>();
 			services.AddSingleton<IGoogleSearchLogic, GoogleSearchLogic>();
 			services.AddSingleton<IYandexImageSearch, YandexImageSearch>();
-
-			services.AddSingleton<IVideoEditor, VideoEditor>();
 			services.AddSingleton<IPostAnalyser, PostAnalyser>();
 			services.AddSingleton<IMediaManipulation, MediaManipulation>();
 		}
@@ -170,7 +172,6 @@ namespace Quarkless.Common.Clients.Configs
 				}));
 
 			services.AddSingleton<IS3BucketLogic, S3BucketLogic>();
-
 			var mongoDbContext = new MongoDbContext(accessors.ConnectionString, "Accounts");
 
 			services.AddIdentity<AccountUser, AccountRole>()
@@ -294,12 +295,14 @@ namespace Quarkless.Common.Clients.Configs
 			{
 				options.ChromePath = accessors.SeleniumChromeAddress;
 			});
-			services.Configure<MediaAnalyserOptions>(options =>
+
+			services.AddSingleton<IVideoEditor>(new VideoEditor(new MediaAnalyserOptions
 			{
-				options.TempImagePath = accessors.TempImagePath;
-				options.TempVideoPath = accessors.TempVideoPath;
-				options.FfmpegEnginePath = accessors.FfmpegPath;
-			});
+				TempImagePath = accessors.TempImagePath,
+				TempVideoPath = accessors.TempVideoPath,
+				FfmpegEnginePath = accessors.FfmpegPath,
+				IsOnWindows = _isWindows
+			}));
 		}
 		public static void AddRepositories(this IServiceCollection services)
 		{

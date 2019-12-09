@@ -9,8 +9,6 @@ services:
       dockerfile: Quarkless/Dockerfile
     ports:
       - 51518:80
-    volumes:
-      - ./References/ffm:/ffm
     networks:
       localnet:
         aliases: 

@@ -4,6 +4,7 @@
     <OutputType>Exe</OutputType>
 	<GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
 	<TargetFramework>netcoreapp3.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 	<StartupObject>Quarkless.Services.Heartbeat.Entrance</StartupObject>
 	<DockerfileRunArguments>--network name=localnet,alias=quarkless.local.heartbeat --name heartbeat.quark</DockerfileRunArguments>

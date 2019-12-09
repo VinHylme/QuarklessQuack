@@ -1,3 +1,5 @@
+#See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
+
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.0-buster-slim AS base
 WORKDIR /app
 
@@ -9,8 +11,8 @@ COPY ["InstagramApiSharp/InstagramApiSharp.csproj", "InstagramApiSharp/"]
 RUN dotnet restore "Quarkless.Security/Quarkless.Security.csproj"
 COPY . .
 WORKDIR "/src/Quarkless.Security"
-RUN dotnet build "Quarkless.Security.csproj" -c Debug -o /app/build
 
+RUN dotnet build "Quarkless.Security.csproj" -c Debug -o /app/build
 FROM build AS publish
 RUN dotnet publish "Quarkless.Security.csproj" -c Debug -o /app/publish
 

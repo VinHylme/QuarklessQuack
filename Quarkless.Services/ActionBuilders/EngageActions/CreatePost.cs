@@ -283,7 +283,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 									user.Profile.Theme.Colors
 										.Select(s => System.Drawing.Color.FromArgb(s.Red, s.Green, s.Blue))
 										.ElementAt(user.Profile.Theme.Colors.Count - 1), 
-									user.Profile.Theme.Percentage, 10).GetAwaiter().GetResult()) continue;
+									user.Profile.Theme.Percentage, 10)) continue;
 
 								selectedMedia.MediaType = InstaMediaType.Carousel;
 								var s3UrlLink = UploadToS3(imBytes, $"Video_{imBytes.GetHashCode()}_{Guid.NewGuid()}").GetAwaiter().GetResult();
@@ -308,7 +308,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 							user.Profile.Theme.Colors
 								.Select(s => System.Drawing.Color.FromArgb(s.Red, s.Green, s.Blue))
 								.ElementAt(user.Profile.Theme.Colors.Count - 1),
-							user.Profile.Theme.Percentage, 10).GetAwaiter().GetResult()) continue;
+							user.Profile.Theme.Percentage, 10)) continue;
 						
 						//add to the list of images to send
 						var s3UrlLink = UploadToS3(bytes, $"Video_{bytes.GetHashCode()}_{Guid.NewGuid()}").GetAwaiter().GetResult();
@@ -504,7 +504,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 									},
 									VideoThumbnail = new InstaImage
 									{
-										Uri = UploadToS3(postAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(f.MediaBytes).GetAwaiter().GetResult(),$"VideoThumb_{Guid.NewGuid()}").GetAwaiter().GetResult()
+										Uri = UploadToS3(postAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(f.MediaBytes),$"VideoThumb_{Guid.NewGuid()}").GetAwaiter().GetResult()
 									}
 								} : null
 							}).ToArray(),	
@@ -524,8 +524,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 							mediaInfo.Caption = string.Empty;
 						var video = selectedMedia.MediaData.FirstOrDefault();
 
-						var videoThumb = postAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(video.MediaBytes)
-							.GetAwaiter().GetResult();
+						var videoThumb = postAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(video.MediaBytes);
 
 						var videoUri = UploadToS3(videoThumb, $"VideoThumb_{Guid.NewGuid()}").GetAwaiter().GetResult();
 						var uploadVideo = new UploadVideoModel
