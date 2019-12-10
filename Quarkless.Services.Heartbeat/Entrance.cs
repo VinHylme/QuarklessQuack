@@ -5,7 +5,9 @@ using QuarklessContexts.Extensions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Common.Clients;
+using QuarklessContexts.Enums;
 using QuarklessContexts.Models.SecurityLayerModels;
+using Environment = System.Environment;
 
 namespace Quarkless.Services.Heartbeat
 {
@@ -64,16 +66,29 @@ namespace Quarkless.Services.Heartbeat
 		
 		static async Task Main(string[] args)
 		{
+			var environmentVariables = Environment.GetEnvironmentVariables();
+			var userId = environmentVariables["USER_ID"].ToString();
+			var instagramId = environmentVariables["USER_INSTAGRAM_ACCOUNT"].ToString();
+			var workerUserId = environmentVariables["WORKER_USER_ID"].ToString();
+			var workerInstagramId = environmentVariables["WORKER_INSTAGRAM_ACCOUNT"].ToString();
+			var operationType = (ExtractOperationType) int.Parse(environmentVariables["OPERATION_TYPE"].ToString());
+
+			if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(instagramId))
+				return;
+			
+			if (string.IsNullOrEmpty(workerUserId) || string.IsNullOrEmpty(workerInstagramId))
+				return;
+			
 			IServiceCollection services = new ServiceCollection();
 
 			services.AddSingleton<IHeartbeatService, HeartbeatService>();
-			//services.AddSingleton<IMetadataExtract, MetadataExtract>();
-
 			services.Append(InitialiseClientServices());
 
 			var buildService = services.BuildServiceProvider();
 
-			await WithExceptionLogAsync(async () => await buildService.GetService<IHeartbeatService>().Start());
+			await WithExceptionLogAsync(async () => await buildService.GetService<IHeartbeatService>()
+				.Start(new CustomerAccount{UserId = userId, InstagramAccountId =  instagramId}, 
+					new WorkerAccount{UserId = workerUserId, InstagramAccountId = workerInstagramId}, operationType));
 		}
 	}
 }

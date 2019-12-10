@@ -7,6 +7,5 @@ namespace Quarkless.Services.Heartbeat
 	{
 		public ShortInstagramAccountModel InstagramAccount { get; set; }
 		public ProxyModel ProxyModel { get; set; }
-		public bool IsCurrentlyAssigned { get; set; }
 	}
 }

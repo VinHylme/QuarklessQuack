@@ -6,16 +6,20 @@
     <OutputType>Exe</OutputType>
     <StartupObject />
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileRunArguments>--network name=localnet,alias=quarkless.local.security --name security.quark -p 65115:65115</DockerfileRunArguments>
+    <DockerfileRunArguments>--hostname=quarkless.security --network name=localnet,alias=quarkless.local.security --name security.quark -p 65115:65115</DockerfileRunArguments>
   </PropertyGroup>
 
   <ItemGroup>
     <None Remove="appsettings.init.json" />
     <None Remove="appsettings.json" />
+    <None Remove="appsettings.local.json" />
     <None Remove="appsettings.prod.json" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="appsettings.local.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

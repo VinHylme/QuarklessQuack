@@ -40,7 +40,8 @@ namespace Quarkless.Security.ServerListener
 		private readonly ClientSockets _clients;
 		private readonly byte[] _buffer;
 		private static IPAddress IpAddress => Dns.GetHostEntry(Dns.GetHostName()).AddressList.Last();
-
+		private static readonly string _dockerHost = "quarkless.security";
+		internal static bool IsDockerHost = Dns.GetHostName() == _dockerHost;
 		public ServerNetwork()
 		{
 			_serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -50,8 +51,10 @@ namespace Quarkless.Security.ServerListener
 		}
 		private void Setup()
 		{
-			//_serverSocket.Bind(new IPEndPoint(IpAddress, 8022));
-			_serverSocket.Bind(new IPEndPoint(IPAddress.Any, 65115));
+			_serverSocket.Bind(IsDockerHost
+				? new IPEndPoint(IPAddress.Any, 65115)
+				: new IPEndPoint(IPAddress.Loopback, 65116));
+
 			_serverSocket.Listen(5);
 		}
 		public void StartAccepting()

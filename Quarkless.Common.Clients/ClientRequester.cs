@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,9 +14,11 @@ namespace Quarkless.Common.Clients
 	{
 		private readonly Socket _clientSocket;
 		private readonly string _host;
-		public ClientRequester(string host)
+		private readonly bool _inDocker;
+		public ClientRequester(string host, bool inDocker = true)
 		{
 			_host = host;
+			_inDocker = inDocker;
 			_clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 		}
 
@@ -26,7 +29,8 @@ namespace Quarkless.Common.Clients
 			{
 				try
 				{
-					_clientSocket.Connect(_host, 65115);
+					var hos = Dns.GetHostName();
+					_clientSocket.Connect(_host, _inDocker ? 65115 : 65116);
 					return true;
 				}
 				catch (SocketException se)

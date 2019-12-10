@@ -56,7 +56,7 @@ namespace Quarkless.Security.ServerListener.ServEntry
 
 	internal sealed class ServerEntry
 	{
-		private const string _fileName = "appsettings{0}.json";
+		private string _fileName = "appsettings{0}.json";
 		private bool _isValid = false;
 		internal bool IsValidClient(AvailableClient clientFrom)
 		{
@@ -78,7 +78,6 @@ namespace Quarkless.Security.ServerListener.ServEntry
 				.Unlock(client.GetHashCode())
 				.Build()).AvailableClients;
 		}
-		
 		public EndPoints PublicEndpoints()
 		{
 			if(!_isValid) throw new Exception("Invalid Client");
@@ -89,7 +88,6 @@ namespace Quarkless.Security.ServerListener.ServEntry
 				RedisCon = access.RedisConnectionString
 			};
 		}
-
 		public EnvironmentsAccess RequestEnvData()
 		{
 			var a = GetEnvData();
@@ -126,15 +124,15 @@ namespace Quarkless.Security.ServerListener.ServEntry
 				return new Accessor(MakeConfigurationBuilder().Unlock(0).Build());
 			throw new Exception("Invalid Client");
 		}
-		private IConfigurationBuilder MakeConfigurationBuilder(string name = "prod")
+		private IConfigurationBuilder MakeConfigurationBuilder(string envType = "prod")
 		{
 
 #if DEBUG
-			name = name.Equals(".init") ? name : "";
+			envType = envType.Equals(".init") ? envType : ServerNetwork.IsDockerHost ? "" : ".local";
 #endif
 			return new ConfigurationBuilder()
 				.SetBasePath(Directory.GetCurrentDirectory().Split("bin")[0])
-				.AddJsonFile(string.Format(_fileName, name));
+				.AddJsonFile(string.Format(_fileName, envType));
 		}
 	}
 }
