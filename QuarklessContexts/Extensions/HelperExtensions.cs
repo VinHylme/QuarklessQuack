@@ -17,6 +17,46 @@ namespace QuarklessContexts.Extensions
 {
 	public static class HelperExtensions
 	{
+		public static string NormaliseString(this string str)
+		{
+			var final = string.Empty;
+
+			if (str.Contains("&"))
+				final = str.Split("&")[0];
+			else if (str.Contains("/"))
+				final = str.Split("/")[0];
+
+			final = Regex.Replace(final, @"\(\w*\)|[^\w\s\(\)]", " ");
+			final = Regex.Replace(final, @"^\s+", "");
+			return final;
+		}
+		public static List<string> NormaliseStringList(this List<string> items)
+		{
+			var splitDualCategories = items
+				.Where(_ => _.Contains("&") || _.Contains("/"))
+				.SelectMany(_ =>
+				{
+					if (_.Contains("&"))
+						return _.Split("&");
+					else if (_.Contains("/"))
+						return _.Split("/");
+					return null;
+				}).Where(_ => _ != null).ToList();
+
+			items.RemoveAll(_ => _.Contains("&") || _.Contains("/"));
+
+			if (splitDualCategories.Any())
+				items.AddRange(splitDualCategories);
+
+			items = items.Select(_ =>
+			{
+				_ = Regex.Replace(_, @"\(\w*\)|[^\w\s\(\)]", " ");
+				_ = Regex.Replace(_, @"^\s+", "");
+				return _;
+			}).ToList();
+
+			return items.Distinct().ToList();
+		}
 		public static string GetPathByFolderName(this string folderName)
 		{
 			var initialPath = Directory.GetCurrentDirectory();

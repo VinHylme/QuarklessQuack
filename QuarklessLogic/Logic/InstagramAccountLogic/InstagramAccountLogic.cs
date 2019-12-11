@@ -231,7 +231,8 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 					IsBusiness = res.IsBusiness,
 					Location = res.Location,
 					ChallengeInfo = res.ChallengeInfo,
-					UserId = res.UserId
+					UserId = res.UserId,
+					Type = res.Type
 				});
 			}
 			catch (Exception ee)

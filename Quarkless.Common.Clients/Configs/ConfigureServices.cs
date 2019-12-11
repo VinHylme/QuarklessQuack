@@ -98,6 +98,7 @@ using QuarklessContexts.Models.APILogger;
 using QuarklessContexts.Models.SecurityLayerModels;
 using QuarklessLogic.Handlers.RequestBuilder.Constants;
 using QuarklessLogic.QueueLogic.Jobs.JobRunner;
+using QuarklessLogic.ServicesLogic.TopicsServiceLogic;
 using IpRateLimitPolicies = AspNetCoreRateLimit.IpRateLimitPolicies;
 #endregion
 

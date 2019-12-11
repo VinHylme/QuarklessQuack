@@ -1,16 +1,13 @@
-﻿using QuarklessContexts.Models.ServicesModels.DatabaseModels;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using MoreLinq;
+using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using QuarklessContexts.Models.Topics;
 using QuarklessRepositories.RedisRepository.SearchCache;
 using QuarklessRepositories.Repository.CorpusRepositories.Topic;
 using QuarklessRepositories.Repository.ServicesRepositories.TopicsRepository;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using MoreLinq;
-using QuarklessContexts.Extensions;
-using SubTopics = QuarklessContexts.Models.ServicesModels.DatabaseModels.SubTopics;
 
-namespace QuarklessLogic.ServicesLogic
+namespace QuarklessLogic.ServicesLogic.TopicsServiceLogic
 {
 	public class TopicServicesLogic : ITopicServicesLogic
 	{
@@ -27,7 +24,6 @@ namespace QuarklessLogic.ServicesLogic
 		{
 			await _searchingCache.StoreRelatedTopics(subTopics);
 		}
-
 		public async Task<QuarklessContexts.Models.Profiles.SubTopics> GetAllRelatedTopics(string topic)
 		{
 			return await _searchingCache.GetReleatedTopic(topic);

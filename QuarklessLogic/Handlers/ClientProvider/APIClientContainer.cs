@@ -2,9 +2,6 @@
 using QuarklessContexts.Contexts;
 using QuarklessContexts.InstaClient;
 using QuarklessContexts.Models;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using QuarklessContexts.Models.Proxies;
 
 namespace QuarklessLogic.Handlers.ClientProvider

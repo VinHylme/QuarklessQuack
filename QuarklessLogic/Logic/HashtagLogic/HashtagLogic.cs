@@ -32,32 +32,26 @@ namespace QuarklessLogic.Logic.HashtagLogic
 		{
 			throw new NotImplementedException();
 		}
-
 		public Task<IResult<InstaHashtagSearch>> GetFollowingHashtagsInfoAsync(long userId)
 		{
 			throw new NotImplementedException();
 		}
-
 		public Task<IResult<InstaHashtag>> GetHashtagInfoAsync(string tagname)
 		{
 			throw new NotImplementedException();
 		}
-
 		public Task<IResult<InstaHashtagStory>> GetHashtagStoriesAsync(string tagname)
 		{
 			throw new NotImplementedException();
 		}
-
 		public Task<IResult<InstaSectionMedia>> GetRecentHashtagMediaListAsync(string tagname, PaginationParameters paginationParameters)
 		{
 			throw new NotImplementedException();
 		}
-		
 		public Task<IResult<InstaHashtagSearch>> GetSuggestedHashtagsAsync()
 		{
 			throw new NotImplementedException();
 		}
-
 		public async Task<IResult<InstaSectionMedia>> GetTopHashtagMediaListAsync(string topic, int limit)
 		{
 			try
@@ -70,7 +64,6 @@ namespace QuarklessLogic.Logic.HashtagLogic
 				return null;
 			}
 		}
-
 		public async Task<IResult<InstaHashtagSearch>> SearchHashtagAsync(string query, IEnumerable<long> excludeList = null)
 		{
 			try
@@ -83,7 +76,6 @@ namespace QuarklessLogic.Logic.HashtagLogic
 				return null;
 			}
 		}
-
 		public async Task<IResult<InstaSectionMedia>> SearchReleatedHashtagAsync(string query, int limit = 1)
 		{
 			try
@@ -96,7 +88,6 @@ namespace QuarklessLogic.Logic.HashtagLogic
 				return null;
 			}
 		}
-
 		public Task<IResult<bool>> UnFollowHashtagAsync(string tagname)
 		{
 			throw new NotImplementedException();
@@ -125,7 +116,6 @@ namespace QuarklessLogic.Logic.HashtagLogic
 				return null;
 			}
 		}
-
 		public async Task UpdateAllMediasLanguagesToLower() => await _hashtagsRepository.UpdateAllMediasLanguagesToLower();
 	}
 }

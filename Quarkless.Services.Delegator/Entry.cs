@@ -73,18 +73,6 @@ namespace Quarkless.Services.Delegator
 			});
 			return services;
 		}
-		private static Task WithExceptionLogAsync(Func<Task> actionAsync)
-		{
-			try
-			{
-				return actionAsync();
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine($"{ex.Message}");
-				throw;
-			}
-		}
 		#endregion
 
 		#region Docker Api Stuff
