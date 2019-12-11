@@ -164,10 +164,10 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					case SearchType.Yandex:
 						if (user.Profile.Theme.ImagesLike != null && user.Profile.Theme.ImagesLike.Count > 0)
 						{
-							var yanres = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaForSpecificUserYandex,user.Profile.Topics.TopicFriendlyName, user.Profile.InstagramAccountId).GetAwaiter().GetResult();
+							var yandexResults = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaForSpecificUserYandex,user.Profile.Topics.TopicFriendlyName, user.Profile.InstagramAccountId).GetAwaiter().GetResult();
 							selectedAction = MetaDataType.FetchMediaForSpecificUserYandex;
-							if (yanres != null)
-								totalResults = yanres.ToList();
+							if (yandexResults != null)
+								totalResults = yandexResults.ToList();
 						}
 						break;
 				}
