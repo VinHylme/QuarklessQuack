@@ -18,11 +18,10 @@ namespace QuarklessLogic.QueueLogic.Jobs.JobTypes
 		{
 			var results = jobOptions.ActionExecute.DynamicInvoke(jobOptions.Parameters);
 			var prop = results.GetType().GetProperty("Succeeded");
-			if (prop != null) { 
-				var didPass = (bool) results.GetType().GetProperty("Succeeded").GetValue(results);
-				if(!didPass)
-					throw new Exception("failed");
-			}
+			if (prop == null) throw new Exception("does not exist");
+			var didPass = (bool) results.GetType().GetProperty("Succeeded")?.GetValue(results);
+			if(!didPass)
+				throw new Exception("failed");
 			throw new Exception("does not exist");
 		}
 	}

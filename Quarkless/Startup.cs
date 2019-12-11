@@ -86,7 +86,7 @@ namespace Quarkless
 				options.AddPolicy(CORS_POLICY,
 					builder=>
 					{
-						builder.WithOrigins(endPoints.FrontEnd);
+						builder.WithOrigins(endPoints.FrontEnd, endPoints.AutomatorService);
 						builder.AllowAnyOrigin();
 						builder.AllowAnyHeader();
 						builder.AllowAnyMethod();

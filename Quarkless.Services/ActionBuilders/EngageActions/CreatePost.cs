@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using QuarklessLogic.Handlers.RequestBuilder.Consts;
+using QuarklessLogic.Handlers.RequestBuilder.Constants;
 using QuarklessContexts.Models.Timeline;
 using QuarklessContexts.Enums;
 using Quarkless.Services.Interfaces.Actions;
@@ -44,13 +44,15 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 		private UserStoreDetails user;
 		private readonly IContentManager _builder;
 		private readonly IHeartbeatLogic _heartbeatLogic;
+		private readonly IUrlReader _urlReader;
 		private IS3BucketLogic _s3BucketLogic;
 		private ImageStrategySettings imageStrategySettings;
 
-		public CreatePost(IContentManager builder, IHeartbeatLogic heartbeatLogic)
+		public CreatePost(IContentManager builder, IHeartbeatLogic heartbeatLogic, IUrlReader urlReader)
 		{
 			_heartbeatLogic = heartbeatLogic;
 			_builder = builder;
+			_urlReader = urlReader;
 		}
 
 		public IActionCommit IncludeStorage(IStorage storage)
@@ -464,7 +466,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 							} : null
 						};
 						
-						restModel.BaseUrl = UrlConstants.UploadPhoto;
+						restModel.BaseUrl = _urlReader.UploadPhoto;
 						restModel.JsonBody = JsonConvert.SerializeObject(uploadPhoto);
 						break;
 					}
@@ -510,7 +512,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 							}).ToArray(),	
 						};
 						
-						restModel.BaseUrl = UrlConstants.UploadCarousel;
+						restModel.BaseUrl = _urlReader.UploadCarousel;
 						restModel.JsonBody = JsonConvert.SerializeObject(uploadAlbum);
 						break;
 					}
@@ -551,7 +553,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 							}
 						};
 						
-						restModel.BaseUrl = UrlConstants.UploadVideo;
+						restModel.BaseUrl = _urlReader.UploadVideo;
 						restModel.JsonBody = JsonConvert.SerializeObject(uploadVideo);
 						postAnalyser.Manipulation.VideoEditor.DisposeVideos();
 						break;

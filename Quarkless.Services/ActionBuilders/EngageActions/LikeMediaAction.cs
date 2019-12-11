@@ -1,5 +1,4 @@
-﻿using MoreLinq;
-using Quarkless.Services.Interfaces;
+﻿using Quarkless.Services.Interfaces;
 using Quarkless.Services.Interfaces.Actions;
 using Quarkless.Services.StrategyBuilders;
 using QuarklessContexts.Classes.Carriers;
@@ -9,7 +8,7 @@ using QuarklessContexts.Models;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessContexts.Models.Timeline;
-using QuarklessLogic.Handlers.RequestBuilder.Consts;
+using QuarklessLogic.Handlers.RequestBuilder.Constants;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using System;
 using System.Collections.Generic;
@@ -32,12 +31,14 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	{
 		private readonly IContentManager _builder;
 		private readonly IHeartbeatLogic _heartbeatLogic;
+		private readonly IUrlReader _urlReader;
 		private UserStoreDetails user;
 		private LikeStrategySettings likeStrategySettings;
-		public LikeMediaAction(IContentManager builder,IHeartbeatLogic heartbeatLogic)
+		public LikeMediaAction(IContentManager builder,IHeartbeatLogic heartbeatLogic, IUrlReader urlReader)
 		{
 			_builder = builder;
 			_heartbeatLogic = heartbeatLogic;
+			_urlReader = urlReader;
 		}
 
 		public IActionCommit IncludeStrategy(IStrategySettings strategy)
@@ -260,7 +261,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 
 						var restModel = new RestModel
 						{
-							BaseUrl = string.Format(UrlConstants.LikeMedia, nominatedMedia),
+							BaseUrl = string.Format(_urlReader.LikeMedia, nominatedMedia),
 							RequestType = RequestType.POST,
 							User = user,
 							JsonBody = null
@@ -303,7 +304,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 									if (nominatedMedia == null) continue;
 									var restModel = new RestModel
 									{
-										BaseUrl = string.Format(UrlConstants.LikeMedia, nominatedMedia),
+										BaseUrl = string.Format(_urlReader.LikeMedia, nominatedMedia),
 										RequestType = RequestType.POST,
 										JsonBody = null,
 										User = user

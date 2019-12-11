@@ -85,7 +85,8 @@ namespace Quarkless.Security.ServerListener.ServEntry
 			return new EndPoints
 			{
 				FrontEnd = access.FrontEnd,
-				RedisCon = access.RedisConnectionString
+				RedisCon = access.RedisConnectionString,
+				AutomatorService = access.AutomatorEndPoint
 			};
 		}
 		public EnvironmentsAccess RequestEnvData()
@@ -94,6 +95,7 @@ namespace Quarkless.Security.ServerListener.ServEntry
 			return new EnvironmentsAccess
 			{
 				AwsOptions = a.AwsOptions(),
+				ApiBasePath = a.ApiBasePath,
 				AwsAccess = a.AwsAccess,
 				AwsPool = a.AwsPool,
 				BasePath = a.BasePath,

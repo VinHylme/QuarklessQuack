@@ -1,21 +1,18 @@
-﻿using Quarkless.Services.Factories;
-using Quarkless.Services.Interfaces;
+﻿using Quarkless.Services.Interfaces;
 using Quarkless.Services.Interfaces.Actions;
 using Quarkless.Services.StrategyBuilders;
 using QuarklessContexts.Classes.Carriers;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models;
-using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessContexts.Models.Timeline;
-using QuarklessLogic.Handlers.RequestBuilder.Consts;
+using QuarklessLogic.Handlers.RequestBuilder.Constants;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using QuarklessLogic.Logic.StorageLogic;
 
 namespace Quarkless.Services.ActionBuilders.EngageActions
@@ -24,12 +21,14 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	{
 		private readonly IContentManager _content;
 		private readonly IHeartbeatLogic _heartbeatLogic;
+		private readonly IUrlReader _urlReader;
 		private UnFollowStrategySettings unFollowStrategySettings;
 		private UserStoreDetails user;
-		public UnFollowUserAction(IContentManager content,IHeartbeatLogic heartbeatLogic)
+		public UnFollowUserAction(IContentManager content,IHeartbeatLogic heartbeatLogic, IUrlReader urlReader)
 		{
 			this._content = content;
 			this._heartbeatLogic = heartbeatLogic;
+			this._urlReader = urlReader;
 		}
 
 		public IActionCommit IncludeStrategy(IStrategySettings strategy)
@@ -73,7 +72,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFollowingList, user.Profile.Topics.TopicFriendlyName, nominatedUser).GetAwaiter().GetResult();
 						var restModel = new RestModel
 						{
-							BaseUrl = string.Format(UrlConstants.UnfollowUser, nominatedUser.ObjectItem.FirstOrDefault()?.UserId),
+							BaseUrl = string.Format(_urlReader.UnfollowUser, nominatedUser.ObjectItem.FirstOrDefault()?.UserId),
 							RequestType = RequestType.POST,
 							JsonBody = null,
 							User = user
@@ -95,7 +94,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				}
 				case UnFollowStrategyType.LeastEngagingN:
 				{
-					var events_ = new List<TimelineEventModel>();
+					var events = new List<TimelineEventModel>();
 					for (var i = 0; i < unFollowStrategySettings.NumberOfUnfollows; i++)
 					{
 						var nominate = meta_S.ElementAtOrDefault(i);
@@ -104,12 +103,12 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFollowingList, user.Profile.Topics.TopicFriendlyName, nominate).GetAwaiter().GetResult();
 						var restModel = new RestModel
 						{
-							BaseUrl = string.Format(UrlConstants.UnfollowUser, nominate.ObjectItem.FirstOrDefault()?.UserId),
+							BaseUrl = string.Format(_urlReader.UnfollowUser, nominate.ObjectItem.FirstOrDefault()?.UserId),
 							RequestType = RequestType.POST,
 							JsonBody = null,
 							User = user
 						};
-						events_.Add(new TimelineEventModel
+						events.Add(new TimelineEventModel
 						{
 							ActionName = $"UnfollowUser_{unFollowStrategySettings.UnFollowStrategy.ToString()}",
 							Data = restModel,
@@ -117,7 +116,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						});
 					}
 					results.IsSuccesful = true;
-					results.Results = events_;
+					results.Results = events;
 					return results;
 				}
 			}

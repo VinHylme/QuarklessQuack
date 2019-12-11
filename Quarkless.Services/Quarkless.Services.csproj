@@ -8,7 +8,7 @@
     <OutputType>Exe</OutputType>
     <StartupObject>Quarkless.Services.Entrance</StartupObject>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-	<DockerfileRunArguments>--network name=localnet,alias=quarkless.local.automator --name automator.quark</DockerfileRunArguments>
+	<DockerfileRunArguments>-p 51242:51242 -e USER_ID=lemonkaces -e USER_INSTAGRAM_ACCOUNT=5cf3d6b9871f49057c0169bc --network name=localnet,alias=quarkless.local.automator --name automator.quark</DockerfileRunArguments>
 	</PropertyGroup>
 
   <ItemGroup>

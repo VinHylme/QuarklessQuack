@@ -10,7 +10,7 @@ using QuarklessContexts.Models.Requests;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessContexts.Models.Timeline;
-using QuarklessLogic.Handlers.RequestBuilder.Consts;
+using QuarklessLogic.Handlers.RequestBuilder.Constants;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using System;
 using System.Collections.Generic;
@@ -35,12 +35,14 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	{
 		private readonly IContentManager _builder;
 		private readonly IHeartbeatLogic _heartbeatLogic;
+		private readonly IUrlReader _urlReader;
 		private UserStoreDetails user;
 		private CommentingStrategySettings commentingStrategySettings;
-		public CreateCommentAction(IContentManager contentManager, IHeartbeatLogic heartbeatLogic)
+		public CreateCommentAction(IContentManager contentManager, IHeartbeatLogic heartbeatLogic, IUrlReader urlReader)
 		{
 			_heartbeatLogic = heartbeatLogic;
 			_builder = contentManager;
+			_urlReader = urlReader;
 		}
 		private HolderComment CommentingByLocation()
 		{
@@ -173,7 +175,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					};
 					var restModel = new RestModel
 					{
-						BaseUrl = string.Format(UrlConstants.CreateComment, nominatedMedia.MediaId),
+						BaseUrl = string.Format(_urlReader.CreateComment, nominatedMedia.MediaId),
 						RequestType = RequestType.POST,
 						JsonBody = JsonConvert.SerializeObject(createComment),
 						User = user

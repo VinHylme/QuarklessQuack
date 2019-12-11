@@ -56,6 +56,9 @@ namespace Quarkless.Security.AccessorSupport
 		public string TempVideoPath => _configuration["MediaPath:videosTempPath"];
 		public string TempImagePath => _configuration["MediaPath:imagesTempPath"];
 		public string FfmpegPath => _configuration["Ffmpeg"];
+		public string ApiBasePath => _configuration["Endpoints:ApiBasePath"];
+		public string AutomatorEndPoint => _configuration["Endpoints:AutomatorPath"];
+
 		public MaxConcurrentRequests MaxConcurrentRequests =>
 			_configuration.GetSection("MaxConcurrentRequests").Get<MaxConcurrentRequests>();
 		public IpRateLimiting IpRateLimiting => _configuration.GetSection("IpRateLimiting").Get<IpRateLimiting>();

@@ -3,16 +3,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Services.ContentBuilder.TopicBuilder;
 using Quarkless.Services.Interfaces;
-#region Used when initially populating corpus
-using QuarklessRepositories.RedisRepository.CorpusCache.CommentCorpusCache;
-using QuarklessRepositories.RedisRepository.CorpusCache.HashtagCorpusCache;
-using QuarklessRepositories.RedisRepository.CorpusCache.MediaCorpusCache;
-using QuarklessRepositories.Repository.CorpusRepositories.Comments;
-using QuarklessRepositories.Repository.CorpusRepositories.Medias;
-using QuarklessRepositories.Repository.ServicesRepositories.CaptionsRepository;
-using QuarklessRepositories.Repository.ServicesRepositories.CommentsRepository;
-using QuarklessRepositories.Repository.ServicesRepositories.HashtagsRepository;
-#endregion
 using StackExchange.Redis;
 using System;
 using System.IO;
@@ -112,26 +102,13 @@ namespace Quarkless.Services
 
 		static void Main(string[] args)
 		{
+			var environmentVariables = Environment.GetEnvironmentVariables();
+			var userId = environmentVariables["USER_ID"].ToString();
+			var instagramId = environmentVariables["USER_INSTAGRAM_ACCOUNT"].ToString();
+
 			var results = WithExceptionLogAsync(async () =>
 			{
-				//lunch
-				//do this when needing to populate table in cache
-
-				//var cT = Task.Run(async () => { 
-				//	var c = await serviceReacher.Get<ICommentCorpusRepository>().GetComments();
-				//	await serviceReacher.Get<ICommentCorpusCache>().AddComments(c);
-				//});
-				//var ccT = Task.Run(async () => { 
-				//	var cc = await serviceReacher.Get<IMediaCorpusRepository>().GetMedias();
-				//	await serviceReacher.Get<IMediaCorpusCache>().AddMedias(cc);
-				//});
-				//var hT = Task.Run(async () => { 
-				//	var h = await serviceReacher.Get<IHashtagsRepository>().GetHashtags();
-				//	await serviceReacher.Get<IHashtagCoprusCache>().AddHashtags(h);
-				//});
-				//Task.WaitAll(cT, ccT, hT);
-
-				await InitialiseClientServices().Get<IAgentManager>().Begin();
+				await InitialiseClientServices().Get<IAgentManager>().Begin(userId, instagramId);
 			});
 			Task.WaitAll(results);
 		}

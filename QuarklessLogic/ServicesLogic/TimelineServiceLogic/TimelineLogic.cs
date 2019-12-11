@@ -17,7 +17,7 @@ using Quarkless.Analyser;
 using QuarklessContexts.Models.Library;
 using QuarklessContexts.Models.LookupModels;
 using QuarklessContexts.Models.MessagingModels;
-using QuarklessLogic.Handlers.RequestBuilder.Consts;
+using QuarklessLogic.Handlers.RequestBuilder.Constants;
 using QuarklessLogic.Logic.StorageLogic;
 using QuarklessLogic.QueueLogic.Jobs.JobOptions;
 using QuarklessRepositories.RedisRepository.LookupCache;
@@ -36,14 +36,16 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 		private readonly ILookupCache _lookupCache;
 		private readonly IS3BucketLogic _s3BucketLogic;
 		private readonly IPostAnalyser _postAnalyser;
+		private readonly IUrlReader _urlReader;
 		public TimelineLogic(ITaskService taskService, IRequestBuilder requestBuilder, 
-			ILookupCache lookupCache, IS3BucketLogic bucketLogic, IPostAnalyser postAnalyser)
+			ILookupCache lookupCache, IS3BucketLogic bucketLogic, IPostAnalyser postAnalyser, IUrlReader urlReader)
 		{
 			_taskService = taskService;
 			_requestBuilder = requestBuilder;
 			_lookupCache = lookupCache;
 			_s3BucketLogic = bucketLogic;
 			_postAnalyser = postAnalyser;
+			_urlReader = urlReader;
 		}
 		#region Add Event To Queue
 		public string AddEventToTimeline(string actionName, RestModel restBody, DateTimeOffset executeTime)
@@ -112,7 +114,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 				{
 					case MediaSelectionType.Image:
 						options.ActionName += $"_{MediaSelectionType.Image.ToString()}_userPosted";
-						options.Rest.BaseUrl = UrlConstants.UploadPhoto;
+						options.Rest.BaseUrl = _urlReader.UploadPhoto;
 						options.Rest.JsonBody = JsonConvert.SerializeObject(new UploadPhotoModel
 						{
 							MediaInfo = mediaInfo,
@@ -131,7 +133,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 						break;
 					case MediaSelectionType.Video:
 						options.ActionName += $"_{MediaSelectionType.Video.ToString()}_userPosted";
-						options.Rest.BaseUrl = UrlConstants.UploadVideo;
+						options.Rest.BaseUrl = _urlReader.UploadVideo;
 						var urlToSend = dataMediaSubmit.RawMediaDatas
 							.FirstOrDefault()?.UrlToSend;
 						if (urlToSend != null)
@@ -160,7 +162,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 						break;
 					case MediaSelectionType.Carousel:
 						options.ActionName += $"_{MediaSelectionType.Carousel.ToString()}_userPosted";
-						options.Rest.BaseUrl = UrlConstants.UploadCarousel;
+						options.Rest.BaseUrl = _urlReader.UploadCarousel;
 						options.Rest.JsonBody = JsonConvert.SerializeObject(new UploadAlbumModel
 						{
 							Album = dataMediaSubmit.RawMediaDatas.Select(x => new InstaAlbumUpload
@@ -256,8 +258,8 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 							}
 
 							options.Rest.JsonBody = model.ToJsonString();
-							options.Rest.BaseUrl = model.ThreadIds.Any() ? UrlConstants.SendDirectMessageMediaWithThreads 
-								: UrlConstants.SendDirectMessageMedia;
+							options.Rest.BaseUrl = model.ThreadIds.Any() ? _urlReader.SendDirectMessageMediaWithThreads 
+								: _urlReader.SendDirectMessageMedia;
 
 							options.ActionName = ActionType.SendDirectMessageMedia.GetDescription();
 							break;
@@ -269,7 +271,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 							}
 
 							options.Rest.JsonBody = model.ToJsonString();
-							options.Rest.BaseUrl = UrlConstants.SendDirectMessageText;
+							options.Rest.BaseUrl = _urlReader.SendDirectMessageText;
 							options.ActionName = ActionType.SendDirectMessageText.GetDescription();
 							break;
 						case SendDirectLinkModel model:
@@ -286,7 +288,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 							}
 
 							options.Rest.JsonBody = model.ToJsonString();
-							options.Rest.BaseUrl = UrlConstants.SendDirectMessageLink;
+							options.Rest.BaseUrl = _urlReader.SendDirectMessageLink;
 							options.ActionName = ActionType.SendDirectMessageLink.GetDescription();
 							break;
 						case SendDirectPhotoModel model:
@@ -307,7 +309,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 							}
 
 							options.Rest.JsonBody = model.ToJsonString();
-							options.Rest.BaseUrl = UrlConstants.SendDirectMessagePhoto;
+							options.Rest.BaseUrl = _urlReader.SendDirectMessagePhoto;
 							options.ActionName = ActionType.SendDirectMessagePhoto.GetDescription();
 							break;
 						case SendDirectVideoModel model:
@@ -333,13 +335,13 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 							};
 							options.ActionName = ActionType.SendDirectMessageVideo.GetDescription();
 							options.Rest.JsonBody = model.ToJsonString();
-							options.Rest.BaseUrl = UrlConstants.SendDirectMessageVideo;
+							options.Rest.BaseUrl = _urlReader.SendDirectMessageVideo;
 							break;
 						case SendDirectProfileModel model:
 
 							options.Rest.JsonBody = model.ToJsonString();
 							options.ActionName = ActionType.SendDirectMessageProfile.GetDescription();
-							options.Rest.BaseUrl = UrlConstants.SendDirectMessageProfile;
+							options.Rest.BaseUrl = _urlReader.SendDirectMessageProfile;
 							break;
 						default:
 							response.NumberOfFails++;

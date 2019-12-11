@@ -21,8 +21,15 @@ namespace Quarkless.Services.Delegator
 	{
 		private const string CLIENT_SECTION = "Client";
 		private const string SERVER_IP = "localhost";
-		private const string heartbeatImageName = "quarkless/quarkless.services.heartbeat:latest";
-		private const string heartbeatContainerName = "/quarkless.heartbeat.";
+
+		private const string HEARTBEAT_IMAGE_NAME = "quarkless/quarkless.services.heartbeat:latest";
+		private const string HEARTBEAT_CONTAINER_NAME = "/quarkless.heartbeat.";
+
+		private const string AUTOMATOR_IMAGE_NAME = "quarkless/quarkless.services.automator:latest";
+		private const string AUTOMATOR_CONTAINER_NAME = "/quarkless.automator.";
+
+		private const string NETWORK_MODE = "localnet";
+
 		private static IAgentLogic _agentLogic;
 		private static DockerClient _client => new DockerClientConfiguration(new Uri("npipe://./pipe/docker_engine")).CreateClient();
 
@@ -150,11 +157,11 @@ namespace Quarkless.Services.Delegator
 				var worker = workers.MoveNextRepeater();
 				await _client.Containers.CreateContainerAsync(new CreateContainerParameters
 				{
-					Image = heartbeatImageName,
+					Image = HEARTBEAT_IMAGE_NAME,
 					Name = $"quarkless.heartbeat.{type.ToString()}.{customer.AccountId}.{customer.Id}.{worker.Id}",
 					HostConfig = new HostConfig
 					{
-						NetworkMode = "localnet",
+						NetworkMode = NETWORK_MODE,
 						RestartPolicy = new RestartPolicy()
 						{
 							Name = RestartPolicyKind.Always
@@ -174,12 +181,70 @@ namespace Quarkless.Services.Delegator
 			}
 
 			//start the containers
-			foreach (var container in await GetContainersByName(heartbeatContainerName))
+			foreach (var container in await GetContainersByName(HEARTBEAT_CONTAINER_NAME))
 			{
 				await _client.Containers.StartContainerAsync(container.ID, new ContainerStartParameters());
 			}
 		}
-        static async Task Main(string[] args)
+		static async Task CreateAndAutomatorContainers(List<ShortInstagramAccountModel> customers)
+		{
+			foreach (var customer in customers)
+			{
+				await _client.Containers.CreateContainerAsync(new CreateContainerParameters
+				{
+					Image = AUTOMATOR_IMAGE_NAME,
+					Name = $"quarkless.automator.{customer.AccountId}.{customer.Id}",
+					HostConfig = new HostConfig
+					{
+						NetworkMode = NETWORK_MODE,
+						PortBindings = new Dictionary<string, IList<PortBinding>>
+						{
+							{ "51242/tcp", 
+								new List<PortBinding>
+								{
+									new PortBinding
+									{
+										HostPort = "51242"
+									}
+								}
+							}
+						},
+						RestartPolicy = new RestartPolicy()
+						{
+							Name = RestartPolicyKind.Always
+						}
+					},
+					
+					NetworkingConfig = new NetworkingConfig()
+					{
+						EndpointsConfig = new Dictionary<string, EndpointSettings>
+						{
+							{ "localnet", 
+								new EndpointSettings()
+								{
+									Aliases = new List<string>{ "quarkless.local.automator" }
+								}
+							}
+						}
+					},
+					Env = new List<string>
+					{
+						$"USER_ID={customer.AccountId}",
+						$"USER_INSTAGRAM_ACCOUNT={customer.Id}",
+					},
+					AttachStderr = true,
+					AttachStdout = true
+				});
+			}
+
+			//start the containers
+			foreach (var container in await GetContainersByName(AUTOMATOR_CONTAINER_NAME))
+			{
+				await _client.Containers.StartContainerAsync(container.ID, new ContainerStartParameters());
+			}
+		}
+
+		static async Task Main(string[] args)
         {
 	        var services = InitialiseClientServices().BuildServiceProvider();
 	        _agentLogic = services.GetService<IAgentLogic>();
@@ -187,28 +252,53 @@ namespace Quarkless.Services.Delegator
 
 			var images = await _client.Images.ListImagesAsync(new ImagesListParameters());
 			
-			if (!images.Any(image => image.RepoTags.Contains(heartbeatImageName)))
+			if (!images.Any(image => image.RepoTags.Contains(HEARTBEAT_IMAGE_NAME)))
 			{
 				try
 				{
 					var projPath = Directory.GetParent(Environment.CurrentDirectory.Split("bin")[0]).FullName;
 					var solutionPath = Directory.GetParent(projPath);
 					var heartBeatPath = solutionPath + @"\Quarkless.Services.Heartbeat";
-					RunCommand($"cd {solutionPath} & docker build -t {heartbeatImageName} -f {heartBeatPath + @"\Dockerfile"} .");
+					RunCommand($"cd {solutionPath} & docker build -t {HEARTBEAT_IMAGE_NAME} -f {heartBeatPath + @"\Dockerfile"} .");
 				}
-				catch (Exception ex)
+				catch (Exception ee)
 				{
-					Console.WriteLine(ex);
+					Console.WriteLine(ee);
+				}
+			}
+
+			if (!images.Any(image => image.RepoTags.Contains(AUTOMATOR_IMAGE_NAME)))
+			{
+				try
+				{
+					var projPath = Directory.GetParent(Environment.CurrentDirectory.Split("bin")[0]).FullName;
+					var solutionPath = Directory.GetParent(projPath);
+					var automatorPath = solutionPath + @"\Quarkless.Services";
+					RunCommand($"cd {solutionPath} & docker build -t {AUTOMATOR_IMAGE_NAME} -f {automatorPath + @"\Dockerfile"} .");
+				}
+				catch (Exception ee)
+				{
+					Console.WriteLine(ee.Message);
 				}
 			}
 
 			//get all heartbeat containers then remove them
-			foreach (var container in await GetContainersByName(heartbeatContainerName))
+			foreach (var container in await GetContainersByName(HEARTBEAT_CONTAINER_NAME))
 			{
-				await _client.Containers.RemoveContainerAsync(container.ID, new ContainerRemoveParameters
-				{
-					Force = true
-				});
+				await _client.Containers.RemoveContainerAsync(container.ID, 
+					new ContainerRemoveParameters
+					{
+						Force = true
+					});
+			}
+			//get all automation service containers then remove them
+			foreach (var container in await GetContainersByName(AUTOMATOR_CONTAINER_NAME))
+			{
+				await _client.Containers.RemoveContainerAsync(container.ID,
+					new ContainerRemoveParameters()
+					{
+						Force = true
+					});
 			}
 
 			// recreate the heartbeat containers for users
@@ -221,6 +311,10 @@ namespace Quarkless.Services.Delegator
 			{
 				await CreateAndRunHeartbeatContainers(customers, opsType);
 			}
+
+			await Task.Delay(TimeSpan.FromMinutes(2.5)); // wait around 2.5 minutes before starting automation (populate data first)
+
+			await CreateAndAutomatorContainers(customers);
         }
 	}
 }

@@ -28,5 +28,7 @@ namespace Quarkless.Security.AccessorSupport
 		string TempVideoPath { get;  }
 		string TempImagePath { get;  }
 		string FfmpegPath { get; }
+		string ApiBasePath { get; }
+		string AutomatorEndPoint { get; }
 	}
 }

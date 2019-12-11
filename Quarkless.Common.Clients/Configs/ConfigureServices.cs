@@ -96,6 +96,7 @@ using Quarkless.Analyser;
 using Quarkless.Analyser.Models;
 using QuarklessContexts.Models.APILogger;
 using QuarklessContexts.Models.SecurityLayerModels;
+using QuarklessLogic.Handlers.RequestBuilder.Constants;
 using QuarklessLogic.QueueLogic.Jobs.JobRunner;
 using IpRateLimitPolicies = AspNetCoreRateLimit.IpRateLimitPolicies;
 #endregion
@@ -303,6 +304,7 @@ namespace Quarkless.Common.Clients.Configs
 				FfmpegEnginePath = accessors.FfmpegPath,
 				IsOnWindows = _isWindows
 			}));
+			services.AddSingleton<IUrlReader>(new UrlReader(accessors.ApiBasePath));
 		}
 		public static void AddRepositories(this IServiceCollection services)
 		{

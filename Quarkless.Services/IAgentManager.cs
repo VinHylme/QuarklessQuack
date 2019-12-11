@@ -4,6 +4,6 @@ namespace Quarkless.Services
 {
 	public interface IAgentManager
 	{
-		Task Begin();
+		Task Begin(string accountId, string instagramAccountId);
 	}
 }

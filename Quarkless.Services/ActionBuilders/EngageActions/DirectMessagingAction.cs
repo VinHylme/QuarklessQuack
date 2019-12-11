@@ -14,7 +14,7 @@ using QuarklessContexts.Models.MessagingModels;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessContexts.Models.Timeline;
-using QuarklessLogic.Handlers.RequestBuilder.Consts;
+using QuarklessLogic.Handlers.RequestBuilder.Constants;
 using QuarklessLogic.Logic.StorageLogic;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 
@@ -48,11 +48,13 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	{
 		private readonly IContentManager _builder;
 		private readonly IHeartbeatLogic _heartbeatLogic;
+		private readonly IUrlReader _urlReader;
 		private UserStoreDetails user;
-		public DirectMessagingAction(IContentManager contentManager, IHeartbeatLogic heartbeatLogic)
+		public DirectMessagingAction(IContentManager contentManager, IHeartbeatLogic heartbeatLogic, IUrlReader urlReader)
 		{
 			_heartbeatLogic = heartbeatLogic;
 			_builder = contentManager;
+			_urlReader = urlReader;
 		}
 
 		#region Functionality for each actions
@@ -354,7 +356,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 							Recipients = nominatedIds,
 							TextMessage = templateSelected?.Entity.Message
 						};
-						restModel.BaseUrl = UrlConstants.SendDirectMessageText;
+						restModel.BaseUrl = _urlReader.SendDirectMessageText;
 						restModel.JsonBody = textModel.ToJsonString();
 						break;
 					case MessageActionType.Link:
@@ -364,7 +366,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 							Link = templateSelected?.Entity.Link,
 							TextMessage = templateSelected?.Entity.Message
 						};
-						restModel.BaseUrl = UrlConstants.SendDirectMessageLink;
+						restModel.BaseUrl = _urlReader.SendDirectMessageLink;
 						restModel.JsonBody = linkModel.ToJsonString();
 						break;
 					case MessageActionType.Photo:
@@ -376,7 +378,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 								ImageBytes = Convert.FromBase64String(templateSelected?.Entity.MediaBytes.Split(',')[1])
 							}
 						};
-						restModel.BaseUrl = UrlConstants.SendDirectMessagePhoto;
+						restModel.BaseUrl = _urlReader.SendDirectMessagePhoto;
 						restModel.JsonBody = photoModel.ToJsonString();
 						break;
 					case MessageActionType.Video:
@@ -397,7 +399,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 								}
 							}
 						};
-						restModel.BaseUrl = UrlConstants.SendDirectMessageVideo;
+						restModel.BaseUrl = _urlReader.SendDirectMessageVideo;
 						restModel.JsonBody = videoModel.ToJsonString();
 						break;
 					case MessageActionType.Profile:

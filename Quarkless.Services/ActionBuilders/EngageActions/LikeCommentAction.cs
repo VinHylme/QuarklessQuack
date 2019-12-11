@@ -9,7 +9,7 @@ using QuarklessContexts.Models;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessContexts.Models.Timeline;
-using QuarklessLogic.Handlers.RequestBuilder.Consts;
+using QuarklessLogic.Handlers.RequestBuilder.Constants;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using System;
 using System.Collections.Generic;
@@ -31,11 +31,13 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	public class LikeCommentAction : IActionCommit
 	{
 		private readonly IHeartbeatLogic _heartbeatLogic;
+		private readonly IUrlReader _urlReader;
 		private UserStoreDetails user;
 		private LikeStrategySettings likeStrategySettings;
-		public LikeCommentAction(IContentManager contentManager, IHeartbeatLogic heartbeatLogic)
+		public LikeCommentAction(IContentManager contentManager, IHeartbeatLogic heartbeatLogic, IUrlReader urlReader)
 		{
 			_heartbeatLogic = heartbeatLogic;
+			_urlReader = urlReader;
 		}
 		private long? CommentingByTopic()
 		{
@@ -267,7 +269,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 
 					var restModel = new RestModel
 					{
-						BaseUrl = string.Format(UrlConstants.LikeComment, nominatedComment.ToString()),
+						BaseUrl = string.Format(_urlReader.LikeComment, nominatedComment.ToString()),
 						RequestType = RequestType.POST,
 						User = user,
 						JsonBody = null
