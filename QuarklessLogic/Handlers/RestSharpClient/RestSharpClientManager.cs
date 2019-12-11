@@ -111,12 +111,12 @@ namespace QuarklessLogic.Handlers.RestSharpClient
 				var request = string.IsNullOrEmpty(resource) ? new RestRequest(Method.GET) : new RestRequest(resource, Method.GET);
 				RestClient.BaseUrl = new Uri(url);
 
-				if (parameters!=null && parameters.Count() > 0)
+				if (parameters!=null && parameters.Any())
 				{
 					foreach(var param_ in parameters)
 						request.AddParameter(param_);
 				}
-				if (headers != null && headers.Count() > 0)
+				if (headers != null && headers.Any())
 				{
 					foreach (var header in headers)
 						request.AddHeader(header.Name, header.Value);

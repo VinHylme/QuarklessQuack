@@ -407,13 +407,13 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 		public string UpdateEvent(UpdateTimelineItemRequest updateTimelineItemRequest)
 		{
 			try { 
-				var job = _taskService.GetEvent(updateTimelineItemRequest.EventId);
+				var job = _taskService.GetEvent(updateTimelineItemRequest.Id);
 				job.ExecuteTime = updateTimelineItemRequest.Time;
 			
 				var object_ = JsonConvert.DeserializeObject(job.Rest.JsonBody, 
-					updateTimelineItemRequest.MediaType == 1 ? typeof(UploadPhotoModel) 
-					: updateTimelineItemRequest.MediaType == 2 ? typeof(UploadVideoModel) 
-					: updateTimelineItemRequest.MediaType == 3 ? typeof(UploadAlbumModel) : typeof(object)
+					updateTimelineItemRequest.Type == 1 ? typeof(UploadPhotoModel) 
+					: updateTimelineItemRequest.Type == 2 ? typeof(UploadVideoModel) 
+					: updateTimelineItemRequest.Type == 3 ? typeof(UploadAlbumModel) : typeof(object)
 					);
 
 				object_.GetProp("MediaInfo").SetValue(object_, new MediaInfo
@@ -426,7 +426,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 
 				job.Rest.JsonBody = JsonConvert.SerializeObject(object_);
 
-				if (!DeleteEvent(updateTimelineItemRequest.EventId)) return null;
+				if (!DeleteEvent(updateTimelineItemRequest.Id)) return null;
 				var res = AddEventToTimeline(job.ActionName, job.Rest, job.ExecuteTime);
 				return !string.IsNullOrEmpty(res) ? res : null;
 			}

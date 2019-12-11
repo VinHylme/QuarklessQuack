@@ -8,7 +8,7 @@ namespace QuarklessContexts.Models.Timeline
 	public class UpdateTimelineItemRequest
 	{
 		[JsonProperty("id")]
-		public string EventId { get; set; }
+		public string Id { get; set; }
 
 		[JsonProperty("caption")]
 		public string Caption { get; set; }
@@ -26,6 +26,6 @@ namespace QuarklessContexts.Models.Timeline
 		public string Credit { get; set; }
 
 		[JsonProperty("type")]
-		public int MediaType { get; set; }
+		public int Type { get; set; }
 	}
 }

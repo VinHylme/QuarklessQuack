@@ -362,7 +362,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 //								SelectedMedia = result
 //							});
 //
-//							selectedMedia.MediaType = InstaMediaType.Image;
+//							selectedMedia.Type = InstaMediaType.Image;
 //							break;
 //						}
 //
@@ -370,7 +370,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 //						if (imBytes.GetAspectRatio() > 1.6)
 //						{
 //							var toCarousel = imBytes.CreateCarousel();
-//							selectedMedia.MediaType = InstaMediaType.Carousel;
+//							selectedMedia.Type = InstaMediaType.Carousel;
 //
 //							//for each image converted to add to the list of images to send
 //							selectedMedia.MediaData = toCarousel.Select(x => 
@@ -389,7 +389,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 //								var oas = selectedMedia.MediaData[0].MediaBytes.GetClosestAspectRatio();
 //								var cas = imBytes.GetClosestAspectRatio();
 //								if (Math.Abs(oas - cas) > 0.5) continue;
-//								selectedMedia.MediaType = InstaMediaType.Carousel;
+//								selectedMedia.Type = InstaMediaType.Carousel;
 //								selectedMedia.MediaData.Add(new MediaData
 //								{
 //									MediaBytes = imBytes,
@@ -399,7 +399,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 //							}
 //							else
 //							{
-//								selectedMedia.MediaType = InstaMediaType.Carousel;
+//								selectedMedia.Type = InstaMediaType.Carousel;
 //								selectedMedia.MediaData.Add(new MediaData
 //								{
 //									MediaBytes = imBytes,

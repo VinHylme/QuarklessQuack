@@ -551,7 +551,7 @@ namespace QuarklessLogic.ContentSearch.YandexSearch
 			//				Topic = url.TopicGroup,
 			//				MediaUrl = new List<string> { a },
 			//				MediaFrom = MediaFrom.Yandex,
-			//				MediaType = InstagramApiSharp.Classes.Models.InstaMediaType.Image
+			//				Type = InstagramApiSharp.Classes.Models.InstaMediaType.Image
 			//			}));
 			//			Task.Delay(500);
 			//		}

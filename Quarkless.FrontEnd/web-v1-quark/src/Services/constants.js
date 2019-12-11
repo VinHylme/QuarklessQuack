@@ -10,7 +10,7 @@ module.exports.Calling = {
   "account_update_agent_state": process.env.VUE_APP_ACCOUNT_UPDATE_AGENT_STATE,
   "account_add_instagram": process.env.VUE_APP_ACCOUNT_ADD_INSTAGRAM,
   "account_instagram_challenge": process.env.VUE_APP_ACCOUNT_INSTAGRAM_CHALLENGE,
-  "account_instagram_refresh": process.env.VUE_APP_ACCOUNT_INSTAGRAM_CHALLENGE,
+  "account_instagram_refresh": process.env.VUE_APP_ACCOUNT_INSTAGRAM_REFRESH,
   "account_get_profiles": process.env.VUE_APP_ACCOUNT_GET_PROFILES,
   "account_update_profile": process.env.VUE_APP_ACCOUNT_UPDATE_PROFILE,
   "account_upload": process.env.VUE_APP_ACCOUNT_UPLOAD,

@@ -1,24 +1,26 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using Docker.DotNet;
+using System.Diagnostics;
 using Docker.DotNet.Models;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using MongoDB.Driver;
-using Quarkless.Common.Clients;
+using System.Threading.Tasks;
 using QuarklessContexts.Enums;
+using Quarkless.Common.Clients;
+using System.Collections.Generic;
+using Microsoft.Extensions.Configuration;
+using QuarklessLogic.ServicesLogic.AgentLogic;
+using Microsoft.Extensions.DependencyInjection;
 using QuarklessContexts.Models.InstagramAccounts;
 using QuarklessContexts.Models.SecurityLayerModels;
-using QuarklessLogic.ServicesLogic.AgentLogic;
 
 namespace Quarkless.Services.Delegator
 {
 	class Entry
 	{
+		#region Declerations
+		#region Constants
+		private const string DOCKER_URL = "npipe://./pipe/docker_engine";
 		private const string CLIENT_SECTION = "Client";
 		private const string SERVER_IP = "localhost";
 
@@ -29,9 +31,10 @@ namespace Quarkless.Services.Delegator
 		private const string AUTOMATOR_CONTAINER_NAME = "/quarkless.automator.";
 
 		private const string NETWORK_MODE = "localnet";
-
-		private static IAgentLogic _agentLogic;
-		private static DockerClient _client => new DockerClientConfiguration(new Uri("npipe://./pipe/docker_engine")).CreateClient();
+		#endregion
+		private static IAgentLogic _agentLogic; 
+		private static DockerClient Client => new DockerClientConfiguration(new Uri(DOCKER_URL)).CreateClient();
+		#endregion
 
 		#region Build Services
 		private static IConfiguration MakeConfigurationBuilder()
@@ -84,6 +87,7 @@ namespace Quarkless.Services.Delegator
 		}
 		#endregion
 
+		#region Docker Api Stuff
 		static void RunCommand(string command)
 		{
 			try
@@ -132,7 +136,7 @@ namespace Quarkless.Services.Delegator
 		}
 		static async Task<IList<ContainerListResponse>> GetContainersByName(string name)
 		{
-			return await _client.Containers.ListContainersAsync(new ContainersListParameters
+			return await Client.Containers.ListContainersAsync(new ContainersListParameters
 			{
 				All = true,
 				Filters = new Dictionary<string, IDictionary<string, bool>>
@@ -152,10 +156,10 @@ namespace Quarkless.Services.Delegator
 			var workers = new NextList<ShortInstagramAccountModel>(await _agentLogic.GetAllAccounts(1));
 			if (!workers.Any()) return;
 
-			foreach (var customer in customers.Where(user=>user.AgentState == (int) AgentState.Running))
+			foreach (var customer in customers)
 			{
 				var worker = workers.MoveNextRepeater();
-				await _client.Containers.CreateContainerAsync(new CreateContainerParameters
+				await Client.Containers.CreateContainerAsync(new CreateContainerParameters
 				{
 					Image = HEARTBEAT_IMAGE_NAME,
 					Name = $"quarkless.heartbeat.{type.ToString()}.{customer.AccountId}.{customer.Id}.{worker.Id}",
@@ -178,19 +182,21 @@ namespace Quarkless.Services.Delegator
 					AttachStderr = true,
 					AttachStdout = true
 				});
+				Console.WriteLine("Successfully created automator app for customer {0}", customer.Username);
 			}
 
 			//start the containers
 			foreach (var container in await GetContainersByName(HEARTBEAT_CONTAINER_NAME))
 			{
-				await _client.Containers.StartContainerAsync(container.ID, new ContainerStartParameters());
+				await Client.Containers.StartContainerAsync(container.ID, new ContainerStartParameters());
+				Console.WriteLine("Successfully started heartbeat app with ID {0}", container.ID);
 			}
 		}
 		static async Task CreateAndAutomatorContainers(List<ShortInstagramAccountModel> customers)
 		{
 			foreach (var customer in customers)
 			{
-				await _client.Containers.CreateContainerAsync(new CreateContainerParameters
+				await Client.Containers.CreateContainerAsync(new CreateContainerParameters
 				{
 					Image = AUTOMATOR_IMAGE_NAME,
 					Name = $"quarkless.automator.{customer.AccountId}.{customer.Id}",
@@ -235,25 +241,37 @@ namespace Quarkless.Services.Delegator
 					AttachStderr = true,
 					AttachStdout = true
 				});
+				Console.WriteLine("Successfully created automator app for customer {0}", customer.Username);
 			}
 
 			//start the containers
 			foreach (var container in await GetContainersByName(AUTOMATOR_CONTAINER_NAME))
 			{
-				await _client.Containers.StartContainerAsync(container.ID, new ContainerStartParameters());
+				await Client.Containers.StartContainerAsync(container.ID, new ContainerStartParameters());
+				Console.WriteLine("Successfully started automator app with ID {0}", container.ID);
 			}
 		}
+		#endregion
 
-		static async Task Main(string[] args)
-        {
-	        var services = InitialiseClientServices().BuildServiceProvider();
-	        _agentLogic = services.GetService<IAgentLogic>();
+		/// <summary>
+		/// This application requires the quarkless.security application to run on your local machine
+		/// for that please go to the quarkless.security project and run the .exe in the bin folder
+		/// (create a shortcut for ease)
+		/// Create images for heartbeat and automator services
+		/// Delete and Recreate the containers for each user
+		/// </summary>
+		/// <returns></returns>
+		private static async Task CarryOutOperation()
+		{
+			var services = InitialiseClientServices().BuildServiceProvider();
+			_agentLogic = services.GetService<IAgentLogic>();
 
 
-			var images = await _client.Images.ListImagesAsync(new ImagesListParameters());
-			
+			var images = await Client.Images.ListImagesAsync(new ImagesListParameters());
+
 			if (!images.Any(image => image.RepoTags.Contains(HEARTBEAT_IMAGE_NAME)))
 			{
+				Console.WriteLine("Creating image for {0}", HEARTBEAT_IMAGE_NAME);
 				try
 				{
 					var projPath = Directory.GetParent(Environment.CurrentDirectory.Split("bin")[0]).FullName;
@@ -269,6 +287,7 @@ namespace Quarkless.Services.Delegator
 
 			if (!images.Any(image => image.RepoTags.Contains(AUTOMATOR_IMAGE_NAME)))
 			{
+				Console.WriteLine("Creating image for {0}", AUTOMATOR_IMAGE_NAME);
 				try
 				{
 					var projPath = Directory.GetParent(Environment.CurrentDirectory.Split("bin")[0]).FullName;
@@ -282,39 +301,52 @@ namespace Quarkless.Services.Delegator
 				}
 			}
 
+			Console.WriteLine("Clearing out current containers...");
+			Console.WriteLine("Beginning with heartbeat app...");
 			//get all heartbeat containers then remove them
 			foreach (var container in await GetContainersByName(HEARTBEAT_CONTAINER_NAME))
 			{
-				await _client.Containers.RemoveContainerAsync(container.ID, 
+				Console.WriteLine("Removed {0}", container.ID);
+				await Client.Containers.RemoveContainerAsync(container.ID,
 					new ContainerRemoveParameters
 					{
 						Force = true
 					});
 			}
+			Console.WriteLine("Finished with heartbeat, now starting automator");
 			//get all automation service containers then remove them
 			foreach (var container in await GetContainersByName(AUTOMATOR_CONTAINER_NAME))
 			{
-				await _client.Containers.RemoveContainerAsync(container.ID,
+				Console.WriteLine("Removed {0}", container.ID);
+				await Client.Containers.RemoveContainerAsync(container.ID,
 					new ContainerRemoveParameters()
 					{
 						Force = true
 					});
 			}
 
+			Console.WriteLine("Recreating new instances of containers");
 			// recreate the heartbeat containers for users
 			var customers = (await _agentLogic.GetAllAccounts(0))?.ToList();
-			
-			if(customers == null || !customers.Any()) return;
+
+			if (customers == null || !customers.Any()) return;
 
 			var opsTypes = Enum.GetValues(typeof(ExtractOperationType)).Cast<ExtractOperationType>();
 			foreach (var opsType in opsTypes)
 			{
 				await CreateAndRunHeartbeatContainers(customers, opsType);
 			}
+			Console.WriteLine("Finished Heartbeat containers, now starting automator");
 
 			await Task.Delay(TimeSpan.FromMinutes(2.5)); // wait around 2.5 minutes before starting automation (populate data first)
 
 			await CreateAndAutomatorContainers(customers);
-        }
+			Console.WriteLine("Finished creating containers for automator");
+		}
+
+		static async Task Main(string[] args)
+		{
+			await CarryOutOperation();
+		}
 	}
 }
