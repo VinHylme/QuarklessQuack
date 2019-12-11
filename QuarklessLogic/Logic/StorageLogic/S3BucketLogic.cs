@@ -105,7 +105,7 @@ namespace QuarklessLogic.Logic.StorageLogic
 				{
 					BucketName = bucketName ?? _bucketName,
 					Key = keyName,
-					Expires = DateTime.Now.AddMinutes(55)
+					Expires = DateTime.Now.AddDays(26)
 				};
 				//string url_ = $"https://{bucketName}.s3.eu-west-2.amazonaws.com/{keyName}";
 				var url = _client.GetPreSignedURL(expiryUrlRequest);
