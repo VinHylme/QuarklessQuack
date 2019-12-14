@@ -9,7 +9,6 @@ using QuarklessRepositories.Repository.ServicesRepositories.HashtagsRepository;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace QuarklessLogic.Logic.HashtagLogic
@@ -28,7 +27,7 @@ namespace QuarklessLogic.Logic.HashtagLogic
 			_hashtagsRepository = hashtagsRepository;
 			_hashtagCoprusCache = hashtagCoprusCache;
 		}
-		public Task<IResult<bool>> FollowHashtagAsync(string tagname)
+		public Task<IResult<bool>> FollowHashtagAsync(string tagName)
 		{
 			throw new NotImplementedException();
 		}
@@ -36,15 +35,15 @@ namespace QuarklessLogic.Logic.HashtagLogic
 		{
 			throw new NotImplementedException();
 		}
-		public Task<IResult<InstaHashtag>> GetHashtagInfoAsync(string tagname)
+		public Task<IResult<InstaHashtag>> GetHashtagInfoAsync(string tagName)
 		{
 			throw new NotImplementedException();
 		}
-		public Task<IResult<InstaHashtagStory>> GetHashtagStoriesAsync(string tagname)
+		public Task<IResult<InstaHashtagStory>> GetHashtagStoriesAsync(string tagName)
 		{
 			throw new NotImplementedException();
 		}
-		public Task<IResult<InstaSectionMedia>> GetRecentHashtagMediaListAsync(string tagname, PaginationParameters paginationParameters)
+		public Task<IResult<InstaSectionMedia>> GetRecentHashtagMediaListAsync(string tagName, PaginationParameters paginationParameters)
 		{
 			throw new NotImplementedException();
 		}
@@ -76,7 +75,7 @@ namespace QuarklessLogic.Logic.HashtagLogic
 				return null;
 			}
 		}
-		public async Task<IResult<InstaSectionMedia>> SearchReleatedHashtagAsync(string query, int limit = 1)
+		public async Task<IResult<InstaSectionMedia>> SearchRelatedHashtagAsync(string query, int limit = 1)
 		{
 			try
 			{
@@ -88,7 +87,7 @@ namespace QuarklessLogic.Logic.HashtagLogic
 				return null;
 			}
 		}
-		public Task<IResult<bool>> UnFollowHashtagAsync(string tagname)
+		public Task<IResult<bool>> UnFollowHashtagAsync(string tagName)
 		{
 			throw new NotImplementedException();
 		}

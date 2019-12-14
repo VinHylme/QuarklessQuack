@@ -3,17 +3,21 @@ using Bogus.DataSets;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.FakerModels;
 using QuarklessLogic.Handlers.EmailService;
+using QuarklessLogic.Handlers.TextGeneration;
 using QuarklessLogic.Handlers.TranslateService;
 
 namespace QuarklessLogic.Handlers.Util
 {
 	public class UtilProviders : IUtilProviders
 	{
-		public UtilProviders(ITranslateService translateService, IEmailService emailService)
+		public UtilProviders(ITextGeneration textGeneration, ITranslateService translateService, IEmailService emailService)
 		{
+			TextGeneration = textGeneration;
 			TranslateService = translateService;
 			EmailService = emailService;
 		}
+
+		public ITextGeneration TextGeneration { get; }
 		public ITranslateService TranslateService { get; }
 		public IEmailService EmailService { get; }
 		public FakerModel GeneratePerson(string locale = "en", string emailProvider = null, bool? isMale = null)

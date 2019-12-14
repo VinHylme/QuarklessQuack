@@ -92,7 +92,7 @@ namespace QuarklessRepositories.Repository.ServicesRepositories.HashtagsReposito
 		{
 			try
 			{
-				List<FilterDefinition<HashtagsModel>> filterList = new List<FilterDefinition<HashtagsModel>>();
+				var filterList = new List<FilterDefinition<HashtagsModel>>();
 				var builders = Builders<HashtagsModel>.Filter;
 				FilterDefinition<HashtagsModel> filters;
 				if (string.IsNullOrEmpty(language) && string.IsNullOrEmpty(mapedLang))

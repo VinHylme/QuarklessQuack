@@ -1,19 +1,15 @@
 ﻿using System;
 using System.IO;
 using System.Text.RegularExpressions;
-using WDict = System.Collections.Generic.Dictionary<string, uint>;
-using TDict = System.Collections.Generic.Dictionary<string, System.Collections.Generic.Dictionary<string, uint>>;
 using QuarklessContexts.Extensions;
-using System.Text;
 using System.Linq;
-using QuarklessRepositories.Repository.CorpusRepositories.Medias;
-using MongoDB.Driver;
 using System.Threading.Tasks;
 using MoreLinq;
 using QuarklessLogic.ServicesLogic.CorpusLogic;
 
 namespace QuarklessLogic.Handlers.TextGeneration
 {
+	//TODO ADD AI LATER, FOR NOW JUST USING MARKOV ALGO
 	public class TextGeneration : ITextGeneration
 	{
 		private readonly ICommentCorpusLogic _commentCorpusLogic;
@@ -23,13 +19,13 @@ namespace QuarklessLogic.Handlers.TextGeneration
 			_commentCorpusLogic = commentCorpusLogic;
 			_mediaCorpusLogic = mediaCorpusLogic;
 		}
-		//TODO: ADD AI LATER, FOR NOW JUST USING MARKOV ALGO
+
+		#region MARKOV TEXT GENERATION 
 		public string MarkovTextGenerator(string filePath, int limit, int size, bool exact = false)
 		{
 			if (!File.Exists(filePath)) { Console.WriteLine("Input file doesn't exist"); return null; }
-
-			string s = Regex.Replace(File.ReadAllText(filePath), @"\s+", " ").TrimEnd(' ');
-			TDict t = MarkovHelper.BuildTDict(s, size);
+			var s = Regex.Replace(File.ReadAllText(filePath), @"\s+", " ").TrimEnd(' ');
+			var t = MarkovHelper.BuildTDict(s, size);
 			return MarkovHelper.BuildString(t, limit, exact).TrimEnd(' ');
 		}
 		public async Task<string> MarkovIt(int type, string topic, string language, int limit)
@@ -43,8 +39,7 @@ namespace QuarklessLogic.Handlers.TextGeneration
 						.GetComments(topic.OnlyWords(), language.MapLanguages().OnlyWords(),333))
 						.DistinctBy(x=>x.Comment);
 					if (data == null) return null;
-					data = data.Where(x => !x.Comment.ContainsAnyFromCommentsAndCaptionCorpus()
-										&& x.Comment.ContainsEnglishCharacters()).TakeAny(takeSize);
+					data = data.TakeAny(takeSize);
 					
 					var comments = data.Select(sa =>
 					{
@@ -60,9 +55,7 @@ namespace QuarklessLogic.Handlers.TextGeneration
 						.GetMedias(topic.OnlyWords(), language.MapLanguages().OnlyWords(), 333))
 						.DistinctBy(x => x.Caption);
 
-					metaMedia = metaMedia
-						.Where(x => !x.Caption.ContainsAnyFromCommentsAndCaptionCorpus() 
-									&& x.Caption.ContainsEnglishCharacters()).TakeAny(takeSize);
+					metaMedia = metaMedia.TakeAny(takeSize);
 					var captions = metaMedia.Select(sa =>
 					{
 						var pos = sa.Caption.LastIndexOf(',');
@@ -79,7 +72,7 @@ namespace QuarklessLogic.Handlers.TextGeneration
 		public string MarkovTextGenerator(string filePath, int type, string topic, string language, int size, int limit)
 		{
 			if (type < 0 && type > 2) throw new Exception("invalid type");
-			string joinedPath = string.Format(filePath,
+			var joinedPath = string.Format(filePath,
 				type == 0 ? "_comments" : type == 1 ? "_captions" : type == 2 ? "_bios" : null);
 
 			var reader = File.ReadAllLines(joinedPath).Skip(1).Select(_=>_.Split(",")).
@@ -87,11 +80,14 @@ namespace QuarklessLogic.Handlers.TextGeneration
 				Select(v=>new { Text = v[0].Replace("\"", ""), Topic = v[1].Replace("\"", ""), Language = v[2].Replace("\"", "") })
 				.Where(x=>!x.Text.Contains("@"));
 
-			if(reader==null && reader.Count()<=0) return null;
-			string s = Regex.Replace(string.Join(',', reader.Select(sa => sa.Text)), @"\s+", " ").TrimEnd(' ');
-			TDict t = MarkovHelper.BuildTDict(s, size);
+			if(!reader.Any()) return null;
+			var s = Regex.Replace(string.Join(',', reader.Select(sa => sa.Text)), @"\s+", " ").TrimEnd(' ');
+			var t = MarkovHelper.BuildTDict(s, size);
 			return MarkovHelper.BuildString(t, limit, true).TrimEnd(' ');
 		}
+		#endregion
+
+
 
 	}
 }

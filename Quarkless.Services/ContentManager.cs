@@ -38,8 +38,6 @@ namespace Quarkless.Services
 		}
 		public string GenerateText(string topic,string lang, int type, int limit)
 		{
-			//return _textGeneration.MarkovTextGenerator(@"C:\Users\yousef.alaw\source\repos\QuarklessQuark\Requires\Datas\normalised_data\{0}.csv",
-			//	type,topic,lang,size,limit) ;
 			return _textGeneration.MarkovIt(type,topic,lang, limit).GetAwaiter().GetResult();
 		}
 		public MediaInfo GenerateMediaInfo(Topics topicSelect, string topicSelected, string language, string credit = null)

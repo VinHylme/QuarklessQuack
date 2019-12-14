@@ -17,19 +17,6 @@ namespace QuarklessContexts.Extensions
 {
 	public static class HelperExtensions
 	{
-		public static string NormaliseString(this string str)
-		{
-			var final = string.Empty;
-
-			if (str.Contains("&"))
-				final = str.Split("&")[0];
-			else if (str.Contains("/"))
-				final = str.Split("/")[0];
-
-			final = Regex.Replace(final, @"\(\w*\)|[^\w\s\(\)]", " ");
-			final = Regex.Replace(final, @"^\s+", "");
-			return final;
-		}
 		public static List<string> NormaliseStringList(this List<string> items)
 		{
 			var splitDualCategories = items
@@ -130,13 +117,12 @@ namespace QuarklessContexts.Extensions
 				var buffer = new Span<byte>(new byte[filter.Length]);
 				return Convert.TryFromBase64String(filter, buffer, out int bytesParsed);
 			}
-#pragma warning disable CS0168 // Variable is declared but never used
 			catch (Exception ee)
-#pragma warning restore CS0168 // Variable is declared but never used
 			{
 				return false;
 			}
 		}
+
 		public static IEnumerable<TType> ToCastList<TType> (this IEnumerable<object> @objects)
 		{
 			var results = new List<TType>();
@@ -174,30 +160,10 @@ namespace QuarklessContexts.Extensions
 
 			return !results.Any() ? null : results;
 		}
+
 		public static string OnlyWords(this string @string)
-		{
-			return Regex.Replace(@string, "[^a-zA-Z]", "").ToLower();
-		}
-		public static bool ContainsAnyFromCommentsAndCaptionCorpus(this string target)
-		{
-			return string.IsNullOrEmpty(target) 
-			       || string.IsNullOrWhiteSpace(target)
-				   || target.Contains(',')
-			       || target.ContainsMentions() 
-			       || target.ContainsHashtags() 
-			       || target.ContainsPhoneNumber() 
-			       || target.ContainsWebAddress();
-		}
-		public static bool ContainsEnglishCharacters(this string target) 
-			=> new Regex("^[a-zA-Z0-9. -_?]*$",RegexOptions.Compiled).IsMatch(target);
-		public static bool ContainsWebAddress(this string target)
-		{
-			var regex = new Regex(@"(http|www|.*?\.)\S*");
-			return regex.IsMatch(target);
-		}
-		public static bool ContainsMentions(this string target) => new Regex(@"@\S*|_{4}").IsMatch(target);
-		public static bool ContainsHashtags(this string target) => new Regex(@"#\S*").IsMatch(target);
-		public static bool ContainsPhoneNumber(this string target) => new Regex(@"\d{7,}").IsMatch(target);
+			=> Regex.Replace(@string, "[^a-zA-Z]", "").ToLower();
+		
 		public static int Similarity(this string s, string t)
 		{
 			if (string.IsNullOrEmpty(s))
@@ -231,7 +197,8 @@ namespace QuarklessContexts.Extensions
 			}
 			return d[n, m];
 		}
-		public static string JoinEvery(this IEnumerable<string> @strings, string seperator, int every)
+
+		public static string JoinEvery(this IEnumerable<string> @strings, string separateBy, int every)
 		{
 			var result = string.Empty;
 
@@ -240,7 +207,7 @@ namespace QuarklessContexts.Extensions
 				if (i % every != 0 || i == 0) continue;
 				for (var j = Math.Abs(i - every); j < (i - every) + every; j++)
 					result += @strings.ElementAt(j) + " ";
-				result += seperator;
+				result += separateBy;
 			}
 
 			return result;

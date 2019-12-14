@@ -178,7 +178,7 @@ namespace QuarklessLogic.Logic.QueryLogic
 		{
 			return new ProfileConfiguration
 			{
-				Topics = (await _topicServicesLogic.GetAllTopicCategories()).OrderBy(item=>item.CategoryName).ToList(),
+				Topics = (await _topicServicesLogic.GetAllTopicCategories()).OrderBy(item=>item.Category.CategoryName).ToList(),
 				ColorsAllowed = Enum.GetValues(typeof(ColorType)).Cast<ColorType>().Select(v=>v.GetDescription()).ToList(),
 				ImageTypes = Enum.GetValues(typeof(ImageType)).Cast<ImageType>().Select(v=>v.GetDescription()).ToList(),
 				Orientations = Enum.GetValues(typeof(Orientation)).Cast<Orientation>().Select(v=>v.GetDescription()).ToList(),
@@ -229,7 +229,7 @@ namespace QuarklessLogic.Logic.QueryLogic
 					var search = await _hashtagLogic.SearchHashtagAsync(filtered);
 					if (!search.Succeeded)
 					{
-						var sRel = await _hashtagLogic.SearchReleatedHashtagAsync(topic, 1);
+						var sRel = await _hashtagLogic.SearchRelatedHashtagAsync(topic, 1);
 						if (!sRel.Succeeded) return null;
 						totalRes.RelatedTopics.AddRange(sRel.Value.RelatedHashtags.Select(x=>x.Name));
 					}
@@ -246,7 +246,7 @@ namespace QuarklessLogic.Logic.QueryLogic
 			var hashtagsRes = await _hashtagLogic.SearchHashtagAsync(cleanedTopic);
 			if (!hashtagsRes.Succeeded)
 			{
-				var related = await _hashtagLogic.SearchReleatedHashtagAsync(cleanedTopic, 1);
+				var related = await _hashtagLogic.SearchRelatedHashtagAsync(cleanedTopic, 1);
 				if (!related.Succeeded) return null;
 				var subTopics = new SubTopics
 				{

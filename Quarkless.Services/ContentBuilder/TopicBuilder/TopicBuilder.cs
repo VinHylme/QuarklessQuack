@@ -281,9 +281,9 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 			//}
 		}
 
-		public async Task AddTopicCategories(IEnumerable<TopicCategories> topicCategories) => await _topicServicesLogic.AddTopicCategories(topicCategories);
+		public async Task AddTopicCategories(IEnumerable<TopicCategory> topicCategories) => await _topicServicesLogic.AddTopicCategories(topicCategories);
 
-		public Task<IEnumerable<TopicCategories>> GetAllTopicCategories()
+		public Task<IEnumerable<TopicCategory>> GetAllTopicCategories()
 		{
 			return _topicServicesLogic.GetAllTopicCategories();
 		}

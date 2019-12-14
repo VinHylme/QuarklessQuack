@@ -94,11 +94,13 @@ using AspNetCoreRateLimit;
 using MongoDB.Driver;
 using Quarkless.Analyser;
 using Quarkless.Analyser.Models;
+using Quarkless.Vision;
 using QuarklessContexts.Models.APILogger;
 using QuarklessContexts.Models.SecurityLayerModels;
 using QuarklessLogic.Handlers.RequestBuilder.Constants;
 using QuarklessLogic.QueueLogic.Jobs.JobRunner;
 using QuarklessLogic.ServicesLogic.TopicsServiceLogic;
+using QuarklessRepositories.Repository.RepositoryClientManager;
 using IpRateLimitPolicies = AspNetCoreRateLimit.IpRateLimitPolicies;
 #endregion
 
@@ -106,8 +108,7 @@ namespace Quarkless.Common.Clients.Configs
 {
 	public static class ConfigureServices
 	{
-		private static bool _isWindows =
-			System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+		private static readonly bool _isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 		public static void AddHangFrameworkServices(this IServiceCollection serviceCollection)
 		{
 			serviceCollection.AddTransient<ITaskService, TaskService>();
@@ -306,6 +307,8 @@ namespace Quarkless.Common.Clients.Configs
 				IsOnWindows = _isWindows
 			}));
 			services.AddSingleton<IUrlReader>(new UrlReader(accessors.ApiBasePath));
+
+			services.AddSingleton<IVisionClient>(new VisionClient(accessors.VisionCredentials));
 		}
 		public static void AddRepositories(this IServiceCollection services)
 		{

@@ -28,7 +28,7 @@ namespace QuarklessRepositories.RepositoryClientManager
 		IMongoCollection<TopicsModel> Topics {get; }
 		IMongoCollection<CommentCorpus> CorpusComments { get; }
 		IMongoCollection<MediaCorpus> CorpusMedia { get; }
-		IMongoCollection<TopicCategories> TopicCategories { get; }
+		IMongoCollection<TopicCategory> TopicCategories { get; }
 		IMongoCollection<CommentsModel> Comments { get; }
 		IMongoCollection<CaptionsModel> Captions { get; }
 		IMongoCollection<HashtagsModel> Hashtags { get; }

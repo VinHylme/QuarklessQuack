@@ -13,8 +13,8 @@ namespace Quarkless.Services.ContentBuilder.TopicBuilder
 		Task<Topics> BuildTopics(ProfileModel profile, int takeSuggested = 15);
 		Task<TopicsModel> Build(string topic, int takeSuggested = -1, int takeHowMany = -1);
 		Task<IEnumerable<string>> BuildHashtags(string topic,string subcategory, string language, int limit = 1, int pickRate = 20);
-		Task AddTopicCategories(IEnumerable<TopicCategories> topicCategories);
-		Task<IEnumerable<TopicCategories>> GetAllTopicCategories();
+		Task AddTopicCategories(IEnumerable<TopicCategory> topicCategories);
+		Task<IEnumerable<TopicCategory>> GetAllTopicCategories();
 		Task BuildTopics(IEnumerable<TopicCategories> topicCategories);
 		Task<QuarklessContexts.Models.Profiles.SubTopics> GetAllRelatedTopics(string topic);
 		Task Update(string selected, string subItem);

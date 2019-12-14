@@ -13,6 +13,6 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 		Task<long> GetMediasCount(string topic);
 		Task UpdateTopicName(string topic, string newTopic);
 		Task UpdateAllMediasLanguagesToLower();
-		Task Clean();
+		Task AddMedia(MediaCorpus mediaCorpus);
 	}
 }

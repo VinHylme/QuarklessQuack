@@ -40,10 +40,8 @@ namespace QuarklessRepositories.RedisRepository.CorpusCache.HashtagCorpusCache
 			string uniqueId = "Hashtags:" + topic + ":" + lang;
 			await WithExceptionLogAsync(async () =>
 			{
-				if (uniqueId != null)
-				{
-					response = await _redisClient.Database(0).GetMembers<HashtagsModel>(uniqueId, RedisKeys.HashtagGrowKeys.Corpus);
-				}
+				response = await _redisClient.Database(0)
+					.GetMembers<HashtagsModel>(uniqueId, RedisKeys.HashtagGrowKeys.Corpus);
 			});
 			return limit > 0 ? response.Take(limit) : response;
 		}

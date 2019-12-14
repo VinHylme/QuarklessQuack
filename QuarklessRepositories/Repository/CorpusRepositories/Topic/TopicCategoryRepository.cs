@@ -11,10 +11,10 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Topic
 	{
 		private readonly IRepositoryContext _context;
 		public TopicCategoryRepository(IRepositoryContext context) => _context = context;
-		public async Task AddCategories(IEnumerable<TopicCategories> topicCategories) => await _context.TopicCategories.InsertManyAsync(topicCategories);
-		public async Task<IEnumerable<TopicCategories>> GetAllCategories(){
+		public async Task AddCategories(IEnumerable<TopicCategory> topicCategories) => await _context.TopicCategories.InsertManyAsync(topicCategories);
+		public async Task<IEnumerable<TopicCategory>> GetAllCategories(){
 			try { 
-				return (await _context.TopicCategories.FindAsync(Builders<TopicCategories>.Filter.Empty)).ToList();
+				return (await _context.TopicCategories.FindAsync(Builders<TopicCategory>.Filter.Empty)).ToList();
 			}
 			catch(Exception e)
 			{
@@ -22,7 +22,7 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Topic
 				return null;
 			}
 		}
-		public async Task<IEnumerable<TopicCategories>> GetCategory(string topicName) => (await _context.TopicCategories.FindAsync(Builders<TopicCategories>.Filter.Eq(_ => _.CategoryName, topicName))).ToList();
+		public async Task<IEnumerable<TopicCategory>> GetCategory(string topicName) => (await _context.TopicCategories.FindAsync(Builders<TopicCategory>.Filter.Eq(_ => _.Category.CategoryName, topicName))).ToList();
 
 	}
 }

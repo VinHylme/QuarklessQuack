@@ -1,23 +1,24 @@
-﻿using Hangfire.Mongo.Dto;
+﻿using System;
+using System.Threading.Tasks;
+using Hangfire.Mongo.Dto;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using QuarklessContexts.Contexts.AccountContext;
 using QuarklessContexts.Models.InstagramAccounts;
+using QuarklessContexts.Models.Library;
 using QuarklessContexts.Models.Logger;
+using QuarklessContexts.Models.Options;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.Proxies;
 using QuarklessContexts.Models.ServicesModels;
 using QuarklessContexts.Models.ServicesModels.Corpus;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
-using QuarklessContexts.Models.Topics;
-using System;
-using System.Threading.Tasks;
-using QuarklessContexts.Models.Library;
-using QuarklessContexts.Models.Options;
 using QuarklessContexts.Models.TimelineLoggingRepository;
+using QuarklessContexts.Models.Topics;
+using QuarklessRepositories.RepositoryClientManager;
 
-namespace QuarklessRepositories.RepositoryClientManager
+namespace QuarklessRepositories.Repository.RepositoryClientManager
 {
 	public class RepositoryContext : IRepositoryContext
 	{
@@ -46,7 +47,7 @@ namespace QuarklessRepositories.RepositoryClientManager
 		public IMongoCollection<PostServiceModel> PostingService => _controlDatabase.GetCollection<PostServiceModel>("PostsAnalyser");
 		public IMongoCollection<CommentsModel> Comments => _contentDatabase.GetCollection<CommentsModel>("Comments");
 		public IMongoCollection<CaptionsModel> Captions => _contentDatabase.GetCollection<CaptionsModel>("Captions");
-		public IMongoCollection<HashtagsModel> Hashtags => _contentDatabase.GetCollection<HashtagsModel>("CHashtags");
+		public IMongoCollection<HashtagsModel> Hashtags => _contentDatabase.GetCollection<HashtagsModel>("CCHashtags");
 		public IMongoCollection<UserBiographyModel> UserBiography => _contentDatabase.GetCollection<UserBiographyModel>("BiographyDetail");
 		public IMongoCollection<JobDto> Timeline => _schedulerDatabase.GetCollection<JobDto>("Timeline.jobGraph");
 		public IMongoCollection<MediasLib> MediaLibrary =>
@@ -57,9 +58,9 @@ namespace QuarklessRepositories.RepositoryClientManager
 			_clientDatabase.GetCollection<CaptionsLib>("UsersCaptionsLibrary");
 		public IMongoCollection<MessagesLib> MessagesLibrary=>
 			_clientDatabase.GetCollection<MessagesLib>("UsersMessagesLibrary");
-		public IMongoCollection<CommentCorpus> CorpusComments => _contentDatabase.GetCollection<CommentCorpus>("CComments");
-		public IMongoCollection<MediaCorpus> CorpusMedia => _contentDatabase.GetCollection<MediaCorpus>("CMedias");
-		public IMongoCollection<TopicCategories> TopicCategories => _contentDatabase.GetCollection<TopicCategories>("CTopic");
+		public IMongoCollection<CommentCorpus> CorpusComments => _contentDatabase.GetCollection<CommentCorpus>("CCComments");
+		public IMongoCollection<MediaCorpus> CorpusMedia => _contentDatabase.GetCollection<MediaCorpus>("CCMedias");
+		public IMongoCollection<TopicCategory> TopicCategories => _contentDatabase.GetCollection<TopicCategory>("CategoryTopic");
 		internal async Task<bool> CreateCollection(string collectionName, BsonDocument document = null)
 		{
 			try

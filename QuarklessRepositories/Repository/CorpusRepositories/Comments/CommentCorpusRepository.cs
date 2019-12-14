@@ -38,31 +38,6 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Comments
 			}
 		}
 
-		public async Task Clean()
-		{
-			try
-			{
-				const string mediaCorpusFilePath =
-					@"C:\Users\yousef.alaw\source\repos\QuarklessQuack\Requires\Datas\new_data\RAWcomments.csv";
-
-				var res = await _context.CorpusComments.FindAsync(_=>true, 
-					new FindOptions<CommentCorpus, CommentCorpus>()
-					{
-						BatchSize = 1000
-					});
-				while (res.MoveNext())
-				{
-					var currentBatch = res.Current
-						.Where(x => !x.Comment.ContainsAnyFromCommentsAndCaptionCorpus())
-						.DistinctBy(_ => _.Comment);
-					currentBatch.ToDataTable().WriteToCsvFile(mediaCorpusFilePath);
-				}
-			}
-			catch (Exception ee)
-			{
-				Console.WriteLine(ee.Message);
-			}
-		}
 		public async Task UpdateAllCommentsLanguagesToLower()
 		{
 			var res = (await _context.CorpusComments.DistinctAsync(_ => _.Language, _ => true)).ToList();

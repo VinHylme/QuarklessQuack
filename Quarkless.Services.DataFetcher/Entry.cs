@@ -20,22 +20,32 @@ namespace Quarkless.Services.DataFetcher
 		private const string SERVER_IP = "security.quark";
 		#endregion
 
-		//TODO: Need to get a list of all current available topics for instagram
-		//TODO: All should be extracted by specific type of worker accounts (not currently assigned to customer accounts)
-		//TODO: Create fetch function for Posts Captions, Hashtags and comments (possibly account details)
-		//TODO: If fetching instagram posts you have access to the captions, preview comments and possibly hashtags
-		//TODO: Hashtags are also available on the first comment of a post too
-		//TODO: Make sure data is clean and not duplicated
-		//TODO: Captions and Comments extracted should not have any @mentions, #hashtags, advertising or non word symbols (expect emojis)
-		//TODO: Store in database
-		//TODO: These should be generic for that particular category,
-		//TODO: If customer wants to create a clothing topic it should be generic to that topic
+		//Need to get a list of all current available topics for instagram
+		//All should be extracted by specific type of worker accounts (not currently assigned to customer accounts)
+		//Create fetch function for Posts Captions, Hashtags and comments (possibly account details)
+		//If fetching instagram posts you have access to the captions, preview comments and possibly hashtags
+		//Hashtags are also available on the first comment of a post too
+		//Make sure data is clean and not duplicated
+		//Captions and Comments extracted should not have any @mentions, #hashtags, advertising or non word symbols (expect emojis)
+		//Store in database
+		//These should be generic for that particular category,
+		//If customer wants to create a clothing topic it should be generic to that topic
 		static async Task Main(string[] args)
 		{
 			var environmentVariables = Environment.GetEnvironmentVariables();
+			
 			var accountId = environmentVariables["WORKER_OWNER"].ToString();
+			int.TryParse(environmentVariables["WORKER_TYPE_CODE"].ToString(), out var workerType);
+			int.TryParse(environmentVariables["BATCH_SIZE"].ToString(), out var batchSize);
+			int.TryParse(environmentVariables["MEDIA_FETCH_AMOUNT"].ToString(), out var mediaFetchAmount);
+			int.TryParse(environmentVariables["COMMENT_FETCH_AMOUNT"].ToString(), out var commentFetchAmount);
+			double.TryParse(environmentVariables["HASHTAG_MEDIA_INTERVAL"].ToString(), out var intervalBetweenHashtagAndMediaSearch);
 
 			if (string.IsNullOrEmpty(accountId))
+				return;
+
+			if (workerType == 0 || mediaFetchAmount == 0 || commentFetchAmount == 0 ||
+			    intervalBetweenHashtagAndMediaSearch <= 0.0 || batchSize == 0)
 				return;
 
 			IServiceCollection services = new ServiceCollection();
@@ -43,7 +53,15 @@ namespace Quarkless.Services.DataFetcher
 			services.Append(InitialiseClientServices());
 			var buildService = services.BuildServiceProvider();
 
-			var settings = new Settings{ AccountId = accountId };
+			var settings = new Settings
+			{
+				AccountId = accountId,
+				WorkerAccountType = workerType,
+				BatchSize = batchSize,
+				CommentFetchAmount = commentFetchAmount,
+				MediaFetchAmount = mediaFetchAmount,
+				IntervalWaitBetweenHashtagsAndMediaSearch = intervalBetweenHashtagAndMediaSearch
+			};
 
 			await buildService.GetService<IFetcher>().Begin(settings);
 		}

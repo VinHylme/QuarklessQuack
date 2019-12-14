@@ -7,7 +7,7 @@ namespace QuarklessContexts.Models.QueryModels.Settings
 	[Serializable]
 	public class ProfileConfiguration
 	{
-		public IEnumerable<TopicCategories> Topics { get; set; }
+		public IEnumerable<TopicCategory> Topics { get; set; }
 		public Dictionary<string,string> Languages { get; set; }
 		public IEnumerable<string> ColorsAllowed { get; set; }
 		public bool CanUserEditProfile { get; set; } = true;

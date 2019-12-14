@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using InstagramApiSharp.Classes.Models;
 using Newtonsoft.Json;
 using QuarklessContexts.Extensions;
-using QuarklessContexts.Models.Proxies;
 using QuarklessContexts.Models.ServicesModels.Corpus;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
@@ -21,18 +19,9 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 	public class HeartbeatLogic : IHeartbeatLogic
 	{
 		private readonly IHeartbeatRepository _heartbeatRepository;
-		private readonly ICommentCorpusLogic _commentsLogic;
-		private readonly IMediaCorpusLogic _mediaCorpusLogic;
-		private readonly IHashtagLogic _hashtagLogic;
-		private readonly IUtilProviders _utilProviders;
-		public HeartbeatLogic(IHeartbeatRepository heartbeatRepository, IUtilProviders utilProviders,
-			ICommentCorpusLogic comment, IMediaCorpusLogic  media, IHashtagLogic hashtags)
+		public HeartbeatLogic(IHeartbeatRepository heartbeatRepository)
 		{
-			_hashtagLogic = hashtags;
-			_commentsLogic = comment;
-			_mediaCorpusLogic = media;
 			_heartbeatRepository = heartbeatRepository;
-			_utilProviders = utilProviders;
 		}
 		public async Task AddMetaData<T>(MetaDataType metaDataType, string topic, __Meta__<T> data, string userId = null)
 		{
@@ -44,8 +33,6 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 		}
 		public async Task UpdateMetaData<T>(MetaDataType metaDataType, string topic, __Meta__<T> data, string userId = null)
 		{
-			//if typeof media
-			//else if
 			var dataToRemove = (await _heartbeatRepository.GetMetaData<T>(metaDataType,topic,userId));
 			var dto = dataToRemove.FirstOrDefault(_ => JsonConvert.SerializeObject(_.ObjectItem) == JsonConvert.SerializeObject(data.ObjectItem));
 			if (dto!=null) { 
@@ -65,173 +52,6 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 		{
 			return await _heartbeatRepository.GetUserFromLikers(metaDataType, topic);
 		}
-
-		public async void PopulateCaption(Media item, string topic)
-		{
-			var filtered = item.Medias.DistinctBy(x=>x.Caption).Where(c=>!c.HasSeen && !c.HasLikedBefore).Select(o =>
-			{
-				if (string.IsNullOrEmpty(o.Caption) || string.IsNullOrWhiteSpace(o.Caption)) return null;
-				var sepaStrings = o.Caption.ToLower().Split('#');
-				var caption = sepaStrings.ElementAtOrDefault(0);
-				if (string.IsNullOrEmpty(caption) || string.IsNullOrWhiteSpace(caption)) return null;
-
-				if (caption.ContainsMentions()
-					|| caption.ContainsHashtags()
-					|| caption.ContainsPhoneNumber()
-					|| caption.ContainsWebAddress()
-					|| caption.Contains("check out")
-					|| caption.Contains("website")
-					|| caption.Contains("phone")
-					|| caption.Contains("blog")) return null;
-				var tags = sepaStrings.Skip(1);
-				var tagsEnumerator = tags as string[] ?? tags.ToArray();
-				if (!tagsEnumerator.Any()) return null;
-				return new
-				{
-					Media = new MediaCorpus
-					{
-						TakenAt = o.TakenAt,
-						OriginalCaption = o.Caption,
-						Caption = caption,
-						Language = null,
-						Location = o?.Location,
-						MediaId = o.MediaId,
-						Topic = topic.OnlyWords(),
-						Username = o?.User?.Username,
-						Usertags = o?.UserTags?.Select(s => s?.User?.UserName).ToList(),
-						CommentsCount = o.CommentCount,
-						LikesCount = o.LikesCount,
-						ViewsCount = o.ViewCount
-					},
-					Tags = new HashtagsModel
-					{
-						Hashtags = tagsEnumerator.Where((l, h) => h > 0 && l.Length <= 15).ToList(),
-						Topic = topic.OnlyWords(),
-						Language = null
-					}
-				};
-			}).Where(otem=>otem!=null).ToArray();
-
-			if (filtered.Any())
-			{
-				var words = filtered.Select(s => s.Media.Caption).ToArray();
-				var detections = _utilProviders.TranslateService.DetectLanguage(words).ToList();
-				for (var i = 0; i < detections.Count; i++)
-				{
-					filtered[i].Media.Language = detections[i].OnlyWords();
-					filtered[i].Tags.Language = detections[i].OnlyWords();
-				}
-			}
-
-			var mediaCorpus = filtered.Select(x => x.Media).ToList();
-			var hashtags = filtered.Select(x => x.Tags).ToList();
-
-			if (mediaCorpus.Count > 0)
-			{
-				await _mediaCorpusLogic.AddMedias(mediaCorpus);
-				Console.WriteLine($"Added captions for topic: {topic}, Captions Captured: {mediaCorpus.Count}");
-			}
-			else
-				Console.WriteLine($"Failed to add captions for topic: {topic}, captions Captured: {mediaCorpus.Count}");
-
-			if (hashtags.Count <= 0) return;
-			await _hashtagLogic.AddHashtagsToRepositoryAndCache(hashtags);
-			Console.WriteLine($"Added hashtags of caption for topic:{topic}, Hashtags Captured: {hashtags.Count}");
-		}
-
-		public async void PopulateComments(List<UserResponse<InstaComment>> comments, string topic)
-		{
-			var filteredComments = comments.DistinctBy(x=>x.Object).Select(o =>
-			{
-				if (string.IsNullOrEmpty(o.Object.Text)) return null;
-				var tags = new List<HashtagsModel>();
-				if (o.Object.Text.Count(s => s == '#') > 2)
-					return null;
-				if (o.Object.Text.ContainsMentions()
-				    || o.Object.Text.ContainsHashtags()
-				    || o.Object.Text.ContainsPhoneNumber()
-				    || o.Object.Text.ContainsWebAddress()
-				    || o.Object.Text.Contains("check out")
-				    || o.Object.Text.Contains("website")
-				    || o.Object.Text.Contains("phone")
-				    || o.Object.Text.Contains("blog")) return null;
-				return new CommentCorpus
-				{
-					Comment = o.Object.Text,
-					Created = o.Object.CreatedAt,
-					Language = null,
-					NumberOfLikes = o.Object.LikesCount,
-					NumberOfReplies = o.Object.ChildCommentCount,
-					Username = o.Username,
-					MediaId = o.MediaId,
-					Topic = topic.OnlyWords()
-				};
-			}).Where(comment => comment != null).ToArray();
-			var filteredTags = comments.Select(o =>
-			{
-				if (string.IsNullOrEmpty(o.Object.Text)) return null;
-				var tags = new List<HashtagsModel>();
-				if (o.Object.Text.Count(s => s == '#') > 2)
-					return new HashtagsModel
-					{
-						Hashtags = o.Object.Text.Split('#').Where(l => l.Length <= 15).ToList(),
-						Language = null,
-						Topic = topic.OnlyWords()
-					};
-
-				return null;
-			}).Where(tag => tag != null).ToArray();
-			if (filteredComments.Any())
-			{
-				var words = filteredComments.Select(s => s.Comment).ToArray();
-				var detections = _utilProviders.TranslateService.DetectLanguage(words).ToList();
-				for (var i = 0; i < detections.Count; i++)
-				{
-					filteredComments[i].Language = detections[i].OnlyWords();
-				}
-
-				var mostFrequentLang = string.Empty;
-				if(detections.Count > 0)
-					mostFrequentLang =
-						detections.GroupBy(x => x).OrderBy(g => g.Count()).Last().Key;
-
-				foreach (var t in filteredTags)
-				{
-					t.Language = mostFrequentLang;
-				}
-			}
-
-			var commentCorpus = filteredComments.ToList();
-			var hashtagsComments = filteredTags.ToList();
-
-			if (commentCorpus.Count > 0)
-			{
-				await _commentsLogic.AddComments(commentCorpus);
-				Console.WriteLine($"Added comments for topic: {topic}, comments Captured: {commentCorpus.Count}");
-			}
-			else
-				Console.WriteLine($"Failed to add comments for topic: {topic}, comments Captured: {commentCorpus.Count}");
-
-			if (hashtagsComments.Count <= 0) return;
-			await _hashtagLogic.AddHashtagsToRepositoryAndCache(hashtagsComments);
-			Console.WriteLine($"Added hashtags of comments for topic:{topic}, Hashtags Captured: {hashtagsComments.Count}");
-		}
-
-		public async Task CleanCorpus()
-		{
-			await Task.Run(() =>
-			{
-				var mediaClean = Task.Run(async ()=>{
-					await _mediaCorpusLogic.CleanCorpus();
-				});
-				var commentClean = Task.Run(async () =>
-				{
-					await _commentsLogic.CleanCorpus();
-				});
-				Task.WaitAll(mediaClean, commentClean);
-			});
-		}
-
 		public async Task RefreshMetaData(MetaDataType metaDataType, string topic, string userId = null)
 		{
 			try {

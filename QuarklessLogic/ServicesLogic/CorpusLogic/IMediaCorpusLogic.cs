@@ -11,6 +11,6 @@ namespace QuarklessLogic.ServicesLogic.CorpusLogic
 		Task<long> MediasCount(string topic);
 		Task UpdateTopicName(string topic, string newTopic);
 		Task UpdateAllMediasLanguagesToLower();
-		Task CleanCorpus();
+		Task AddMedia(MediaCorpus mediaCorpus);
 	}
 }

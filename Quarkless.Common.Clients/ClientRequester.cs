@@ -15,6 +15,7 @@ namespace Quarkless.Common.Clients
 		private readonly Socket _clientSocket;
 		private readonly string _host;
 		private readonly bool _inDocker;
+		private const int BYTE_LIMIT = 8192;
 		public ClientRequester(string host, bool inDocker = true)
 		{
 			_host = host;
@@ -66,7 +67,7 @@ namespace Quarkless.Common.Clients
 				var request = dataToSend.Serialize();
 				var buffer = Encoding.ASCII.GetBytes(request);
 				_clientSocket.Send(buffer);
-				var bytesReceived = new byte[4096];
+				var bytesReceived = new byte[BYTE_LIMIT];
 				var requestReceivedLen = _clientSocket.Receive(bytesReceived);
 				var data = new byte[requestReceivedLen];
 				Array.Copy(bytesReceived, data, requestReceivedLen);

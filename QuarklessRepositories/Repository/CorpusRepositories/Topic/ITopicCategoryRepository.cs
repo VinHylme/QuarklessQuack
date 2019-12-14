@@ -6,8 +6,8 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Topic
 {
 	public interface ITopicCategoryRepository
 	{
-		Task AddCategories(IEnumerable<TopicCategories> topicCategories);
-		Task<IEnumerable<TopicCategories>> GetAllCategories();
-		Task<IEnumerable<TopicCategories>> GetCategory(string topicName);
+		Task AddCategories(IEnumerable<TopicCategory> topicCategories);
+		Task<IEnumerable<TopicCategory>> GetAllCategories();
+		Task<IEnumerable<TopicCategory>> GetCategory(string topicName);
 	}
 }

@@ -4,14 +4,17 @@ using System.Threading.Tasks;
 using QuarklessLogic.ServicesLogic;
 using QuarklessContexts.Extensions;
 using System.Collections.Concurrent;
-using Quarkless.Interfacing.Objects;
-using System.Text.RegularExpressions;
+using System.Collections.Generic;
 using InstagramApiSharp;
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Models;
+using LanguageDetection;
 using MoreLinq;
 using QuarklessLogic.Logic.HashtagLogic;
 using QuarklessContexts.Models.InstagramAccounts;
+using QuarklessContexts.Models.ServicesModels.Corpus;
+using QuarklessContexts.Models.ServicesModels.DatabaseModels;
+using QuarklessContexts.Models.Topics;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Logic.InstagramAccountLogic;
 using QuarklessLogic.Logic.ResponseLogic;
@@ -22,7 +25,11 @@ namespace Quarkless.Services.DataFetcher
 	public class Fetcher : IFetcher
 	{
 		#region Init
-		private ConcurrentQueue<ShortInstagramAccountModel> _workers;
+		private double _intervalWaitBetweenHashtagsAndMediaSearch;
+		private int _mediaFetchAmount, _commentFetchAmount, _batchSize, _workerAccountType;
+
+		private ConcurrentQueue<IEnumerable<ShortInstagramAccountModel>> _workerBatches;
+		private readonly LanguageDetector _detector;
 		private readonly ITopicServicesLogic _topicServicesLogic;
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
 		private readonly IAPIClientContext _clientContext;
@@ -30,6 +37,7 @@ namespace Quarkless.Services.DataFetcher
 		private readonly IMediaCorpusLogic _mediaCorpusLogic;
 		private readonly ICommentCorpusLogic _commentCorpusLogic;
 		private readonly IHashtagLogic _hashtagCorpusLogic;
+
 		public Fetcher(ITopicServicesLogic topicServicesLogic, IInstagramAccountLogic instagramAccountLogic, 
 			IAPIClientContext clientContext, IResponseResolver responseResolver,
 			IMediaCorpusLogic mediaCorpusLogic, ICommentCorpusLogic commentCorpusLogic, IHashtagLogic hashtagCorpusLogic)
@@ -42,59 +50,131 @@ namespace Quarkless.Services.DataFetcher
 			_mediaCorpusLogic = mediaCorpusLogic;
 			_commentCorpusLogic = commentCorpusLogic;
 			_hashtagCorpusLogic = hashtagCorpusLogic;
+
+			_detector = new LanguageDetector();
+			_detector.AddAllLanguages();
 		}
 		#endregion
 
 		/// <summary>
-		/// Once have more accounts, could possibly batch each workers into groups of 2/3 
+		/// wait until one batch is free
+		/// upon free batch then send batch through function
+		/// other function will perform the same thing here, (wait for single worker to be free)
+		/// once done and batch is full --> batch complete
+		/// rinse and repeat
 		/// </summary>
 		/// <param name="settings"></param>
 		/// <returns></returns>
 		public async Task Begin(Settings settings)
 		{
-			//TODO: Need to link the original topic with the modified ones so that later they can be linked
-			_workers = new ConcurrentQueue<ShortInstagramAccountModel>(await _instagramAccountLogic.GetInstagramAccountsOfUser(settings.AccountId, 1));
+			_intervalWaitBetweenHashtagsAndMediaSearch = settings.IntervalWaitBetweenHashtagsAndMediaSearch;
+			_batchSize = settings.BatchSize;
+			_workerAccountType = settings.WorkerAccountType;
+			_mediaFetchAmount = settings.MediaFetchAmount;
+			_commentFetchAmount = settings.CommentFetchAmount;
+
+			_workerBatches = new ConcurrentQueue<IEnumerable<ShortInstagramAccountModel>>(
+				(await _instagramAccountLogic.GetInstagramAccountsOfUser(settings.AccountId, _workerAccountType))
+				.Batch(_batchSize));
+			
 			var topicCategories = (await _topicServicesLogic.GetAllTopicCategories()).ToList();
-			var initialWorkerAmount = _workers.Count;
-			var pos = 0;
+			var initialWorkerAmount = _workerBatches.Count;
 
 			Console.WriteLine("Total Topics To Fetch {0}", topicCategories.Count);
-			var flattenCategories = topicCategories.SelectMany(_ => _.SubCategories).ToList();
 
-			#region Make the list readable for instagram search
-			flattenCategories.AddRange(topicCategories
-				.Where(_=>!_.CategoryName.Contains("&"))
-				.Select(_=>_.CategoryName));
-
-			var uniqueCategories = flattenCategories.NormaliseStringList();
-
-			uniqueCategories.ForEach(Console.WriteLine);
-
-			#endregion
-
-			foreach (var category in uniqueCategories)
+			var topics = topicCategories.SelectMany(_ => _.SubCategories)
+				.Distinct()
+				.Shuffle()
+				.ToList();
+			topics.ForEach(Console.WriteLine);
+			foreach (var category in topics)
 			{
-				Console.WriteLine(pos++);
-				while (_workers.IsEmpty) //wait for worker to be available before continuing;
+				Console.WriteLine("Started on category: {0}",category);
+				Console.WriteLine("----------------------------------------------------------------------");
+				while (_workerBatches.IsEmpty) //wait for worker to be available before continuing;
 					await Task.Delay(TimeSpan.FromSeconds(0.35));
 				
-				_workers.TryDequeue(out var worker);
-				_ = PerformFetch(category, worker);
+				_workerBatches.TryDequeue(out var workers);
+				_ = BatchOperation(category, new ConcurrentQueue<ShortInstagramAccountModel>(workers));
 
-				if (!topicCategories.Last().Equals(category)) continue;
-				while (_workers.Count != initialWorkerAmount)	//wait for all to finish;
+				if (!topics.Last().Equals(category)) continue;
+				while (_workerBatches.Count != initialWorkerAmount)	//wait for all to finish;
 					await Task.Delay(TimeSpan.FromSeconds(0.35));
 			}
 		}
 
-		private async Task<IResult<InstaSectionMedia>> SearchTopMedias(APIClientContainer container, string hashtag, int limit)
-			=> await _responseResolver.WithResolverAsync(
-				await container.Hashtag.GetTopHashtagMediaListAsync(hashtag,
+		private async Task GetBusinessCategoriesFromInstagram()
+		{
+			var pos = 0;
+			var initialWorkerAmount = _workerBatches.Count;
+			_workerBatches.TryPeek(out var workersPeek);
+
+			var workers = new ConcurrentQueue<ShortInstagramAccountModel>(workersPeek);
+			workers.TryPeek(out var workerp);
+
+			var api = new APIClientContainer(_clientContext, workerp.AccountId, workerp.Id);
+			var categories = await api.Business.GetCategoriesAsync();
+			if (!categories.Succeeded)
+				return;
+
+			foreach (var category in categories.Value)
+			{
+				Console.WriteLine(pos++);
+				while (workers.IsEmpty) //wait for worker to be available before continuing;
+					await Task.Delay(TimeSpan.FromSeconds(0.35));
+
+				workers.TryDequeue(out var worker);
+
+				#region Category Stuff Function
+				_ = Task.Run(async () =>
+				{
+					// connect to a client in order to access instagram api
+					var clientContainer = new APIClientContainer(_clientContext, worker.AccountId, worker.Id);
+					var results = await _responseResolver.WithClient(clientContainer).WithResolverAsync(
+						await clientContainer.Business.GetSubCategoriesAsync(category.CategoryId));
+					if (!results.Succeeded)
+						return;
+
+					var objectCategory = new TopicCategory
+					{
+						Category = new Category { CategoryName = category.CategoryName, CategoryId = category.CategoryId },
+						SubCategories = results.Value.Select(_ => _.CategoryName).ToList().NormaliseStringList()
+					};
+					await _topicServicesLogic.AddTopicCategories(new List<TopicCategory> { objectCategory });
+					await Task.Delay(TimeSpan.FromSeconds(SecureRandom.Next(5, 7)));
+				}).ContinueWith(t =>
+				{
+					Console.WriteLine("Finished Fetch for {0} using worker {1}", category.CategoryName, worker.Username);
+					workers.Enqueue(worker);
+				});
+				#endregion
+
+				if (!categories.Value.Last().Equals(category)) continue;
+				while (workers.Count != initialWorkerAmount)   //wait for all to finish;
+					await Task.Delay(TimeSpan.FromSeconds(0.35));
+			}
+		}
+
+		#region Search
+		private async Task<IResult<InstaSectionMedia>> SearchTopMedias(APIClientContainer container, IEnumerable<InstaHashtag> hashtags,
+			int limit)
+		{
+			var hashtag = hashtags.Where(_ => _.NonViolating && _.MediaCount > 10).TakeAny(1).Single(); // take random one from list
+			Console.WriteLine("Picked hashtag {0}", hashtag.Name);
+			return await _responseResolver.WithResolverAsync(
+				await container.Hashtag.GetTopHashtagMediaListAsync(hashtag.Name,
 					PaginationParameters.MaxPagesToLoad(limit)));
-		private async Task<IResult<InstaSectionMedia>> SearchRecentMedias(APIClientContainer container, string hashtag, int limit)
-			=> await _responseResolver.WithResolverAsync(
-				await container.Hashtag.GetRecentHashtagMediaListAsync(hashtag,
+		}
+		private async Task<IResult<InstaSectionMedia>> SearchRecentMedias(APIClientContainer container, IEnumerable<InstaHashtag> hashtags,
+			int limit)
+		{
+			var hashtag = hashtags.Where(_ => _.NonViolating && _.MediaCount > 10).TakeAny(1).Single(); // take random one from list
+			Console.WriteLine("Picked hashtag {0}", hashtag.Name);
+			return await _responseResolver.WithResolverAsync(
+				await container.Hashtag.GetRecentHashtagMediaListAsync(hashtag.Name,
 					PaginationParameters.MaxPagesToLoad(limit)));
+		}
+
 		private async Task<IResult<InstaSectionMedia>>PerformAction(Func<Task<IResult<InstaSectionMedia>>> @action, int attempts, TimeSpan delayPerRetry)
 		{
 			await Task.Delay(delayPerRetry);
@@ -103,50 +183,184 @@ namespace Quarkless.Services.DataFetcher
 			attempts--;
 			return await PerformAction(@action, attempts, delayPerRetry);
 		}
-		
-		private async Task PerformFetch(SString topic, ShortInstagramAccountModel worker)
+		private async Task<IResult<TResponse>> PerformAction<TResponse>(Func<Task<IResult<TResponse>>> @action, int attempts, TimeSpan delayPerRetry)
 		{
-			Console.WriteLine("Began Fetch for {0} using worker {1}", topic, worker.Username);
-			await Task.Run(async () =>
+			await Task.Delay(delayPerRetry);
+			var results = await @action();
+			if (results.Succeeded) return results;
+			attempts--;
+			return await PerformAction(@action, attempts, delayPerRetry);
+		}
+		#endregion
+		
+		private async Task BatchOperation(string topic, ConcurrentQueue<ShortInstagramAccountModel> workers)
+		{
+			var initialWorkerAmount = workers.Count;
+			workers.TryPeek(out var workerPeek);
+			var clientContainer = new APIClientContainer(_clientContext, workerPeek.AccountId, workerPeek.Id);
+			#region Pick one random Hashtag against the topic and then search for posts (limit=2)
+			// first perform a hashtag search & related hashtags
+			var hashtagResults = await _responseResolver.WithClient(clientContainer)
+				.WithResolverAsync(await clientContainer.Hashtag.SearchHashtagAsync(topic));
+
+			await Task.Delay(TimeSpan.FromSeconds(SecureRandom.NextDouble() + _intervalWaitBetweenHashtagsAndMediaSearch));
+
+			if (!hashtagResults.Succeeded && !hashtagResults.Value.Any())
+				return;
+
+			var mediaResults = await PerformAction(() => SecureRandom.Next(0, 1) == 0 ?
+					SearchTopMedias(clientContainer, hashtagResults.Value, _mediaFetchAmount) :
+					SearchRecentMedias(clientContainer, hashtagResults.Value, _mediaFetchAmount),
+				3, TimeSpan.FromSeconds(0.85));
+
+			if (!mediaResults.Succeeded)
+				return;
+			var medias = mediaResults.Value.Medias;
+			#endregion
+
+			//remove duplicates from list (check against db)
+			var currentMedias = await _mediaCorpusLogic.GetMedias(topic, null, 4000);
+			var filteredMedias = medias.Where(_ => currentMedias.All(p => p.MediaId != _.Pk) 
+			                                       && _.Caption!=null).ToList();
+
+			if (!filteredMedias.Any()) return;
+
+			foreach (var media in filteredMedias)
 			{
-				// connect to a client in order to access instagram api
-				var clientContainer = new APIClientContainer(_clientContext, worker.AccountId, worker.Id);
-				
-				// fetch data for this topic
-				// first perform a hashtag search & related hashtags
-				var hashtagResults = await _responseResolver
-					.WithResolverAsync(await clientContainer.Hashtag.SearchHashtagAsync(topic));
+				while (workers.IsEmpty) //wait for worker to be available before continuing;
+					await Task.Delay(TimeSpan.FromSeconds(0.35));
+				workers.TryDequeue(out var worker);
 
-				if (!hashtagResults.Succeeded && !hashtagResults.Value.Any())
-					return;
-
-				var hashtag = hashtagResults.Value.TakeAny(1).Single(); // take random one from list
-				await Task.Delay(TimeSpan.FromSeconds(SecureRandom.NextDouble() + 1));
-				
-				// search medias for the hashtag
-				var mediaResults = await PerformAction(() => SecureRandom.Next(0,1) == 0 ?
-					SearchTopMedias(clientContainer, hashtag.Name, 1) : 
-					SearchRecentMedias(clientContainer, hashtag.Name, 1), 
-					3, TimeSpan.FromSeconds(0.85));
-				
-				if (!mediaResults.Succeeded)
-					return;
-
-				var currentlyStored = await _mediaCorpusLogic.GetMedias(topic, "en", 4000);
-
-				foreach (var media in mediaResults.Value.Medias)
+				#region Fetch Start Function
+				_ = Task.Run(async () =>
 				{
-					//clean the captions
-				}
+					// connect to a client in order to access instagram api
+					var clientApi = new APIClientContainer(_clientContext, worker.AccountId, worker.Id);
 
-				// check for duplicates before storing
-				// store caption, hashtags and comments
-				await Task.Delay(TimeSpan.FromSeconds(SecureRandom.Next(5,7)));
-			}).ContinueWith(t =>
-			{
-				Console.WriteLine("Finished Fetch for {0} using worker {1}", topic, worker.Username);
-				_workers.Enqueue(worker);
-			});
+					#region STORE POST CAPTION & HASHTAGS
+					var hashtags = media.Caption.Text.FilterHashtags().ToList();
+					var caption = media.Caption.Text
+						.RemoveHashtagsFromText()
+						.RemoveMentionsFromText()
+						.RemoveCurrencyFromText()
+						.RemovePhoneNumbersFromText()
+						.RemoveWebAddressesFromText()
+						.RemoveNonWordsFromText()
+						.RemoveHorizontalSeparationFromText()
+						.RemoveVerticalSeparationFromText()
+						.RemoveLargeSpacesInText();
+
+					if (!_detector.Detect(caption).Equals("en")) return;
+					if (!string.IsNullOrEmpty(caption) || caption!=" ")
+					{
+						await Task.Delay(TimeSpan.FromSeconds(SecureRandom.NextDouble() + 1));
+						var mediaCorpus = new MediaCorpus
+						{
+							Caption = caption,
+							CommentsCount = media.CommentsCount,
+							LikesCount = media.LikesCount,
+							Location = media.Location,
+							MediaId = media.Pk,
+							TakenAt = media.TakenAt,
+							OriginalCaption = media.Caption.Text,
+							Topic = topic,
+							ViewsCount = media.ViewCount,
+						};
+						Console.WriteLine("Storing post...");
+						await _mediaCorpusLogic.AddMedia(mediaCorpus);
+					}
+
+					if (hashtags.Any())
+					{
+						var hashtagCorpus = new HashtagsModel
+						{
+							Hashtags = hashtags.ToList(),
+							Topic = topic
+						};
+						Console.WriteLine("Storing hashtags of post...");
+						await _hashtagCorpusLogic.AddHashtagsToRepositoryAndCache(new[] {hashtagCorpus});
+					}
+					#endregion
+
+					if (!int.TryParse(media.CommentsCount, out var commentCount) && commentCount <= 0)
+						return;
+
+					var mediaCommentsAsync =
+						await clientApi.Comment.GetMediaCommentsAsync(media.Pk, PaginationParameters.MaxPagesToLoad(_commentFetchAmount));
+
+					if (!mediaCommentsAsync.Succeeded)
+						return;
+
+					var comments = new List<CommentCorpus>();
+
+					void AddInnerComments(IEnumerable<InstaComment> commentsIn)
+					{
+						foreach (var comment in commentsIn)
+						{
+							var commentTags = comment.Text.FilterHashtags().ToList();
+							if (commentTags.Count > 3)
+							{
+								_hashtagCorpusLogic.AddHashtagsToRepositoryAndCache(new[]
+								{
+									new HashtagsModel
+									{
+										Hashtags = commentTags, 
+										Topic = topic
+									}
+								});
+							}
+							if(comment.User.Pk == media.User.Pk) continue;
+							var commentExtract = comment.Text
+								.RemoveHashtagsFromText()
+								.RemoveMentionsFromText()
+								.RemoveCurrencyFromText()
+								.RemovePhoneNumbersFromText()
+								.RemoveWebAddressesFromText()
+								.RemoveNonWordsFromText()
+								.RemoveHorizontalSeparationFromText()
+								.RemoveVerticalSeparationFromText()
+								.RemoveLargeSpacesInText();
+
+							if (!string.IsNullOrEmpty(commentExtract) || commentExtract!=" ")
+								comments.Add(new CommentCorpus
+								{
+									Comment = commentExtract,
+									Created = comment.CreatedAtUtc,
+									MediaId = media.Pk,
+									NumberOfLikes = comment.LikesCount,
+									NumberOfReplies = comment.ChildCommentCount,
+									Topic = topic,
+									Username = comment.User.UserName,
+									IsReply = comment.ParentCommentId > 0
+								});
+							
+							if (comment.ChildComments.Count > 0)
+								AddInnerComments(comment.ChildComments);
+						}
+					}
+
+					AddInnerComments(mediaCommentsAsync.Value.Comments);
+
+					if (comments.Any())
+					{
+						Console.WriteLine("Adding Comments fetched {0}", comments.Count);
+						await _commentCorpusLogic.AddComments(comments);
+					}
+
+					await Task.Delay(TimeSpan.FromSeconds(SecureRandom.Next(1, 2)));
+					Console.WriteLine("Moving to next media...");
+				}).ContinueWith(t =>
+				{
+					Console.WriteLine("Finished Fetch for {0} using worker {1}", media?.Pk, worker.Username);
+					workers.Enqueue(worker);
+				});
+				#endregion 
+
+				if (!filteredMedias.Last().Equals(media)) continue;
+				while (workers.Count != initialWorkerAmount)   //wait for all to finish;
+					await Task.Delay(TimeSpan.FromSeconds(0.35));
+				_workerBatches.Enqueue(workers);
+			}
 		}
 	}
 }

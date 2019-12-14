@@ -31,5 +31,6 @@ namespace QuarklessContexts.Models.SecurityLayerModels
 		public string TempImagePath { get; set; }
 		public string FfmpegPath { get; set; }
 		public string ApiBasePath { get; set; }
+		public string VisionCredentials { get; set; }
 	}
 }

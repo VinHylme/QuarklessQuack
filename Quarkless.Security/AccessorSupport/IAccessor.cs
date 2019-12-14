@@ -30,5 +30,6 @@ namespace Quarkless.Security.AccessorSupport
 		string FfmpegPath { get; }
 		string ApiBasePath { get; }
 		string AutomatorEndPoint { get; }
+		string VisionCredentials { get; }
 	}
 }

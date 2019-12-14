@@ -24,6 +24,10 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 			await _context.CorpusMedia.InsertManyAsync(medias);
 		}
 
+		public async Task AddMedia(MediaCorpus mediaCorpus)
+		{
+			await _context.CorpusMedia.InsertOneAsync(mediaCorpus);
+		}
 		public async Task<IEnumerable<MediaCorpus>> GetMedias(IEnumerable<FilterDefinition<MediaCorpus>> searchRepository = null, int limit = -1)
 		{
 			try
@@ -47,9 +51,7 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 				var res = await _context.CorpusMedia.FindAsync(filter, options);
 				return res.ToList();
 			}
-#pragma warning disable CS0168 // Variable is declared but never used
 			catch (Exception e)
-#pragma warning restore CS0168 // Variable is declared but never used
 			{
 
 				return null;
@@ -74,31 +76,6 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 			await _context.Hashtags.UpdateManyAsync(o => o.Topic == topic, updateDef3);
 		}
 
-		public async Task Clean()
-		{
-			try
-			{
-				const string mediaCorpusFilePath =
-					@"C:\Users\yousef.alaw\source\repos\QuarklessQuack\Requires\Datas\new_data\RAWcaptions.csv";
-
-				var res = await _context.CorpusMedia.FindAsync(_=>true, 
-				new FindOptions<MediaCorpus, MediaCorpus>()
-				{
-					BatchSize = 1000
-				});
-				while (res.MoveNext())
-				{
-					var currentBatch = res.Current
-						.Where(x => !x.Caption.ContainsAnyFromCommentsAndCaptionCorpus())
-						.DistinctBy(_ => _.Caption);
-					currentBatch.ToDataTable().WriteToCsvFile(mediaCorpusFilePath);
-				}
-			}
-			catch (Exception ee)
-			{
-				Console.WriteLine(ee.Message);
-			}
-		}
 		public async Task UpdateAllMediasLanguagesToLower()
 		{
 			var res = (await _context.CorpusMedia.DistinctAsync(_ => _.Language, _ => true)).ToList();
@@ -108,6 +85,7 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 				await _context.CorpusMedia.UpdateManyAsync(_ => _.Language == lang, updateDef);
 			}
 		}
+
 		public async Task<IEnumerable<MediaCorpus>> GetMedias(string topic, string language = null, int limit = -1, bool skip = true)
 		{
 			try

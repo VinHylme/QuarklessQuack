@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using Microsoft.Extensions.Configuration;
 using QuarklessContexts;
 using QuarklessContexts.Models.APILogger;
@@ -12,6 +13,7 @@ namespace Quarkless.Security.AccessorSupport
 	internal class Accessor: IAccessor, IInitAccess
 	{
 		private readonly IConfiguration _configuration;
+		private const string VISION_CREDENTIALS = "quitic.visionai.json";
 		public Accessor(IConfiguration configuration) => _configuration = configuration;
 
 		#region Public Getters
@@ -58,7 +60,7 @@ namespace Quarkless.Security.AccessorSupport
 		public string FfmpegPath => _configuration["Ffmpeg"];
 		public string ApiBasePath => _configuration["Endpoints:ApiBasePath"];
 		public string AutomatorEndPoint => _configuration["Endpoints:AutomatorPath"];
-
+		public string VisionCredentials => File.ReadAllText(VISION_CREDENTIALS);
 		public MaxConcurrentRequests MaxConcurrentRequests =>
 			_configuration.GetSection("MaxConcurrentRequests").Get<MaxConcurrentRequests>();
 		public IpRateLimiting IpRateLimiting => _configuration.GetSection("IpRateLimiting").Get<IpRateLimiting>();

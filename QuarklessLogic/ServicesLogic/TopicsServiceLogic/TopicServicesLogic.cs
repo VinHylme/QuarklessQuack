@@ -32,11 +32,11 @@ namespace QuarklessLogic.ServicesLogic.TopicsServiceLogic
 		{
 			return await _topicsRepository.AddOrUpdateTopic(topics);
 		}
-		public async Task AddTopicCategories(IEnumerable<TopicCategories> topicCategories) => await _topicCategoryRepository.AddCategories(topicCategories);
-		public async Task<IEnumerable<TopicCategories>> GetAllTopicCategories()
+		public async Task AddTopicCategories(IEnumerable<TopicCategory> topicCategories) => await _topicCategoryRepository.AddCategories(topicCategories);
+		public async Task<IEnumerable<TopicCategory>> GetAllTopicCategories()
 		{
 			var allCategories = await _topicCategoryRepository.GetAllCategories();
-			var uniqueByCat = allCategories.DistinctBy(x => x.CategoryName).DistinctBy(x => x.SubCategories);
+			var uniqueByCat = allCategories.DistinctBy(x => x.Category.CategoryName).DistinctBy(x => x.SubCategories);
 			//var total = (await GetTopics())
 			//	.Select(s => s.SubTopics)
 			//	.SquashMe()

@@ -10,8 +10,8 @@ namespace QuarklessLogic.ServicesLogic
 		Task<bool> AddOrUpdateTopic(TopicsModel topics);
 		Task<TopicsModel> GetTopicByName(string topicName);
 		Task<IEnumerable<TopicsModel>> GetTopics();
-		Task AddTopicCategories(IEnumerable<TopicCategories> topicCategories);
-		Task<IEnumerable<TopicCategories>> GetAllTopicCategories();
+		Task AddTopicCategories(IEnumerable<TopicCategory> topicCategories);
+		Task<IEnumerable<TopicCategory>> GetAllTopicCategories();
 		Task AddRelated(QuarklessContexts.Models.Profiles.SubTopics subTopics);
 		Task<QuarklessContexts.Models.Profiles.SubTopics> GetAllRelatedTopics(string topic);
 	}

@@ -1,0 +1,24 @@
+version: "3.4"
+
+services:
+    quarkless_dataFetcher:
+        image: quarkless/services.datafetch
+        container_name: quarkless.datafetch
+        environment: 
+            - HASHTAG_MEDIA_INTERVAL=0.5
+            - COMMENT_FETCH_AMOUNT=2
+            - MEDIA_FETCH_AMOUNT=2
+            - BATCH_SIZE=3
+            - WORKER_TYPE_CODE=1
+            - WORKER_OWNER=lemonkaces
+        build:
+            context: .
+            dockerfile: Quarkless.Services.DataFetcher/Dockerfile
+        networks:
+            localnet:
+                aliases: 
+                - quarkless.local.datafetcher
+
+networks:
+    localnet:
+        external: true
