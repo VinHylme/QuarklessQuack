@@ -8,5 +8,6 @@
 		public int CommentFetchAmount { get; set; } = 1;
 		public int BatchSize { get; set; } = 3;
 		public int WorkerAccountType { get; set; } = 1;
+		public bool BuildInitialTopics { get; set; }
 	}
 }

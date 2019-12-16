@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 namespace QuarklessContexts.Models.Topics
 {
-
 	public class Category
 	{
 		public string CategoryId { get; set; }

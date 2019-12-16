@@ -53,7 +53,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Services.Delegato
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Services.DataFetcher", "Quarkless.Services.DataFetcher\Quarkless.Services.DataFetcher.csproj", "{BCD0DE14-120A-4AE2-A60D-DF2F70DD9C47}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quarkless.Vision", "Quarkless.Vision\Quarkless.Vision.csproj", "{90E9F935-166D-40F0-96FE-8A069F651ABE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Vision", "Quarkless.Vision\Quarkless.Vision.csproj", "{90E9F935-166D-40F0-96FE-8A069F651ABE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -6,7 +6,7 @@
 	<LangVersion>latest</LangVersion>
 	<GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
 	<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-	<DockerfileRunArguments>-e HASHTAG_MEDIA_INTERVAL=0.55 -e COMMENT_FETCH_AMOUNT=2 -e MEDIA_FETCH_AMOUNT=2 -e BATCH_SIZE=3 -e WORKER_TYPE_CODE=1 -e WORKER_OWNER=lemonkaces --network name=localnet,alias=quarkless.local.datafetcher --name fetcher.quark</DockerfileRunArguments>
+	<DockerfileRunArguments>-e INIT=true -e HASHTAG_MEDIA_INTERVAL=0.55 -e COMMENT_FETCH_AMOUNT=2 -e MEDIA_FETCH_AMOUNT=2 -e BATCH_SIZE=1 -e WORKER_TYPE_CODE=1 -e WORKER_OWNER=lemonkaces --network name=localnet,alias=quarkless.local.datafetcher --name fetcher.quark</DockerfileRunArguments>
   </PropertyGroup>
 
   <ItemGroup>

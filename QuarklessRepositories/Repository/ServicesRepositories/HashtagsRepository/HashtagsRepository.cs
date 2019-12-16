@@ -1,12 +1,10 @@
-﻿using MongoDB.Bson;
-using MongoDB.Driver;
+﻿using MongoDB.Driver;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using QuarklessRepositories.RepositoryClientManager;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace QuarklessRepositories.Repository.ServicesRepositories.HashtagsRepository
@@ -22,7 +20,7 @@ namespace QuarklessRepositories.Repository.ServicesRepositories.HashtagsReposito
 		{
 			try
 			{
-				if (hashtag_ids == null && hashtag_ids.Count() <= 0) return false;
+				if (hashtag_ids == null && !hashtag_ids.Any()) return false;
 				var builders = Builders<HashtagsModel>.Filter.In(item => item._id, hashtag_ids);
 				var res = await _context.Hashtags.DeleteManyAsync(builders);
 				return res.DeletedCount > 0;
@@ -49,7 +47,7 @@ namespace QuarklessRepositories.Repository.ServicesRepositories.HashtagsReposito
 		{
 			try
 			{
-				List<FilterDefinition<HashtagsModel>> filterList = new List<FilterDefinition<HashtagsModel>>();
+				var filterList = new List<FilterDefinition<HashtagsModel>>();
 				var builders = Builders<HashtagsModel>.Filter;
 
 				if (searchRepository == null)

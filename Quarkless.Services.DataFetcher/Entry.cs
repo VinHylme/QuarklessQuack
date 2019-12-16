@@ -40,7 +40,7 @@ namespace Quarkless.Services.DataFetcher
 			int.TryParse(environmentVariables["MEDIA_FETCH_AMOUNT"].ToString(), out var mediaFetchAmount);
 			int.TryParse(environmentVariables["COMMENT_FETCH_AMOUNT"].ToString(), out var commentFetchAmount);
 			double.TryParse(environmentVariables["HASHTAG_MEDIA_INTERVAL"].ToString(), out var intervalBetweenHashtagAndMediaSearch);
-
+			bool.TryParse(environmentVariables["INIT"].ToString(), out var buildInitialTopics);
 			if (string.IsNullOrEmpty(accountId))
 				return;
 
@@ -60,7 +60,8 @@ namespace Quarkless.Services.DataFetcher
 				BatchSize = batchSize,
 				CommentFetchAmount = commentFetchAmount,
 				MediaFetchAmount = mediaFetchAmount,
-				IntervalWaitBetweenHashtagsAndMediaSearch = intervalBetweenHashtagAndMediaSearch
+				IntervalWaitBetweenHashtagsAndMediaSearch = intervalBetweenHashtagAndMediaSearch,
+				BuildInitialTopics = buildInitialTopics
 			};
 
 			await buildService.GetService<IFetcher>().Begin(settings);

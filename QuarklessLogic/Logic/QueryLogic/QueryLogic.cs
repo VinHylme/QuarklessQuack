@@ -197,14 +197,14 @@ namespace QuarklessLogic.Logic.QueryLogic
 			var hashtags = new List<string>();
 			while (hashtags.Count < pickRate) { 
 				var chosenHashtags = new List<string>();
-				foreach(var hashtagres in res)
+				foreach(var hashtagResult in res)
 				{
-					if (string.IsNullOrEmpty(hashtagres.Language)) continue;
-					var hlang = clean.Replace(hashtagres.Language.ToLower(),"");
-					var langpicked = clean.Replace(language.MapLanguages().ToLower(),"");
+					if (string.IsNullOrEmpty(hashtagResult.Language)) continue;
+					var languageResult = clean.Replace(hashtagResult.Language.ToLower(),"");
+					var languagePicked = clean.Replace(language.MapLanguages().ToLower(),"");
 
-					if(hlang == langpicked)
-						chosenHashtags.AddRange(hashtagres.Hashtags);
+					if(languageResult == languagePicked)
+						chosenHashtags.AddRange(hashtagResult.Hashtags);
 				}
 				if (chosenHashtags.Count <= 0) continue;
 				var chosenHashtagsFiltered = chosenHashtags.Where(space => space.Count(oc => oc == ' ') <= 1);

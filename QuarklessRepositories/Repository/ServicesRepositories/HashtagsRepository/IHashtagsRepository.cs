@@ -5,7 +5,7 @@ using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 
 namespace QuarklessRepositories.Repository.ServicesRepositories.HashtagsRepository
 {
-	public interface IHashtagsRepository : IServiceRepository
+	public interface IHashtagsRepository 
 	{
 		Task<bool> AddHashtags(IEnumerable<HashtagsModel> hashtags);
 		Task<bool> RemoveHashtags(IEnumerable<string> hashtag_ids);

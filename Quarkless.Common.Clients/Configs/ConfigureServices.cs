@@ -1,6 +1,5 @@
 ﻿#region References
 using System;
-using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Amazon.CognitoIdentityProvider;
@@ -80,8 +79,6 @@ using QuarklessRepositories.Repository.CorpusRepositories.Comments;
 using QuarklessRepositories.Repository.CorpusRepositories.Medias;
 using QuarklessRepositories.Repository.CorpusRepositories.Topic;
 using QuarklessRepositories.Repository.LibraryRepository;
-using QuarklessRepositories.Repository.ServicesRepositories;
-using QuarklessRepositories.Repository.ServicesRepositories.CommentsRepository;
 using QuarklessRepositories.Repository.ServicesRepositories.HashtagsRepository;
 using QuarklessRepositories.Repository.ServicesRepositories.TopicsRepository;
 using QuarklessRepositories.Repository.TimelineRepository;
@@ -91,16 +88,17 @@ using Amazon;
 using Amazon.CognitoIdentity;
 using Amazon.Extensions.NETCore.Setup;
 using AspNetCoreRateLimit;
-using MongoDB.Driver;
 using Quarkless.Analyser;
 using Quarkless.Analyser.Models;
 using Quarkless.Vision;
 using QuarklessContexts.Models.APILogger;
 using QuarklessContexts.Models.SecurityLayerModels;
 using QuarklessLogic.Handlers.RequestBuilder.Constants;
+using QuarklessLogic.Logic.TopicLookupLogic;
 using QuarklessLogic.QueueLogic.Jobs.JobRunner;
 using QuarklessLogic.ServicesLogic.TopicsServiceLogic;
 using QuarklessRepositories.Repository.RepositoryClientManager;
+using QuarklessRepositories.Repository.TopicLookupRepository;
 using IpRateLimitPolicies = AspNetCoreRateLimit.IpRateLimitPolicies;
 #endregion
 
@@ -150,6 +148,7 @@ namespace Quarkless.Common.Clients.Configs
 			services.AddSingleton<IYandexImageSearch, YandexImageSearch>();
 			services.AddSingleton<IPostAnalyser, PostAnalyser>();
 			services.AddSingleton<IMediaManipulation, MediaManipulation>();
+			services.AddSingleton<ITopicLookupLogic, TopicLookupLogic>();
 		}
 		public static void AddAuthHandlers(this IServiceCollection services, EnvironmentsAccess accessors)
 		{
@@ -318,9 +317,7 @@ namespace Quarkless.Common.Clients.Configs
 			services.AddTransient<IInstagramAccountRepository, InstagramAccountRepository>();
 			services.AddTransient<IProxyRepostory, ProxyRepository>();
 			services.AddTransient<IProfileRepository, ProfileRepository>();
-			services.AddTransient<IPostServicesRepository, PostServicesRepository>();
 			services.AddTransient<ITopicsRepository, TopicsRepository>();
-			services.AddTransient<ICommentsRepository, CommentsRepository>();
 			services.AddTransient<IHashtagsRepository, HashtagsRepository>();
 			services.AddTransient<ITimelineLoggingRepository, TimelineLoggingRepository>();
 			services.AddTransient<IHeartbeatRepository, HeartbeatRepository>();
@@ -338,6 +335,7 @@ namespace Quarkless.Common.Clients.Configs
 			services.AddTransient<ILoggerStore, LoggerStore>();
 			services.AddTransient<IRedisClient, RedisClient>();
 			services.AddTransient<IAccountCache, AccountCache>();
+			services.AddTransient<ITopicLookupRepository, TopicLookupRepository>();
 		}
 		public static void AddHandlers(this IServiceCollection services)
 		{

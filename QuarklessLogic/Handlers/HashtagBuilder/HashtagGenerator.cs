@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using MoreLinq;
+using Quarkless.Vision;
 using QuarklessContexts.Extensions;
 using QuarklessLogic.Logic.HashtagLogic;
 
@@ -11,11 +12,18 @@ namespace QuarklessLogic.Handlers.HashtagBuilder
 	public class HashtagGenerator
 	{
 		private readonly IHashtagLogic _hashtagLogic;
-		public HashtagGenerator(IHashtagLogic hashtagLogic)
+		private readonly IVisionClient _visionClient;
+		public HashtagGenerator(IHashtagLogic hashtagLogic, IVisionClient client)
 		{
 			_hashtagLogic = hashtagLogic;
+			_visionClient = client;
 		}
 
+		public async Task<IEnumerable<string>> SuggestHashtags(byte[] imageBytes, string topic)
+		{
+			var imageLabels = await _visionClient.AnnotateImage(imageBytes);
+			return null;
+		}
 		public async Task<IEnumerable<string>> BuildHashtags(string topic, string subcategory, string language = null, int limit = 1, int pickRate = 20)
 		{
 			var hashtagResults = (await _hashtagLogic.GetHashtagsByTopicAndLanguage(topic.OnlyWords(),

@@ -1,14 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using InstagramApiSharp.Classes.Models;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using OpenQA.Selenium;
 using QuarklessContexts.Models.Options;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.Proxies;
 using QuarklessContexts.Models.ResponseModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
+using QuarklessLogic.ContentSearch.SeleniumClient;
 using QuarklessLogic.Handlers.RestSharpClient;
 
 namespace QuarklessLogic.ContentSearch.GoogleSearch
@@ -26,16 +29,24 @@ namespace QuarklessLogic.ContentSearch.GoogleSearch
 
 	public class GoogleSearchLogic : IGoogleSearchLogic
 	{
+		private const string IMAGE_URL = "https://www.google.co.uk/imghp?hl=en&tab=wi&ogbl";
 		private readonly string _apiEndpoint;
 		private readonly IRestSharpClientManager _restSharpClient;
+		private readonly ISeleniumClient _seleniumClient;
 
-		public GoogleSearchLogic(IOptions<GoogleSearchOptions> options)
+		public GoogleSearchLogic(IOptions<GoogleSearchOptions> options, ISeleniumClient seleniumClient)
 		{
+			_seleniumClient = seleniumClient;
 			_apiEndpoint = options.Value.Endpoint;
 			_restSharpClient = new RestSharpClientManager();
 		}
 
-		public void WithProxy(ProxyModel proxy) => _restSharpClient.AddProxy(proxy);
+		public void WithProxy(ProxyModel proxy)
+		{
+			_restSharpClient.AddProxy(proxy);
+			var proxyLine = string.IsNullOrEmpty(proxy.Username) ? $"http://{proxy.Address}:{proxy.Port}" : $"http://{proxy.Username}:{proxy.Password}@{proxy.Address}:{proxy.Port}";
+			_seleniumClient.AddArguments($"--proxy-server={proxyLine}");
+		}
 		public SearchResponse<Media> SearchViaGoogle(SearchImageModel searchImageQuery)
 		{
 			var response = new SearchResponse<Media>();
@@ -130,5 +141,25 @@ namespace QuarklessLogic.ContentSearch.GoogleSearch
 				return response;
 			}
 		}
+
+		public async Task<IEnumerable<string>> GetSuggestions(string query)
+		{
+			var results = new List<string>();
+			using (var driver = _seleniumClient.CreateDriver())
+			{
+				driver.Navigate().GoToUrl(IMAGE_URL);
+				var searchBox = driver.FindElement(By.XPath("//input[@title= 'Search']"));
+				await Task.Delay(TimeSpan.FromSeconds(.25));
+				searchBox.SendKeys(query);
+				searchBox.Submit();
+				await Task.Delay(TimeSpan.FromSeconds(.55));
+				var carouselSuggestions = driver.FindElements(By.ClassName("dtviD"));
+				if(carouselSuggestions.Any())
+					results.AddRange(carouselSuggestions.Select(_=>_.Text));
+			}
+
+			return results;
+		}
+
 	}
 }

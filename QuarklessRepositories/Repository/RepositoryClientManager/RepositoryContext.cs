@@ -11,7 +11,6 @@ using QuarklessContexts.Models.Logger;
 using QuarklessContexts.Models.Options;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.Proxies;
-using QuarklessContexts.Models.ServicesModels;
 using QuarklessContexts.Models.ServicesModels.Corpus;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using QuarklessContexts.Models.TimelineLoggingRepository;
@@ -22,6 +21,7 @@ namespace QuarklessRepositories.Repository.RepositoryClientManager
 {
 	public class RepositoryContext : IRepositoryContext
 	{
+		#region Initialisers
 		private readonly IMongoDatabase _clientDatabase;
 		private readonly IMongoDatabase _controlDatabase;
 		private readonly IMongoDatabase _contentDatabase;
@@ -34,22 +34,23 @@ namespace QuarklessRepositories.Repository.RepositoryClientManager
 			_contentDatabase = client.GetDatabase(options.Value.ContentDatabase);
 			_schedulerDatabase = client.GetDatabase(options.Value.SchedulerDatabase);
 		}
+		#endregion
 
-		public IMongoCollection<TopicsModel> Topics => _contentDatabase.GetCollection<TopicsModel>("Topics");
+		#region Timeline and Report Handlers
 		public IMongoCollection<LoggerModel> Logger => _controlDatabase.GetCollection<LoggerModel>("ReportHandle");
 		public IMongoCollection<TimelineEventLog> TimelineLogger =>
 			_controlDatabase.GetCollection<TimelineEventLog>("TimelineLogger");
+		public IMongoCollection<JobDto> Timeline => _schedulerDatabase.GetCollection<JobDto>("Timeline.jobGraph");
+		#endregion
+
+		#region User Profiles
 		public IMongoCollection<InstagramAccountModel> InstagramAccounts => _clientDatabase.GetCollection<InstagramAccountModel>("InstagramAccounts");
-		public IMongoCollection<InstagramClientAccount> InstagramClientAccount => _clientDatabase.GetCollection<InstagramClientAccount>("InstagramAccounts");
 		public IMongoCollection<ProxyModel> Proxies => _clientDatabase.GetCollection<ProxyModel>("Proxies");
 		public IMongoCollection<AccountUser> Account => _clientDatabase.GetCollection<AccountUser>("accountUsers");
 		public IMongoCollection<ProfileModel> Profiles => _clientDatabase.GetCollection<ProfileModel>("Profiles");
-		public IMongoCollection<PostServiceModel> PostingService => _controlDatabase.GetCollection<PostServiceModel>("PostsAnalyser");
-		public IMongoCollection<CommentsModel> Comments => _contentDatabase.GetCollection<CommentsModel>("Comments");
-		public IMongoCollection<CaptionsModel> Captions => _contentDatabase.GetCollection<CaptionsModel>("Captions");
-		public IMongoCollection<HashtagsModel> Hashtags => _contentDatabase.GetCollection<HashtagsModel>("CCHashtags");
-		public IMongoCollection<UserBiographyModel> UserBiography => _contentDatabase.GetCollection<UserBiographyModel>("BiographyDetail");
-		public IMongoCollection<JobDto> Timeline => _schedulerDatabase.GetCollection<JobDto>("Timeline.jobGraph");
+		#endregion
+
+		#region User Saved Medias / Captions / Messages/ Hashtags
 		public IMongoCollection<MediasLib> MediaLibrary =>
 			_clientDatabase.GetCollection<MediasLib>("UsersMediasLibrary");
 		public IMongoCollection<HashtagsLib> HashtagLibrary =>
@@ -58,9 +59,16 @@ namespace QuarklessRepositories.Repository.RepositoryClientManager
 			_clientDatabase.GetCollection<CaptionsLib>("UsersCaptionsLibrary");
 		public IMongoCollection<MessagesLib> MessagesLibrary=>
 			_clientDatabase.GetCollection<MessagesLib>("UsersMessagesLibrary");
+		#endregion
+
+		public IMongoCollection<CTopic> TopicLookup => _contentDatabase.GetCollection<CTopic>("TopicLookup");
+		public IMongoCollection<TopicsModel> Topics => _contentDatabase.GetCollection<TopicsModel>("Topics");
+		public IMongoCollection<HashtagsModel> Hashtags => _contentDatabase.GetCollection<HashtagsModel>("CCHashtags");
 		public IMongoCollection<CommentCorpus> CorpusComments => _contentDatabase.GetCollection<CommentCorpus>("CCComments");
 		public IMongoCollection<MediaCorpus> CorpusMedia => _contentDatabase.GetCollection<MediaCorpus>("CCMedias");
 		public IMongoCollection<TopicCategory> TopicCategories => _contentDatabase.GetCollection<TopicCategory>("CategoryTopic");
+
+		#region Local Functions
 		internal async Task<bool> CreateCollection(string collectionName, BsonDocument document = null)
 		{
 			try
@@ -88,5 +96,6 @@ namespace QuarklessRepositories.Repository.RepositoryClientManager
 		{
 			return await _clientDatabase.ListCollectionNamesAsync();
 		}
+		#endregion
 	}
 }

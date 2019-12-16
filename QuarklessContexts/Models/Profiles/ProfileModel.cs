@@ -2,6 +2,8 @@
 using QuarklessContexts.Enums;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Reflection.Metadata;
+using QuarklessContexts.Models.Topics;
 
 namespace QuarklessContexts.Models.Profiles
 {
@@ -80,6 +82,12 @@ namespace QuarklessContexts.Models.Profiles
 		public TopicTypes TopicType { get; set; } = TopicTypes.NotSelected;
 		public string TopicFriendlyName { get; set; } = string.Empty;
 		public List<SubTopics> SubTopics { get; set; }
+	}
+
+	public class Topic
+	{
+		public CTopic Category { get; set; }
+		public List<CTopic> Topics { get; set; }
 	}
 
 	public class ProfileModel

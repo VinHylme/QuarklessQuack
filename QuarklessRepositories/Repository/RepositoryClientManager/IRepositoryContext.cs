@@ -18,21 +18,17 @@ namespace QuarklessRepositories.RepositoryClientManager
 	public interface IRepositoryContext
 	{
 		IMongoCollection<InstagramAccountModel> InstagramAccounts { get; }
-		IMongoCollection<InstagramClientAccount> InstagramClientAccount { get;}
 		IMongoCollection<ProxyModel> Proxies { get;}
 		IMongoCollection<AccountUser> Account { get; }
 		IMongoCollection<ProfileModel> Profiles { get; }
 		IMongoCollection<LoggerModel> Logger { get; }
 		IMongoCollection<TimelineEventLog> TimelineLogger { get; }
-		IMongoCollection<PostServiceModel> PostingService { get; }
+		IMongoCollection<CTopic> TopicLookup { get; }
 		IMongoCollection<TopicsModel> Topics {get; }
 		IMongoCollection<CommentCorpus> CorpusComments { get; }
 		IMongoCollection<MediaCorpus> CorpusMedia { get; }
 		IMongoCollection<TopicCategory> TopicCategories { get; }
-		IMongoCollection<CommentsModel> Comments { get; }
-		IMongoCollection<CaptionsModel> Captions { get; }
 		IMongoCollection<HashtagsModel> Hashtags { get; }
-		IMongoCollection<UserBiographyModel> UserBiography { get; }
 		IMongoCollection<JobDto> Timeline { get; }
 		IMongoCollection<MediasLib> MediaLibrary { get; }
 		IMongoCollection<HashtagsLib> HashtagLibrary { get; }
