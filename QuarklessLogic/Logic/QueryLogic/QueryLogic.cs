@@ -5,7 +5,6 @@ using QuarklessContexts.Models.QueryModels.Settings;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessLogic.Handlers.RestSharpClient;
 using QuarklessLogic.Logic.HashtagLogic;
-using QuarklessLogic.ServicesLogic;
 using QuarklessLogic.ServicesLogic.ContentSearch;
 using QuarklessRepositories.RedisRepository.SearchCache;
 using System;
@@ -18,13 +17,15 @@ using MoreLinq.Extensions;
 using Quarkless.Interfacing;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
-using Quarkless.Interfacing.Objects;
 using QuarklessContexts.Models.Sections;
 using QuarklessRepositories.RedisRepository.LoggerStoring;
 using InstagramApiSharp.Classes.Models;
 using QuarklessContexts.Models.LookupModels;
+using QuarklessContexts.Models.Topics;
 using QuarklessLogic.Handlers.ClientProvider;
+using QuarklessLogic.Handlers.HashtagBuilder;
 using QuarklessLogic.Logic.LookupLogic;
+using QuarklessLogic.Logic.TopicLookupLogic;
 
 namespace QuarklessLogic.Logic.QueryLogic
 {
@@ -32,14 +33,15 @@ namespace QuarklessLogic.Logic.QueryLogic
 	{
 		private readonly IRestSharpClientManager _restSharpClientManager;
 		private readonly IContentSearcherHandler _contentSearcherHandler;
-		private readonly ITopicServicesLogic _topicServicesLogic;
+		private readonly ITopicLookupLogic _topicLookupLogic;
 		private readonly ISearchingCache _searchingCache;
 		private readonly IHashtagLogic _hashtagLogic;
 		private readonly IHeartbeatLogic _heartbeatLogic;
 		private readonly ILookupLogic _lookupLogic;
 		private readonly IAPIClientContext _context;
+		private readonly IHashtagGenerator _hashtagGenerator;
 		public QueryLogic(IRestSharpClientManager restSharpClientManager, IContentSearcherHandler contentSearcherHandler,
-			ISearchingCache searchingCache, ITopicServicesLogic topicServicesLogic, 
+			ISearchingCache searchingCache,ITopicLookupLogic topicLookupLogic, IHashtagGenerator hashtagGenerator,
 			IHashtagLogic hashtagLogic, IHeartbeatLogic heartbeatLogic, ILoggerStore loggerStore, ILookupLogic lookupLogic, IAPIClientContext context)
 			: base(loggerStore, Sections.QueryLogic.GetDescription())
 		{
@@ -47,9 +49,10 @@ namespace QuarklessLogic.Logic.QueryLogic
 			_heartbeatLogic = heartbeatLogic;
 			_hashtagLogic = hashtagLogic;
 			_searchingCache = searchingCache;
+			_hashtagGenerator = hashtagGenerator;
 			_restSharpClientManager = restSharpClientManager;
 			_contentSearcherHandler = contentSearcherHandler;
-			_topicServicesLogic = topicServicesLogic;
+			_topicLookupLogic = topicLookupLogic;
 			_context = context;
 		}
 		public object SearchPlaces(string query)
@@ -77,11 +80,13 @@ namespace QuarklessLogic.Logic.QueryLogic
 				return null;
 			}
 		}	
-		public async Task<Media> SimilarImagesSearch(string userId, int limit = 1, int offset = 0, IEnumerable<string> urls = null, bool moreAccurate = false)
+
+		public async Task<Media> SimilarImagesSearch(string userId, int limit = 1, 
+			int offset = 0, IEnumerable<string> urls = null, bool moreAccurate = false)
 		{
 			if(urls == null || (limit == 0)) return null;
 			var requestData = urls as string[] ?? urls.ToArray();
-			var strurl = requestData.Select(_ => new GroupImagesAlike { TopicGroup = "any", Url = _ }).ToList();
+			var strurl = requestData.Select(_ => new GroupImagesAlike { TopicGroup = new CTopic(), Url = _ }).ToList();
 			var newLimit = limit;
 			Media response;
 			if (newLimit == -1)
@@ -176,9 +181,14 @@ namespace QuarklessLogic.Logic.QueryLogic
 		}
 		public async Task<ProfileConfiguration> GetProfileConfig()
 		{
+			var topics = await _topicLookupLogic.GetCategories();
 			return new ProfileConfiguration
 			{
-				Topics = (await _topicServicesLogic.GetAllTopicCategories()).OrderBy(item=>item.Category.CategoryName).ToList(),
+				Topics = topics.Where(_=>!string.IsNullOrEmpty(_.Name)).Select(_=> new Topic
+				{
+					Category = _,
+					Topics = _topicLookupLogic.GetTopicByParentId(_._id).Result
+				}),
 				ColorsAllowed = Enum.GetValues(typeof(ColorType)).Cast<ColorType>().Select(v=>v.GetDescription()).ToList(),
 				ImageTypes = Enum.GetValues(typeof(ImageType)).Cast<ImageType>().Select(v=>v.GetDescription()).ToList(),
 				Orientations = Enum.GetValues(typeof(Orientation)).Cast<Orientation>().Select(v=>v.GetDescription()).ToList(),
@@ -188,35 +198,14 @@ namespace QuarklessLogic.Logic.QueryLogic
 				CanUserEditProfile = true
 			};
 		}
-		public async Task<IEnumerable<string>> BuildHashtags(string topic, string subcategory, string language,
-			int limit = 1, int pickRate = 20)
+		public async Task<IEnumerable<string>> BuildHashtags(SuggestHashtagRequest suggestHashtagRequest)
 		{
-			var res = (await _hashtagLogic.GetHashtagsByTopicAndLanguage(topic.OnlyWords(), language.ToUpper().OnlyWords(), language.MapLanguages().OnlyWords(),limit)).Shuffle().ToList();
-			var clean = new Regex(@"[^\w\d]");
-			if (res.Count <= 0) return null;
-			var hashtags = new List<string>();
-			while (hashtags.Count < pickRate) { 
-				var chosenHashtags = new List<string>();
-				foreach(var hashtagResult in res)
-				{
-					if (string.IsNullOrEmpty(hashtagResult.Language)) continue;
-					var languageResult = clean.Replace(hashtagResult.Language.ToLower(),"");
-					var languagePicked = clean.Replace(language.MapLanguages().ToLower(),"");
-
-					if(languageResult == languagePicked)
-						chosenHashtags.AddRange(hashtagResult.Hashtags);
-				}
-				if (chosenHashtags.Count <= 0) continue;
-				var chosenHashtagsFiltered = chosenHashtags.Where(space => space.Count(oc => oc == ' ') <= 1);
-				var hashtagsFiltered = chosenHashtagsFiltered as string[] ?? chosenHashtagsFiltered.ToArray();
-				if (!hashtagsFiltered.Any()) return null;
-				hashtags.AddRange(hashtagsFiltered.Where(s => s.Length >= 3 && s.Length <= 30));
-			}
-			return hashtags.Take(pickRate);
+			return await _hashtagGenerator.SuggestHashtags(suggestHashtagRequest.ProfileTopic,
+				suggestHashtagRequest.MediaTopic, suggestHashtagRequest.PickAmount, suggestHashtagRequest.MediaUrls);
 		}
 		public async Task<SubTopics> GetRelatedKeywords(string topicName)
 		{
-			var res = await _searchingCache.GetReleatedTopic(topicName);
+			var res = await _searchingCache.GetRelatedTopic(topicName);
 			if (res != null && res.RelatedTopics.Count>0) return res;
 
 			if (topicName.Contains('('))
@@ -277,7 +266,7 @@ namespace QuarklessLogic.Logic.QueryLogic
 			return await RunCodeWithLoggerExceptionAsync(async () =>
 			{
 				_contentSearcherHandler.ChangeUser(new APIClientContainer(_context,username, instagramAccountId));
-				var results = await _contentSearcherHandler.SearchMediaDetailInstagram(topics.ToList(), limit);
+				var results = await _contentSearcherHandler.SearchMediaDetailInstagram(topics, limit);
 				if (results != null) return results;
 				await Warn($"Nothing was found for search query {string.Join(',', topics)}", 
 					nameof(SearchMediasByTopic), username, instagramAccountId);  
@@ -346,63 +335,65 @@ namespace QuarklessLogic.Logic.QueryLogic
 		#endregion
 		#region Heartbeat Logic Stuff
 
-		public async Task<IEnumerable<CommentMedia>> GetRecentComments(SString accountId,
-			SString instagramAccountId, SString topic)
+		public async Task<IEnumerable<CommentMedia>> GetRecentComments(ProfileRequest profile)
 		{
 			return await RunCodeWithLoggerExceptionAsync(async () =>
 			{
 				var metaDataComments =
 					await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(
-						MetaDataType.UsersRecentComments, topic, instagramAccountId);
+						MetaDataType.UsersRecentComments, profile.Topic.Category._id, profile.InstagramAccountId);
 				var metaS = metaDataComments as __Meta__<List<UserResponse<InstaComment>>>[] ?? metaDataComments.ToArray();
 
 				if (metaS.Any())
 				{
 					var recentComments = metaS.Select(x=>x.ObjectItem).SquashMe().ToList();
-					var medias = await GetUsersMedia(accountId, instagramAccountId, topic);
+					var medias = await GetUsersMedia(profile);
 
 					return (from mediaResponseSingle in medias 
-						where recentComments.Exists(x => x.MediaId == mediaResponseSingle.MediaId) select new CommentMedia {Media = mediaResponseSingle, Comments = recentComments.Where(x => x.MediaId == mediaResponseSingle.MediaId).ToList()}).ToList();
+						where recentComments.Exists(x => x.MediaId == mediaResponseSingle.MediaId) 
+						select new CommentMedia {Media = mediaResponseSingle, Comments = recentComments.Where(x => x.MediaId == mediaResponseSingle.MediaId).ToList()}).ToList();
 				}
-				await Warn("Empty Comments", nameof(GetRecentComments), accountId, instagramAccountId);
+				await Warn("Empty Comments", nameof(GetRecentComments), profile.AccountId, profile.InstagramAccountId);
 				return EmptyList<CommentMedia>();
-			}, nameof(GetRecentComments), accountId, instagramAccountId);
+			}, nameof(GetRecentComments), profile.AccountId, profile.InstagramAccountId);
 		}
-
-		public async Task<InstaDirectInbox> GetUserInbox(SString accountId, SString instagramAccountId, SString topic)
+		public async Task<InstaDirectInbox> GetUserInbox(ProfileRequest profile)
 		{
 			return await RunCodeWithLoggerExceptionAsync(async () =>
 			{
 				var inbox = await _heartbeatLogic.GetMetaData<InstaDirectInboxContainer>(
-					MetaDataType.FetchUserDirectInbox, topic, instagramAccountId);
+					MetaDataType.FetchUserDirectInbox, profile.Topic.Category._id, profile.InstagramAccountId);
 				if (inbox != null)
 				{
 					var items = inbox.FirstOrDefault()?.ObjectItem;
 					items?.Inbox.Threads.ForEach(_ => { _.Items.Reverse(); });
 					return items?.Inbox;
 				}
-				await Warn("Inbox Empty", nameof(GetUserInbox), accountId, instagramAccountId);
+				await Warn("Inbox Empty", nameof(GetUserInbox), profile.AccountId, profile.InstagramAccountId);
 				return null;
-			},nameof(GetUserInbox), accountId, instagramAccountId);
+			},nameof(GetUserInbox), profile.AccountId, profile.InstagramAccountId);
 		}
-		public async Task<IEnumerable<Media>> GetUsersFeed(SString accountId, SString instagramAccountId, SString topic)
+		public async Task<IEnumerable<Media>> GetUsersFeed(ProfileRequest profile)
 		{
 			return await RunCodeWithLoggerExceptionAsync(async () =>
 			{
-				var medias = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchUsersFeed, topic, instagramAccountId);
+				var medias = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchUsersFeed, 
+					profile.Topic.Category._id, profile.InstagramAccountId);
+
 				if (medias != null) return medias.Select(x => x.ObjectItem);
-				await Warn("Empty list returned", nameof(GetUsersFeed), accountId, instagramAccountId);  
+				await Warn("Empty list returned", nameof(GetUsersFeed), profile.AccountId, profile.InstagramAccountId);  
 				return EmptyList<Media>();
-			}, nameof(GetUsersFeed), accountId, instagramAccountId);
+			}, nameof(GetUsersFeed), profile.AccountId, profile.InstagramAccountId);
 		}
-		public async Task<IEnumerable<MediaResponseSingle>> GetUsersMedia(SString accountId, SString instagramAccountId, SString topic)
+		public async Task<IEnumerable<MediaResponseSingle>> GetUsersMedia(ProfileRequest profile)
 		{
 			return (await RunCodeWithLoggerExceptionAsync(async () =>
 			{
-				var medias = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchUserOwnProfile, topic, instagramAccountId);
+				var medias = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchUserOwnProfile, 
+					profile.Topic.Category._id, profile.InstagramAccountId);
 				if (medias == null)
 				{
-					await Warn("Empty list returned", nameof(GetUsersMedia), accountId, instagramAccountId);
+					await Warn("Empty list returned", nameof(GetUsersMedia), profile.AccountId, profile.InstagramAccountId);
 					return EmptyList<MediaResponseSingle>();
 				}
 				var newResults = medias.Select(x => x.ObjectItem.Medias).SquashMe().Select(x =>
@@ -447,44 +438,49 @@ namespace QuarklessLogic.Logic.QueryLogic
 				}).SquashMe();
 				return newResults;
 
-			}, nameof(GetUsersMedia), accountId, instagramAccountId)).OrderByDescending(x=>x.TakenAt);
+			}, nameof(GetUsersMedia), profile.AccountId, profile.InstagramAccountId)).OrderByDescending(x=>x.TakenAt);
 		}
-		public async Task<IEnumerable<Media>> GetMediasTargetList(SString accountId, SString instagramAccountId, SString topic)
+		public async Task<IEnumerable<Media>> GetMediasTargetList(ProfileRequest profile)
 		{
 			return await RunCodeWithLoggerExceptionAsync(async () =>
 			{
-				var medias = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByUserTargetList, topic, instagramAccountId);
+				var medias = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByUserTargetList, 
+					profile.Topic.Category._id, profile.InstagramAccountId);
 				if (medias != null) return medias.Select(x => x.ObjectItem);
-				await Warn("Empty list returned", nameof(GetMediasTargetList), accountId, instagramAccountId);  
+				await Warn("Empty list returned", nameof(GetMediasTargetList), profile.AccountId, profile.InstagramAccountId);  
 				return EmptyList<Media>();
-			}, nameof(GetUsersTargetList), accountId, instagramAccountId);
+			}, nameof(GetUsersTargetList), profile.AccountId, profile.InstagramAccountId);
 		}
-		public async Task<IEnumerable<Media>> GetMediasByLocation(SString accountId, SString instagramAccountId, SString topic)
+		public async Task<IEnumerable<Media>> GetMediasByLocation(ProfileRequest profile)
 		{
 			return await RunCodeWithLoggerExceptionAsync(async () =>
 			{
-				var medias = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByUserLocationTargetList, topic, instagramAccountId);
+				var medias = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByUserLocationTargetList, 
+					profile.Topic.Category._id, profile.InstagramAccountId);
+
 				if (medias != null) return medias.Select(x => x.ObjectItem);
-				await Warn("Empty list returned", nameof(GetMediasByLocation), accountId, instagramAccountId);  
+				await Warn("Empty list returned", nameof(GetMediasByLocation), profile.AccountId, profile.InstagramAccountId);  
 				return EmptyList<Media>();
-			}, nameof(GetMediasByLocation), accountId, instagramAccountId);
+			}, nameof(GetMediasByLocation), profile.AccountId, profile.InstagramAccountId);
 		}
-		public async Task<IEnumerable<LookupContainer<UserResponse>>> GetUsersTargetList(SString accountId, SString instagramAccountId, SString topic)
+		public async Task<IEnumerable<LookupContainer<UserResponse>>> GetUsersTargetList(ProfileRequest profile)
 		{
 			return await RunCodeWithLoggerExceptionAsync(async () =>
 			{
-				var medias = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByUserTargetList, topic, instagramAccountId);
+				var medias = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByUserTargetList, profile.Topic.Category._id, 
+					profile.InstagramAccountId);
+
 				if(medias == null)
 				{ 
-					await Warn("Empty list returned", nameof(GetUsersTargetList), accountId, instagramAccountId);  
+					await Warn("Empty list returned", nameof(GetUsersTargetList), profile.AccountId, profile.InstagramAccountId);  
 					return EmptyList<LookupContainer<UserResponse>>();
 				}
-				var commenters = await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaUserTargetList, topic, instagramAccountId);
+				var commenters = await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaUserTargetList, profile.Topic.Category._id, profile.InstagramAccountId);
 				var users = medias.Select(a=>a.ObjectItem.Medias)
 					.SquashMe().Select(x=>new LookupContainer<UserResponse>
 					{
 						Object = x.User, 
-						Lookup = _lookupLogic.Get(accountId, instagramAccountId, 
+						Lookup = _lookupLogic.Get(profile.AccountId, profile.InstagramAccountId, 
 							x.User.UserId.ToString()).GetAwaiter().GetResult()
 							.OrderByDescending(d=>d.LastModified)
 							.DistinctBy(y=>y.ActionType)
@@ -504,31 +500,34 @@ namespace QuarklessLogic.Logic.QueryLogic
 							UserId = u.UserId,
 							Username = u.Username,
 						},
-						Lookup = _lookupLogic.Get(accountId, instagramAccountId, 
+						Lookup = _lookupLogic.Get(profile.AccountId, profile.InstagramAccountId, 
 							u.UserId.ToString()).GetAwaiter().GetResult().DistinctBy(x=>x.ActionType)
 					}));
 				}
 				return users.DistinctBy(x=>x.Object.Username);
-			}, nameof(GetUserByLocation), accountId, instagramAccountId);
+			}, nameof(GetUserByLocation), profile.AccountId, profile.InstagramAccountId);
 		}
-		public async Task<IEnumerable<LookupContainer<UserResponse>>> GetUserByLocation(SString accountId, SString instagramAccountId, SString topic)
+		public async Task<IEnumerable<LookupContainer<UserResponse>>> GetUserByLocation(ProfileRequest profile)
 		{
 			return await RunCodeWithLoggerExceptionAsync(async () =>
 			{
-				var medias = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByUserLocationTargetList, topic, instagramAccountId);
+				var medias = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByUserLocationTargetList, 
+					profile.Topic.Category._id, profile.InstagramAccountId);
 				
 				if(medias == null)
 				{ 
-					await Warn("Empty list returned", nameof(GetUserByLocation), accountId, instagramAccountId);  
+					await Warn("Empty list returned", nameof(GetUserByLocation), profile.AccountId, profile.InstagramAccountId);  
 					return EmptyList<LookupContainer<UserResponse>>();
 				}
 				
-				var commenters = await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaLocationTargetList, topic, instagramAccountId);
+				var commenters = await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(MetaDataType.FetchCommentsViaLocationTargetList,
+					profile.Topic.Category._id, profile.InstagramAccountId);
+
 				var users = medias.Select(a=>a.ObjectItem.Medias)
 				.SquashMe().Select(x=>new LookupContainer<UserResponse>
 				{
 					Object = x.User, 
-					Lookup = _lookupLogic.Get(accountId, instagramAccountId, 
+					Lookup = _lookupLogic.Get(profile.AccountId, profile.InstagramAccountId, 
 						x.User.UserId.ToString()).GetAwaiter().GetResult()
 						.OrderByDescending(d=>d.LastModified)
 						.DistinctBy(y=>y.ActionType)
@@ -549,68 +548,74 @@ namespace QuarklessLogic.Logic.QueryLogic
 						UserId = u.UserId,
 						Username = u.Username,
 					},
-					Lookup = _lookupLogic.Get(accountId, instagramAccountId,
+					Lookup = _lookupLogic.Get(profile.AccountId, profile.InstagramAccountId,
 						u.UserId.ToString()).GetAwaiter().GetResult()
 						.OrderByDescending(d=>d.LastModified)
 						.DistinctBy(y=>y.ActionType)
 				}));
 
 				return users.DistinctBy(x=>x.Object.Username);
-			}, nameof(GetUserByLocation), accountId, instagramAccountId);
+			}, nameof(GetUserByLocation), profile.AccountId, profile.InstagramAccountId);
 		}
-		public async Task<IEnumerable<LookupContainer<UserResponse<string>>>> GetUsersFollowingList(SString accountId, SString instagramAccountId, SString topic)
+		public async Task<IEnumerable<LookupContainer<UserResponse<string>>>> GetUsersFollowingList(ProfileRequest profile)
 		{
 			return await RunCodeWithLoggerExceptionAsync(async () =>
 			{
-				var users = await _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersFollowingList, topic, instagramAccountId);
+				var users = await _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersFollowingList, 
+					profile.Topic.Category._id, profile.InstagramAccountId)
+					;
 				if (users != null) return users.Select(x => x.ObjectItem).SquashMe()
 					.Select(x=>new LookupContainer<UserResponse<string>>
 					{
 						Object = x, 
-						Lookup = _lookupLogic.Get(accountId, instagramAccountId, 
+						Lookup = _lookupLogic.Get(profile.AccountId, profile.InstagramAccountId, 
 							x.UserId.ToString()).GetAwaiter().GetResult()
 							.OrderByDescending(d=>d.LastModified)
 							.DistinctBy(y=>y.ActionType)
 					}).ToList();
-				await Warn("Empty list returned", nameof(GetUsersFollowingList), accountId, instagramAccountId); 
+				await Warn("Empty list returned", nameof(GetUsersFollowingList), profile.AccountId, profile.InstagramAccountId); 
 				return EmptyList<LookupContainer<UserResponse<string>>>();
-			}, nameof(GetUsersFollowingList), accountId, instagramAccountId);
+			}, nameof(GetUsersFollowingList), profile.AccountId, profile.InstagramAccountId);
 		}
-		public async Task<IEnumerable<LookupContainer<UserResponse<string>>>> GetUsersFollowerList(SString accountId, SString instagramAccountId, SString topic)
+		public async Task<IEnumerable<LookupContainer<UserResponse<string>>>> GetUsersFollowerList(ProfileRequest profile)
 		{
 			return await RunCodeWithLoggerExceptionAsync(async () =>
 			{
-				var users = await _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersFollowerList, topic, instagramAccountId);
+				var users = await _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersFollowerList, 
+					profile.Topic.Category._id, profile.InstagramAccountId);
+
 				if (users != null) return users.Select(x => x.ObjectItem).SquashMe()
 					.Select(x=>new LookupContainer<UserResponse<string>>
 					{
 						Object = x, 
-						Lookup = _lookupLogic.Get(accountId, instagramAccountId, 
+						Lookup = _lookupLogic.Get(profile.AccountId, profile.InstagramAccountId, 
 							x.UserId.ToString()).GetAwaiter().GetResult()
 							.OrderByDescending(d=>d.LastModified)
 							.DistinctBy(y=>y.ActionType)
 					}).ToList();
-				await Warn("Returned empty list", nameof(GetUsersFollowerList), accountId, instagramAccountId); 
+				await Warn("Returned empty list", nameof(GetUsersFollowerList), profile.AccountId, profile.InstagramAccountId); 
 				return EmptyList<LookupContainer<UserResponse<string>>>();
-			}, nameof(GetUsersFollowerList), accountId, instagramAccountId);
+			}, nameof(GetUsersFollowerList), profile.AccountId, profile.InstagramAccountId);
 		}
-		public async Task<IEnumerable<LookupContainer<UserResponse<UserSuggestionDetails>>>> GetUsersSuggestedFollowingList(SString accountId, SString instagramAccountId, SString topic)
+		public async Task<IEnumerable<LookupContainer<UserResponse<UserSuggestionDetails>>>> GetUsersSuggestedFollowingList(ProfileRequest profile)
 		{
 			return await RunCodeWithLoggerExceptionAsync(async () =>
 			{
-				var users = await _heartbeatLogic.GetMetaData<List<UserResponse<UserSuggestionDetails>>>(MetaDataType.FetchUsersFollowSuggestions, topic, instagramAccountId);
+				var users = await _heartbeatLogic.GetMetaData<List<UserResponse<UserSuggestionDetails>>>(MetaDataType.FetchUsersFollowSuggestions,
+					profile.Topic.Category._id, profile.InstagramAccountId);
+
 				if (users != null) return users.Select(x => x.ObjectItem).SquashMe()
 					.Select(x=>new LookupContainer<UserResponse<UserSuggestionDetails>>
 					{
 						Object = x, 
-						Lookup = _lookupLogic.Get(accountId, instagramAccountId, 
+						Lookup = _lookupLogic.Get(profile.AccountId, profile.InstagramAccountId, 
 							x.UserId.ToString()).GetAwaiter().GetResult()
 							.OrderByDescending(d=>d.LastModified)
 							.DistinctBy(y=>y.ActionType)
 					}).ToList();
-				await Warn("Returned empty list", nameof(GetUsersSuggestedFollowingList), accountId, instagramAccountId); 
+				await Warn("Returned empty list", nameof(GetUsersSuggestedFollowingList), profile.AccountId, profile.InstagramAccountId); 
 				return EmptyList<LookupContainer<UserResponse<UserSuggestionDetails>>>();
-			}, nameof(GetUsersSuggestedFollowingList), accountId, instagramAccountId);
+			}, nameof(GetUsersSuggestedFollowingList), profile.AccountId, profile.InstagramAccountId);
 		}
 		#endregion
 	}

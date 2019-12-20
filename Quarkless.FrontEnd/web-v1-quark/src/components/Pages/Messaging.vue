@@ -886,7 +886,7 @@ export default {
 	GetRecentComments(){
 		this.$store.dispatch('GetRecentComments', {
 			instagramAccountId: this.selectedAccount.account.id,
-			topic: this.selectedAccount.profile.topics.topicFriendlyName
+			topic: this.selectedAccount.profile.profileTopic
 		}).then(res=>{
 			this.recentComments = res.data;
 		}).catch(err=>{
@@ -896,7 +896,7 @@ export default {
 	GetUserInbox(){
 		this.$store.dispatch('GetUserInbox', {
 			instagramAccountId: this.selectedAccount.account.id,
-			topic: this.selectedAccount.profile.topics.topicFriendlyName
+			topic: this.selectedAccount.profile.profileTopic
 		}).then(res=>{
 			console.log(res)
 			this.chat.inbox = res.data.threads.map(res=> { return {item:res, selected:false}})
@@ -958,7 +958,7 @@ export default {
       this.$store.dispatch(name,
       { 
         instagramAccountId: this.selectedAccount.account.id,
-        topic: this.selectedAccount.profile.topics.topicFriendlyName
+        topic: this.selectedAccount.profile.profileTopic
       }).then((result) => {
         this.results.searchResultItems = result.data.map(res=>{
           return {item: res, selected: false}

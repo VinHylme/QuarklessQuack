@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using QuarklessContexts.Models.Topics;
 using QuarklessLogic.Handlers.ReportHandler;
 
 namespace QuarklessLogic.Logic.InstagramAccountLogic
@@ -69,9 +70,10 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 					{
 						Account_Id = result.AccountId,
 						InstagramAccountId = result._id,
-						Topics = new QuarklessContexts.Models.Profiles.Topics
+						ProfileTopic = new QuarklessContexts.Models.Profiles.Topic
 						{
-							SubTopics = new List<QuarklessContexts.Models.Profiles.SubTopics>(),
+							Category = null,
+							Topics = new List<CTopic>()
 						},
 						Description = "Add a description about this profile",
 						Name = "My Profile 1",

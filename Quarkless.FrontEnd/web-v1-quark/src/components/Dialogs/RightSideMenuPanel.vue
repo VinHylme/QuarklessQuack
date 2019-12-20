@@ -295,7 +295,7 @@ export default {
         _self.medias.isLoading = true;
         store.dispatch('GetUserMedias', {
           instagramAccountId: _self.data.selectedAccount.account.id, 
-          topic: _self.data.selectedAccount.profile.topics.topicFriendlyName
+          topic: _self.data.selectedAccount.profile.profileTopic
         }).then(res=>{
           _self.medias.searchResults = res.data
           _self.medias.isLoading = false;

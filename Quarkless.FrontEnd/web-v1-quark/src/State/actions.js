@@ -391,7 +391,7 @@ export default {
     },
     BuildTags({commit}, data){
       return new Promise((resolve, reject)=>{
-        QueryServices.BuildTags(data.topic, data.subcat, data.lang, data.limit, data.pickRate).then(resp=>{
+        QueryServices.BuildTags(data).then(resp=>{
           resolve(resp);
         }).catch((err)=>reject(err));
       })

@@ -5,7 +5,9 @@ using QuarklessRepositories.RepositoryClientManager;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using MongoDB.Bson;
 
 namespace QuarklessRepositories.Repository.ServicesRepositories.HashtagsRepository
 {
@@ -72,19 +74,23 @@ namespace QuarklessRepositories.Repository.ServicesRepositories.HashtagsReposito
 				return null;
 			}
 		}
-		public async Task<IEnumerable<HashtagsModel>> GetHashtagsByTopic(string topic, int limit)
+		public async Task<List<HashtagsModel>> GetHashtagsByTopic(string topic, int limit)
 		{
-			var query = new FilterDefinitionBuilder<HashtagsModel>().Eq("Topic", topic.ToLower());
-			var countSize = await _context.Hashtags.CountDocumentsAsync(query);
-			if (countSize < limit)
+			try
 			{
-				limit = (int) countSize;
+				var query = new FilterDefinitionBuilder<HashtagsModel>().Regex(_ => _.Topic,
+					BsonRegularExpression.Create(new Regex("^" + topic + "$", RegexOptions.IgnoreCase)));
+				return (await _context.Hashtags.FindAsync(query, new FindOptions<HashtagsModel, HashtagsModel>
+				{
+					Limit = limit
+				})).ToList();
+
 			}
-			return (await _context.Hashtags.FindAsync(query, new FindOptions<HashtagsModel, HashtagsModel>
+			catch (Exception err)
 			{
-				Skip = SecureRandom.Next((int)(await _context.Hashtags.CountDocumentsAsync(query)) - limit),
-				Limit = limit
-			})).ToList();
+				Console.WriteLine(err.Message);
+				return new List<HashtagsModel>();
+			}
 		}
 		public async Task<IEnumerable<HashtagsModel>> GetHashtags(string topic, string language = null, string mapedLang = null, int limit = -1)
 		{

@@ -1,6 +1,5 @@
 ﻿using Quarkless.Services.ActionBuilders.EngageActions;
 using Quarkless.Services.Factories;
-using Quarkless.Services.Interfaces;
 using Quarkless.Services.Interfaces.Actions;
 using Quarkless.Services.StrategyBuilders;
 using QuarklessContexts.Extensions;
@@ -21,6 +20,7 @@ using Quarkless.Analyser;
 using QuarklessContexts.Models.UserAuth.AuthTypes;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Models.TimelineLoggingRepository;
+using QuarklessLogic.Handlers.ContentInfoBuilder;
 using QuarklessLogic.Handlers.RequestBuilder.Constants;
 using QuarklessLogic.Handlers.RestSharpClient;
 using QuarklessLogic.Logic.LibaryLogic;
@@ -37,7 +37,7 @@ namespace Quarkless.Services
 		private readonly XRange _unfollowPurgeCycle = new XRange(16,33);
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
 		private readonly IProfileLogic _profileLogic;
-		private readonly IContentManager _contentManager;
+		private readonly IContentInfoBuilder _contentManager;
 		private readonly ITimelineLogic _timelineLogic;
 		private readonly ITimelineEventLogLogic _timelineEventLogs;
 		private readonly IAuthHandler _authHandler;
@@ -47,7 +47,7 @@ namespace Quarkless.Services
 		private readonly IPostAnalyser _postAnalyser;
 		private readonly IUrlReader _urlReader;
 		public AgentManager(IInstagramAccountLogic instagramAccountLogic, IProfileLogic profileLogic,
-			IContentManager contentManager, ITimelineLogic timelineLogic, ITimelineEventLogLogic eventLogLogic, 
+			IContentInfoBuilder contentManager, ITimelineLogic timelineLogic, ITimelineEventLogLogic eventLogLogic, 
 			IHeartbeatLogic heartbeatLogic, IAuthHandler authHandler, ILibraryLogic libraryLogic,
 			IS3BucketLogic s3Bucket, IPostAnalyser postAnalyser, IUrlReader urlReader, IRestSharpClientManager rn)
 		{

@@ -281,14 +281,15 @@ namespace QuarklessContexts.Extensions
 		}
 		public static IEnumerable<T> TakeAny<T>(this IEnumerable<T> @items, int amount)
 		{
-			if(@items.Count() < amount)
+			var enumerable = @items as T[] ?? @items.ToArray();
+			if(enumerable.Count() < amount)
 			{
-				amount = @items.Count()-1;
+				amount = enumerable.Count()-1;
 			}
 			var uniqueItems = new List<T>();
 			while (uniqueItems.Count < amount)
 			{
-				var item = @items.ElementAtOrDefault(SecureRandom.Next(@items.Count()));
+				var item = enumerable.ElementAtOrDefault(SecureRandom.Next(enumerable.Count()));
 				if (!uniqueItems.Contains(item))
 				{
 					uniqueItems.Add(item);

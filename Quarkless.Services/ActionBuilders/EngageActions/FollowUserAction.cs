@@ -13,6 +13,7 @@ using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using QuarklessLogic.Handlers.ContentInfoBuilder;
 using QuarklessLogic.Logic.StorageLogic;
 
 namespace Quarkless.Services.ActionBuilders.EngageActions
@@ -28,12 +29,12 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	}
 	public class FollowUserAction : IActionCommit
 	{
-		private readonly IContentManager _builder;
+		private readonly IContentInfoBuilder _builder;
 		private readonly IHeartbeatLogic _heartbeatLogic;
 		private readonly IUrlReader _urlReader;
 		private UserStoreDetails user;
 		private FollowStrategySettings followStrategySettings;
-		public FollowUserAction(IContentManager builder, IHeartbeatLogic heartbeatLogic, IUrlReader urlReader)
+		public FollowUserAction(IContentInfoBuilder builder, IHeartbeatLogic heartbeatLogic, IUrlReader urlReader)
 		{
 			_builder = builder;
 			_heartbeatLogic = heartbeatLogic;
@@ -51,14 +52,14 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				ActionType = (int)ActionType.FollowUser,
 				User = user.Profile.InstagramAccountId
 			};
-			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersViaPostLiked, user.Profile.Topics.TopicFriendlyName)
+			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersViaPostLiked, user.Profile.ProfileTopic.Category._id)
 				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Count > 0);
 			var meta_S = fetchMedias as __Meta__<List<UserResponse<string>>>[] ?? fetchMedias.ToArray();
 			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
 			if (@select == null) return 0;
 			@select.SeenBy.Add(@by);
-			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostLiked, user.Profile.Topics.TopicFriendlyName, @select).GetAwaiter().GetResult();
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostLiked, user.Profile.ProfileTopic.Category._id, @select).GetAwaiter().GetResult();
 			return @select.ObjectItem?.ElementAtOrDefault(@select.ObjectItem.Count)?.UserId ?? 0;
 		}
 		private long FollowBasedOnTopic()
@@ -68,7 +69,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				ActionType = (int)ActionType.FollowUser,
 				User = user.Profile.InstagramAccountId
 			};
-			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic, user.Profile.Topics.TopicFriendlyName)
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic, user.Profile.ProfileTopic.Category._id)
 				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Medias.Count > 0);
 			if (fetchMedias == null) return 0;
@@ -76,7 +77,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
 			if (@select == null) return 0;
 			@select.SeenBy.Add(@by);
-			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByTopic, user.Profile.Topics.TopicFriendlyName, @select).GetAwaiter().GetResult();
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByTopic, user.Profile.ProfileTopic.Category._id, @select).GetAwaiter().GetResult();
 			return @select.ObjectItem?.Medias.FirstOrDefault()?.User.UserId ?? 0;
 		}
 		private long FollowBasedOnLocation()
@@ -86,14 +87,14 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				ActionType = (int)ActionType.FollowUser,
 				User = user.Profile.InstagramAccountId
 			};
-			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByUserLocationTargetList, user.Profile.Topics.TopicFriendlyName,user.Profile.InstagramAccountId)
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByUserLocationTargetList, user.Profile.ProfileTopic.Category._id,user.Profile.InstagramAccountId)
 				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Medias.Count > 0);
 			var meta_S = fetchMedias as __Meta__<Media>[] ?? fetchMedias.ToArray();
 			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
 			if (@select == null) return 0;
 			@select.SeenBy.Add(@by);
-			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByUserLocationTargetList, user.Profile.Topics.TopicFriendlyName, @select,user.Profile.InstagramAccountId).GetAwaiter().GetResult();
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByUserLocationTargetList, user.Profile.ProfileTopic.Category._id, @select,user.Profile.InstagramAccountId).GetAwaiter().GetResult();
 			return @select.ObjectItem.Medias.FirstOrDefault()?.User.UserId ?? 0;
 		}
 		private long FollowBasedOnCommenters()
@@ -103,14 +104,14 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				ActionType = (int)ActionType.FollowUser,
 				User = user.Profile.InstagramAccountId
 			};
-			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<CommentResponse>>>(MetaDataType.FetchUsersViaPostCommented, user.Profile.Topics.TopicFriendlyName)
+			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<CommentResponse>>>(MetaDataType.FetchUsersViaPostCommented, user.Profile.ProfileTopic.Category._id)
 				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Count > 0);
 			var meta_S = fetchMedias as __Meta__<List<UserResponse<CommentResponse>>>[] ?? fetchMedias.ToArray();
 			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
 			if (@select == null) return 0;
 			@select.SeenBy.Add(@by);
-			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostCommented, user.Profile.Topics.TopicFriendlyName, @select).GetAwaiter().GetResult();
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostCommented, user.Profile.ProfileTopic.Category._id, @select).GetAwaiter().GetResult();
 			return @select.ObjectItem.ElementAtOrDefault(@select.ObjectItem.Count)?.UserId ?? 0;
 		}
 		private long FollowBasedOnSuggestions()
@@ -120,7 +121,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				ActionType = (int)ActionType.FollowUser,
 				User = user.Profile.InstagramAccountId
 			};
-			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<UserSuggestionDetails>>>(MetaDataType.FetchUsersFollowSuggestions, user.Profile.Topics.TopicFriendlyName, user.Profile.InstagramAccountId)
+			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<UserSuggestionDetails>>>(MetaDataType.FetchUsersFollowSuggestions, user.Profile.ProfileTopic.Category._id, user.Profile.InstagramAccountId)
 				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Count > 0);
 
@@ -129,7 +130,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			if (@select == null) return 0;
 			@select.SeenBy.Add(@by);
 
-			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFollowSuggestions, user.Profile.Topics.TopicFriendlyName, @select).GetAwaiter().GetResult();
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFollowSuggestions, user.Profile.ProfileTopic.Category._id, @select).GetAwaiter().GetResult();
 			return @select.ObjectItem.ElementAtOrDefault(@select.ObjectItem.Count)?.UserId ?? 0;
 		}
 		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)

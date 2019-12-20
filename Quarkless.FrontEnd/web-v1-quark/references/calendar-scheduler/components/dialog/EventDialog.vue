@@ -410,16 +410,15 @@
             getSuggestedTags(e){
                 if(e===true){
                     this.prePostData.isFetchingHashtags = true;
-                    state.dispatch('BuildTags', 
-                    {
-                        topic: encodeURIComponent(this.profile.topics.topicFriendlyName), 
-                        subcat: this.profile.topics.subTopics[Math.floor(Math.random()*this.profile.topics.subTopics.length)].topicName,
-                        lang: this.profile.language,
-                        limit:500,
-                        pickRate:25
-                    }).then(resp=>{
+                    const request = {
+                        profileTopic: this.profile.profileTopic,
+                        mediaTopic: null,
+                        pickAmount: 25,
+                        mediaUrls: this.postDataBuild.media.map(res=>res.url)
+                    }
+                    state.dispatch('BuildTags', request).then(resp=>{
                         this.postDataBuild.hashtags = [];
-                        resp.data.forEach((item)=>this.postDataBuild.hashtags.push('#'+item));
+                        resp.data.forEach((item)=>this.postDataBuild.hashtags.push(item));
                         this.prePostData.autoSuggest = false;
                         this.prePostData.isFetchingHashtags = false;
                     }).catch(err=>{

@@ -5,6 +5,7 @@ using QuarklessLogic.Logic.QueryLogic;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using QuarklessContexts.Models.QueryModels;
+using QuarklessContexts.Models.ServicesModels.SearchModels;
 
 namespace Quarkless.Controllers
 {
@@ -42,14 +43,13 @@ namespace Quarkless.Controllers
 			return Ok(await _queryLogic.GetRelatedKeywords(topic));
 		}
 
-		[HttpGet]
-		[Route("api/query/build/tags/{topic}/{subcategory}/{language}/{limit}/{pickRate}")]
-		public async Task<IActionResult> BuildTags(string topic, string subcategory, 
-			string language, int limit, int pickRate)
+		[HttpPost]
+		[Route("api/query/build/tags")]
+		public async Task<IActionResult> BuildTags(SuggestHashtagRequest suggestHashtagRequest)
 		{
 			if (string.IsNullOrEmpty(_userContext.CurrentUser))
 				return BadRequest("Invalid Request");
-			return Ok(await _queryLogic.BuildHashtags(topic, subcategory, language, limit, pickRate));
+			return Ok(await _queryLogic.BuildHashtags(suggestHashtagRequest));
 		}
 		[HttpGet]
 		[Route("api/query/search/places/{query}")]
@@ -129,94 +129,104 @@ namespace Quarkless.Controllers
 
 		#region Heartbeat Logic Stuff
 
-		[HttpGet]
-		[Route("api/query/recentComments/{instagramId}/{topic}")]
-		public async Task<IActionResult> GetRecentComments(string instagramId, string topic)
+		[HttpPost]
+		[Route("api/query/recentComments")]
+		public async Task<IActionResult> GetRecentComments(ProfileRequest profile)
 		{
 			if(string.IsNullOrEmpty(_userContext.CurrentUser))
 				return BadRequest("Invalid Request");
-			return Ok(await _queryLogic.GetRecentComments(_userContext.CurrentUser, instagramId, topic));
+			profile.AccountId = _userContext.CurrentUser;
+			return Ok(await _queryLogic.GetRecentComments(profile));
 		}
 
-		[HttpGet]
-		[Route("api/query/userInbox/{instagramId}/{topic}")]
-		public async Task<IActionResult> GetUserInbox(string instagramId, string topic)
+		[HttpPost]
+		[Route("api/query/userInbox")]
+		public async Task<IActionResult> GetUserInbox(ProfileRequest profile)
 		{
 			if(string.IsNullOrEmpty(_userContext.CurrentUser))
 				return BadRequest("Invalid Request");
-			return Ok(await _queryLogic.GetUserInbox(_userContext.CurrentUser, instagramId, topic));
+			profile.AccountId = _userContext.CurrentUser;
+			return Ok(await _queryLogic.GetUserInbox(profile));
 		}
 
-		[HttpGet]
-		[Route("api/query/userMedias/{instagramId}/{topic}")]
-		public async Task<IActionResult> GetUsersMedias(string instagramId, string topic)
+		[HttpPost]
+		[Route("api/query/userMedias")]
+		public async Task<IActionResult> GetUsersMedias(ProfileRequest profile)
 		{
 			if(string.IsNullOrEmpty(_userContext.CurrentUser))
 				return BadRequest("Invalid Request");
-			return Ok(await _queryLogic.GetUsersMedia(_userContext.CurrentUser, instagramId, topic));
+			profile.AccountId = _userContext.CurrentUser;
+			return Ok(await _queryLogic.GetUsersMedia(profile));
 		}
 
-		[HttpGet]
-		[Route("api/query/userFeed/{instagramId}/{topic}")]
-		public async Task<IActionResult> GetUsersFeed(string instagramId, string topic)
+		[HttpPost]
+		[Route("api/query/userFeed")]
+		public async Task<IActionResult> GetUsersFeed(ProfileRequest profile)
 		{
 			if(string.IsNullOrEmpty(_userContext.CurrentUser))
 				return BadRequest("Invalid Request");
-			return Ok(await _queryLogic.GetUsersFeed(_userContext.CurrentUser, instagramId, topic));
+			profile.AccountId = _userContext.CurrentUser;
+			return Ok(await _queryLogic.GetUsersFeed(profile));
 		}
 
-		[HttpGet]
-		[Route("api/query/userFollowerList/{instagramId}/{topic}")]
-		public async Task<IActionResult> GetUserFollowerList(string instagramId, string topic)
+		[HttpPost]
+		[Route("api/query/userFollowerList")]
+		public async Task<IActionResult> GetUserFollowerList(ProfileRequest profile)
 		{
 			if(string.IsNullOrEmpty(_userContext.CurrentUser))
 				return BadRequest("Invalid Request");
-			return Ok(await _queryLogic.GetUsersFollowerList(_userContext.CurrentUser, instagramId, topic));
+			profile.AccountId = _userContext.CurrentUser;
+			return Ok(await _queryLogic.GetUsersFollowerList(profile));
 		}
 
-		[HttpGet]
-		[Route("api/query/userFollowingList/{instagramId}/{topic}")]
-		public async Task<IActionResult> GetUserFollowingList(string instagramId, string topic)
+		[HttpPost]
+		[Route("api/query/userFollowingList")]
+		public async Task<IActionResult> GetUserFollowingList(ProfileRequest profile)
 		{
 			if(string.IsNullOrEmpty(_userContext.CurrentUser))
 				return BadRequest("Invalid Request");
-			return Ok(await _queryLogic.GetUsersFollowingList(_userContext.CurrentUser, instagramId, topic));
+			profile.AccountId = _userContext.CurrentUser;
+			return Ok(await _queryLogic.GetUsersFollowingList(profile));
 		}
 
-		[HttpGet]
-		[Route("api/query/userLocation/{instagramId}/{topic}")]
-		public async Task<IActionResult> GetUserByLocation(string instagramId, string topic)
+		[HttpPost]
+		[Route("api/query/userLocation")]
+		public async Task<IActionResult> GetUserByLocation(ProfileRequest profile)
 		{
 			if(string.IsNullOrEmpty(_userContext.CurrentUser))
 				return BadRequest("Invalid Request");
-			return Ok(await _queryLogic.GetUserByLocation(_userContext.CurrentUser, instagramId, topic));
+			profile.AccountId = _userContext.CurrentUser;
+			return Ok(await _queryLogic.GetUserByLocation(profile));
 		}	
 		
-		[HttpGet]
-		[Route("api/query/userSuggestionFollowing/{instagramId}/{topic}")]
-		public async Task<IActionResult> GetUsersSuggestedFollowingList(string instagramId, string topic)
+		[HttpPost]
+		[Route("api/query/userSuggestionFollowing")]
+		public async Task<IActionResult> GetUsersSuggestedFollowingList(ProfileRequest profile)
 		{
 			if(string.IsNullOrEmpty(_userContext.CurrentUser))
 				return BadRequest("Invalid Request");
-			return Ok(await _queryLogic.GetUsersSuggestedFollowingList(_userContext.CurrentUser, instagramId, topic));
+			profile.AccountId = _userContext.CurrentUser;
+			return Ok(await _queryLogic.GetUsersSuggestedFollowingList(profile));
 		}
 
-		[HttpGet]
-		[Route("api/query/userTargetList/{instagramId}/{topic}")]
-		public async Task<IActionResult> GetUsersTargetList(string instagramId, string topic)
+		[HttpPost]
+		[Route("api/query/userTargetList")]
+		public async Task<IActionResult> GetUsersTargetList(ProfileRequest profile)
 		{
 			if(string.IsNullOrEmpty(_userContext.CurrentUser))
 				return BadRequest("Invalid Request");
-			return Ok(await _queryLogic.GetUsersTargetList(_userContext.CurrentUser, instagramId, topic));
+			profile.AccountId = _userContext.CurrentUser;
+			return Ok(await _queryLogic.GetUsersTargetList(profile));
 		}
 
-		[HttpGet]
-		[Route("api/query/mediasLocation/{instagramId}/{topic}")]
-		public async Task<IActionResult> GetMediasByLocation(string instagramId, string topic)
+		[HttpPost]
+		[Route("api/query/mediasLocation")]
+		public async Task<IActionResult> GetMediasByLocation(ProfileRequest profile)
 		{
 			if(string.IsNullOrEmpty(_userContext.CurrentUser))
 				return BadRequest("Invalid Request");
-			return Ok(await _queryLogic.GetMediasByLocation(_userContext.CurrentUser, instagramId, topic));
+			profile.AccountId = _userContext.CurrentUser;
+			return Ok(await _queryLogic.GetMediasByLocation(profile));
 		}
 		#endregion
 	}

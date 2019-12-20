@@ -32,17 +32,17 @@ namespace QuarklessRepositories.Repository.TopicLookupRepository
 				return null;
 			}
 		}
-		public async Task<IEnumerable<string>> AddTopics(IEnumerable<CTopic> topics)
+		public async Task<List<string>> AddTopics(List<CTopic> topics)
 		{
 			try
 			{
 				await _context.TopicLookup.InsertManyAsync(topics);
-				return topics.Select(_ => _._id);
+				return topics.Select(_ => _._id).ToList();
 			}
 			catch (Exception err)
 			{
 				Console.WriteLine(err.Message);
-				return Enumerable.Empty<string>();
+				return new List<string>();
 			}
 		}
 
@@ -60,61 +60,61 @@ namespace QuarklessRepositories.Repository.TopicLookupRepository
 				return null;
 			}
 		}
-		public async Task<IEnumerable<CTopic>> GetTopicsByParentId(string parentId)
+		public async Task<List<CTopic>> GetTopicsByParentId(string parentId)
 		{
 			try
 			{
 				var filter = new FilterDefinitionBuilder<CTopic>().Eq("ParentTopicId", ObjectId.Parse(parentId));
 				var result = await _context.TopicLookup.FindAsync(filter);
-				return result.ToEnumerable();
+				return result.ToList();
 			}
 			catch (Exception err)
 			{
 				Console.WriteLine(err.Message);
-				return Enumerable.Empty<CTopic>();
+				return new List<CTopic>();
 			}
 		}
 
-		public async Task<IEnumerable<CTopic>> GetCategories()
+		public async Task<List<CTopic>> GetCategories()
 		{
 			try
 			{
 				var filter = new FilterDefinitionBuilder<CTopic>().Eq("ParentTopicId", BsonObjectId.Empty);
 				var results = await _context.TopicLookup.FindAsync(filter);
-				return results.ToEnumerable();
+				return results.ToList();
 			}
 			catch (Exception err)
 			{
 				Console.WriteLine(err.Message);
-				return Enumerable.Empty<CTopic>();
+				return new List<CTopic>();
 			}
 		}
-		public async Task<IEnumerable<CTopic>> GetTopicsNameLike(string name)
+		public async Task<List<CTopic>> GetTopicsNameLike(string name)
 		{
 			try
 			{
 				var filter = new FilterDefinitionBuilder<CTopic>().Regex("Name", new BsonRegularExpression(".*"+name+".*"));
 				var result = await _context.TopicLookup.FindAsync(filter);
-				return result.ToEnumerable();
+				return result.ToList();
 			}
 			catch (Exception err)
 			{
 				Console.WriteLine(err.Message);
-				return Enumerable.Empty<CTopic>();
+				return new List<CTopic>();
 			}
 		}
-		public async Task<IEnumerable<CTopic>> GetTopicsName(string name)
+		public async Task<List<CTopic>> GetTopicsName(string name)
 		{
 			try
 			{
 				var filter = new FilterDefinitionBuilder<CTopic>().Eq("Name",name);
 				var result = await _context.TopicLookup.FindAsync(filter);
-				return result.ToEnumerable();
+				return result.ToList();
 			}
 			catch (Exception err)
 			{
 				Console.WriteLine(err.Message);
-				return Enumerable.Empty<CTopic>();
+				return new List<CTopic>();
 			}
 		}
 

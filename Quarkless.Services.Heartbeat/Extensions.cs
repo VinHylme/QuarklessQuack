@@ -54,7 +54,7 @@ namespace Quarkless.Services.Heartbeat
 				media.Add(new Media
 				{
 					Medias = medias.Medias.Between(pos, amount).ToList(),
-					errors = medias.errors
+					Errors = medias.Errors
 				});
 				pos = x;
 			}

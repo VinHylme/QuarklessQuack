@@ -7,12 +7,12 @@ namespace QuarklessRepositories.Repository.TopicLookupRepository
 	public interface ITopicLookupRepository
 	{
 		Task<string> AddTopic(CTopic topic);
-		Task<IEnumerable<string>> AddTopics(IEnumerable<CTopic> topics);
+		Task<List<string>> AddTopics(List<CTopic> topics);
 		Task<CTopic> GetTopicById(string id);
-		Task<IEnumerable<CTopic>> GetTopicsByParentId(string parentId);
-		Task<IEnumerable<CTopic>> GetTopicsNameLike(string name);
-		Task<IEnumerable<CTopic>> GetTopicsName(string name);
-		Task<IEnumerable<CTopic>> GetCategories();
+		Task<List<CTopic>> GetTopicsByParentId(string parentId);
+		Task<List<CTopic>> GetTopicsNameLike(string name);
+		Task<List<CTopic>> GetTopicsName(string name);
+		Task<List<CTopic>> GetCategories();
 		Task<long> DeleteAll();
 	}
 }

@@ -22,22 +22,16 @@ namespace QuarklessRepositories.ProfileRepository
 			try { 
 				var filter = Builders<ProfileModel>.Filter.Eq("_id", profileId);
 				var getProfile = (await _context.Profiles.FindAsync(filter)).FirstOrDefault();
-				if (getProfile != null)
+				if (getProfile == null) return false;
+				var updates = Builders<ProfileModel>.Update;
+				var toAdd = new GroupImagesAlike
 				{
-					var updates = Builders<ProfileModel>.Update;
-					GroupImagesAlike toAdd = new GroupImagesAlike
-					{
-						TopicGroup = getProfile.Topics.TopicFriendlyName,
-						Url = mediaUrl
-					};
-					var newup = updates.Push(e=>e.Theme.ImagesLike,toAdd);
-					var res = await _context.Profiles.UpdateOneAsync(filter, newup);
-					if (res.IsAcknowledged)
-					{
-						return true;
-					}
-				}
-				return false;
+					TopicGroup = getProfile.ProfileTopic.Category,
+					Url = mediaUrl
+				};
+				var newPush = updates.Push(e=>e.Theme.ImagesLike,toAdd);
+				var res = await _context.Profiles.UpdateOneAsync(filter, newPush);
+				return res.IsAcknowledged;
 			}
 			catch
 			{
@@ -69,10 +63,9 @@ namespace QuarklessRepositories.ProfileRepository
 				var profiles = await _context.Profiles.FindAsync(filter);
 				return profiles.SingleOrDefault();
 			}
-#pragma warning disable CS0168 // Variable is declared but never used
 			catch (Exception ee)
-#pragma warning restore CS0168 // Variable is declared but never used
 			{
+				Console.WriteLine(ee.Message);
 				return null;
 			}
 		}
@@ -83,16 +76,11 @@ namespace QuarklessRepositories.ProfileRepository
 			{
 				var filter = Builders<ProfileModel>.Filter.Eq("Account_Id", accountId);
 				var profiles = await _context.Profiles.FindAsync(filter);
-				if (profiles != null)
-				{
-					return profiles.ToList();
-				}
-				return null;
+				return profiles?.ToList();
 			}
-#pragma warning disable CS0168 // Variable is declared but never used
 			catch(Exception ee)
-#pragma warning restore CS0168 // Variable is declared but never used
 			{
+				Console.WriteLine(ee.Message);
 				return null;
 			}
 		}

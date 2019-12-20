@@ -14,6 +14,7 @@ using QuarklessContexts.Models.MessagingModels;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessContexts.Models.Timeline;
+using QuarklessLogic.Handlers.ContentInfoBuilder;
 using QuarklessLogic.Handlers.RequestBuilder.Constants;
 using QuarklessLogic.Logic.StorageLogic;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
@@ -46,11 +47,11 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	}
 	public class DirectMessagingAction : IActionCommit
 	{
-		private readonly IContentManager _builder;
+		private readonly IContentInfoBuilder _builder;
 		private readonly IHeartbeatLogic _heartbeatLogic;
 		private readonly IUrlReader _urlReader;
 		private UserStoreDetails user;
-		public DirectMessagingAction(IContentManager contentManager, IHeartbeatLogic heartbeatLogic, IUrlReader urlReader)
+		public DirectMessagingAction(IContentInfoBuilder contentManager, IHeartbeatLogic heartbeatLogic, IUrlReader urlReader)
 		{
 			_heartbeatLogic = heartbeatLogic;
 			_builder = contentManager;
@@ -65,14 +66,17 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				ActionType = (int)ActionType.SendDirectMessage,
 				User = user.Profile.InstagramAccountId
 			};
-			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersViaPostLiked, user.Profile.Topics.TopicFriendlyName)
+			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersViaPostLiked, 
+					user.Profile.ProfileTopic.Category._id)
 				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Count > 0);
 			var meta_S = fetchMedias as __Meta__<List<UserResponse<string>>>[] ?? fetchMedias.ToArray();
 			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
 			if (@select == null) return 0;
 			@select.SeenBy.Add(@by);
-			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostLiked, user.Profile.Topics.TopicFriendlyName, @select).GetAwaiter().GetResult();
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostLiked, 
+				user.Profile.ProfileTopic.Category._id, @select).GetAwaiter().GetResult();
+
 			return @select.ObjectItem?.ElementAtOrDefault(@select.ObjectItem.Count)?.UserId ?? 0;
 		}
 		private long SendDirectMessageBasedOnCommenters()
@@ -82,14 +86,18 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				ActionType = (int)ActionType.SendDirectMessage,
 				User = user.Profile.InstagramAccountId
 			};
-			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<CommentResponse>>>(MetaDataType.FetchUsersViaPostCommented, user.Profile.Topics.TopicFriendlyName)
+			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<CommentResponse>>>(MetaDataType.FetchUsersViaPostCommented,
+					user.Profile.ProfileTopic.Category._id)
+
 				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Count > 0);
 			var meta_S = fetchMedias as __Meta__<List<UserResponse<CommentResponse>>>[] ?? fetchMedias.ToArray();
 			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Length));
 			if (@select == null) return 0;
 			@select.SeenBy.Add(@by);
-			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostCommented, user.Profile.Topics.TopicFriendlyName, @select).GetAwaiter().GetResult();
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersViaPostCommented, 
+				user.Profile.ProfileTopic.Category._id, @select).GetAwaiter().GetResult();
+
 			return @select.ObjectItem.First().UserId;
 		}
 		private long SendDirectMessageBasedOnTopic()
@@ -99,15 +107,18 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				ActionType = (int)ActionType.SendDirectMessage,
 				User = user.Profile.InstagramAccountId
 			};
-			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic, user.Profile.Topics.TopicFriendlyName)
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic,
+					user.Profile.ProfileTopic.Category._id)
 				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Medias.Count > 0);
-			if (fetchMedias == null) return 0;
 			var meta_S = fetchMedias as __Meta__<Media>[] ?? fetchMedias.ToArray();
 			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
 			if (@select == null) return 0;
 			@select.SeenBy.Add(@by);
-			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByTopic, user.Profile.Topics.TopicFriendlyName, @select).GetAwaiter().GetResult();
+
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByTopic,
+				user.Profile.ProfileTopic.Category._id, @select).GetAwaiter().GetResult();
+
 			return @select.ObjectItem?.Medias.FirstOrDefault()?.User.UserId ?? 0;
 		}
 		private long SendDirectMessageBasedOnLocation()
@@ -117,14 +128,21 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				ActionType = (int)ActionType.SendDirectMessage,
 				User = user.Profile.InstagramAccountId
 			};
-			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByUserLocationTargetList, user.Profile.Topics.TopicFriendlyName, user.Profile.InstagramAccountId)
-				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByUserLocationTargetList,
+					user.Profile.ProfileTopic.Category._id, user.Profile.InstagramAccountId)
+				.GetAwaiter().GetResult()
+				.Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Medias.Count > 0);
+			
 			var meta_S = fetchMedias as __Meta__<Media>[] ?? fetchMedias.ToArray();
 			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
 			if (@select == null) return 0;
 			@select.SeenBy.Add(@by);
-			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByUserLocationTargetList, user.Profile.Topics.TopicFriendlyName, @select,user.Profile.InstagramAccountId).GetAwaiter().GetResult();
+
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchMediaByUserLocationTargetList, 
+				user.Profile.ProfileTopic.Category._id, @select,user.Profile.InstagramAccountId)
+				.GetAwaiter().GetResult();
+
 			return @select.ObjectItem.Medias.FirstOrDefault()?.User.UserId ?? 0;
 		}
 		private long SendDirectMessageBasedOnSuggestions()
@@ -134,8 +152,10 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				ActionType = (int)ActionType.SendDirectMessage,
 				User = user.Profile.InstagramAccountId
 			};
-			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<UserSuggestionDetails>>>(MetaDataType.FetchUsersFollowSuggestions, user.Profile.Topics.TopicFriendlyName, user.OInstagramAccountUser)
-				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
+			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<UserSuggestionDetails>>>(MetaDataType.FetchUsersFollowSuggestions, 
+					user.Profile.ProfileTopic.Category._id, user.OInstagramAccountUser)
+				.GetAwaiter().GetResult()
+				.Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Count > 0);
 
 			var meta_S = fetchMedias as __Meta__<List<UserResponse<UserSuggestionDetails>>>[] ?? fetchMedias.ToArray();
@@ -143,7 +163,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			if (@select == null) return 0;
 			@select.SeenBy.Add(@by);
 
-			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFollowSuggestions, user.Profile.Topics.TopicFriendlyName, @select).GetAwaiter().GetResult();
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFollowSuggestions, 
+				user.Profile.ProfileTopic.Category._id, @select).GetAwaiter().GetResult();
 			return @select.ObjectItem.First().UserId;
 		}
 		private long SendDirectMessageBasedOnUsersFollowers()
@@ -153,7 +174,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				ActionType = (int)ActionType.SendDirectMessage,
 				User = user.Profile.InstagramAccountId
 			};
-			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersFollowerList, user.Profile.Topics.TopicFriendlyName, user.OInstagramAccountUser)
+			var fetchMedias = _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(MetaDataType.FetchUsersFollowerList,
+					user.Profile.ProfileTopic.Category._id, user.OInstagramAccountUser)
 				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Count > 0);
 
@@ -162,7 +184,8 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			if (@select == null) return 0;
 			@select.SeenBy.Add(@by);
 
-			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFollowerList, user.Profile.Topics.TopicFriendlyName, @select).GetAwaiter().GetResult();
+			_heartbeatLogic.UpdateMetaData(MetaDataType.FetchUsersFollowerList, 
+				user.Profile.ProfileTopic.Category._id, @select).GetAwaiter().GetResult();
 			return @select.ObjectItem.First().UserId;
 		}
 		#endregion

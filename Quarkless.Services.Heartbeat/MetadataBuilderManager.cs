@@ -1,14 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using QuarklessContexts.Models.Proxies;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 using QuarklessLogic.ContentSearch.GoogleSearch;
 using QuarklessLogic.ContentSearch.YandexSearch;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Logic.InstagramAccountLogic;
 using QuarklessLogic.Logic.ResponseLogic;
+using QuarklessLogic.Logic.TopicLookupLogic;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 
 namespace Quarkless.Services.Heartbeat
@@ -21,12 +19,12 @@ namespace Quarkless.Services.Heartbeat
 			IAPIClientContext context, IHeartbeatLogic heartbeatLogic,
 			IResponseResolver responseResolver,
 			IGoogleSearchLogic googleSearchLogic, IYandexImageSearch yandexImageSearch,
-			IInstagramAccountLogic accountLogic)
+			IInstagramAccountLogic accountLogic, ITopicLookupLogic topicLookup)
 		{
 			_assignment = assignment;
 
 			_metadataExtract = new MetadataExtract(context, heartbeatLogic, responseResolver, googleSearchLogic,
-				yandexImageSearch, accountLogic, assignment);
+				yandexImageSearch, accountLogic,topicLookup, assignment);
 			//_metadataExtract.Initialise(assignment);
 		}
 

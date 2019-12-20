@@ -24,10 +24,8 @@ namespace QuarklessRepositories.RepositoryClientManager
 		IMongoCollection<LoggerModel> Logger { get; }
 		IMongoCollection<TimelineEventLog> TimelineLogger { get; }
 		IMongoCollection<CTopic> TopicLookup { get; }
-		IMongoCollection<TopicsModel> Topics {get; }
 		IMongoCollection<CommentCorpus> CorpusComments { get; }
 		IMongoCollection<MediaCorpus> CorpusMedia { get; }
-		IMongoCollection<TopicCategory> TopicCategories { get; }
 		IMongoCollection<HashtagsModel> Hashtags { get; }
 		IMongoCollection<JobDto> Timeline { get; }
 		IMongoCollection<MediasLib> MediaLibrary { get; }

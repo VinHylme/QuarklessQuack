@@ -62,11 +62,9 @@ namespace QuarklessRepositories.Repository.RepositoryClientManager
 		#endregion
 
 		public IMongoCollection<CTopic> TopicLookup => _contentDatabase.GetCollection<CTopic>("TopicLookup");
-		public IMongoCollection<TopicsModel> Topics => _contentDatabase.GetCollection<TopicsModel>("Topics");
 		public IMongoCollection<HashtagsModel> Hashtags => _contentDatabase.GetCollection<HashtagsModel>("CCHashtags");
 		public IMongoCollection<CommentCorpus> CorpusComments => _contentDatabase.GetCollection<CommentCorpus>("CCComments");
 		public IMongoCollection<MediaCorpus> CorpusMedia => _contentDatabase.GetCollection<MediaCorpus>("CCMedias");
-		public IMongoCollection<TopicCategory> TopicCategories => _contentDatabase.GetCollection<TopicCategory>("CategoryTopic");
 
 		#region Local Functions
 		internal async Task<bool> CreateCollection(string collectionName, BsonDocument document = null)

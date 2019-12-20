@@ -117,6 +117,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 						options.Rest.BaseUrl = _urlReader.UploadPhoto;
 						options.Rest.JsonBody = JsonConvert.SerializeObject(new UploadPhotoModel
 						{
+							MediaTopic = null,
 							MediaInfo = mediaInfo,
 							Image = new InstaImageUpload()
 							{
@@ -139,6 +140,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 						if (urlToSend != null)
 							options.Rest.JsonBody = JsonConvert.SerializeObject(new UploadVideoModel
 							{
+								MediaTopic = null,
 								MediaInfo = mediaInfo,
 								Video = new InstaVideoUpload
 								{
@@ -165,6 +167,7 @@ namespace QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic
 						options.Rest.BaseUrl = _urlReader.UploadCarousel;
 						options.Rest.JsonBody = JsonConvert.SerializeObject(new UploadAlbumModel
 						{
+							MediaTopic = null,
 							Album = dataMediaSubmit.RawMediaDatas.Select(x => new InstaAlbumUpload
 							{
 								ImageToUpload = x.MediaType == MediaSelectionType.Image

@@ -19,7 +19,8 @@ namespace QuarklessLogic.Logic.HashtagLogic
 		Task<IResult<InstaHashtagSearch>> SearchHashtagAsync(string query, IEnumerable<long> excludeList = null);
 		Task<IResult<InstaSectionMedia>> SearchRelatedHashtagAsync(string query, int limit = 1);
 		Task<IResult<bool>> UnFollowHashtagAsync(string tagName);
-		Task AddHashtagsToRepositoryAndCache(IEnumerable<HashtagsModel> hashtags);
+		Task AddHashtagsToRepository(IEnumerable<HashtagsModel> hashtags);
+		Task<List<HashtagsModel>> GetHashtagsFromRepositoryByTopic(string topic, int limit = 1);
 		Task<IEnumerable<HashtagsModel>> GetHashtagsByTopicAndLanguage(string topic, string lang, string langmapped, int limit =1);
 		Task UpdateAllMediasLanguagesToLower();
 

@@ -53,11 +53,7 @@ namespace QuarklessRepositories.RedisRepository.SearchCache
 				if(res==null) return null;
 				var req = res.Select(s=>s.RequestData).ToList();
 				var findMe = req.FindIndex(s=>s.SequenceEqual(find.RequestData));
-				if (findMe >= 0)
-				{
-					return res.ElementAtOrDefault(findMe);
-				}
-				return null;
+				return findMe >= 0 ? res.ElementAtOrDefault(findMe) : null;
 			}
 			catch (Exception ee)
 			{
@@ -65,9 +61,9 @@ namespace QuarklessRepositories.RedisRepository.SearchCache
 				return null;
 			}
 		}
-		public async Task<SubTopics> GetReleatedTopic(string topic)
+		public async Task<SubTopics> GetRelatedTopic(string topic)
 		{
-			RedisKey key = $"ReleatedTopics:{topic}";
+			RedisKey key = $"RelatedTopics:{topic}";
 			try
 			{
 				var res = await _redis.Database(2).GetMembers<SubTopics>(key, RedisKeys.HashtagGrowKeys.SearchSession);
@@ -83,7 +79,7 @@ namespace QuarklessRepositories.RedisRepository.SearchCache
 		{
 			try
 			{
-				RedisKey key = $"ReleatedTopics:{subTopics.TopicName}";
+				RedisKey key = $"RelatedTopics:{subTopics.TopicName}";
 				await _redis.Database(2).SetAdd(key,RedisKeys.HashtagGrowKeys.SearchSession, JsonConvert.SerializeObject(subTopics),TimeSpan.FromDays(600));
 			}
 			catch(Exception e)

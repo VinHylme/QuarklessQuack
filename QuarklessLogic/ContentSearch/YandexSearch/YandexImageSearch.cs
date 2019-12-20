@@ -203,37 +203,34 @@ namespace QuarklessLogic.ContentSearch.YandexSearch
 		}
 		private string BuildUrl(YandexSearchQuery yandexSearch)
 		{
-			string urlBuilt = string.Empty;
-			if (!string.IsNullOrEmpty(yandexSearch.SearchQuery))
+			var urlBuilt = string.Empty;
+			if (string.IsNullOrEmpty(yandexSearch.SearchQuery)) return null;
+			urlBuilt += $"search?text={HttpUtility.UrlEncode(yandexSearch.SearchQuery)}";
+			if (yandexSearch.Orientation != Orientation.Any)
 			{
-				urlBuilt += $"search?text={HttpUtility.UrlEncode(yandexSearch.SearchQuery)}";
-				if (yandexSearch.Orientation != Orientation.Any)
-				{
-					urlBuilt += "&iorient=" + yandexSearch.Orientation.GetDescription();
-				}
-				if (yandexSearch.Type != ImageType.Any)
-				{
-					urlBuilt += "&type=" + yandexSearch.Type.GetDescription();
-				}
-				if (yandexSearch.Color != ColorType.Any)
-				{
-					urlBuilt += "&icolor=" + yandexSearch.Color.GetDescription();
-				}
-				if (yandexSearch.Format != FormatType.Any)
-				{
-					urlBuilt += "&itype=" + yandexSearch.Format.GetDescription();
-				}
-				if (yandexSearch.Size != SizeType.None && yandexSearch.SpecificSize == null)
-				{
-					urlBuilt += "&isize=" + yandexSearch.Size.GetDescription();
-				}
-				if (yandexSearch.SpecificSize != null && yandexSearch.Size == SizeType.None)
-				{
-					urlBuilt += "&isize=eq&iw=" + yandexSearch.SpecificSize.Value.Width + "&ih=" + yandexSearch.SpecificSize.Value.Height;
-				}
-				return yandexImages + urlBuilt;
+				urlBuilt += "&iorient=" + yandexSearch.Orientation.GetDescription();
 			}
-			return null;
+			if (yandexSearch.Type != ImageType.Any)
+			{
+				urlBuilt += "&type=" + yandexSearch.Type.GetDescription();
+			}
+			if (yandexSearch.Color != ColorType.Any)
+			{
+				urlBuilt += "&icolor=" + yandexSearch.Color.GetDescription();
+			}
+			if (yandexSearch.Format != FormatType.Any)
+			{
+				urlBuilt += "&itype=" + yandexSearch.Format.GetDescription();
+			}
+			if (yandexSearch.Size != SizeType.None && yandexSearch.SpecificSize == null)
+			{
+				urlBuilt += "&isize=" + yandexSearch.Size.GetDescription();
+			}
+			if (yandexSearch.SpecificSize != null && yandexSearch.Size == SizeType.None)
+			{
+				urlBuilt += "&isize=eq&iw=" + yandexSearch.SpecificSize.Value.Width + "&ih=" + yandexSearch.SpecificSize.Value.Height;
+			}
+			return yandexImages + urlBuilt;
 		}
 		public SearchResponse<Media> SearchQueryREST(YandexSearchQuery yandexSearchQuery, int limit = 16)
 		{
@@ -278,10 +275,10 @@ namespace QuarklessLogic.ContentSearch.YandexSearch
 			ImagesLikeUrls.ToList().ForEach(url =>
 			{
 				if (url == null) return;
-				var fullurl_ = yandexImages;
+				var httpsYandexComImages = yandexImages;
 				try
 				{
-					var result = _seleniumClient.YandexImageSearch(fullurl_, url.Url, "serp-item_pos_", limit);
+					var result = _seleniumClient.YandexImageSearch(httpsYandexComImages, url.Url, "serp-item_pos_", limit);
 					totalFound.Medias.AddRange(result.Where(s => !s.Contains(".gif")).Select(a => new MediaResponse
 					{
 						Topic = url.TopicGroup,
@@ -295,7 +292,7 @@ namespace QuarklessLogic.ContentSearch.YandexSearch
 					Console.Write(ee.Message);
 					response.Message = ee.Message;
 					response.StatusCode = ResponseCode.InternalServerError;
-					totalFound.errors++;
+					totalFound.Errors++;
 				}
 			});
 			if (totalFound.Medias.Count > 0)
@@ -548,7 +545,7 @@ namespace QuarklessLogic.ContentSearch.YandexSearch
 			//			if (result == null) return null;
 			//			TotalFound.Medias.AddRange(result.Where(s => !s.Contains(".gif")).Select(a => new MediaResponse
 			//			{
-			//				Topic = url.TopicGroup,
+			//				ProfileTopic = url.TopicGroup,
 			//				MediaUrl = new List<string> { a },
 			//				MediaFrom = MediaFrom.Yandex,
 			//				Type = InstagramApiSharp.Classes.Models.InstaMediaType.Image

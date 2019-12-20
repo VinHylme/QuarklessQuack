@@ -3,6 +3,7 @@ using Bogus.DataSets;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.FakerModels;
 using QuarklessLogic.Handlers.EmailService;
+using QuarklessLogic.Handlers.HashtagBuilder;
 using QuarklessLogic.Handlers.TextGeneration;
 using QuarklessLogic.Handlers.TranslateService;
 
@@ -10,14 +11,16 @@ namespace QuarklessLogic.Handlers.Util
 {
 	public class UtilProviders : IUtilProviders
 	{
-		public UtilProviders(ITextGeneration textGeneration, ITranslateService translateService, IEmailService emailService)
+		public UtilProviders(ITextGenerator textGenerator, IHashtagGenerator hashtagGenerator,
+			ITranslateService translateService, IEmailService emailService)
 		{
-			TextGeneration = textGeneration;
+			TextGenerator = textGenerator;
+			HashtagGenerator = hashtagGenerator;
 			TranslateService = translateService;
 			EmailService = emailService;
 		}
-
-		public ITextGeneration TextGeneration { get; }
+		public IHashtagGenerator HashtagGenerator { get; }
+		public ITextGenerator TextGenerator { get; }
 		public ITranslateService TranslateService { get; }
 		public IEmailService EmailService { get; }
 		public FakerModel GeneratePerson(string locale = "en", string emailProvider = null, bool? isMale = null)

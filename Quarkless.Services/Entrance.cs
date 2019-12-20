@@ -1,8 +1,6 @@
 ﻿using Hangfire;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Quarkless.Services.ContentBuilder.TopicBuilder;
-using Quarkless.Services.Interfaces;
 using StackExchange.Redis;
 using System;
 using System.IO;
@@ -81,8 +79,6 @@ namespace Quarkless.Services
 			var redis = ConnectionMultiplexer.Connect(endPoints.RedisCon);
 
 			services.AddTransient<IAgentManager, AgentManager>();
-			services.AddTransient<ITopicBuilder, TopicBuilder>();
-			services.AddSingleton<IContentManager, ContentManager>();
 			services.AddLogging();
 
 			GlobalConfiguration.Configuration.UseRedisStorage(redis, new Hangfire.Redis.RedisStorageOptions

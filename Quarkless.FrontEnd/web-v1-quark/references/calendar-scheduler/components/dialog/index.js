@@ -102,6 +102,7 @@ export default {
             credit:credit,
             location:location,
             medias:medias,
+            mediaTopic:bodyResp.mediaTopic,
             startTime: params.startTime,
             type: type
         }

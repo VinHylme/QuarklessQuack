@@ -3,6 +3,7 @@ using Quarkless.Services.Interfaces;
 using QuarklessContexts.Enums;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using System.Collections.Generic;
+using QuarklessLogic.Handlers.ContentInfoBuilder;
 using QuarklessLogic.Handlers.RequestBuilder.Constants;
 
 namespace Quarkless.Services.Factories
@@ -28,7 +29,7 @@ namespace Quarkless.Services.Factories
 
 		public static ActionsManager Begin => new ActionsManager();
 
-		public IActionCommit Commit(ActionType actionType, IContentManager actionBuilderManager, 
+		public IActionCommit Commit(ActionType actionType, IContentInfoBuilder actionBuilderManager, 
 			IHeartbeatLogic heartbeatLogic, IUrlReader urlReader) 
 			=>_factories[actionType].Commit(actionBuilderManager,heartbeatLogic, urlReader);
 	}

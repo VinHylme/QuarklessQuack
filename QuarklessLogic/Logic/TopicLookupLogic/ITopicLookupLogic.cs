@@ -7,12 +7,12 @@ namespace QuarklessLogic.Logic.TopicLookupLogic
 	public interface ITopicLookupLogic
 	{
 		Task<string> AddTopic(CTopic topic);
-		Task<IEnumerable<string>> AddTopics(IEnumerable<CTopic> topics);
+		Task<List<string>> AddTopics(List<CTopic> topics);
 		Task<CTopic> GetTopicById(string id);
-		Task<IEnumerable<CTopic>> GetTopicByParentId(string parentId);
-		Task<IEnumerable<CTopic>> GetTopicByNameLike(string name);
-		Task<IEnumerable<CTopic>> GetTopicByName(string name);
-		Task<IEnumerable<CTopic>> GetCategories();
+		Task<List<CTopic>> GetTopicByParentId(string parentId);
+		Task<List<CTopic>> GetTopicByNameLike(string name);
+		Task<List<CTopic>> GetTopicByName(string name);
+		Task<List<CTopic>> GetCategories();
 		Task<long> DeleteAll();
 	}
 }

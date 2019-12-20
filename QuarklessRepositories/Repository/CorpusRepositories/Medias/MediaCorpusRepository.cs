@@ -4,8 +4,10 @@ using QuarklessRepositories.RepositoryClientManager;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using MoreLinq;
 using System.Threading.Tasks;
+using MongoDB.Bson;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.CorpusModels;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
@@ -86,41 +88,42 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 			}
 		}
 
-		public async Task<IEnumerable<MediaCorpus>> GetMedias(string topic, string language = null, int limit = -1, bool skip = true)
+		public async Task<IEnumerable<MediaCorpus>> GetMedias(string topic, string language = null, 
+			int limit = -1, bool skip = true)
 		{
 			try
 			{
 				var builders = Builders<MediaCorpus>.Filter;
 				FilterDefinition<MediaCorpus> filters;
+
 				if(string.IsNullOrEmpty(language))
 				{
-					filters = builders.Eq(_ => _.Topic, topic);
+					filters = builders.Regex(_ => _.Topic, 
+						BsonRegularExpression.Create(new Regex("^" + topic + "$", RegexOptions.IgnoreCase)));
 				}
 				else
 				{
 
 					filters = builders.Eq(_ => _.Topic, topic) & (builders.Eq(_ => _.Language, language));
 				}
+
 				var len = await _context.CorpusMedia.CountDocumentsAsync(filters);
+
 				if(len<=0) return new List<MediaCorpus>();
 				var options = new FindOptions<MediaCorpus, MediaCorpus>()
 				{
 					Skip = skip ? SecureRandom.Next((int)len/2) : 0
 				};
+
 				if (limit != -1)
 					options.Limit = limit;
 				var res = await _context.CorpusMedia.FindAsync(filters, options);
 				return res.ToList();
 			}
-#pragma warning disable CS0168 // Variable is declared but never used
 			catch (Exception e)
-#pragma warning restore CS0168 // Variable is declared but never used
 			{
-
 				return null;
 			}
 		}
-
-
 	}
 }

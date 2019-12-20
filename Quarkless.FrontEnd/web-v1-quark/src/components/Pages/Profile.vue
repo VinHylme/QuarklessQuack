@@ -12,11 +12,6 @@
                   <b-field extended class="descr" label="Profile Description" :type="!canEdit ?'is-success' : 'is-primary'" >
                     <b-input v-model="profile.description" maxlength="100" size="is-medium" :disabled="!canEdit"></b-input>
                   </b-field>
-                  <!-- <b-field class="lang" label="Profile Language" :type="!canEdit ?'is-success' : 'is-primary'" >
-                     <b-select :disabled="!canEdit" v-model="profile.language" size="is-medium">
-                      <option v-for="(lang,index) in config.languages" :key="index" :value="lang">{{lang}}</option>
-                    </b-select>
-                  </b-field> -->
               </b-field>
             </section>
             <section class="section topic_area">
@@ -27,14 +22,14 @@
                   size="is-medium"
                   style="width:40vw;"
                   icon="magnify"
-                  v-model="profile.topics.topicFriendlyName"
+                  v-model="currentProfileCategoryTopic.name"
                   placeholder="What is your business about? e.g. Ecommerce"
                   :keep-first="false"
                   :open-on-focus="true"
-                  :data="filteredDataObj"
-                  field="subCategories"
-                  @select="searchReleatedTopics"
-                  @keyup.enter="searchReleatedTopics">
+                  :data="filteredDataArray"
+                  @select="changeProfileTopic"
+                  @keyup.enter="changeProfileTopic"
+                  field="category.name">
                 </b-autocomplete>
                 </b-field>
                 <a @click="isTip1Active = !isTip1Active;" :disabled="isTip1Active"  style="margin-top:1.7em; margin-left:-1em">
@@ -68,15 +63,15 @@
                     The keywords you use here are very important, you can specify a topic which most relates to your niche, each of those topics will also have many sub topics which will help our team build your profile to their best ability.
                 </b-notification>
                 <div class="box subtopics_container" style="background:#121212;">
-                  <div v-for="(subTopic,index) in profile.topics.subTopics" :key="subTopic+'_'+index" class="field is-grouped is-grouped-multiline" style="padding:0.4em;">
+                  <div v-for="(subTopic,index) in profile.profileTopic.topics" :key="subTopic.name+'_'+index" class="field is-grouped is-grouped-multiline" style="padding:0.4em;">
                     <div class="control">
                       <div class="tags has-addons">
-                        <a @click="showSubTopicReleated(subTopic,index)" style="text-decoration: none;" class="tag is-medium is-danger">
+                        <a style="text-decoration: none;" class="tag is-medium is-danger">
                           <b-tooltip label="Expand and show all" type="is-dark">
                           <b-icon pack="fas" icon="eye"></b-icon>
                           </b-tooltip>
                         </a>
-                        <span class="tag is-medium is-dark">{{subTopic.topicName}}</span>
+                        <span class="tag is-medium is-dark">{{subTopic.name}}</span>
                         <a class="tag is-medium is-delete" @click="deleteTopic(subTopic)"></a>
                       </div>
                     </div>
@@ -92,39 +87,10 @@
                     </div>
                   </div>
                 </div>               
-                <b-field v-if="isExpandedSubTopics" position="is-centered" class="is-dark is-small" :label="'Showing Results For: '+selectedTopic.topicName"></b-field>
-                <div class="box subtopics_container" style="background:#121212;" v-if="isExpandedSubTopics">
-                  <b-notification v-if="searchingTopics" style="width:100%; background:transparent; height:150px;" :closable="false">
-                    <b-loading :is-full-page="false" :active.sync="searchingTopics">
-                      <b-icon
-                          pack="fas"
-                          icon="spinner"
-                          size="is-large"
-                          custom-class="fa-spin">
-                      </b-icon>
-                    </b-loading>
-                  </b-notification>
-                  <div class="closeSubTopics">
-                    <a @click="isExpandedSubTopics=false">
-                      <b-icon type="is-dark" pack="fas" size="is-default" icon="times-circle">
-                      </b-icon>
-                    </a>
-                  </div>
-                   <div v-for="(topic,index) in selectedTopic.relatedTopics" :key="index" class="control"  style="padding:0.4em;">
-                      <div class="tags has-addons">
-                        <span class="tag is-medium is-twitter">{{topic}}</span>
-                        <a @click="profile.topics.subTopics[profile.topics.subTopics.findIndex((ob)=>ob.topicName === selectedTopic.topicName)].relatedTopics.splice(index,1)" class="tag is-medium is-delete"></a>
-                      </div>
-                    </div>
-                </div>
-                <div v-if="searchReleatedTopic.length>0 || isSearchingRelated">
-                  <b-notification :closable="false" v-if="isSearchingRelated" style="background:transparent; text-align:center; color:#d9d9d9;">
-                      ...loading
-                      <b-loading :is-full-page="false" :active.sync="isSearchingRelated" :can-cancel="true"></b-loading>
-                  </b-notification>
+                <div v-if="relatedTopics.length>0">
                   <b-field position="is-centered" class="is-dark is-small" label="Releated topics "></b-field>
                   <div class="box subtopics_container" style="background:#121212;">
-                    <div v-for="(subTopic,index) in displayedReleatedTopic" :key="subTopic+'_'+index" class="field is-grouped is-grouped-multiline" style="padding:0.4em;">
+                    <div v-for="(subTopic,index) in filteredRelatedTopics" :key="subTopic+'__'+index" class="field is-grouped is-grouped-multiline" style="padding:0.4em;">
                       <div class="control">
                         <div class="tags has-addons">
                           <span class="tag is-large is-dark">{{subTopic}}</span>
@@ -374,18 +340,6 @@
                         </b-tooltip>
                       </b-field>
                 </div>
-                 <!-- <b-dropdown style="text-align:center; margin:0 auto;" v-if="$store.state.role==='Admin'"
-                    v-model="profile.additionalConfigurations.searchTypes"
-                    multiple
-                    aria-role="list">
-                    <button class="button is-darker" type="button" slot="trigger">
-                        <span>Selected Search Types ({{ profile.additionalConfigurations.searchTypes.length }})</span>
-                        <b-icon icon="menu-down"></b-icon>
-                    </button>
-                    <b-dropdown-item v-for="(sType, index) in config.searchTypes" :key="index" :value="index" aria-role="listitem">
-                        <span>{{sType}}</span>
-                    </b-dropdown-item>
-                </b-dropdown> -->
             </div>
           </b-step-item>
       </b-steps>
@@ -402,7 +356,6 @@ import debounce from 'lodash/debounce'
 import ColorCard from '../Objects/ColorCard';
 import Color from '../Objects/Colors';
 import DropZone from '../Objects/DropZone';
-import Pagination from '../Objects/Pagination';
 import ImageItem from '../Objects/ImageItem';
 import draggable from 'vuedraggable'
 import Vue from 'vue';
@@ -413,7 +366,6 @@ export default {
     ColorCard,
     'c-color':Color,
     'd-drop':DropZone,
-    'd-page':Pagination,
     //Intersect 
     draggable
   },
@@ -445,33 +397,30 @@ export default {
       searchMediaItems:[],
       urls:[],
       finishedSearching:false,
-      searchReleatedTopic:[],
-      displayedReleatedTopic:[],
       toAddTopic:'',
       isTip1Active:false,
-      isExpandedSubTopics:false,
-      selectedTopic:[],
       searchingTopics:false,
       displayableList:[],
       isMoreAccurate:false,
-      isSearchingRelated:false,
       isLoadingTopics:false
     }
   },
   created(){
     this.profile = this.$store.getters.UserProfiles[this.$store.getters.UserProfiles.findIndex(_=>_._id == this.$route.params.id)];
-    this.profile.topics.topicFriendlyName = this.profile.topics.topicFriendlyName.replace(/^\w/, c => c.toUpperCase());
+    this.profile.profileTopic.category.name = this.profile.profileTopic.category.name.replace(/^\w/, c => c.toUpperCase());
   },
   mounted(){
     this.isLoadingTopics = true;
     this.$store.dispatch('GetProfileConfig').then(con => 
     {
-      this.config = this.$store.getters.GetProfileConfig;
+      this.config = con.data
       this.isLoadingTopics = false;
     }).catch(err=>{
       this.isLoadingTopics = false;
     });
-    this.searchReleatedTopics(this.profile.topics.topicFriendlyName);
+  },
+  watch:{
+
   },
   computed:{
     imagesAlikeList:{
@@ -482,44 +431,54 @@ export default {
         this.profile.theme.imagesLike = value;
       }
     },
-    filteredDataObj() {
-      var total = []
-      if(this.config.topics!==undefined){
-        this.config.topics.forEach( (item) =>
-        {
-          //total.push(item.categoryName);
-          item.subCategories.forEach((subItems)=>total.push(subItems))
-        });
-        return total.filter((option) => {
-          return option.toString()
-          .toLowerCase()
-          .indexOf(this.profile.topics.topicFriendlyName.toLowerCase()) >= 0
-        })
+    currentProfileCategoryTopic:{
+      get(){
+        return this.profile.profileTopic.category
+      },
+      set(value){
+        this.profile.profileTopic.category = value;
       }
     },
-    filterReleatedTopics(){
-      // let subtopics = this.profile.topics.subTopics;
-      //  return this.searchReleatedTopic.filter((val,index)=> {
-      //    return subtopics.indexOf((ob) => ob.topicName.toLowerCase() == val.toLowerCase()) == -1
-      //  });
-      //return this.searchReleatedTopic.filter(val=>!this.profile.topics.subTopics.includes(val))
-      var index;
-      for(var x = 0 ; x < this.profile.topics.subTopics.length; x++){
-        index = this.searchReleatedTopic.indexOf(this.profile.topics.subTopics[x].topicName);
-        if(index > -1){
-          this.searchReleatedTopic.splice(index, 1);
-        }
-      }
-      return this.searchReleatedTopic;
+    currentTopicSelected(){   
+      return this.config.topics.findIndex(item => item.category._id == this.currentProfileCategoryTopic._id);
+    },
+    relatedTopics(){
+      if(this.config.topics === undefined)
+        return []
+      if(this.currentTopicSelected<=-1)
+        return []
+      return this.config.topics[this.currentTopicSelected].topics;
+    },
+    filteredRelatedTopics(){
+      if(this.config.topics === undefined)
+        return []
+      return this.relatedTopics.slice((this.currentHashPage-1)*this.perPage,this.currentHashPage*this.perPage).map(item=>item.name)
+    },
+    filteredDataArray() {
+      if(this.config.topics === undefined)
+        return [];
+      return this.config.topics.map(item=>item.category).map(item=>item.name).filter((option) => {
+          return option
+              .toString()
+              .toLowerCase()
+              .indexOf(this.currentProfileCategoryTopic.name.toLowerCase()) >= 0
+      })
     }
   },
   methods:{
+    changeProfileTopic(e){
+      if(e){
+        let index = this.config.topics.findIndex(item=>item.category.name === e)
+        if(index > -1)
+          this.currentProfileCategoryTopic = this.config.topics[index].category
+      }
+    },
+    //todo: will need to update the topiclookup table
     saveProfile(){
       this.savingProfile = true;
       let contains = false;
-      console.log(this.config);
       this.config.topics.forEach((topic)=>{
-        if(topic.subCategories.includes(this.profile.topics.topicFriendlyName)){
+        if(topic.category.includes(this.currentProfileCategoryTopic)){
           contains = true;
         }
       });
@@ -527,7 +486,7 @@ export default {
       if(!contains)
       {
          Vue.prototype.$toast.open({
-            message: 'Oops, looks like the topic' +' ~' + this.profile.topics.topicFriendlyName + '~ '+ 'you have entered does not exist',
+            message: 'Oops, looks like the topic' +' ~' + this.currentProfileCategoryTopic.name + '~ '+ 'you have entered does not exist',
             type: 'is-danger'
         })
         return;
@@ -551,72 +510,60 @@ export default {
     addImageToList(image){
       let filtered = this.searchMediaItems.filter((item)=>item.url == image.url);
       let imageUrl = filtered[0].url
-      this.profile.theme.imagesLike.push({topicGroup:this.profile.topics.topicFriendlyName, url:imageUrl});
-    },
-    showSubTopicReleated(item, index){
-      this.isExpandedSubTopics = true;
-      if(this.profile.topics.subTopics[index].relatedTopics.length<=0){
-        this.searchingTopics = true;
-        this.$store.dispatch('ReleatedTopics', {instaId: this.profile.instagramAccountId, topic:item.topicName}).then(resp=>{
-          this.profile.topics.subTopics[index].relatedTopics = resp.data.relatedTopics;
-          this.searchingTopics = false;
-        })
-      }
-      this.selectedTopic = this.profile.topics.subTopics[index];
-      //this.searchingTopics = false;
+      this.profile.theme.imagesLike.push({topicGroup:this.currentProfileCategoryTopic, url:imageUrl});
     },
     deleteTopic(e){
-      var index = this.profile.topics.subTopics.findIndex((ob=>ob===e));
-      this.profile.topics.subTopics.splice(index,1);
+      var index = this.profile.profileTopic.topics.findIndex((ob=>ob===e));
+      this.profile.profileTopic.topics.splice(index,1);
     },
     addTopic(e){
       if(e!==undefined){
         if(e){
-          if(this.profile.topics.subTopics.findIndex((ob)=>ob.topicName === e) < 0)
-            this.profile.topics.subTopics.push({topicName:e, relatedTopics:[] })
+          if(this.profile.profileTopic.topics.findIndex((ob)=>ob.name === e) < 0){
+            const topicToAdd = {
+                parentTopicId: this.currentProfileCategoryTopic._id,
+                name: e,
+                _id: null
+            }
+            this.profile.profileTopic.topics.push(topicToAdd)
+            let indexOfTopic = this.currentTopicSelected;
+            if(indexOfTopic>-1){
+              var relatedTopics = this.config.topics[indexOfTopic].topics;
+              let pos = relatedTopics.findIndex(item=>item.name === e);
+              relatedTopics.splice(pos, 1)
+            }
+          }
         }
       }
       else if(this.toAddTopic){
-        if(this.profile.topics.subTopics.findIndex((ob)=>ob.topicName === this.toAddTopic) < 0){
-          this.profile.topics.subTopics.push({topicName:this.toAddTopic, relatedTopics:[] })
+        if(this.profile.profileTopic.topics.findIndex((ob)=>ob.name === this.toAddTopic) < 0){
+          const topicToAdd = {
+                parentTopicId: this.currentProfileCategoryTopic._id,
+                name: this.toAddTopic,
+                _id: null
+          }
+          this.profile.profileTopic.topics.push(topicToAdd)
           this.toAddTopic = ''
         }
       }
     },
     nextset(){
-      if(this.searchReleatedTopic.length!==0 || this.searchReleatedTopic!==undefined){
-        const maxpagerelated = this.searchReleatedTopic.length / this.perPage;
+      if(this.relatedTopics.length!==0 || this.relatedTopics!==undefined){
+        const maxpagerelated = this.relatedTopics.length / this.perPage;
         if(maxpagerelated > this.currentHashPage){
             this.currentHashPage++;
-            this.displayedReleatedTopic = this.filterReleatedTopics.slice((this.currentHashPage-1)*this.perPage,this.currentHashPage*this.perPage);
         }
       }
     },
     prevset(){
       if(this.currentHashPage > 1){
         this.currentHashPage--;
-        this.displayedReleatedTopic = this.filterReleatedTopics.slice((this.currentHashPage-1)*this.perPage,this.currentHashPage*this.perPage);
       }
     },
     fixedEncodeURIComponent(str){
       return encodeURIComponent(str).replace(/[!'()*]/g, (c) => {
         return '%' + c.charCodeAt(0).toString(16)
       })
-    },
-    searchReleatedTopics(e){
-      if(e!==null){
-        this.isSearchingRelated = true;
-        this.searchReleatedTopic = []
-        this.displayedReleatedTopic = []
-        this.$store.dispatch('ReleatedTopics', {instaId: this.profile.instagramAccountId, topic:e.replace("/", "%28")}).then(resp=>{
-          resp.data.relatedTopics.forEach((item)=>this.searchReleatedTopic.push(item))
-          this.displayedReleatedTopic = this.filterReleatedTopics.slice((this.currentHashPage-1)*this.perPage,this.currentHashPage*this.perPage);
-          this.isSearchingRelated = false;
-        }).catch(err=>{
-          this.isSearchingRelated = false;
-        })
-      }
-      //this.$store.dispatch('ReleatedTopics',)
     },
     scrollBehavior: function (to) {
        window.scrollTo(0,0);
@@ -644,9 +591,9 @@ export default {
       this.isLoading = false;
     },
     onUpload(e){
-      this.currentPage = 1;
       const data = {instaId: this.profile.instagramAccountId, profileId: this.profile._id, formData:e.formData};
       this.$store.dispatch('UploadFileForProfile',data).then(resp=>{
+        this.currentPage = 0;
         this.urls = resp.data.urls;
         this.searchImage(this.urls);
       })
@@ -717,7 +664,7 @@ export default {
     },500),
     deleteSubTopic(index){
       if(this.canEdit)
-        this.profile.topics.subTopics.splice(index,1);
+        this.profile.profileTopic.topics.splice(index,1);
     }
   }
 }

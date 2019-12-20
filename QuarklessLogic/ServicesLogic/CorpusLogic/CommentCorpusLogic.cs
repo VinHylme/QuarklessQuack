@@ -23,10 +23,6 @@ namespace QuarklessLogic.ServicesLogic.CorpusLogic
 		}
 		public async Task<IEnumerable<CommentCorpus>> GetComments(string topic, string lang, int limit = -1, bool skip = true)
 		{
-			//var cacheRes = await _commentCorpusCache.GetComments(topic, mappedLang, limit);
-			//var commentCorpora = cacheRes as CommentCorpus[] ?? cacheRes.ToArray();
-			//if (commentCorpora.Any())
-				//return commentCorpora;
 			return await _commentCorpusRepository.GetComments(topic, lang, limit, skip);
 		}
 

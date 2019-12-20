@@ -16,8 +16,8 @@ export default {
   ReleatedTopic(instaAccount, topic){
     return Api(true, instaAccount).get(Calling["query_related_topics"]+topic);
   },
-  BuildTags(topic, subcat, lang, limit, pickRate){
-    return Api(true).get(Calling["query_buildtags"]+topic + '/' + subcat + '/' + lang + '/' + limit + '/'+ pickRate);
+  BuildTags(suggestRequest){
+    return Api(true).post(Calling["query_buildtags"],suggestRequest);
   },
   SearchByTopic(query, instaAccount, limit){
     return Api(true, instaAccount).post(Calling["query_searchTopic"]+instaAccount+'/'+limit, {query});
@@ -26,33 +26,84 @@ export default {
     return Api(true, instaAccount).post(Calling["query_searchLocation"]+instaAccount+'/'+limit, {query});
   },
   GetUserMedias(instaAccount, topic){
-    return Api(true).get(Calling["query_userMedia"]+instaAccount+'/'+topic)
+    const profileRequest = {
+      accountId:null,
+      instagramAccountId:instaAccount,
+      topic: topic
+    }
+    return Api(true).post(Calling["query_userMedia"],profileRequest)
   },
   GetUserInbox(instaAccount, topic){
-    return Api(true).get(Calling["query_userInbox"]+instaAccount+'/'+topic)
+    const profileRequest = {
+      accountId:null,
+      instagramAccountId:instaAccount,
+      topic: topic
+   }
+    return Api(true).post(Calling["query_userInbox"],profileRequest)
   },
   GetUserFeed(instaAccount, topic){
-    return Api(true).get(Calling["query_userFeed"]+instaAccount+'/'+topic)
+    const profileRequest = {
+      accountId:null,
+      instagramAccountId:instaAccount,
+      topic: topic
+    }
+    return Api(true).post(Calling["query_userFeed"], profileRequest)
   },
   GetUserFollowerList(instaAccount, topic){
-    return Api(true).get(Calling["query_userFollowerList"]+instaAccount+'/'+topic)
+    const profileRequest = {
+      accountId:null,
+      instagramAccountId:instaAccount,
+      topic: topic
+    }
+    return Api(true).post(Calling["query_userFollowerList"], profileRequest)
   },
   GetUserFollowingList(instaAccount, topic){
-    return Api(true).get(Calling["query_userFollowingList"]+instaAccount+'/'+topic)
+    const profileRequest = {
+      accountId:null,
+      instagramAccountId:instaAccount,
+      topic: topic
+    }
+    return Api(true).post(Calling["query_userFollowingList"], profileRequest)
   },
   GetUserTargetLocation(instaAccount, topic){
-    return Api(true).get(Calling["query_userTargetLocation"]+instaAccount+'/'+topic)
+    const profileRequest = {
+      accountId:null,
+      instagramAccountId:instaAccount,
+      topic: topic
+    }
+    return Api(true).post(Calling["query_userTargetLocation"],profileRequest)
   },
   GetUserFollowingSuggestions(instaAccount, topic){
-    return Api(true).get(Calling["query_userFollowingSuggestions"]+instaAccount+'/'+topic)
+    const profileRequest = {
+      accountId:null,
+      instagramAccountId:instaAccount,
+      topic: topic
+    }
+    return Api(true).post(Calling["query_userFollowingSuggestions"], profileRequest)
   },
   GetUsersTargetList(instaAccount, topic){
-    return Api(true).get(Calling["query_userTargetList"]+instaAccount+'/'+topic)
+    const profileRequest = {
+      accountId:null,
+      instagramAccountId:instaAccount,
+      topic: topic
+    }
+    return Api(true).post(Calling["query_userTargetList"], profileRequest)
   },
   GetMediasByLocation(instaAccount, topic){
-    return Api(true).get(Calling["query_mediaByLocation"]+instaAccount+'/'+topic)
+    const profileRequest = {
+      accountId:null,
+      instagramAccountId:instaAccount,
+      topic: topic
+  }
+    return Api(true).post(Calling["query_mediaByLocation"],profileRequest)
   },
   GetRecentComments(instaAccount, topic){
-	return Api(true).get(Calling["query_recentComments"]+instaAccount+'/'+topic)
+
+    const profileRequest = {
+        accountId:null,
+        instagramAccountId:instaAccount,
+        topic: topic
+    }
+  return Api(true).post(Calling["query_recentComments"], profileRequest)
   }
 }

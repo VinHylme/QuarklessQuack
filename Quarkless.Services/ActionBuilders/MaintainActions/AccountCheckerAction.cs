@@ -11,18 +11,19 @@ using System.Linq;
 using InstagramApiSharp.Classes.Models;
 using QuarklessLogic.Handlers.RequestBuilder.Constants;
 using QuarklessContexts.Classes.Carriers;
+using QuarklessLogic.Handlers.ContentInfoBuilder;
 using QuarklessLogic.Logic.StorageLogic;
 
 namespace Quarkless.Services.ActionBuilders.MaintainActions
 {
 	public class AccountCheckerAction : IActionCommit
 	{
-		private readonly IContentManager _content;
+		private readonly IContentInfoBuilder _content;
 		private readonly IHeartbeatLogic _heartbeatLogic;
 		private readonly IUrlReader _urlReader;
 		private UserStoreDetails user;
 		private AccountCheckerStrategySettings _accountCheckerStrategySettings;
-		public AccountCheckerAction(IContentManager content, IHeartbeatLogic heartbeatLogic, IUrlReader urlReader)
+		public AccountCheckerAction(IContentInfoBuilder content, IHeartbeatLogic heartbeatLogic, IUrlReader urlReader)
 		{
 			_content = content;
 			_heartbeatLogic = heartbeatLogic;
@@ -57,7 +58,7 @@ namespace Quarkless.Services.ActionBuilders.MaintainActions
 			if (actionOptions != null)
 			{
 				var accountCheckerActionOptions = actionOptions as AccountCheckerActionOptions;
-				var currentUsersMedia = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchUserOwnProfile, user.Profile.Topics.TopicFriendlyName, user.Profile.InstagramAccountId)
+				var currentUsersMedia = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchUserOwnProfile, user.Profile.ProfileTopic.Category._id, user.Profile.InstagramAccountId)
 										.GetAwaiter().GetResult().ToList();
 
 				var postAnalyser = accountCheckerActionOptions.PostAnalyser;

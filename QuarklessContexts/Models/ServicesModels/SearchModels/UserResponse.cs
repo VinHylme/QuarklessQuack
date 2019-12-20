@@ -1,4 +1,5 @@
 ﻿using System;
+using QuarklessContexts.Models.Topics;
 
 namespace QuarklessContexts.Models.ServicesModels.SearchModels
 {
@@ -10,7 +11,7 @@ namespace QuarklessContexts.Models.ServicesModels.SearchModels
 		public long UserId { get; set; }
 		public string Username { get; set; }
 		public string FullName { get; set; }
-		public string Topic { get; set; }
+		public CTopic Topic { get; set; }
 		public bool IsPrivate { get; set; }
 		public bool IsVerified { get; set; }
 		public string ProfilePicture { get; set; }
@@ -22,7 +23,7 @@ namespace QuarklessContexts.Models.ServicesModels.SearchModels
 		public long UserId { get; set; }
 		public string Username { get; set; }
 		public string FullName { get; set; }
-		public string Topic { get; set; }
+		public CTopic Topic { get; set; }
 		public bool IsPrivate { get; set; }
 		public bool IsVerified { get; set; }
 		public string ProfilePicture { get; set; }

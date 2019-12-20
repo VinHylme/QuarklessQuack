@@ -9,6 +9,7 @@ using QuarklessLogic.Logic.InstagramAccountLogic;
 using QuarklessLogic.Logic.ProfileLogic;
 using QuarklessLogic.Logic.ProxyLogic;
 using QuarklessLogic.Logic.ResponseLogic;
+using QuarklessLogic.Logic.TopicLookupLogic;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 
 namespace Quarkless.Services.Heartbeat
@@ -25,12 +26,13 @@ namespace Quarkless.Services.Heartbeat
 		private readonly IGoogleSearchLogic _googleSearchLogic;
 		private readonly IYandexImageSearch _yandexImageSearch;
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
+		private readonly ITopicLookupLogic _topicLookup;
 
 		public HeartbeatService(IProfileLogic profileLogic, 
 			IProxyLogic proxyLogic, IAPIClientContext context, IHeartbeatLogic heartbeatLogic,
 			IResponseResolver responseResolver,
 			IGoogleSearchLogic googleSearchLogic, IYandexImageSearch yandexImageSearch,
-			IInstagramAccountLogic accountLogic)
+			IInstagramAccountLogic accountLogic, ITopicLookupLogic topicLookup)
 		{
 			_profileLogic = profileLogic;
 			_proxyLogic = proxyLogic;
@@ -40,7 +42,7 @@ namespace Quarkless.Services.Heartbeat
 			_googleSearchLogic = googleSearchLogic;
 			_yandexImageSearch = yandexImageSearch;
 			_instagramAccountLogic = accountLogic;
-			//_metadataExtract = metadataExtract;
+			_topicLookup = topicLookup;
 		}
 
 		/// <summary>
@@ -80,11 +82,11 @@ namespace Quarkless.Services.Heartbeat
 			var assignment = new Assignment
 			{
 				Customer = customer,
-				CustomerTopic = customer.Profile.Topics,
+				CustomerTopic = customer.Profile.ProfileTopic,
 				Worker = assignWorker
 			};
 			var metaBuilder = new MetadataBuilderManager(assignment, _context, _heartbeatLogic, _responseResolver,
-				_googleSearchLogic, _yandexImageSearch, _instagramAccountLogic);
+				_googleSearchLogic, _yandexImageSearch, _instagramAccountLogic,_topicLookup);
 
 			switch (operation)
 			{

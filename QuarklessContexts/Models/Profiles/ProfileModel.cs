@@ -1,8 +1,6 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
-using QuarklessContexts.Enums;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Reflection.Metadata;
 using QuarklessContexts.Models.Topics;
 
 namespace QuarklessContexts.Models.Profiles
@@ -17,7 +15,7 @@ namespace QuarklessContexts.Models.Profiles
 	}
 	public class GroupImagesAlike
 	{
-		public string TopicGroup { get; set; }
+		public CTopic TopicGroup { get; set; }
 		public string Url { get; set; }
 	}
 	public class Themes
@@ -71,23 +69,11 @@ namespace QuarklessContexts.Models.Profiles
 			SearchTypes = new List<int>();
 		}
 	}
+
 	public class SubTopics
 	{
 		public string TopicName { get; set; }
 		public List<string> RelatedTopics { get; set; }
-	}
-	public class Topics
-	{
-		[BsonRepresentation(MongoDB.Bson.BsonType.Int32)]
-		public TopicTypes TopicType { get; set; } = TopicTypes.NotSelected;
-		public string TopicFriendlyName { get; set; } = string.Empty;
-		public List<SubTopics> SubTopics { get; set; }
-	}
-
-	public class Topic
-	{
-		public CTopic Category { get; set; }
-		public List<CTopic> Topics { get; set; }
 	}
 
 	public class ProfileModel
@@ -101,7 +87,7 @@ namespace QuarklessContexts.Models.Profiles
 		public string Name { get; set; }
 		public string Description { get; set; }
 		public string Language { get; set; }
-		public Topics Topics { get; set; }
+		public Topic ProfileTopic { get; set; }
 		public bool AutoGenerateTopics { get; set; }
 		public Location UserLocation { get; set; }
 		public List<string> UserTargetList { get; set; }

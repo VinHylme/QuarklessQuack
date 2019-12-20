@@ -77,10 +77,8 @@ using QuarklessRepositories.RedisRepository.SearchCache;
 using QuarklessRepositories.RedisRepository.TimelineJobRedis;
 using QuarklessRepositories.Repository.CorpusRepositories.Comments;
 using QuarklessRepositories.Repository.CorpusRepositories.Medias;
-using QuarklessRepositories.Repository.CorpusRepositories.Topic;
 using QuarklessRepositories.Repository.LibraryRepository;
 using QuarklessRepositories.Repository.ServicesRepositories.HashtagsRepository;
-using QuarklessRepositories.Repository.ServicesRepositories.TopicsRepository;
 using QuarklessRepositories.Repository.TimelineRepository;
 using QuarklessRepositories.RepositoryClientManager;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -93,10 +91,12 @@ using Quarkless.Analyser.Models;
 using Quarkless.Vision;
 using QuarklessContexts.Models.APILogger;
 using QuarklessContexts.Models.SecurityLayerModels;
+using QuarklessLogic.Handlers.ContentInfoBuilder;
+using QuarklessLogic.Handlers.HashtagBuilder;
 using QuarklessLogic.Handlers.RequestBuilder.Constants;
+using QuarklessLogic.Handlers.WorkerManagerService;
 using QuarklessLogic.Logic.TopicLookupLogic;
 using QuarklessLogic.QueueLogic.Jobs.JobRunner;
-using QuarklessLogic.ServicesLogic.TopicsServiceLogic;
 using QuarklessRepositories.Repository.RepositoryClientManager;
 using QuarklessRepositories.Repository.TopicLookupRepository;
 using IpRateLimitPolicies = AspNetCoreRateLimit.IpRateLimitPolicies;
@@ -317,7 +317,6 @@ namespace Quarkless.Common.Clients.Configs
 			services.AddTransient<IInstagramAccountRepository, InstagramAccountRepository>();
 			services.AddTransient<IProxyRepostory, ProxyRepository>();
 			services.AddTransient<IProfileRepository, ProfileRepository>();
-			services.AddTransient<ITopicsRepository, TopicsRepository>();
 			services.AddTransient<IHashtagsRepository, HashtagsRepository>();
 			services.AddTransient<ITimelineLoggingRepository, TimelineLoggingRepository>();
 			services.AddTransient<IHeartbeatRepository, HeartbeatRepository>();
@@ -328,7 +327,6 @@ namespace Quarkless.Common.Clients.Configs
 			services.AddTransient<IHashtagCoprusCache, HashtagCoprusCache>();
 			services.AddTransient<IMediaCorpusCache, MediaCorpusCache>();
 			services.AddTransient<ITimelineJobRepository, TimelineJobRepository>();
-			services.AddTransient<ITopicCategoryRepository, TopicCategoryRepository>();
 			services.AddTransient<ILibraryRepository, LibraryRepository>();
 			services.AddTransient<ILibraryCache, LibraryCache>();
 			services.AddTransient<IAPILogCache, APILogCache>();
@@ -341,7 +339,6 @@ namespace Quarkless.Common.Clients.Configs
 		{
 			services.AddTransient<IReportHandler, ReportHandler>();
 			services.AddSingleton<IRestSharpClientManager, RestSharpClientManager>();
-			services.AddTransient<ITopicServicesLogic, TopicServicesLogic>();
 
 			services.AddTransient<ISeleniumClient, SeleniumClient>();
 
@@ -350,7 +347,9 @@ namespace Quarkless.Common.Clients.Configs
 			services.AddTransient<IAPIClientContainer, APIClientContainer>();
 			services.AddTransient<ITranslateService, TranslateService>();
 			services.AddTransient<IUtilProviders, UtilProviders>();
-			services.AddSingleton<ITextGeneration, TextGeneration>();
+			services.AddSingleton<ITextGenerator, TextGenerator>();
+			services.AddSingleton<IHashtagGenerator, HashtagGenerator>();
+			services.AddSingleton<IContentInfoBuilder, ContentInfoBuilder>();
 		}
 		public static void AddContexts(this IServiceCollection services)
 		{

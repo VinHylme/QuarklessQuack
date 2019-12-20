@@ -406,7 +406,7 @@ namespace QuarklessLogic.Logic.ResponseLogic
 					{
 						Id = Guid.NewGuid().ToString(),
 						LastModified = DateTime.UtcNow,
-						LookupStatus = LookupStatus.Completeted,
+						LookupStatus = LookupStatus.Completed,
 						ActionType = actionType
 					});
 				}

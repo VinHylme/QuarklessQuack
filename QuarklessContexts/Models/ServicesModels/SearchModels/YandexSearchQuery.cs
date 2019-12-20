@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using QuarklessContexts.Models.Topics;
 
 namespace QuarklessContexts.Models.ServicesModels.SearchModels
 {
@@ -90,7 +91,7 @@ namespace QuarklessContexts.Models.ServicesModels.SearchModels
 	}
 	public class YandexSearchQuery
 	{
-		public string OriginalTopic { get; set; }
+		public CTopic OriginalTopic { get; set; }
 		public string SearchQuery { get; set; }
 		public Orientation Orientation { get; set; }
 		public ImageType Type { get; set; }

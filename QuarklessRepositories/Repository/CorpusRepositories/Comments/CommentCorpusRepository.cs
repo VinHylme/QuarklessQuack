@@ -5,7 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using MongoDB.Bson;
 using MoreLinq;
 using QuarklessContexts.Extensions;
 
@@ -84,7 +86,8 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Comments
 				FilterDefinition<CommentCorpus> filters;
 				if (string.IsNullOrEmpty(language))
 				{
-					filters = builders.Eq(_ => _.Topic, topic);
+					filters = builders.Eq(_ => _.Topic,
+						BsonRegularExpression.Create(new Regex("^" + topic + "$", RegexOptions.IgnoreCase)));
 				}
 				else
 				{

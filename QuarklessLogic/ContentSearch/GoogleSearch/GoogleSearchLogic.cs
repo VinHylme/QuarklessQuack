@@ -11,6 +11,7 @@ using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.Proxies;
 using QuarklessContexts.Models.ResponseModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
+using QuarklessContexts.Models.Topics;
 using QuarklessLogic.ContentSearch.SeleniumClient;
 using QuarklessLogic.Handlers.RestSharpClient;
 
@@ -20,7 +21,7 @@ namespace QuarklessLogic.ContentSearch.GoogleSearch
 	{
 		public struct Medias
 		{
-			public string Topic { get; set; }
+			public CTopic Topic { get; set; }
 			public string MediaUrl { get; set; }
 		}
 		public List<Medias> MediasObject;

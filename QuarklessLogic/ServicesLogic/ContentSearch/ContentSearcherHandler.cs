@@ -43,29 +43,6 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 		{
 			_container = newUser;
 		}
-		#region Business
-		public async Task<IEnumerable<TopicCategories>> GetBusinessCategories()
-		{
-			var cat = await _responseResolver.WithClient(_container).WithResolverAsync(await _container.Business.GetCategoriesAsync());
-			var categories = new List<TopicCategories>();
-			if (!cat.Succeeded) return categories;
-			foreach(var ca in cat.Value)
-			{
-				var subCategories = await _container.Business.GetSubCategoriesAsync(ca.CategoryId);
-				if (subCategories.Succeeded)
-				{
-					categories.Add(new TopicCategories
-					{
-						CategoryName = ca.CategoryName,
-						SubCategories = subCategories.Value.Select(s=>s.CategoryName).ToList()
-					});
-				}
-				await Task.Delay(450);
-			}
-			return categories;
-		}
-
-		#endregion
 
 		public async Task<IEnumerable<UserResponse<string>>> GetUsersFollowersList(string username, int limit,
 			string query = null, bool mutualFirst = true)
@@ -231,13 +208,13 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 				(await _container.User.GetFullUserInfoAsync(userId));
 			return userDetailsResp.Succeeded ? userDetailsResp.Value : null;
 		}
-		public async Task<Media> SearchMediaDetailInstagram(IEnumerable<string> topics, int limit, bool isRecent = false)
+		public async Task<Media> SearchMediaDetailInstagram(IEnumerable<CTopic> topics, int limit, bool isRecent = false)
 		{
 			var medias = new Media();
 			foreach (var topic in topics)
 			{
-				var mediasResults = !isRecent ? await _container.Hashtag.GetTopHashtagMediaListAsync(topic.OnlyWords(), PaginationParameters.MaxPagesToLoad(limit))
-											: await _container.Hashtag.GetRecentHashtagMediaListAsync(topic.OnlyWords(),PaginationParameters.MaxPagesToLoad(limit));
+				var mediasResults = !isRecent ? await _container.Hashtag.GetTopHashtagMediaListAsync(topic.Name.OnlyWords(), PaginationParameters.MaxPagesToLoad(limit))
+											: await _container.Hashtag.GetRecentHashtagMediaListAsync(topic.Name.OnlyWords(),PaginationParameters.MaxPagesToLoad(limit));
 				if (mediasResults.Succeeded)
 				{
 					medias.Medias.AddRange(mediasResults.Value.Medias.Select(s =>
@@ -315,6 +292,89 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 			}
 			return medias;
 		}
+		public async Task<Media> SearchMediaDetailInstagram(IEnumerable<string> topics, int limit, bool isRecent = false)
+		{
+			var medias = new Media();
+			foreach (var topic in topics)
+			{
+				var mediasResults = !isRecent ? await _container.Hashtag.GetTopHashtagMediaListAsync(topic.OnlyWords(), PaginationParameters.MaxPagesToLoad(limit))
+											: await _container.Hashtag.GetRecentHashtagMediaListAsync(topic.OnlyWords(), PaginationParameters.MaxPagesToLoad(limit));
+				if (mediasResults.Succeeded)
+				{
+					medias.Medias.AddRange(mediasResults.Value.Medias.Select(s =>
+					{
+						var mediaDetail = new MediaResponse
+						{
+							LikesCount = s.LikesCount,
+							MediaId = s.Pk,
+							HasLikedBefore = s.HasLiked,
+							HasAudio = s.HasAudio,
+							IsCommentsDisabled = s.IsCommentsDisabled,
+							Location = s?.Location,
+							ViewCount = s.ViewCount,
+							Caption = s?.Caption?.Text,
+							Explore = s?.Explore,
+							FilterType = s.FilterType,
+							HasSeen = s.IsSeen,
+							NumberOfQualities = s.NumberOfQualities,
+							PhotosOfI = s.PhotoOfYou,
+							PreviewComments = s?.PreviewComments,
+							ProductTags = s?.ProductTags,
+							ProductType = s.ProductType,
+							TopLikers = s?.TopLikers,
+							TakenAt = s.TakenAt,
+							UserTags = s?.UserTags,
+							IsFollowing = s?.User?.FriendshipStatus?.Following,
+							CommentCount = s.CommentsCount,
+							MediaFrom = MediaFrom.Instagram,
+							MediaType = s.MediaType,
+							User = new UserResponse
+							{
+								FullName = s.User.FullName,
+								IsPrivate = s.User.IsPrivate,
+								IsVerified = s.User.IsVerified,
+								ProfilePicture = s.User.ProfilePicture,
+								UserId = s.User.Pk,
+								Username = s.User.UserName
+							}
+						};
+						var mediaDetailMediaUrl = new List<string>();
+						switch (s.MediaType)
+						{
+							case InstaMediaType.Image:
+								{
+									var im = s.Images.FirstOrDefault()?.Uri;
+									if (im != null)
+										mediaDetailMediaUrl.Add(im);
+									break;
+								}
+							case InstaMediaType.Video:
+								{
+									var iv = s.Videos.FirstOrDefault()?.Uri;
+									if (iv != null)
+										mediaDetailMediaUrl.Add(iv);
+									break;
+								}
+							case InstaMediaType.Carousel:
+								s.Carousel.ForEach(x =>
+								{
+									var videos = x.Videos.FirstOrDefault()?.Uri;
+									if (videos != null)
+										mediaDetailMediaUrl.Add(videos);
+									var images = x.Images.FirstOrDefault()?.Uri;
+									if (images != null)
+										mediaDetailMediaUrl.Add(images);
+								});
+								break;
+						}
+						mediaDetail.MediaUrl = mediaDetailMediaUrl;
+						return mediaDetail;
+					}));
+				}
+			}
+			return medias;
+		}
+
 		public async Task<Media> SearchUsersMediaDetailInstagram(string userName, int limit)
 		{
 			var medias = await _responseResolver.WithClient(_container).WithResolverAsync
@@ -652,64 +712,62 @@ namespace QuarklessLogic.ServicesLogic.ContentSearch
 		}
 
 		#region Probably Old 
-		public async Task<Media> SearchMediaInstagram(IEnumerable<string> topics, InstaMediaType mediaType, int limit)
+		public async Task<Media> SearchMediaInstagram(IEnumerable<CTopic> topics, InstaMediaType mediaType, int limit)
 		{
 			Media mediaresp = new Media();
 			foreach (var topic in topics)
 			{
 				MediaResponse media_ = new MediaResponse();
-				var results = await _container.Hashtag.GetTopHashtagMediaListAsync(topic, PaginationParameters.MaxPagesToLoad(limit));
-				if (results.Succeeded)
+				var results = await _container.Hashtag.GetTopHashtagMediaListAsync(topic.Name.OnlyWords(), PaginationParameters.MaxPagesToLoad(limit));
+				if (!results.Succeeded) continue;
+				media_.Topic = topic;
+				foreach (var results_media in results.Value.Medias)
 				{
-					media_.Topic = topic;
-					foreach (var results_media in results.Value.Medias)
+					switch (mediaType)
 					{
-						switch (mediaType)
-						{
-							case InstaMediaType.All:
-								var image = results_media.Images.FirstOrDefault()?.Uri;
-								if (!string.IsNullOrEmpty(image))
-									media_.MediaUrl.Add(image);
-								var video = results_media.Videos.FirstOrDefault()?.Uri;
-								if (!string.IsNullOrEmpty(video))
-									media_.MediaUrl.Add(video);
-								results_media.Carousel.Select(s =>
-								{
-									var videos = s.Videos.FirstOrDefault()?.Uri;
-									if (!string.IsNullOrEmpty(videos))
-										media_.MediaUrl.Add(videos);
-									var images = s.Images.FirstOrDefault()?.Uri;
-									if (!string.IsNullOrEmpty(images))
-										media_.MediaUrl.Add(images);
-									return s;
-								});
-								break;
-							case InstaMediaType.Image:
-								var image_ = results_media.Images.FirstOrDefault()?.Uri;
-								if (!string.IsNullOrEmpty(image_))
-									media_.MediaUrl.Add(image_);
-								break;
-							case InstaMediaType.Video:
-								var video_ = results_media.Videos.FirstOrDefault()?.Uri;
-								if (!string.IsNullOrEmpty(video_))
-									media_.MediaUrl.Add(video_);
-								break;
-							case InstaMediaType.Carousel:
-								results_media.Carousel.Select(s =>
-								{
-									var videos = s.Videos.FirstOrDefault()?.Uri;
-									if (videos != null)
-										media_.MediaUrl.Add(videos);
-									var images = s.Images.FirstOrDefault()?.Uri;
-									if (images != null)
-										media_.MediaUrl.Add(images);
-									return s;
-								});
-								break;
-						}
+						case InstaMediaType.All:
+							var image = results_media.Images.FirstOrDefault()?.Uri;
+							if (!string.IsNullOrEmpty(image))
+								media_.MediaUrl.Add(image);
+							var video = results_media.Videos.FirstOrDefault()?.Uri;
+							if (!string.IsNullOrEmpty(video))
+								media_.MediaUrl.Add(video);
+							results_media.Carousel.Select(s =>
+							{
+								var videos = s.Videos.FirstOrDefault()?.Uri;
+								if (!string.IsNullOrEmpty(videos))
+									media_.MediaUrl.Add(videos);
+								var images = s.Images.FirstOrDefault()?.Uri;
+								if (!string.IsNullOrEmpty(images))
+									media_.MediaUrl.Add(images);
+								return s;
+							});
+							break;
+						case InstaMediaType.Image:
+							var image_ = results_media.Images.FirstOrDefault()?.Uri;
+							if (!string.IsNullOrEmpty(image_))
+								media_.MediaUrl.Add(image_);
+							break;
+						case InstaMediaType.Video:
+							var video_ = results_media.Videos.FirstOrDefault()?.Uri;
+							if (!string.IsNullOrEmpty(video_))
+								media_.MediaUrl.Add(video_);
+							break;
+						case InstaMediaType.Carousel:
+							results_media.Carousel.Select(s =>
+							{
+								var videos = s.Videos.FirstOrDefault()?.Uri;
+								if (videos != null)
+									media_.MediaUrl.Add(videos);
+								var images = s.Images.FirstOrDefault()?.Uri;
+								if (images != null)
+									media_.MediaUrl.Add(images);
+								return s;
+							});
+							break;
 					}
-					mediaresp.Medias.Add(media_);
 				}
+				mediaresp.Medias.Add(media_);
 			}
 			return mediaresp;
 		}

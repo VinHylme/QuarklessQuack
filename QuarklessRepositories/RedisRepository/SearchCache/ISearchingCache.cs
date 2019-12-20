@@ -9,7 +9,7 @@ namespace QuarklessRepositories.RedisRepository.SearchCache
 	{
 		Task<SearchRequest> GetSearchData(string userId, SearchRequest find, string instagramId = null, string profileId = null);
 		Task StoreSearchData(string userId, SearchRequest search, string instagramId = null, string profileId = null);
-		Task<SubTopics> GetReleatedTopic(string topic);
+		Task<SubTopics> GetRelatedTopic(string topic);
 		Task StoreRelatedTopics(SubTopics subTopics);
 	}
 }

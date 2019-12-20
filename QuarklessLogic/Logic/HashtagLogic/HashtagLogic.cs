@@ -18,15 +18,17 @@ namespace QuarklessLogic.Logic.HashtagLogic
 		private IReportHandler _reportHandler { get; set; }
 		private readonly IAPIClientContainer Client;
 		private readonly IHashtagsRepository _hashtagsRepository;
-		private readonly IHashtagCoprusCache _hashtagCoprusCache;
-		public HashtagLogic(IReportHandler reportHandler, IAPIClientContainer clientContexter, 
-			IHashtagsRepository hashtagsRepository, IHashtagCoprusCache hashtagCoprusCache)
+		private readonly IHashtagCoprusCache _hashtagCorpusCache;
+		public HashtagLogic(IReportHandler reportHandler, IAPIClientContainer clientContext, 
+			IHashtagsRepository hashtagsRepository, IHashtagCoprusCache hashtagCorpusCache)
 		{
-			Client = clientContexter;
+			Client = clientContext;
 			_reportHandler = reportHandler;
 			_hashtagsRepository = hashtagsRepository;
-			_hashtagCoprusCache = hashtagCoprusCache;
+			_hashtagCorpusCache = hashtagCorpusCache;
 		}
+
+		#region Instagram Functions
 		public Task<IResult<bool>> FollowHashtagAsync(string tagName)
 		{
 			throw new NotImplementedException();
@@ -91,16 +93,20 @@ namespace QuarklessLogic.Logic.HashtagLogic
 		{
 			throw new NotImplementedException();
 		}
-		public async Task AddHashtagsToRepositoryAndCache(IEnumerable<HashtagsModel> hashtags)
-		{
-			await _hashtagsRepository.AddHashtags(hashtags);
-			//await _hashtagCoprusCache.AddHashtags(hashtags);
-		}
+		#endregion
+
+		#region Hashtag Database Logic
+		public async Task AddHashtagsToRepository(IEnumerable<HashtagsModel> hashtags) 
+			=> await _hashtagsRepository.AddHashtags(hashtags);
+
+
+		public async Task<List<HashtagsModel>> GetHashtagsFromRepositoryByTopic(string topic, int limit = 1)
+			=> await _hashtagsRepository.GetHashtagsByTopic(topic, limit);
 		public async Task<IEnumerable<HashtagsModel>> GetHashtagsByTopicAndLanguage(string topic, string lang, string langmapped, int limit = 1)
 		{
 			try
 			{
-				var cacheRes = await _hashtagCoprusCache.GetHashtags(topic, lang, limit);
+				var cacheRes = await _hashtagCorpusCache.GetHashtags(topic, lang, limit);
 				var hashtagsByTopicAndLanguage = cacheRes as HashtagsModel[] ?? cacheRes.ToArray();
 				if(hashtagsByTopicAndLanguage.Any())
 					return hashtagsByTopicAndLanguage;
@@ -116,5 +122,6 @@ namespace QuarklessLogic.Logic.HashtagLogic
 			}
 		}
 		public async Task UpdateAllMediasLanguagesToLower() => await _hashtagsRepository.UpdateAllMediasLanguagesToLower();
+		#endregion
 	}
 }

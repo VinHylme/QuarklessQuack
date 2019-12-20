@@ -5,16 +5,18 @@ using QuarklessContexts.Extensions;
 using System.Linq;
 using System.Threading.Tasks;
 using MoreLinq;
+using QuarklessContexts.Models.Topics;
 using QuarklessLogic.ServicesLogic.CorpusLogic;
 
 namespace QuarklessLogic.Handlers.TextGeneration
 {
 	//TODO ADD AI LATER, FOR NOW JUST USING MARKOV ALGO
-	public class TextGeneration : ITextGeneration
+	public class TextGenerator : ITextGenerator
 	{
+		private const string EMOJIS = @"😄😃😀😊😉😍😘😚😗😙😜😝😛😳😁😔😌😒😞😣😢😂😭😪😥😰😅😓😩😫😨😱😠😡😤😖😆😋😷😎😴😵😲😟😦😧😈👿😮😬";
 		private readonly ICommentCorpusLogic _commentCorpusLogic;
 		private readonly IMediaCorpusLogic _mediaCorpusLogic;
-		public TextGeneration(ICommentCorpusLogic commentCorpusLogic, IMediaCorpusLogic mediaCorpusLogic)
+		public TextGenerator(ICommentCorpusLogic commentCorpusLogic, IMediaCorpusLogic mediaCorpusLogic)
 		{
 			_commentCorpusLogic = commentCorpusLogic;
 			_mediaCorpusLogic = mediaCorpusLogic;
@@ -27,6 +29,65 @@ namespace QuarklessLogic.Handlers.TextGeneration
 			var s = Regex.Replace(File.ReadAllText(filePath), @"\s+", " ").TrimEnd(' ');
 			var t = MarkovHelper.BuildTDict(s, size);
 			return MarkovHelper.BuildString(t, limit, exact).TrimEnd(' ');
+		}
+
+		public async Task<string> GenerateCaptionByMarkovChain(CTopic mediaTopic, int limit)
+		{
+			if (mediaTopic == null)
+				return string.Empty;
+			if (limit <= 0)
+				return string.Empty;
+
+			const int searchLimit = 1500;
+			const int takeSize = 15;
+
+			var medias = (await _mediaCorpusLogic.GetMedias(mediaTopic.Name, null, limit:searchLimit, skip: false))
+				.DistinctBy(_=>_.Caption)
+				.Shuffle()
+				.Take(takeSize)
+				.ToList();
+
+			if(!medias.Any())
+				return new string(EMOJIS.TakeAny(SecureRandom.Next(3,7)).ToArray());
+
+			var captions = medias.Select(sa =>
+			{
+				var pos = sa.Caption.LastIndexOf(',');
+				return pos > 0 ? sa.Caption.Remove(pos, 1) : sa.Caption;
+			});
+
+			var dataMedia = Regex.Replace(string.Join(',', captions), @"\s+", " ").TrimEnd(' ');
+			var dMediaDict = MarkovHelper.BuildTDict(dataMedia, takeSize / 2);
+			return MarkovHelper.BuildString(dMediaDict, limit, true).TrimEnd(' ').Replace(",", " ");
+		}
+		public async Task<string> GenerateCommentByMarkovChain(CTopic mediaTopic, int limit)
+		{
+			if (mediaTopic == null)
+				return string.Empty;
+			if (limit <= 0)
+				return string.Empty;
+
+			const int searchLimit = 1500;
+			const int takeSize = 15;
+
+			var commentCorpusResults = (await _commentCorpusLogic.GetComments(mediaTopic.Name, null, limit: searchLimit, skip: false))
+				.DistinctBy(_ => _.Comment)
+				.Shuffle()
+				.Take(takeSize)
+				.ToList();
+
+			if (!commentCorpusResults.Any())
+				return new string(EMOJIS.TakeAny(SecureRandom.Next(3, 7)).ToArray());
+
+			var comments = commentCorpusResults.Select(sa =>
+			{
+				var pos = sa.Comment.LastIndexOf(',');
+				return pos > 0 ? sa.Comment.Remove(pos, 1) : sa.Comment;
+			});
+
+			var dataComment = Regex.Replace(string.Join(',', comments), @"\s+", " ").TrimEnd(' ');
+			var dCommentDict = MarkovHelper.BuildTDict(dataComment, takeSize / 2);
+			return MarkovHelper.BuildString(dCommentDict, limit, true).TrimEnd(' ').Replace(",", " ");
 		}
 		public async Task<string> MarkovIt(int type, string topic, string language, int limit)
 		{
@@ -86,8 +147,5 @@ namespace QuarklessLogic.Handlers.TextGeneration
 			return MarkovHelper.BuildString(t, limit, true).TrimEnd(' ');
 		}
 		#endregion
-
-
-
 	}
 }

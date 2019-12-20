@@ -119,7 +119,14 @@ namespace Quarkless.Vision
 		}
 		public IEnumerable<IEnumerable<EntityAnnotation>> AnnotateImages(IEnumerable<string> imageUrls)
 		{
-			return imageUrls.Select(image => _client.DetectLabels(Image.FromUri(image)));
+			try
+			{
+				return imageUrls.Select(image => _client.DetectLabels(Image.FromUri(image)));
+			}
+			catch (Exception err)
+			{
+				return Enumerable.Empty<IEnumerable<EntityAnnotation>>();
+			}
 		}
 	}
 }

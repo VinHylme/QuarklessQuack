@@ -6,6 +6,6 @@ namespace Quarkless.Services.Heartbeat
 	{
 		public FullUserDetail Customer { get; set; }
 		public Worker Worker { get; set; }
-		public Topics CustomerTopic { get; set; }
+		public Topic CustomerTopic { get; set; }
 	}
 }

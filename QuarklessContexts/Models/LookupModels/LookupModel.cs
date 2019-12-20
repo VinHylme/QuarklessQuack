@@ -7,7 +7,7 @@ namespace QuarklessContexts.Models.LookupModels
 	{
 		NotStarted,
 		Pending,
-		Completeted,
+		Completed,
 		Failed
 	}
 	public class LookupModel

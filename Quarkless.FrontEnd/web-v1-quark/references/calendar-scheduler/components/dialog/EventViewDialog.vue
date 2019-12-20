@@ -157,6 +157,7 @@ export default {
     credit: String,
     location: Object,
     medias:Array,
+    mediaTopic:Object,
     startTime: Object,
     type: Number
   },
@@ -194,16 +195,15 @@ export default {
     getSuggestedTags(e){
         if(e===true){
           this.isFetchingHashtags = true;
-          state.dispatch('BuildTags', 
-          {
-              topic: encodeURIComponent(this.profile.topics.topicFriendlyName), 
-              subcat: this.profile.topics.subTopics[Math.floor(Math.random()*this.profile.topics.subTopics.length)].topicName,
-              lang: this.profile.language,
-              limit:500,
-              pickRate:25
-          }).then(resp=>{
+          const request = {
+            profileTopic: this.profile.profileTopic,
+            mediaTopic: this.mediaTopic,
+            pickAmount: 25,
+            mediaUrls: this.medias.map(res=>res.url)
+          }
+          state.dispatch('BuildTags', request).then(resp=>{
               this.hashtags = [];
-              resp.data.forEach((item)=>this.hashtags.push('#'+item));
+              resp.data.forEach((item)=>this.hashtags.push(item));
               this.autoSuggest = false;
               this.isFetchingHashtags = false;
           }).catch(err=>{

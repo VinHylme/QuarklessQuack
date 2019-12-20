@@ -44,7 +44,7 @@ class SearchImage(Resource):
         mediaResponse  = []
         for k,v in path[0].items():
             for n in v:
-                mediaResponse.append({"Topic":k, "MediaUrl": n})
+                mediaResponse.append({"Topic":{"_id":None, "ParentTopicId":None, "Name":k}, "MediaUrl": n})
 
         result = {
             "MediasObject" : mediaResponse,

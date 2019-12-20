@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using QuarklessContexts.Enums;
 using QuarklessContexts.Models.MediaModels;
 using QuarklessLogic.Logic.TimelineEventLogLogic;
 using QuarklessContexts.Models.MessagingModels;
