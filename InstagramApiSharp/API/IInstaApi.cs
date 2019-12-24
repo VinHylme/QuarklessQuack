@@ -33,17 +33,14 @@ namespace InstagramApiSharp.API
     /// </summary>
     public interface IInstaApi
     {
-	    #region Custom
 	    string Username { get; }
 	    bool IsUserValidated();
 
-	    #endregion
-
-		#region Properties
-		/// <summary>
-		///     Gets or sets two factor login info
-		/// </summary>
-		InstaTwoFactorLoginInfo TwoFactorLoginInfo { get; set; }
+        #region Properties
+        /// <summary>
+        ///     Gets or sets two factor login info
+        /// </summary>
+        InstaTwoFactorLoginInfo TwoFactorLoginInfo { get; set; }
         /// <summary>
         ///     Gets or sets challenge login info
         /// </summary>

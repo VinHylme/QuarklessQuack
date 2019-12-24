@@ -141,16 +141,12 @@ namespace Quarkless.Services.Delegator
 
 		static async Task CreateAndRunHeartbeatContainers(List<ShortInstagramAccountModel> customers, ExtractOperationType type)
 		{
-			var workers = new NextList<ShortInstagramAccountModel>(await _agentLogic.GetAllAccounts(1));
-			if (!workers.Any()) return;
-
 			foreach (var customer in customers)
 			{
-				var worker = workers.MoveNextRepeater();
 				await Client.Containers.CreateContainerAsync(new CreateContainerParameters
 				{
 					Image = HEARTBEAT_IMAGE_NAME,
-					Name = $"quarkless.heartbeat.{type.ToString()}.{customer.AccountId}.{customer.Id}.{worker.Id}",
+					Name = $"quarkless.heartbeat.{type.ToString()}.{customer.AccountId}.{customer.Id}",
 					HostConfig = new HostConfig
 					{
 						NetworkMode = NETWORK_MODE,
@@ -163,8 +159,6 @@ namespace Quarkless.Services.Delegator
 					{
 						$"USER_ID={customer.AccountId}",
 						$"USER_INSTAGRAM_ACCOUNT={customer.Id}",
-						$"WORKER_USER_ID={worker.AccountId}",
-						$"WORKER_INSTAGRAM_ACCOUNT={worker.Id}",
 						$"OPERATION_TYPE={((int)type).ToString()}"
 					},
 					AttachStderr = true,

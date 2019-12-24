@@ -7,7 +7,7 @@
     <LangVersion>latest</LangVersion>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 	<StartupObject>Quarkless.Services.Heartbeat.Entrance</StartupObject>
-	<DockerfileRunArguments>-e OPERATION_TYPE=1 -e USER_ID=lemonkaces -e USER_INSTAGRAM_ACCOUNT=5cf3d6b9871f49057c0169bc -e WORKER_USER_ID=lemonkaces -e WORKER_INSTAGRAM_ACCOUNT=5d2470904d1eb42ee084e9ec  --network name=localnet,alias=quarkless.local.heartbeat --name heartbeat.quark</DockerfileRunArguments>
+	<DockerfileRunArguments>-e OPERATION_TYPE=0 -e USER_ID=lemonkaces -e USER_INSTAGRAM_ACCOUNT=5cf3d6b9871f49057c0169bc --network name=localnet,alias=quarkless.local.heartbeat --name heartbeat.quark</DockerfileRunArguments>
   </PropertyGroup>
 
   <ItemGroup>

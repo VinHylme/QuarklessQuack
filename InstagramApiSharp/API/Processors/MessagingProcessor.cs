@@ -911,7 +911,7 @@ namespace InstagramApiSharp.API.Processors
             try
             {
                 var instaUri = UriCreator.GetLikeUnlikeDirectMessageUri();
-
+                var cc = ExtensionHelper.GetThreadToken();
                 var data = new Dictionary<string, string>
                 {
                     {"item_type", "reaction"},
@@ -920,7 +920,9 @@ namespace InstagramApiSharp.API.Processors
                     {"_csrftoken", _user.CsrfToken},
                     {"_uuid", _deviceInfo.DeviceGuid.ToString()},
                     {"thread_ids", $"[{threadId}]"},
-                    {"client_context", Guid.NewGuid().ToString()},
+                    {"client_context",cc},
+                    {"device_id", _deviceInfo.DeviceId},
+                    {"mutation_token", cc},
                     {"node_type", "item"},
                     {"reaction_status", "created"},
                     {"item_id", itemId}
@@ -956,6 +958,7 @@ namespace InstagramApiSharp.API.Processors
             try
             {
                 var instaUri = UriCreator.GetDirectThreadSeenUri(threadId, itemId);
+                var cc = ExtensionHelper.GetThreadToken();
 
                 var data = new Dictionary<string, string>
                 {
@@ -964,6 +967,8 @@ namespace InstagramApiSharp.API.Processors
                     {"_csrftoken", _user.CsrfToken},
                     {"_uuid", _deviceInfo.DeviceGuid.ToString()},
                     {"item_id", itemId},
+                    {"device_id", _deviceInfo.DeviceId},
+                    {"mutation_token", cc},
                     {"use_unified_inbox", "true"},
                 };
                 var request =
@@ -1161,12 +1166,14 @@ namespace InstagramApiSharp.API.Processors
             try
             {
                 var instaUri = UriCreator.GetBroadcastFelixShareUri();
+                var cc = ExtensionHelper.GetThreadToken();
+
                 var data = new Dictionary<string, string>
                 {
-                    {"mutation_token", Guid.NewGuid().ToString()},
+                    {"mutation_token", cc},
                     {"media_id", mediaId},
                     {"action", "send_item"},
-                    {"client_context", Guid.NewGuid().ToString()},
+                    {"client_context", cc},
                     {"_csrftoken", _user.CsrfToken},
                     {"_uuid", _deviceInfo.DeviceGuid.ToString()}
                 };
@@ -1239,14 +1246,17 @@ namespace InstagramApiSharp.API.Processors
             try
             {
                 var instaUri = UriCreator.GetSendDirectHashtagUri();
-                var clientContext = Guid.NewGuid().ToString();
+
+                var cc = ExtensionHelper.GetThreadToken();
                 var data = new Dictionary<string, string>
                 {
                     {"text", text ?? string.Empty},
                     {"hashtag", hashtag},
                     {"action", "send_item"},
-                    {"client_context", clientContext},
+                    {"client_context", cc},
                     {"_csrftoken", _user.CsrfToken},
+                    {"device_id", _deviceInfo.DeviceId},
+                    {"mutation_token", cc},
                     {"_uuid", _deviceInfo.DeviceGuid.ToString()}
                 };
                 if (threadIds?.Length > 0)
@@ -1314,7 +1324,7 @@ namespace InstagramApiSharp.API.Processors
             try
             {
                 var instaUri = UriCreator.GetSendDirectLinkUri();
-                var clientContext = Guid.NewGuid().ToString();
+                var clientContext = ExtensionHelper.GetThreadToken()/*Guid.NewGuid().ToString()*/;
                 var data = new Dictionary<string, string>
                 {
                     {"link_text", text ?? string.Empty},
@@ -1324,7 +1334,8 @@ namespace InstagramApiSharp.API.Processors
                     {"_csrftoken", _user.CsrfToken},
                     {"device_id", _deviceInfo.DeviceId},
                     {"mutation_token", clientContext},
-                    {"_uuid", _deviceInfo.DeviceGuid.ToString()}
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"offline_threading_id", clientContext}
                 };
                 if (threadIds?.Length > 0)
                 {
@@ -1368,7 +1379,7 @@ namespace InstagramApiSharp.API.Processors
             try
             {
                 var instaUri = UriCreator.GetSendDirectLocationUri();
-                var clientContext = Guid.NewGuid().ToString();
+                var clientContext = ExtensionHelper.GetThreadToken();
                 var data = new Dictionary<string, string>
                 {
                     {"venue_id", externalId},
@@ -1463,7 +1474,7 @@ namespace InstagramApiSharp.API.Processors
             try
             {
                 var instaUri = UriCreator.GetSendDirectProfileUri();
-                var clientContext = Guid.NewGuid().ToString();
+                var clientContext = ExtensionHelper.GetThreadToken();
                 var data = new Dictionary<string, string>
                 {
                     {"profile_user_id", userIdToSend.ToString()},
@@ -1471,6 +1482,8 @@ namespace InstagramApiSharp.API.Processors
                     {"thread_ids", $"[{threadIds.EncodeList(false)}]"},
                     {"client_context", clientContext},
                     {"_csrftoken", _user.CsrfToken},
+                    {"device_id", _deviceInfo.DeviceId},
+                    {"mutation_token", clientContext},
                     {"_uuid", _deviceInfo.DeviceGuid.ToString()}
                 };
                 var request =
@@ -1505,7 +1518,7 @@ namespace InstagramApiSharp.API.Processors
             try
             {
                 var instaUri = UriCreator.GetSendDirectProfileUri();
-                var clientContext = Guid.NewGuid().ToString();
+                var clientContext = ExtensionHelper.GetThreadToken();
                 var data = new Dictionary<string, string>
                 {
                     {"profile_user_id", userIdToSend.ToString()},
@@ -1513,6 +1526,8 @@ namespace InstagramApiSharp.API.Processors
                     {"recipient_users", $"[[" + recipients + "]]"},
                     {"client_context", clientContext},
                     {"_csrftoken", _user.CsrfToken},
+                    {"device_id", _deviceInfo.DeviceId},
+                    {"mutation_token", clientContext},
                     {"_uuid", _deviceInfo.DeviceGuid.ToString()}
                 };
                 var request =
@@ -1550,7 +1565,7 @@ namespace InstagramApiSharp.API.Processors
             try
             {
                 var directSendMessageUri = UriCreator.GetDirectSendMessageUri();
-                var token = Guid.NewGuid().ToString();
+                var token = ExtensionHelper.GetThreadToken();
                 var data = new Dictionary<string, string>
                 {
                     {"mentioned_user_ids", "[]"},
@@ -1560,7 +1575,8 @@ namespace InstagramApiSharp.API.Processors
                     {"text", text},
                     {"device_id", _deviceInfo.DeviceId},
                     {"mutation_token", token},
-                    {"_uuid", _deviceInfo.DeviceGuid.ToString()}
+                    {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"offline_threading_id", token}
                 };
                 if (!string.IsNullOrEmpty(recipients))
                     data.Add("recipient_users", "[[" + recipients + "]]");
@@ -1746,7 +1762,7 @@ namespace InstagramApiSharp.API.Processors
             try
             {
                 var instaUri = UriCreator.GetMediaShareUri(mediaType);
-                var clientContext = Guid.NewGuid().ToString();
+                var clientContext = ExtensionHelper.GetThreadToken();
                 var data = new Dictionary<string, string>
                 {
                     {"action", "send_item"},
@@ -1755,6 +1771,8 @@ namespace InstagramApiSharp.API.Processors
                     {"_csrftoken", _user.CsrfToken},
                     {"unified_broadcast_format", "1"},
                     {"_uuid", _deviceInfo.DeviceGuid.ToString()},
+                    {"device_id", _deviceInfo.DeviceId},
+                    {"mutation_token", clientContext},
                     {"text", text ?? string.Empty}
                 };
                 if (threadIds != null)
@@ -1841,7 +1859,7 @@ namespace InstagramApiSharp.API.Processors
             try
             {
                 var instaUri = UriCreator.GetLikeUnlikeDirectMessageUri();
-
+                var token = ExtensionHelper.GetThreadToken();
                 var data = new Dictionary<string, string>
                 {
                     {"item_type", "reaction"},
@@ -1850,8 +1868,10 @@ namespace InstagramApiSharp.API.Processors
                     {"_csrftoken", _user.CsrfToken},
                     {"_uuid", _deviceInfo.DeviceGuid.ToString()},
                     {"thread_ids", $"[{threadId}]"},
-                    {"client_context", Guid.NewGuid().ToString()},
+                    {"client_context", token},
                     {"node_type", "item"},
+                    {"device_id", _deviceInfo.DeviceId},
+                    {"mutation_token", token},
                     {"reaction_status", "deleted"},
                     {"item_id", itemId}
                 };
@@ -2041,14 +2061,16 @@ namespace InstagramApiSharp.API.Processors
             try
             {
                 var instaUri = UriCreator.GetDirectThreadBroadcastLikeUri();
-
+                var token = ExtensionHelper.GetThreadToken();
                 var data = new Dictionary<string, string>
                 {
                     {"action", "send_item"},
                     {"_csrftoken", _user.CsrfToken},
                     {"_uuid", _deviceInfo.DeviceGuid.ToString()},
                     {"thread_id", $"{threadId}"},
-                    {"client_context", Guid.NewGuid().ToString()}
+                    {"client_context", token},
+                    {"device_id", _deviceInfo.DeviceId},
+                    {"mutation_token", token},
                 };
                 var request =
                     _httpHelper.GetDefaultRequest(HttpMethod.Post, instaUri, _deviceInfo, data);
@@ -2092,13 +2114,14 @@ namespace InstagramApiSharp.API.Processors
                 }
                 catch { }
                 var instaUri = UriCreator.GetDirectConfigurePhotoUri();
+                var token = ExtensionHelper.GetThreadToken();
                 var data = new Dictionary<string, string>
                 {
                     {"action", "send_item"},
-                    {"client_context", Guid.NewGuid().ToString()},
+                    {"client_context", token},
                     {"_csrftoken", _user.CsrfToken},
                     {"device_id", _deviceInfo.DeviceId},
-                    {"mutation_token", Guid.NewGuid().ToString()},
+                    {"mutation_token", token},
                     {"_uuid", _deviceInfo.DeviceGuid.ToString()},
                     {"allow_full_aspect_ratio", "true"},
                     {"upload_id", uploadId},
@@ -2238,13 +2261,14 @@ namespace InstagramApiSharp.API.Processors
                 //device_id=android-21c311d494a974fe&
                 //mutation_token=8ad00094-2980-4113-9d58-270fe746c7d3&
                 //_uuid=6324ecb2-e663-4dc8-a3a1-289c699cc876
+                var token = ExtensionHelper.GetThreadToken();
                 var data = new Dictionary<string, string>
                 {
-                    {"client_context", Guid.NewGuid().ToString()},
+                    {"client_context", token},
                     {"_csrftoken", _user.CsrfToken},
                     {"id", giphyId},
                     {"device_id", _deviceInfo.DeviceId},
-                    {"mutation_token", Guid.NewGuid().ToString()},
+                    {"mutation_token", token},
                     {"_uuid", _deviceInfo.DeviceGuid.ToString()},
                 };
                 if (threadIds?.Length > 0)

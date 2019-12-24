@@ -55,7 +55,6 @@ using QuarklessLogic.Logic.TimelineEventLogLogic;
 using QuarklessLogic.QueueLogic.Services;
 using QuarklessLogic.ServicesLogic;
 using QuarklessLogic.ServicesLogic.AgentLogic;
-using QuarklessLogic.ServicesLogic.ContentSearch;
 using QuarklessLogic.ServicesLogic.CorpusLogic;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic;
@@ -91,9 +90,11 @@ using Quarkless.Analyser.Models;
 using Quarkless.Vision;
 using QuarklessContexts.Models.APILogger;
 using QuarklessContexts.Models.SecurityLayerModels;
+using QuarklessLogic.ContentSearch.InstagramSearch;
 using QuarklessLogic.Handlers.ContentInfoBuilder;
 using QuarklessLogic.Handlers.HashtagBuilder;
 using QuarklessLogic.Handlers.RequestBuilder.Constants;
+using QuarklessLogic.Handlers.SearchProvider;
 using QuarklessLogic.Handlers.WorkerManagerService;
 using QuarklessLogic.Logic.TopicLookupLogic;
 using QuarklessLogic.QueueLogic.Jobs.JobRunner;
@@ -132,7 +133,7 @@ namespace Quarkless.Common.Clients.Configs
 			services.AddTransient<ICommentCorpusLogic, CommentCorpusLogic>();
 			services.AddTransient<IMediaCorpusLogic, MediaCorpusLogic>();
 			services.AddTransient<IQueryLogic, QueryLogic>();
-			services.AddSingleton<IContentSearcherHandler, ContentSearcherHandler>();
+			services.AddSingleton<IInstagramContentSearch, InstagramContentSearch>();
 			services.AddTransient<ISearchingCache, SearchingCache>();
 			services.AddTransient<ILibraryLogic, LibraryLogic>();
 			services.AddTransient<ITimelineEventLogLogic, TimelineEventLogLogic>();
@@ -149,6 +150,7 @@ namespace Quarkless.Common.Clients.Configs
 			services.AddSingleton<IPostAnalyser, PostAnalyser>();
 			services.AddSingleton<IMediaManipulation, MediaManipulation>();
 			services.AddSingleton<ITopicLookupLogic, TopicLookupLogic>();
+			services.AddSingleton<ISearchProvider, SearchProvider>();
 		}
 		public static void AddAuthHandlers(this IServiceCollection services, EnvironmentsAccess accessors)
 		{
@@ -350,6 +352,7 @@ namespace Quarkless.Common.Clients.Configs
 			services.AddSingleton<ITextGenerator, TextGenerator>();
 			services.AddSingleton<IHashtagGenerator, HashtagGenerator>();
 			services.AddSingleton<IContentInfoBuilder, ContentInfoBuilder>();
+			services.AddSingleton<IWorkerManager, WorkerManager>();
 		}
 		public static void AddContexts(this IServiceCollection services)
 		{

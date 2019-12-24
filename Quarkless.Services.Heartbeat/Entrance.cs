@@ -69,16 +69,11 @@ namespace Quarkless.Services.Heartbeat
 			var environmentVariables = Environment.GetEnvironmentVariables();
 			var userId = environmentVariables["USER_ID"].ToString();
 			var instagramId = environmentVariables["USER_INSTAGRAM_ACCOUNT"].ToString();
-			var workerUserId = environmentVariables["WORKER_USER_ID"].ToString();
-			var workerInstagramId = environmentVariables["WORKER_INSTAGRAM_ACCOUNT"].ToString();
 			var operationType = (ExtractOperationType) int.Parse(environmentVariables["OPERATION_TYPE"].ToString());
 
 			if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(instagramId))
 				return;
-			
-			if (string.IsNullOrEmpty(workerUserId) || string.IsNullOrEmpty(workerInstagramId))
-				return;
-			
+
 			IServiceCollection services = new ServiceCollection();
 
 			services.AddSingleton<IHeartbeatService, HeartbeatService>();
@@ -87,8 +82,7 @@ namespace Quarkless.Services.Heartbeat
 			var buildService = services.BuildServiceProvider();
 
 			await WithExceptionLogAsync(async () => await buildService.GetService<IHeartbeatService>()
-				.Start(new CustomerAccount{UserId = userId, InstagramAccountId =  instagramId}, 
-					new WorkerAccount{UserId = workerUserId, InstagramAccountId = workerInstagramId}, operationType));
+				.Start(new CustomerAccount{UserId = userId, InstagramAccountId =  instagramId}, operationType));
 		}
 	}
 }

@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace QuarklessLogic.Handlers.WorkerManagerService
 {
 	public class WorkersBatchEventArgs : EventArgs
 	{
-		public IEnumerable<Worker> Workers;
+		public Workers Workers { get; set; }
 		public DateTime Date { get; set; }
 	}
+
 }

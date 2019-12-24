@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using QuarklessLogic.ServicesLogic;
 using QuarklessContexts.Extensions;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -31,9 +30,8 @@ namespace Quarkless.Services.DataFetcher
 	{
 		#region Init
 		private double _intervalWaitBetweenHashtagsAndMediaSearch;
-		private int _mediaFetchAmount, _commentFetchAmount, _batchSize, _workerAccountType;
-
-		private ConcurrentQueue<IEnumerable<ShortInstagramAccountModel>> _workerBatches;
+		private int _mediaFetchAmount, _commentFetchAmount;
+		
 		private readonly LanguageDetector _detector;
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
 		private readonly IProfileLogic _profileLogic;
@@ -44,6 +42,8 @@ namespace Quarkless.Services.DataFetcher
 		private readonly IHashtagLogic _hashtagCorpusLogic;
 		private readonly IGoogleSearchLogic _googleSearchLogic;
 		private readonly ITopicLookupLogic _topicLookup;
+		private readonly IWorkerManager _workerManager;
+
 		public Fetcher(IInstagramAccountLogic instagramAccountLogic, 
 			IAPIClientContext clientContext, IResponseResolver responseResolver, IProfileLogic profileLogic,
 			IMediaCorpusLogic mediaCorpusLogic, ICommentCorpusLogic commentCorpusLogic, IHashtagLogic hashtagCorpusLogic,
@@ -60,6 +60,8 @@ namespace Quarkless.Services.DataFetcher
 
 			_googleSearchLogic = googleSearchLogic;
 			_topicLookup = topicLookup;
+
+			_workerManager = new WorkerManager(clientContext, instagramAccountLogic, 3, 1);
 
 			_detector = new LanguageDetector();
 			_detector.AddAllLanguages();
@@ -79,29 +81,36 @@ namespace Quarkless.Services.DataFetcher
 		{
 			#region Initialise By Settings
 			_intervalWaitBetweenHashtagsAndMediaSearch = settings.IntervalWaitBetweenHashtagsAndMediaSearch;
-			_batchSize = settings.BatchSize;
-			_workerAccountType = settings.WorkerAccountType;
 			_mediaFetchAmount = settings.MediaFetchAmount;
 			_commentFetchAmount = settings.CommentFetchAmount;
-
-			_workerBatches = new ConcurrentQueue<IEnumerable<ShortInstagramAccountModel>>(
-				(await _instagramAccountLogic.GetInstagramAccountsOfUser(settings.AccountId, _workerAccountType))
-				.Batch(_batchSize));
-
-			var initialWorkerAmount = _workerBatches.Count;
 			#endregion
 
-			var manager = new WorkerManager(_clientContext, _instagramAccountLogic, 
-				_batchSize, _workerAccountType);
 
-			//await manager.PerformTaskOnWorkers(BatchOperationV2, "art");
-			while (true) ;
-			await manager.PerformTaskOnWorkers(workers =>
+			await _workerManager.PerformTaskOnWorkers(async workers =>
 			{
-				return workers.PerformQueryTaskWithClient(_responseResolver,
-					(worker, i) => worker.Client.Feeds
-						.GetExploreFeedAsync(PaginationParameters.MaxPagesToLoad(i)), 4);
+				var results = await workers.PerformQueryTaskWithClient(_responseResolver, async (worker, lim) 
+					=> await worker.Client.Hashtag.GetTopHashtagMediaListAsync("art",
+					PaginationParameters.MaxPagesToLoad(lim)),1);
+				var m = 0;
 			});
+
+			var customers = (await _instagramAccountLogic.GetInstagramAccounts(0));
+
+			var customerToTopic =
+				customers.Select(_ => new
+				{
+					Account = _, 
+					_profileLogic.GetProfile(_.AccountId, _.Id).Result.ProfileTopic
+				}).ToList();
+
+			foreach (var customerTopic in customerToTopic)
+			{
+				var topics = new List<CTopic> { customerTopic.ProfileTopic.Category };
+				if(customerTopic.ProfileTopic.Topics.Any())
+					topics.AddRange(customerTopic.ProfileTopic.Topics);
+			}
+
+			//await _workerManager.PerformTaskOnWorkers(BatchOperationV2, "art");
 
 			if (settings.BuildInitialTopics)
 			{
@@ -141,20 +150,20 @@ namespace Quarkless.Services.DataFetcher
 
 
 
-				foreach (var topic in customerTopics)
-				{
-					Console.WriteLine("Started on category: {0}", topic);
-					Console.WriteLine("----------------------------------------------------------------------");
-					while (_workerBatches.IsEmpty) //wait for worker to be available before continuing;
-						await Task.Delay(TimeSpan.FromSeconds(0.35));
-
-					_workerBatches.TryDequeue(out var workers);
-					_ = BatchOperation(topic.Name, new ConcurrentQueue<ShortInstagramAccountModel>(workers));
-
-					if (!customerTopics.Last().Equals(topic)) continue;
-					while (_workerBatches.Count != initialWorkerAmount) //wait for all to finish;
-						await Task.Delay(TimeSpan.FromSeconds(0.35));
-				}
+//				foreach (var topic in customerTopics)
+//				{
+//					Console.WriteLine("Started on category: {0}", topic);
+//					Console.WriteLine("----------------------------------------------------------------------");
+//					while (_workerBatches.IsEmpty) //wait for worker to be available before continuing;
+//						await Task.Delay(TimeSpan.FromSeconds(0.35));
+//
+//					_workerBatches.TryDequeue(out var workers);
+//					_ = BatchOperation(topic.Name, new ConcurrentQueue<ShortInstagramAccountModel>(workers));
+//
+//					if (!customerTopics.Last().Equals(topic)) continue;
+//					while (_workerBatches.Count != initialWorkerAmount) //wait for all to finish;
+//						await Task.Delay(TimeSpan.FromSeconds(0.35));
+//				}
 			}
 		}
 
@@ -194,7 +203,7 @@ namespace Quarkless.Services.DataFetcher
 
 			await _topicLookup.AddTopics(totalTopics);
 			workers.Enqueue(worker);
-			_workerBatches.Enqueue(workers);
+			//_workerBatches.Enqueue(workers);
 		}
 
 		#region Search
@@ -238,8 +247,8 @@ namespace Quarkless.Services.DataFetcher
 		private async Task BatchOperationV2(IWorkers workers, string topic)
 		{
 			var hashtagResults = await workers.PerformQueryTaskWithClient
-			(_responseResolver,
-				(worker, query, limit) => worker.Client.Hashtag.SearchHashtagAsync(query), topic,2);
+			(_responseResolver, (worker, query, limit) 
+				=> worker.Client.Hashtag.SearchHashtagAsync(query), topic,2);
 			
 			if (!hashtagResults.Succeeded && hashtagResults.Value.Count <= 0)
 				return;
@@ -432,7 +441,7 @@ namespace Quarkless.Services.DataFetcher
 				if (!filteredMedias.Last().Equals(media)) continue;
 				while (workers.Count != initialWorkerAmount)   //wait for all to finish;
 					await Task.Delay(TimeSpan.FromSeconds(0.35));
-				_workerBatches.Enqueue(workers);
+				//_workerBatches.Enqueue(workers);
 			}
 		}
 	}

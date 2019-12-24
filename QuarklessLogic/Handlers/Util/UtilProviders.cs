@@ -4,6 +4,7 @@ using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.FakerModels;
 using QuarklessLogic.Handlers.EmailService;
 using QuarklessLogic.Handlers.HashtagBuilder;
+using QuarklessLogic.Handlers.SearchProvider;
 using QuarklessLogic.Handlers.TextGeneration;
 using QuarklessLogic.Handlers.TranslateService;
 
@@ -12,13 +13,15 @@ namespace QuarklessLogic.Handlers.Util
 	public class UtilProviders : IUtilProviders
 	{
 		public UtilProviders(ITextGenerator textGenerator, IHashtagGenerator hashtagGenerator,
-			ITranslateService translateService, IEmailService emailService)
+			ITranslateService translateService, IEmailService emailService, ISearchProvider searchProvider)
 		{
 			TextGenerator = textGenerator;
 			HashtagGenerator = hashtagGenerator;
 			TranslateService = translateService;
 			EmailService = emailService;
+			SearchProvider = searchProvider;
 		}
+		public ISearchProvider SearchProvider { get; }
 		public IHashtagGenerator HashtagGenerator { get; }
 		public ITextGenerator TextGenerator { get; }
 		public ITranslateService TranslateService { get; }

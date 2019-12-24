@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,77 +12,152 @@ namespace QuarklessLogic.Handlers.WorkerManagerService
 {
 	public class WorkerManagerUpdateEventArgs : EventArgs
 	{
-		public ConcurrentQueue<Workers> BatchWorkers { get; set; }
+		public int TotalWorkerCount { get; set; }
+		public WorkerManager Instance { get; set; }
 		public DateTime UpdateTime { get; set; }
-
 	}
-	public class WorkerManager
+
+	public class WorkerManager : IWorkerManager
 	{
-		protected event EventHandler<WorkerManagerUpdateEventArgs> UpdateWorkers;
-		private readonly ConcurrentQueue<Workers> _batchWorkers;
-		private Timer timer;
-		private readonly int updateLoopTime = TimeSpan.FromSeconds(10).Milliseconds;
+		#region Private Declare
+		private Timer _timer;
+		private ConcurrentQueue<Workers> _batchWorkers;
+		private readonly int _updateLoopTime;
+		private readonly IAPIClientContext _context;
+		private readonly IInstagramAccountLogic _instagramAccountLogic;
+		private int _batchSize;
+		private int _workerAccountType;
+		private int _accountWorkersFetched;
+		#endregion
+
 		#region Init
 		public WorkerManager(IAPIClientContext context, IInstagramAccountLogic instagramAccountLogic, 
 			int batchSize = 1, int workerAccountType = 1)
 		{
-			var accounts = instagramAccountLogic.GetInstagramAccounts(workerAccountType).Result.Batch(batchSize);
-			_batchWorkers = new ConcurrentQueue<Workers>(accounts.Select(_ => new Workers(context,_)));
-			UpdateWorkerPool();
-		}
-		public WorkerManager(IAPIClientContext context, IEnumerable<ShortInstagramAccountModel> workerAccounts, int batchSize = 1)
-		{
-			var accounts = workerAccounts.Batch(batchSize);
-			_batchWorkers = new ConcurrentQueue<Workers>(accounts.Select(_ => new Workers(context, _)));
-			UpdateWorkerPool();
+			_context = context;
+			_instagramAccountLogic = instagramAccountLogic;
+			_batchSize = batchSize;
+			_workerAccountType = workerAccountType;
+			_updateLoopTime = (int)TimeSpan.FromMinutes(8).TotalMilliseconds;
+			_batchWorkers = SetBatchWorkers();
+			_timer = SetWorkerPoolTimer();
 		}
 		#endregion
 
-		protected void UpdateWorkerPool()
+		#region Worker & Timer Setters
+		private Timer SetWorkerPoolTimer()
 		{
-			timer = new Timer(OnCallBack, this, updateLoopTime, Timeout.Infinite);
+			return new Timer(_=>OnCallBack(), null, _updateLoopTime, Timeout.Infinite);
 		}
-		private void OnCallBack(object state)
+		private ConcurrentQueue<Workers> SetBatchWorkers()
 		{
-			timer.Dispose();
-			
-			timer = new Timer(OnCallBack, this, updateLoopTime, Timeout.Infinite);
+			var accounts = _instagramAccountLogic.GetInstagramAccounts(_workerAccountType).Result
+				?.Where(_=>_.AgentState != (int) AgentState.Working)
+				.Batch(_batchSize)
+				.ToList();
+
+			if(accounts == null || !accounts.Any()) return new ConcurrentQueue<Workers>();
+			_accountWorkersFetched = accounts.Count;
+			return new ConcurrentQueue<Workers>(accounts.Select(_ => new Workers(_context,_instagramAccountLogic, _)));
 		}
-		protected virtual void OnBatchWorkUpdating(WorkerManagerUpdateEventArgs args)
+		private void OnCallBack()
 		{
-			var handler = UpdateWorkers;
+			_timer.Dispose();
+			OnBatchWorkUpdateStarting(new WorkerManagerUpdateEventArgs
+			{
+				TotalWorkerCount = _accountWorkersFetched,
+				Instance = this,
+				UpdateTime = DateTime.UtcNow
+			});
+			Task.Delay(TimeSpan.FromSeconds(1)).GetAwaiter().GetResult();
+			_batchWorkers = SetBatchWorkers();
+			OnBatchWorkFinishedUpdating(new WorkerManagerUpdateEventArgs
+			{
+				TotalWorkerCount = _accountWorkersFetched,
+				Instance = this,
+				UpdateTime = DateTime.UtcNow
+			});
+			_timer = SetWorkerPoolTimer();
+		}
+		#endregion
+
+		#region Event Handlers
+		public event EventHandler<WorkerManagerUpdateEventArgs> WorkerManagerUpdateStarting;
+		public event EventHandler<WorkerManagerUpdateEventArgs> WorkerManagerFinishedUpdating;
+		protected virtual void OnBatchWorkUpdateStarting(WorkerManagerUpdateEventArgs args)
+		{
+			var handler = WorkerManagerUpdateStarting;
 			handler?.Invoke(this, args);
 		}
+		protected virtual void OnBatchWorkFinishedUpdating(WorkerManagerUpdateEventArgs args)
+		{
+			var handler = WorkerManagerFinishedUpdating;
+			handler?.Invoke(this, args);
+		}
+		#endregion
+
 		public async Task PerformTaskOnWorkers(Func<IWorkers, Task> action)
 		{
 			var workers = await TakeNextAvailableWorkers();
+
+			workers.BatchWorkStarted += (o, e) =>
+			{
+				
+			};
+
+			workers.BatchWorkFinished += (o, e) =>
+			{
+				if (_accountWorkersFetched == _batchWorkers.Sum(x=>x.NumberOfWorkersTotal)) return;
+				_batchWorkers.Enqueue(workers);
+			};
+
+			workers.BatchWorkFailed += (o, e) =>
+			{
+				Console.WriteLine(e.Error.Message);
+				_batchWorkers.Enqueue(workers);
+			};
+
+			await workers.PerformBatchTask(action);
+		}
+
+		public async Task PerformTaskOnWorkers(Action<IWorkers> action)
+		{
+			var workers = await TakeNextAvailableWorkers();
+
 			workers.BatchWorkStarted += (o, e) =>
 			{
 
 			};
+
 			workers.BatchWorkFinished += (o, e) =>
 			{
+				if (_accountWorkersFetched == _batchWorkers.Sum(x => x.NumberOfWorkersTotal)) return;
 				_batchWorkers.Enqueue(workers);
 			};
+
 			workers.BatchWorkFailed += (o, e) =>
 			{
+				Console.WriteLine(e.Error.Message);
 				_batchWorkers.Enqueue(workers);
 			};
-			await workers.PerformBatchTask(action);
+
+			workers.PerformBatchTask(action);
 		}
+
 		public async Task PerformTaskOnWorkers(Func<IWorkers, string, Task> action, string topic)
 		{
 			var workers = await TakeNextAvailableWorkers();
 			workers.BatchWorkStarted += (o, e) =>
 			{
-				
 			};
 			workers.BatchWorkFinished += (o, e) =>
 			{
+				if (_accountWorkersFetched == _batchWorkers.Sum(x => x.NumberOfWorkersTotal)) return;
 				_batchWorkers.Enqueue(workers);
 			};
 			workers.BatchWorkFailed += (o, e) =>
 			{
+				Console.WriteLine(e.Error.Message);
 				_batchWorkers.Enqueue(workers);
 			};
 			await workers.PerformBatchTask(action, topic);
@@ -91,9 +165,12 @@ namespace QuarklessLogic.Handlers.WorkerManagerService
 
 		protected async Task<Workers> TakeNextAvailableWorkers()
 		{
-			while (_batchWorkers.IsEmpty)
-				await Task.Delay(TimeSpan.FromSeconds(0.34));
-			return !_batchWorkers.TryDequeue(out var worker) ? null : worker;
+			_batchWorkers = SetBatchWorkers();
+			if (!_batchWorkers.IsEmpty) return !_batchWorkers.TryDequeue(out var workers) ? null : workers;
+
+			Console.WriteLine("Waiting for workers to be available...");
+			await Task.Delay(TimeSpan.FromSeconds(0.35));
+			return await TakeNextAvailableWorkers();
 		}
 	}
 }

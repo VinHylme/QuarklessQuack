@@ -181,6 +181,39 @@ namespace InstagramApiSharp.API.Versions
                          SignatureKey = "8013dff8e97c16461a8881071210e8271c8fb0cf604d3c7d8f798df621435a18",
                          BloksVersionId = "15f3ececf8692b1eddb3a12f1ffb072cc9e9109aac995e30f1f500b68d9917eb"
                     }
+                },
+                {
+                    InstaApiVersionType.Version117,
+                    new InstaApiVersion
+                    {
+                         AppApiVersionCode = "180322757",
+                         AppVersion = "117.0.0.28.123",
+                         Capabilities = "3brTvwE=",
+                         SignatureKey = "a86109795736d73c9a94172cd9b736917d7d94ca61c9101164894b3f0d43bef4",
+                         BloksVersionId = "0a3ae4c88248863609c67e278f34af44673cff300bc76add965a9fb036bd3ca3"
+                    }
+                },
+                {
+                    InstaApiVersionType.Version121,
+                    new InstaApiVersion
+                    {
+                         AppApiVersionCode = "185203705",
+                         AppVersion = "121.0.0.29.119",
+                         Capabilities = "3brTvwE=",
+                         SignatureKey = "9193488027538fd3450b83b7d05286d4ca9599a0f7eeed90d8c85925698a05dc",
+                         BloksVersionId = "1b030ce63a06c25f3e4de6aaaf6802fe1e76401bc5ab6e5fb85ed6c2d333e0c7"
+                    }
+                },
+                {
+                    InstaApiVersionType.Version123,
+                    new InstaApiVersion
+                    {
+                         AppApiVersionCode = "188791674",
+                         AppVersion = "123.0.0.21.114",
+                         Capabilities = "3brTvwM=",
+                         SignatureKey = "8fea883900208c803efa5daebe163d3d75979be19e288368a3e34a465c0f975e",
+                         BloksVersionId = "7ab39aa203b17c94cc6787d6cd9052d221683361875eee1e1bfe30b8e9debd74"
+                    }
                 }
             };
         }

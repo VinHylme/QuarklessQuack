@@ -5,7 +5,6 @@ using QuarklessContexts.Models.QueryModels.Settings;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using QuarklessLogic.Handlers.RestSharpClient;
 using QuarklessLogic.Logic.HashtagLogic;
-using QuarklessLogic.ServicesLogic.ContentSearch;
 using QuarklessRepositories.RedisRepository.SearchCache;
 using System;
 using System.Collections.Generic;
@@ -22,8 +21,10 @@ using QuarklessRepositories.RedisRepository.LoggerStoring;
 using InstagramApiSharp.Classes.Models;
 using QuarklessContexts.Models.LookupModels;
 using QuarklessContexts.Models.Topics;
+using QuarklessLogic.ContentSearch.InstagramSearch;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.HashtagBuilder;
+using QuarklessLogic.Handlers.SearchProvider;
 using QuarklessLogic.Logic.LookupLogic;
 using QuarklessLogic.Logic.TopicLookupLogic;
 
@@ -32,7 +33,7 @@ namespace QuarklessLogic.Logic.QueryLogic
 	public class QueryLogic : CommonInterface, IQueryLogic
 	{
 		private readonly IRestSharpClientManager _restSharpClientManager;
-		private readonly IContentSearcherHandler _contentSearcherHandler;
+		private readonly ISearchProvider _searchProvider;
 		private readonly ITopicLookupLogic _topicLookupLogic;
 		private readonly ISearchingCache _searchingCache;
 		private readonly IHashtagLogic _hashtagLogic;
@@ -40,7 +41,7 @@ namespace QuarklessLogic.Logic.QueryLogic
 		private readonly ILookupLogic _lookupLogic;
 		private readonly IAPIClientContext _context;
 		private readonly IHashtagGenerator _hashtagGenerator;
-		public QueryLogic(IRestSharpClientManager restSharpClientManager, IContentSearcherHandler contentSearcherHandler,
+		public QueryLogic(IRestSharpClientManager restSharpClientManager, ISearchProvider searchProvider,
 			ISearchingCache searchingCache,ITopicLookupLogic topicLookupLogic, IHashtagGenerator hashtagGenerator,
 			IHashtagLogic hashtagLogic, IHeartbeatLogic heartbeatLogic, ILoggerStore loggerStore, ILookupLogic lookupLogic, IAPIClientContext context)
 			: base(loggerStore, Sections.QueryLogic.GetDescription())
@@ -51,8 +52,8 @@ namespace QuarklessLogic.Logic.QueryLogic
 			_searchingCache = searchingCache;
 			_hashtagGenerator = hashtagGenerator;
 			_restSharpClientManager = restSharpClientManager;
-			_contentSearcherHandler = contentSearcherHandler;
 			_topicLookupLogic = topicLookupLogic;
+			_searchProvider = searchProvider;
 			_context = context;
 		}
 		public object SearchPlaces(string query)
@@ -106,14 +107,14 @@ namespace QuarklessLogic.Logic.QueryLogic
 
 				if (moreAccurate)
 				{
-					response = _contentSearcherHandler.SearchViaYandexBySimilarImages(strurl, 6, 0).Result;
-					response.Medias.Reverse();
+					response = _searchProvider.YandexSearch.SearchRelatedImagesRest(strurl, 6, 0).Result;
+					response.Medias = response.Medias?.Distinct().Reverse().ToList();
 					searchRequest.ResponseData = response;
 					await _searchingCache.StoreSearchData(userId, searchRequest);
 				}
 				else
 				{
-					var res = _contentSearcherHandler.SearchSimilarImagesViaGoogle(strurl, 99);
+					var res = _searchProvider.GoogleSearch.SearchSimilarImagesViaGoogle(strurl, 99);
 					if (res.StatusCode == QuarklessContexts.Models.ResponseModels.ResponseCode.Success)
 					{
 						response = res.Result;
@@ -122,8 +123,8 @@ namespace QuarklessLogic.Logic.QueryLogic
 					}
 					else
 					{
-						response = _contentSearcherHandler.SearchViaYandexBySimilarImages(strurl, 6, 0).Result;
-						response.Medias.Reverse();
+						response = _searchProvider.YandexSearch.SearchRelatedImagesRest(strurl, 6, 0).Result;
+						response.Medias = response.Medias?.Distinct().Reverse().ToList();
 						searchRequest.ResponseData = response;
 						await _searchingCache.StoreSearchData(userId, searchRequest);
 					}
@@ -152,14 +153,14 @@ namespace QuarklessLogic.Logic.QueryLogic
 
 				if (moreAccurate)
 				{
-					response = _contentSearcherHandler.SearchViaYandexBySimilarImages(strurl, 1 + offset, offset).Result;
-					response.Medias.Reverse();
+					response = _searchProvider.YandexSearch.SearchRelatedImagesRest(strurl, 1 + offset, offset).Result;
+					response.Medias = response.Medias?.Distinct().Reverse().ToList();
 					searchRequest.ResponseData = response;
 					await _searchingCache.StoreSearchData(userId, searchRequest);
 				}
 				else
 				{
-					var res = _contentSearcherHandler.SearchSimilarImagesViaGoogle(strurl, newLimit,
+					var res = _searchProvider.GoogleSearch.SearchSimilarImagesViaGoogle(strurl, newLimit,
 						offset > 0 ? Math.Abs(newLimit - limit) : offset);
 					if (res.StatusCode == QuarklessContexts.Models.ResponseModels.ResponseCode.Success)
 					{
@@ -169,8 +170,8 @@ namespace QuarklessLogic.Logic.QueryLogic
 					}
 					else
 					{
-						response = _contentSearcherHandler.SearchViaYandexBySimilarImages(strurl, 1 + offset, offset).Result;
-						response.Medias.Reverse();
+						response = _searchProvider.YandexSearch.SearchRelatedImagesRest(strurl, 1 + offset, offset).Result;
+						response.Medias = response.Medias?.Distinct().Reverse().ToList();
 						searchRequest.ResponseData = response;
 						await _searchingCache.StoreSearchData(userId, searchRequest);
 					}
@@ -265,8 +266,11 @@ namespace QuarklessLogic.Logic.QueryLogic
 		{
 			return await RunCodeWithLoggerExceptionAsync(async () =>
 			{
-				_contentSearcherHandler.ChangeUser(new APIClientContainer(_context,username, instagramAccountId));
-				var results = await _contentSearcherHandler.SearchMediaDetailInstagram(topics, limit);
+				var search = _searchProvider.InstagramSearch(
+					new APIClientContainer(_context, username, instagramAccountId), null);
+				
+				var results = await search.SearchMediaDetailInstagram(topics, limit);
+				
 				if (results != null) return results;
 				await Warn($"Nothing was found for search query {string.Join(',', topics)}", 
 					nameof(SearchMediasByTopic), username, instagramAccountId);  
@@ -297,6 +301,7 @@ namespace QuarklessLogic.Logic.QueryLogic
 
 			}, nameof(SearchUsersByTopic), username, instagramAccountId);
 		}
+
 		public async Task<IEnumerable<LookupContainer<UserResponse>>> SearchUsersByLocation(Location location,
 			string username, string instagramAccountId, int limit = 1)
 		{
@@ -324,8 +329,12 @@ namespace QuarklessLogic.Logic.QueryLogic
 		{
 			return await RunCodeWithLoggerExceptionAsync(async () =>
 			{
-				_contentSearcherHandler.ChangeUser(new APIClientContainer(_context,username, instagramAccountId));
-				var results = await _contentSearcherHandler.SearchTopLocationMediaDetailInstagram(location, limit);
+				
+				var search = _searchProvider.InstagramSearch(
+					new APIClientContainer(_context, username, instagramAccountId), null);
+				
+				var results = await search.SearchTopLocationMediaDetailInstagram(location, limit);
+
 				if (results != null) return results;
 				await Warn($"Nothing was found for search query {location.City}", 
 					nameof(SearchMediasByLocation), username, instagramAccountId);  
@@ -398,10 +407,10 @@ namespace QuarklessLogic.Logic.QueryLogic
 				}
 				var newResults = medias.Select(x => x.ObjectItem.Medias).SquashMe().Select(x =>
 				{
-					var medi = new List<MediaResponseSingle>();
+					var media = new List<MediaResponseSingle>();
 					foreach (var mediaUrl in x.MediaUrl)
 					{
-						medi.Add(new MediaResponseSingle
+						media.Add(new MediaResponseSingle
 						{
 							Caption = x.Caption,
 							CommentCount = x.CommentCount,
@@ -434,7 +443,7 @@ namespace QuarklessLogic.Logic.QueryLogic
 						});
 					}
 
-					return medi;
+					return media;
 				}).SquashMe();
 				return newResults;
 

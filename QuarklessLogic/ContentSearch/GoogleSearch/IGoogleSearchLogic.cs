@@ -9,7 +9,7 @@ namespace QuarklessLogic.ContentSearch.GoogleSearch
 {
 	public interface IGoogleSearchLogic
 	{
-		void WithProxy(ProxyModel proxy);
+		IGoogleSearchLogic WithProxy(ProxyModel proxy = null);
 		Task<IEnumerable<string>> GetSuggestions(string query);
 		SearchResponse<Media> SearchViaGoogle(SearchImageModel searchImageQuery);
 		SearchResponse<Media> SearchSimilarImagesViaGoogle(IEnumerable<GroupImagesAlike> groupImages, int limit,

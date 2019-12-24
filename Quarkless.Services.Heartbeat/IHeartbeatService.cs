@@ -8,14 +8,8 @@ namespace Quarkless.Services.Heartbeat
 		public string UserId { get; set; }
 		public string InstagramAccountId { get; set; }
 	}
-	public struct WorkerAccount
-	{
-		public string UserId { get; set; }
-		public string InstagramAccountId { get; set; }
-	}
-
 	public interface IHeartbeatService
 	{
-		Task Start(CustomerAccount customer, WorkerAccount worker, ExtractOperationType operation);
+		Task Start(CustomerAccount customer, ExtractOperationType operation);
 	}
 }

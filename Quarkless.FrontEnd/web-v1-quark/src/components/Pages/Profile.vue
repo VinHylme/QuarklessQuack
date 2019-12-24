@@ -478,7 +478,7 @@ export default {
       this.savingProfile = true;
       let contains = false;
       this.config.topics.forEach((topic)=>{
-        if(topic.category.includes(this.currentProfileCategoryTopic)){
+        if(topic.category.name.includes(this.currentProfileCategoryTopic.name)){
           contains = true;
         }
       });

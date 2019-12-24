@@ -33,7 +33,26 @@ namespace InstagramApiSharp.API
     internal class InstaApi : IInstaApi
     {
         #region Variables and properties
+        public string Username => _user.UserName;
 
+        /// <summary>
+        /// Checks if user is validated
+        /// </summary>
+        /// <returns></returns>
+        public bool IsUserValidated()
+        {
+	        try
+	        {
+		        ValidateUser();
+		        ValidateLoggedIn();
+		        return true;
+	        }
+	        catch (Exception ee)
+	        {
+		        Console.Write(ee.Message);
+		        return false;
+	        }
+        }
         private IConfigureMediaDelay _configureMediaDelay = ConfigureMediaDelay.Empty();
         private IRequestDelay _delay = RequestDelay.Empty();
         private readonly IHttpRequestProcessor _httpRequestProcessor;
@@ -90,30 +109,10 @@ namespace InstagramApiSharp.API
         /// </summary>
         public IHttpRequestProcessor HttpRequestProcessor => _httpRequestProcessor;
 
-		#endregion Variables and properties
-		public string Username => _user.UserName;
+        #endregion Variables and properties
 
-		/// <summary>
-		/// Checks if user is validated
-		/// </summary>
-		/// <returns></returns>
-		public bool IsUserValidated()
-		{
-			try
-			{
-				ValidateUser();
-				ValidateLoggedIn();
-				return true;
-			}
-			catch (Exception ee)
-			{
-				Console.Write(ee.Message);
-				return false;
-			}
-		}
-
-		#region SessionHandler
-		private ISessionHandler _sessionHandler;
+        #region SessionHandler
+        private ISessionHandler _sessionHandler;
         public ISessionHandler SessionHandler { get => _sessionHandler; set => _sessionHandler = value; }
         #endregion
 
@@ -230,7 +229,7 @@ namespace InstagramApiSharp.API
             _httpRequestProcessor = httpRequestProcessor;
             _apiVersionType = apiVersionType;
             _apiVersion = InstaApiVersionList.GetApiVersionList().GetApiVersion(apiVersionType);
-            _httpHelper = new HttpHelper(_apiVersion);
+            _httpHelper = new HttpHelper(_apiVersion, httpRequestProcessor, this);
             _configureMediaDelay = configureMediaDelay;
         }
 
@@ -2990,12 +2989,12 @@ namespace InstagramApiSharp.API
             }
 
             if (data.InstaApiVersion == null)
-                data.InstaApiVersion = InstaApiVersionType.Version113;
+                data.InstaApiVersion = InstaApiVersionType.Version123;
             if(!LoadApiVersionFromSessionFile)
-                data.InstaApiVersion = InstaApiVersionType.Version113;
+                data.InstaApiVersion = InstaApiVersionType.Version123;
             _apiVersionType = data.InstaApiVersion.Value;
             _apiVersion = InstaApiVersionList.GetApiVersionList().GetApiVersion(_apiVersionType);
-            _httpHelper = new HttpHelper(_apiVersion);
+            _httpHelper = new HttpHelper(_apiVersion, _httpRequestProcessor, this);
 
             IsUserAuthenticated = data.IsAuthenticated;
             InvalidateProcessors();
@@ -3032,12 +3031,12 @@ namespace InstagramApiSharp.API
             }
 
             if (data.InstaApiVersion == null)
-                data.InstaApiVersion = InstaApiVersionType.Version113;
+                data.InstaApiVersion = InstaApiVersionType.Version123;
             if (!LoadApiVersionFromSessionFile)
-                data.InstaApiVersion = InstaApiVersionType.Version113;
+                data.InstaApiVersion = InstaApiVersionType.Version123;
             _apiVersionType = data.InstaApiVersion.Value;
             _apiVersion = InstaApiVersionList.GetApiVersionList().GetApiVersion(_apiVersionType);
-            _httpHelper = new HttpHelper(_apiVersion);
+            _httpHelper = new HttpHelper(_apiVersion, _httpRequestProcessor, this);
 
             IsUserAuthenticated = data.IsAuthenticated;
             InvalidateProcessors();
@@ -3076,12 +3075,12 @@ namespace InstagramApiSharp.API
             }
 
             if (stateData.InstaApiVersion == null)
-                stateData.InstaApiVersion = InstaApiVersionType.Version113;
+                stateData.InstaApiVersion = InstaApiVersionType.Version123;
             if (!LoadApiVersionFromSessionFile)
-                stateData.InstaApiVersion = InstaApiVersionType.Version113;
+                stateData.InstaApiVersion = InstaApiVersionType.Version123;
             _apiVersionType = stateData.InstaApiVersion.Value;
             _apiVersion = InstaApiVersionList.GetApiVersionList().GetApiVersion(_apiVersionType);
-            _httpHelper = new HttpHelper(_apiVersion);
+            _httpHelper = new HttpHelper(_apiVersion, _httpRequestProcessor, this);
 
             IsUserAuthenticated = stateData.IsAuthenticated;
             InvalidateProcessors();

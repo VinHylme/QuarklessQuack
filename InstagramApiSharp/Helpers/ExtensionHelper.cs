@@ -102,6 +102,20 @@ namespace InstagramApiSharp
         {
             return System.Net.WebUtility.UrlEncode(data);
         }
+
+        public static string GetThreadToken()
+        {
+            var str = "";
+            // 6600286272511816379
+            str += Rnd.Next(0, 9);
+            str += Rnd.Next(0, 9);
+            str += Rnd.Next(1000, 9999);
+            str += Rnd.Next(11111, 99999);
+
+            str += Rnd.Next(2222, 6789);
+
+            return $"6600{str}";
+        }
         public static string GetJson(this InstaLocationShort location)
         {
             if (location == null)

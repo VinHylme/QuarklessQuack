@@ -2,13 +2,12 @@
 using System.Threading.Tasks;
 using QuarklessContexts.Enums;
 using QuarklessContexts.Models.InstagramAccounts;
-using QuarklessLogic.ContentSearch.GoogleSearch;
-using QuarklessLogic.ContentSearch.YandexSearch;
 using QuarklessLogic.Handlers.ClientProvider;
+using QuarklessLogic.Handlers.SearchProvider;
+using QuarklessLogic.Handlers.WorkerManagerService;
 using QuarklessLogic.Logic.InstagramAccountLogic;
 using QuarklessLogic.Logic.ProfileLogic;
 using QuarklessLogic.Logic.ProxyLogic;
-using QuarklessLogic.Logic.ResponseLogic;
 using QuarklessLogic.Logic.TopicLookupLogic;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 
@@ -16,33 +15,25 @@ namespace Quarkless.Services.Heartbeat
 {
 	public class HeartbeatService : IHeartbeatService
 	{
-		// each user account is assigned a proxy
-		// scraping websites require additional scrapping proxies (could do with connecting them here)
 		private readonly IProfileLogic _profileLogic;
 		private readonly IProxyLogic _proxyLogic;
 		private readonly IHeartbeatLogic _heartbeatLogic;
-		private readonly IAPIClientContext _context;
-		private readonly IResponseResolver _responseResolver;
-		private readonly IGoogleSearchLogic _googleSearchLogic;
-		private readonly IYandexImageSearch _yandexImageSearch;
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
 		private readonly ITopicLookupLogic _topicLookup;
-
+		private readonly ISearchProvider _searchProvider;
+		private readonly IWorkerManager _workerManager;
 		public HeartbeatService(IProfileLogic profileLogic, 
-			IProxyLogic proxyLogic, IAPIClientContext context, IHeartbeatLogic heartbeatLogic,
-			IResponseResolver responseResolver,
-			IGoogleSearchLogic googleSearchLogic, IYandexImageSearch yandexImageSearch,
+			IProxyLogic proxyLogic,  IHeartbeatLogic heartbeatLogic, 
+			ISearchProvider searchProvider, IAPIClientContext context,
 			IInstagramAccountLogic accountLogic, ITopicLookupLogic topicLookup)
 		{
 			_profileLogic = profileLogic;
 			_proxyLogic = proxyLogic;
-			_context = context;
 			_heartbeatLogic = heartbeatLogic;
-			_responseResolver = responseResolver;
-			_googleSearchLogic = googleSearchLogic;
-			_yandexImageSearch = yandexImageSearch;
 			_instagramAccountLogic = accountLogic;
 			_topicLookup = topicLookup;
+			_searchProvider = searchProvider;
+			_workerManager = new WorkerManager(context, _instagramAccountLogic, 2, 1);
 		}
 
 		/// <summary>
@@ -60,7 +51,7 @@ namespace Quarkless.Services.Heartbeat
 			};
 		}
 
-		public async Task Start(CustomerAccount customer, WorkerAccount worker, ExtractOperationType operation)
+		public async Task Start(CustomerAccount customer, ExtractOperationType operation)
 		{
 			var currentAccount = await _instagramAccountLogic.GetInstagramAccountShort(customer.UserId, customer.InstagramAccountId);
 			if (currentAccount == null)
@@ -68,25 +59,13 @@ namespace Quarkless.Services.Heartbeat
 			if (currentAccount.AgentState != (int) AgentState.Running)
 				return;
 
-			var workerAccount =
-				await _instagramAccountLogic.GetInstagramAccountShort(worker.UserId, worker.InstagramAccountId);
-			
-			if (workerAccount == null)
-				return;
-			
-			await PerformTask(await GetFullUserDetails(currentAccount), new Worker{InstagramAccount = workerAccount}, operation);
+			await PerformTask(await GetFullUserDetails(currentAccount), operation);
 		}
 
-		private async Task PerformTask(FullUserDetail customer, Worker assignWorker, ExtractOperationType operation)
+		private async Task PerformTask(FullUserDetail customer, ExtractOperationType operation)
 		{
-			var assignment = new Assignment
-			{
-				Customer = customer,
-				CustomerTopic = customer.Profile.ProfileTopic,
-				Worker = assignWorker
-			};
-			var metaBuilder = new MetadataBuilderManager(assignment, _context, _heartbeatLogic, _responseResolver,
-				_googleSearchLogic, _yandexImageSearch, _instagramAccountLogic,_topicLookup);
+			var metaBuilder = new MetadataBuilderManager(customer, _heartbeatLogic, _workerManager, 
+				_searchProvider, _instagramAccountLogic,_topicLookup);
 
 			switch (operation)
 			{

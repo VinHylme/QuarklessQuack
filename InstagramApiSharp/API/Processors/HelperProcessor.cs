@@ -546,7 +546,7 @@ namespace InstagramApiSharp.API.Processors
                 catch { }
                 var instaUri = UriCreator.GetDirectConfigureVideoUri();
                 var retryContext = GetRetryContext();
-                var clientContext = Guid.NewGuid().ToString();
+                var clientContext = ExtensionHelper.GetThreadToken();
                 if (!string.IsNullOrEmpty(caption))
                     caption = caption.Replace("\r", "");
                 if (isDirectVideo)
@@ -557,6 +557,8 @@ namespace InstagramApiSharp.API.Processors
                          {"client_context",clientContext},
                          {"_csrftoken",_user.CsrfToken},
                          {"video_result",""},
+                         {"device_id", _deviceInfo.DeviceId},
+                         {"mutation_token", clientContext},
                          {"_uuid",_deviceInfo.DeviceGuid.ToString()},
                          {"upload_id",uploadId}
                     };
@@ -938,7 +940,7 @@ namespace InstagramApiSharp.API.Processors
                     caption = caption.Replace("\r", "");
                 var instaUri = UriCreator.GetDirectConfigureVideoUri();
                 var retryContext = GetRetryContext();
-                var clientContext = Guid.NewGuid().ToString();
+                var clientContext = ExtensionHelper.GetThreadToken();
 
                 //if (isDirectVideo)
                 //{
@@ -1595,7 +1597,7 @@ namespace InstagramApiSharp.API.Processors
                 catch { }
                 var instaUri = UriCreator.GetBroadcastVoiceUri();
                 var retryContext = GetRetryContext();
-                var clientContext = Guid.NewGuid().ToString();
+                var clientContext = ExtensionHelper.GetThreadToken();
                 var waveformData = audio.WaveformData?.Count > 0 ? string.Join(",", audio.WaveformData) : string.Empty;
 
                 var data = new Dictionary<string, string>
@@ -1604,7 +1606,7 @@ namespace InstagramApiSharp.API.Processors
                     {"client_context", clientContext},
                     {"_csrftoken", _user.CsrfToken},
                     {"device_id", _deviceInfo.DeviceId},
-                    {"mutation_token", Guid.NewGuid().ToString()},
+                    {"mutation_token", clientContext},
                     {"_uuid", _deviceInfo.DeviceGuid.ToString()},
                     {"waveform", $"[{waveformData}]"},
                     {"waveform_sampling_frequency_hz", audio.WaveformSamplingFrequencyHz.ToString()},

@@ -42,11 +42,22 @@ namespace QuarklessLogic.ContentSearch.GoogleSearch
 			_restSharpClient = new RestSharpClientManager();
 		}
 
-		public void WithProxy(ProxyModel proxy)
+		public IGoogleSearchLogic WithProxy(ProxyModel proxy = null)
 		{
-			_restSharpClient.AddProxy(proxy);
-			var proxyLine = string.IsNullOrEmpty(proxy.Username) ? $"http://{proxy.Address}:{proxy.Port}" : $"http://{proxy.Username}:{proxy.Password}@{proxy.Address}:{proxy.Port}";
-			_seleniumClient.AddArguments($"--proxy-server={proxyLine}");
+			//TODO: Add proxy rotating service and assign a proxy
+			if (proxy == null)
+			{
+
+			}
+			else
+			{
+				_restSharpClient.AddProxy(proxy);
+				var proxyLine = string.IsNullOrEmpty(proxy.Username)
+					? $"http://{proxy.Address}:{proxy.Port}"
+					: $"http://{proxy.Username}:{proxy.Password}@{proxy.Address}:{proxy.Port}";
+				_seleniumClient.AddArguments($"--proxy-server={proxyLine}");
+			}
+			return this;
 		}
 		public SearchResponse<Media> SearchViaGoogle(SearchImageModel searchImageQuery)
 		{

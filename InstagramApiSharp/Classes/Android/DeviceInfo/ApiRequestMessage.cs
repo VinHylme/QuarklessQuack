@@ -13,11 +13,15 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
     public class ApiRequestMessage
     {
         readonly static Random Rnd = new Random();
+        //[JsonProperty("jazoest")]
+        [JsonIgnore()]
+        public string Jazoest { get; set; } = "22451";
         [JsonProperty("country_codes")]
         public string CountryCodes { get; set; } = "[{\"country_code\":\"1\",\"source\":[\"default\"]}]";
         [JsonProperty("phone_id")]
         public string PhoneId { get; set; }
-        [JsonProperty("enc_password")]
+        //[JsonProperty("enc_password")]
+        [JsonIgnore()]
         public string EncPassword { get; set; }
         [JsonProperty("username")]
         public string Username { get; set; }

@@ -195,11 +195,22 @@ namespace QuarklessLogic.ContentSearch.YandexSearch
 				"--ignore-certificate-errors");
 		}
 
-		public void WithProxy(ProxyModel proxy)
+		public IYandexImageSearch WithProxy(ProxyModel proxy = null)
 		{
-			_restSharpClientManager.AddProxy(proxy);
-			var proxyLine = string.IsNullOrEmpty(proxy.Username) ? $"http://{proxy.Address}:{proxy.Port}" : $"http://{proxy.Username}:{proxy.Password}@{proxy.Address}:{proxy.Port}";
-			_seleniumClient.AddArguments($"--proxy-server={proxyLine}");
+			//TODO: ADD ROTATING PROXY CODE AND ASSIGN A PROXY
+			if (proxy == null)
+			{
+
+			}
+			else
+			{
+				_restSharpClientManager.AddProxy(proxy);
+				var proxyLine = string.IsNullOrEmpty(proxy.Username)
+					? $"http://{proxy.Address}:{proxy.Port}"
+					: $"http://{proxy.Username}:{proxy.Password}@{proxy.Address}:{proxy.Port}";
+				_seleniumClient.AddArguments($"--proxy-server={proxyLine}");
+			}
+			return this;
 		}
 		private string BuildUrl(YandexSearchQuery yandexSearch)
 		{
@@ -232,7 +243,7 @@ namespace QuarklessLogic.ContentSearch.YandexSearch
 			}
 			return yandexImages + urlBuilt;
 		}
-		public SearchResponse<Media> SearchQueryREST(YandexSearchQuery yandexSearchQuery, int limit = 16)
+		public SearchResponse<Media> SearchQueryRest(YandexSearchQuery yandexSearchQuery, int limit = 16)
 		{
 			var response = new SearchResponse<Media>();
 			var totalFound = new Media();
@@ -267,12 +278,12 @@ namespace QuarklessLogic.ContentSearch.YandexSearch
 				return response;
 			}
 		}
-		public SearchResponse<Media> SearchSafeButSlow(IEnumerable<GroupImagesAlike> ImagesLikeUrls, int limit)
+		public SearchResponse<Media> SearchSafeButSlow(IEnumerable<GroupImagesAlike> similarImages, int limit)
 		{
 			var totalFound = new Media();
 			var response = new SearchResponse<Media>();
 
-			ImagesLikeUrls.ToList().ForEach(url =>
+			similarImages.ToList().ForEach(url =>
 			{
 				if (url == null) return;
 				var httpsYandexComImages = yandexImages;
@@ -479,12 +490,12 @@ namespace QuarklessLogic.ContentSearch.YandexSearch
 //			return response;
 			#endregion
 		}
-		public SearchResponse<Media> SearchRelatedImagesREST(IEnumerable<GroupImagesAlike> imagesAlikes, int numberOfPages, int offset = 0)
+		public SearchResponse<Media> SearchRelatedImagesRest(IEnumerable<GroupImagesAlike> similarImages, int numberOfPages, int offset = 0)
 		{
 			var response = new SearchResponse<Media>();
 			var totalCollected = new Media();
 
-			foreach (var url in imagesAlikes)
+			foreach (var url in similarImages)
 			{
 				if (url == null) continue;
 				var fullImageUrl = yandexBaseImageUrl + url.Url + rpt;
@@ -528,13 +539,12 @@ namespace QuarklessLogic.ContentSearch.YandexSearch
 				response.Result = null;
 				response.StatusCode = ResponseCode.ReachedEndAndNull;
 			}
-
 			return response;
 		}
-		public Media Search(IEnumerable<GroupImagesAlike> ImagesLikeUrls, int limit)
+		public Media Search(IEnumerable<GroupImagesAlike> similarImages, int limit)
 		{
 			//Media TotalFound = new Media();
-			//foreach (var url in ImagesLikeUrls)
+			//foreach (var url in similarImages)
 			//{
 			//	if (url != null)
 			//	{
