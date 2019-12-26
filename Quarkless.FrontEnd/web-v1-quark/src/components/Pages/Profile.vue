@@ -403,6 +403,7 @@ export default {
       displayableList:[],
       isMoreAccurate:false,
       isLoadingTopics:false,
+      relatedTopicsParent:[]
     }
   },
   created(){
@@ -415,6 +416,9 @@ export default {
     {
       this.config = con.data
       this.isLoadingTopics = false;
+      if(this.currentTopicSelected > -1){
+       this.getRelatedTopicsByParent();
+      }
     }).catch(err=>{
       this.isLoadingTopics = false;
     });
@@ -443,7 +447,8 @@ export default {
       return this.config.categories.findIndex(item => item._id == this.currentProfileCategoryTopic._id);
     },
     relatedTopics(){
-      return this.getRelatedTopicsByParent();
+      if(this.config.categories===undefined) return []
+      return this.relatedTopicsParent;
     },
     filteredRelatedTopics(){
       if(this.config.categories === undefined)
@@ -463,21 +468,20 @@ export default {
   },
   methods:{
     getRelatedTopicsByParent(){
-      console.log(this.config.categories)
-      if(this.config.categories === undefined)
-        return []
-      let data = []
       this.$store.dispatch('ReleatedTopicByParent', this.config.categories[this.currentTopicSelected]._id).then(resp=>{
-        data = resp.data;
+        this.relatedTopicsParent = resp.data;
       }).catch(err=>{
+        this.relatedTopicsParent = []
       })
-      return data;
+      this.relatedTopicsParent = []
     },
     changeProfileTopic(e){
       if(e){
         let index = this.config.categories.findIndex(item=>item.name === e)
-        if(index > -1)
+        if(index > -1){
           this.currentProfileCategoryTopic = this.config.categories[index]
+          this.getRelatedTopicsByParent();
+        }
       }
     },
     //todo: will need to update the topiclookup table
@@ -498,29 +502,38 @@ export default {
         })
         return;
       }
+      if(this.profile.profileTopic.topics.length<=0)
+      {
+        Vue.prototype.$toast.open({
+            message: 'Please provide at least one sub topic',
+            type: 'is-danger'
+        })
+        return;
+      }
       const topicsProfile = this.profile.profileTopic; 
       this.profile.profileTopic = null;
       if(this.profile!==undefined || this.profile!==null || this.profile){
          this.$store.dispatch('UpdateProfile', this.profile).then(resp=>{
            this.profile.profileTopic = topicsProfile;
+           this.savingProfile = false;
+           Vue.prototype.$toast.open({
+                  message: 'Changes Saved!',
+                  type: 'is-success'
+            });
            let profileRequest = {
              profileId: this.profile._id,
              topics: topicsProfile.topics
            }
-           console.log(profileRequest)
            this.$store.dispatch('AddProfileTopics', profileRequest).then(resp=>{
-             console.log(topicsProfile)
-              this.savingProfile = false;
               Vue.prototype.$toast.open({
-                  message: 'Changes Saved!',
-                  type: 'is-success'
+                message: 'Your topics have been updated',
+                type: 'is-success'
               })
            }).catch(err=>{
-             this.savingProfile = false;
               Vue.prototype.$toast.open({
-                message: 'Oops, looks like your profile could not be updated',
+                message: 'We could not update the new topics you set',
                 type: 'is-danger'
-            })
+              })
            })
          }).catch(err=>{
            this.savingProfile = false;

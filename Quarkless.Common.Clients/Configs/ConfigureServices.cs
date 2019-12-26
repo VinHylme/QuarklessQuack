@@ -366,10 +366,10 @@ namespace Quarkless.Common.Clients.Configs
 		}
 		public static void AddEventServices(this IServiceCollection services)
 		{
-			services.AddSingleton<IEventSubscriber<InstagramAccountModel>, ProfileLogic>();
-			services.AddSingleton<IEventSubscriber<ProfileModel>, ProxyLogic>();
-			services.AddSingleton<IEventSubscriber<ProfileTopicAddRequest>, TopicLookupLogic>();
-			services.AddSingleton<IEventPublisher, EventPublisher>(
+			services.AddTransient<IEventSubscriber<InstagramAccountModel>, ProfileLogic>();
+			services.AddTransient<IEventSubscriber<ProfileModel>, ProxyLogic>();
+			services.AddTransient<IEventSubscriber<ProfileTopicAddRequest>, TopicLookupLogic>();
+			services.AddTransient<IEventPublisher, EventPublisher>(
 				s => new EventPublisher(services.BuildServiceProvider(false).CreateScope()));
 		}
 	}
