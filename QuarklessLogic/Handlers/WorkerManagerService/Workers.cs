@@ -334,9 +334,9 @@ namespace QuarklessLogic.Handlers.WorkerManagerService
 			return await worker.PerformQueryTaskWithWorker(action, limit);
 		}
 
-		public async Task<TResult> PerformAction<TResult>(Func<Worker, TResult> action)
+		public TResult PerformAction<TResult>(Func<Worker, TResult> action)
 		{
-			var worker = await TakeNextAvailableWorker();
+			var worker = TakeNextAvailableWorker().Result;
 			
 			worker.WorkerFinished += (o, e) =>
 			{

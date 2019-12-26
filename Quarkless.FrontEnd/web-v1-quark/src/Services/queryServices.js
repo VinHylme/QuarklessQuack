@@ -16,6 +16,9 @@ export default {
   ReleatedTopic(instaAccount, topic){
     return Api(true, instaAccount).get(Calling["query_related_topics"]+topic);
   },
+  ReleatedTopicByParent(parentId){
+    return Api(true).get(Calling['query_related_by_parent'] + parentId);
+  },
   BuildTags(suggestRequest){
     return Api(true).post(Calling["query_buildtags"],suggestRequest);
   },

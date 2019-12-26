@@ -19,7 +19,6 @@ namespace Quarkless.Common.Clients.Configs
 				else
 					service.GetDescription().InvokeConfigureMethod(services, access);
 			}
-
 			return services;
 		}
 

@@ -68,7 +68,8 @@ namespace Quarkless.Services
 					ServiceTypes.AddHandlers,
 					ServiceTypes.AddAuthHandlers,
 					ServiceTypes.AddRepositories,
-					ServiceTypes.AddHangFrameworkServices
+					ServiceTypes.AddHangFrameworkServices,
+					ServiceTypes.AddEventServices
 				}
 			});
 			var endPoints = (EndPoints) cIn.Send(new GetPublicEndpointCommandArgs

@@ -21,7 +21,6 @@ using QuarklessRepositories.RedisRepository.LoggerStoring;
 using InstagramApiSharp.Classes.Models;
 using QuarklessContexts.Models.LookupModels;
 using QuarklessContexts.Models.Topics;
-using QuarklessLogic.ContentSearch.InstagramSearch;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.HashtagBuilder;
 using QuarklessLogic.Handlers.SearchProvider;
@@ -180,16 +179,15 @@ namespace QuarklessLogic.Logic.QueryLogic
 
 			return response;
 		}
+
+		public async Task<IEnumerable<CTopic>> GetRelatedTopics(string topicParentId)
+			=> await _topicLookupLogic.GetTopicByParentId(topicParentId);
 		public async Task<ProfileConfiguration> GetProfileConfig()
 		{
 			var topics = await _topicLookupLogic.GetCategories();
 			return new ProfileConfiguration
 			{
-				Topics = topics.Where(_=>!string.IsNullOrEmpty(_.Name)).Select(_=> new Topic
-				{
-					Category = _,
-					Topics = _topicLookupLogic.GetTopicByParentId(_._id).Result
-				}),
+				Categories = topics.Where(_ => !string.IsNullOrEmpty(_.Name)),
 				ColorsAllowed = Enum.GetValues(typeof(ColorType)).Cast<ColorType>().Select(v=>v.GetDescription()).ToList(),
 				ImageTypes = Enum.GetValues(typeof(ImageType)).Cast<ImageType>().Select(v=>v.GetDescription()).ToList(),
 				Orientations = Enum.GetValues(typeof(Orientation)).Cast<Orientation>().Select(v=>v.GetDescription()).ToList(),

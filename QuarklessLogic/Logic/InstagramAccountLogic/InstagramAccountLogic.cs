@@ -2,7 +2,6 @@
 using QuarklessContexts.Classes.Carriers;
 using QuarklessContexts.Models.InstagramAccounts;
 using QuarklessContexts.Models.Proxies;
-using QuarklessLogic.Logic.ProfileLogic;
 using QuarklessLogic.Logic.ProxyLogic;
 using QuarklessRepositories.InstagramAccountRepository;
 using QuarklessRepositories.RedisRepository.InstagramAccountRedis;
@@ -10,34 +9,33 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using QuarklessContexts.Models.Topics;
+using QuarklessLogic.Handlers.EventHandlers;
 using QuarklessLogic.Handlers.ReportHandler;
 
 namespace QuarklessLogic.Logic.InstagramAccountLogic
 {
 	public class InstagramAccountLogic : IInstagramAccountLogic
 	{
-		private readonly IProxyLogic _proxyLogic;
-		private readonly IProfileLogic _profileLogic;
 		private readonly IInstagramAccountRepository _instagramAccountRepository;
 		private readonly IInstagramAccountRedis _instagramAccountRedis;
+		private readonly IEventPublisher _publisher;
 		private readonly IReportHandler _reportHandler;
-		public InstagramAccountLogic(IProxyLogic proxyLogic, IInstagramAccountRepository instagramAccountRepository, 
-			IInstagramAccountRedis instagramAccountRedis, IProfileLogic profileLogic, IReportHandler reportHandler)
+		public InstagramAccountLogic(IInstagramAccountRepository instagramAccountRepository, 
+			IInstagramAccountRedis instagramAccountRedis, IEventPublisher publisher, IReportHandler reportHandler)
 		{
-			_profileLogic = profileLogic;
-			_proxyLogic = proxyLogic;
+			_publisher = publisher;
 			_instagramAccountRepository = instagramAccountRepository;
 			_instagramAccountRedis = instagramAccountRedis;
 			_reportHandler = reportHandler;
 			_reportHandler.SetupReportHandler("InstagramAccountLogic");
 		}
+
 		public async Task<ResultCarrier<AddInstagramAccountResponse>> AddInstagramAccount(string accountId, StateData state, AddInstagramAccountRequest addInstagram)
 		{
-			var @Result = new ResultCarrier<AddInstagramAccountResponse>();
+			var resultCarrier = new ResultCarrier<AddInstagramAccountResponse>();
 			try {
 				var device = state.DeviceInfo.DeviceModel;
-				var instamodel = new InstagramAccountModel
+				var instagramAccountModel = new InstagramAccountModel
 				{
 					Device = device,
 					State = state,
@@ -63,72 +61,30 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 					ChallengeInfo = null,
 					UserId = null
 				};
-				var result = await _instagramAccountRepository.AddInstagramAccount(instamodel);
+				var result = await _instagramAccountRepository.AddInstagramAccount(instagramAccountModel);
 				if(result!=null)
 				{
-					var createEmptyProfile = await _profileLogic.AddProfile(new QuarklessContexts.Models.Profiles.ProfileModel
+					await _publisher.PublishAsync(result);
+					resultCarrier.IsSuccesful = true;
+					resultCarrier.Results = new AddInstagramAccountResponse
 					{
-						Account_Id = result.AccountId,
+						AccountId = result.AccountId,
 						InstagramAccountId = result._id,
-						ProfileTopic = new QuarklessContexts.Models.Profiles.Topic
-						{
-							Category = null,
-							Topics = new List<CTopic>()
-						},
-						Description = "Add a description about this profile",
-						Name = "My Profile 1",
-						AdditionalConfigurations = new QuarklessContexts.Models.Profiles.AdditionalConfigurations
-						{
-							ImageType = 0,
-							IsTumblry = false,
-							SearchTypes = new List<int> { 0, 1, 2 },
-							EnableAutoPosting = true,
-							AutoGenerateCaption = true,
-							AllowRepost = true
-						},
-						AutoGenerateTopics = false,
-						Language = "English",
-						Theme = new QuarklessContexts.Models.Profiles.Themes
-						{
-							Name = "My Cool Theme",
-							Percentage = 20,
-							Colors = new List<QuarklessContexts.Models.Profiles.Color>(),
-							ImagesLike = new List<QuarklessContexts.Models.Profiles.GroupImagesAlike>()
-						},
-						LocationTargetList = new List<QuarklessContexts.Models.Profiles.Location>(),
-						UserTargetList = new List<string>(),
-						UserLocation = new QuarklessContexts.Models.Profiles.Location()
-					});
-					if (createEmptyProfile != null) { 
-						var assign = await _proxyLogic.AssignProxy(new AssignedTo { Account_Id = result.AccountId, InstaId = result._id.ToString()});
-						if (assign)
-						{
-							Result.IsSuccesful = true;
-							Result.Results = new AddInstagramAccountResponse{
-								AccountId = result.AccountId,
-								InstagramAccountId = result._id,
-								ProfileId = createEmptyProfile._id
-							};
-							return Result;
-						}
-						Result.Info = new ErrorResponse
-						{
-							Message =  $"Failed to assign proxy to user {result.AccountId}, instagram account {result.Username}",
-						};
-					}
+					};
+					return resultCarrier;
 				}
-				Result.Info = new ErrorResponse{Message = $"Failed to add instagram user of {result.AccountId}, instagram account {result.Username}" };
-				return Result;
+				resultCarrier.Info = new ErrorResponse{Message = $"Failed to add instagram user of {result.AccountId}, instagram account {result.Username}" };
+				return resultCarrier;
 			}
 			catch(Exception ee)
 			{
-				Result.Info = new ErrorResponse
+				resultCarrier.Info = new ErrorResponse
 				{ 
-					Message = $"Exepction trying to add user: {addInstagram.Username}, error: {ee.Message}",
+					Message = $"Exception trying to add user: {addInstagram.Username}, error: {ee.Message}",
 					Exception = ee
 				};
 				_reportHandler.MakeReport(ee);
-				return Result;
+				return resultCarrier;
 			}	
 		}
 		public async Task<StateData> GetInstagramAccountStateData(string accountId, string InstagramAccountId)
@@ -342,5 +298,7 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 				_reportHandler.MakeReport(ee);
 			}
 		}
+
+
 	}
 }

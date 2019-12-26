@@ -21,6 +21,8 @@ namespace QuarklessContexts.Models.SecurityLayerModels
 		[Description("AddContexts")]
 		AddContexts,
 		[Description("AddRequestLogging")]
-		AddRequestLogging
+		AddRequestLogging,
+		[Description("AddEventServices")]
+		AddEventServices
 	}
 }

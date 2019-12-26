@@ -13,10 +13,12 @@ module.exports.Calling = {
   "account_instagram_refresh": process.env.VUE_APP_ACCOUNT_INSTAGRAM_REFRESH,
   "account_get_profiles": process.env.VUE_APP_ACCOUNT_GET_PROFILES,
   "account_update_profile": process.env.VUE_APP_ACCOUNT_UPDATE_PROFILE,
+  "account_add_profile_topics": process.env.VUE_APP_PROFILE_ADD_TOPICS,
   "account_upload": process.env.VUE_APP_ACCOUNT_UPLOAD,
   "account_session": process.env.VUE_APP_ACCOUNT_SESSION,
 
   "query_config": process.env.VUE_APP_QUERY_CONFIG,
+  "query_related_by_parent": process.env.VUE_APP_QUERY_RELATED_TOPIC,
   "query_place_search": process.env.VUE_APP_QUERY_PLACE_SEARCH,
   "query_place_autocomplete": process.env.VUE_APP_QUERY_PLACE_AUTOCOMPLETE,
   "query_similar_image_search": process.env.VUE_APP_QUERY_SIMILAR_IMAGE_SEARCH,

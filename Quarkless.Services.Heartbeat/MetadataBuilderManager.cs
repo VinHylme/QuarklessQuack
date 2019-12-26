@@ -65,7 +65,7 @@ namespace Quarkless.Services.Heartbeat
 			Console.WriteLine("Began External Extract for {0}", _customer.InstagramAccount.Username);
 			var googleImages = Task.Run(async () => await _metadataExtract.BuildGoogleImages(20));
 			var yandexImages = Task.Run(async () => await _metadataExtract.BuildYandexImages(takeTopicAmount: 1));
-			Task.WaitAll(googleImages, yandexImages);
+			await Task.WhenAll(googleImages, yandexImages);
 			Console.WriteLine("Ended External Extract for {0}", _customer.InstagramAccount.Username);
 		}
 

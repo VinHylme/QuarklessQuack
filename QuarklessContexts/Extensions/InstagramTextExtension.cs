@@ -9,7 +9,6 @@ namespace QuarklessContexts.Extensions
 		public static string MatchOnlyHashtags => @"(#\w*)"; 
 		public static string MatchOnlyMentions => @"(@\w*)";
 		public static string MatchOnlyCurrency => @"(\w*[$|£|€|¥|]\w*)";
-		public static string MatchOnlyMultipleSpaces = @"(\s{2,})";
 		public static string MatchAnyVerticalSeparation = @"^[^a-z|^A-Z]$";
 		public static string MatchAnyHorizontalSeparation = @"^[^\w|\s|_]{2,}$";
 		public static string MatchOnlyNonWordsChars => @"[^a-z|^A-Z|^\s|^\.]{3,}";
@@ -41,7 +40,7 @@ namespace QuarklessContexts.Extensions
 			Regex.Matches(text, MatchOnlyCurrency).Select(s => s.Value);
 		public static string RemoveCurrencyFromText(this string text) =>
 			Regex.Replace(text, MatchOnlyCurrency, " ");
-		public static string RemoveLargeSpacesInText(this string text) =>
-			Regex.Replace(text, MatchOnlyMultipleSpaces, " ");
+		public static string RemoveLargeSpacesInText(this string text, int numberOfSpaces = 2, string replaceWith = " ") =>
+			Regex.Replace(text, @"(\s{"+numberOfSpaces+",})", replaceWith);
 	}
 }

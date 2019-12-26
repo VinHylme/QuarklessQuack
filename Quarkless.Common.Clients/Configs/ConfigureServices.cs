@@ -89,9 +89,12 @@ using Quarkless.Analyser;
 using Quarkless.Analyser.Models;
 using Quarkless.Vision;
 using QuarklessContexts.Models.APILogger;
+using QuarklessContexts.Models.InstagramAccounts;
+using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.SecurityLayerModels;
 using QuarklessLogic.ContentSearch.InstagramSearch;
 using QuarklessLogic.Handlers.ContentInfoBuilder;
+using QuarklessLogic.Handlers.EventHandlers;
 using QuarklessLogic.Handlers.HashtagBuilder;
 using QuarklessLogic.Handlers.RequestBuilder.Constants;
 using QuarklessLogic.Handlers.SearchProvider;
@@ -107,7 +110,8 @@ namespace Quarkless.Common.Clients.Configs
 {
 	public static class ConfigureServices
 	{
-		private static readonly bool _isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+		private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
 		public static void AddHangFrameworkServices(this IServiceCollection serviceCollection)
 		{
 			serviceCollection.AddTransient<ITaskService, TaskService>();
@@ -305,7 +309,7 @@ namespace Quarkless.Common.Clients.Configs
 				TempImagePath = accessors.TempImagePath,
 				TempVideoPath = accessors.TempVideoPath,
 				FfmpegEnginePath = accessors.FfmpegPath,
-				IsOnWindows = _isWindows
+				IsOnWindows = IsWindows
 			}));
 			services.AddSingleton<IUrlReader>(new UrlReader(accessors.ApiBasePath));
 
@@ -317,7 +321,7 @@ namespace Quarkless.Common.Clients.Configs
 			new GuidSerializer(BsonType.String));
 			services.AddSingleton<IRepositoryContext, RepositoryContext>();
 			services.AddTransient<IInstagramAccountRepository, InstagramAccountRepository>();
-			services.AddTransient<IProxyRepostory, ProxyRepository>();
+			services.AddTransient<IProxyRepository, ProxyRepository>();
 			services.AddTransient<IProfileRepository, ProfileRepository>();
 			services.AddTransient<IHashtagsRepository, HashtagsRepository>();
 			services.AddTransient<ITimelineLoggingRepository, TimelineLoggingRepository>();
@@ -359,6 +363,14 @@ namespace Quarkless.Common.Clients.Configs
 			services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 			services.AddTransient<IUserContext, UserContext>();
 			services.AddTransient<IRequestBuilder, RequestBuilder>();
+		}
+		public static void AddEventServices(this IServiceCollection services)
+		{
+			services.AddSingleton<IEventSubscriber<InstagramAccountModel>, ProfileLogic>();
+			services.AddSingleton<IEventSubscriber<ProfileModel>, ProxyLogic>();
+			services.AddSingleton<IEventSubscriber<ProfileTopicAddRequest>, TopicLookupLogic>();
+			services.AddSingleton<IEventPublisher, EventPublisher>(
+				s => new EventPublisher(services.BuildServiceProvider(false).CreateScope()));
 		}
 	}
 }

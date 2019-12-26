@@ -402,7 +402,7 @@ export default {
       searchingTopics:false,
       displayableList:[],
       isMoreAccurate:false,
-      isLoadingTopics:false
+      isLoadingTopics:false,
     }
   },
   created(){
@@ -439,25 +439,21 @@ export default {
         this.profile.profileTopic.category = value;
       }
     },
-    currentTopicSelected(){   
-      return this.config.topics.findIndex(item => item.category._id == this.currentProfileCategoryTopic._id);
+    currentTopicSelected(){
+      return this.config.categories.findIndex(item => item._id == this.currentProfileCategoryTopic._id);
     },
     relatedTopics(){
-      if(this.config.topics === undefined)
-        return []
-      if(this.currentTopicSelected<=-1)
-        return []
-      return this.config.topics[this.currentTopicSelected].topics;
+      return this.getRelatedTopicsByParent();
     },
     filteredRelatedTopics(){
-      if(this.config.topics === undefined)
+      if(this.config.categories === undefined)
         return []
       return this.relatedTopics.slice((this.currentHashPage-1)*this.perPage,this.currentHashPage*this.perPage).map(item=>item.name)
     },
     filteredDataArray() {
-      if(this.config.topics === undefined)
+      if(this.config.categories === undefined)
         return [];
-      return this.config.topics.map(item=>item.category).map(item=>item.name).filter((option) => {
+      return this.config.categories.map(item=>item.name).filter((option) => {
           return option
               .toString()
               .toLowerCase()
@@ -466,19 +462,30 @@ export default {
     }
   },
   methods:{
+    getRelatedTopicsByParent(){
+      console.log(this.config.categories)
+      if(this.config.categories === undefined)
+        return []
+      let data = []
+      this.$store.dispatch('ReleatedTopicByParent', this.config.categories[this.currentTopicSelected]._id).then(resp=>{
+        data = resp.data;
+      }).catch(err=>{
+      })
+      return data;
+    },
     changeProfileTopic(e){
       if(e){
-        let index = this.config.topics.findIndex(item=>item.category.name === e)
+        let index = this.config.categories.findIndex(item=>item.name === e)
         if(index > -1)
-          this.currentProfileCategoryTopic = this.config.topics[index].category
+          this.currentProfileCategoryTopic = this.config.categories[index]
       }
     },
     //todo: will need to update the topiclookup table
     saveProfile(){
       this.savingProfile = true;
       let contains = false;
-      this.config.topics.forEach((topic)=>{
-        if(topic.category.name.includes(this.currentProfileCategoryTopic.name)){
+      this.config.categories.forEach((topic)=>{
+        if(topic.name.includes(this.currentProfileCategoryTopic.name)){
           contains = true;
         }
       });
@@ -491,18 +498,36 @@ export default {
         })
         return;
       }
+      const topicsProfile = this.profile.profileTopic; 
+      this.profile.profileTopic = null;
       if(this.profile!==undefined || this.profile!==null || this.profile){
          this.$store.dispatch('UpdateProfile', this.profile).then(resp=>{
-           this.savingProfile = false;
-           Vue.prototype.$toast.open({
-                    message: 'Changes Saved!',
-                    type: 'is-success'
+           this.profile.profileTopic = topicsProfile;
+           let profileRequest = {
+             profileId: this.profile._id,
+             topics: topicsProfile.topics
+           }
+           console.log(profileRequest)
+           this.$store.dispatch('AddProfileTopics', profileRequest).then(resp=>{
+             console.log(topicsProfile)
+              this.savingProfile = false;
+              Vue.prototype.$toast.open({
+                  message: 'Changes Saved!',
+                  type: 'is-success'
+              })
+           }).catch(err=>{
+             this.savingProfile = false;
+              Vue.prototype.$toast.open({
+                message: 'Oops, looks like your profile could not be updated',
+                type: 'is-danger'
             })
+           })
          }).catch(err=>{
            this.savingProfile = false;
+           this.profile.profileTopic = topicsProfile;
            Vue.prototype.$toast.open({
-                    message: 'Oops, looks like something went wrong on our end',
-                    type: 'is-danger'
+              message: 'Oops, looks like something went wrong on our end',
+              type: 'is-danger'
             })
          })
       }
@@ -528,8 +553,8 @@ export default {
             this.profile.profileTopic.topics.push(topicToAdd)
             let indexOfTopic = this.currentTopicSelected;
             if(indexOfTopic>-1){
-              var relatedTopics = this.config.topics[indexOfTopic].topics;
-              let pos = relatedTopics.findIndex(item=>item.name === e);
+              var relatedTopics = this.relatedTopics
+              let pos = this.relatedTopics.findIndex(item=>item.name === e);
               relatedTopics.splice(pos, 1)
             }
           }
@@ -672,6 +697,9 @@ export default {
 
 <style lang="scss">
 .whole_container{
+  .field.is-grouped.is-grouped-multiline:last-child{
+    margin-bottom: 0;
+  }
 	.box-style{
 		background:#1f1f1f; 
 		width:60%;

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -14,6 +13,8 @@ using Newtonsoft.Json;
 using System.ComponentModel;
 using System.Text;
 using QuarklessContexts.Extensions;
+using QuarklessContexts.Models.Profiles;
+using QuarklessLogic.Handlers.EventHandlers;
 
 namespace QuarklessLogic.Logic.ProxyLogic
 {
@@ -110,13 +111,13 @@ namespace QuarklessLogic.Logic.ProxyLogic
 		public int google { get; set; }
 	}
 
-	public class ProxyLogic : IProxyLogic
+	public class ProxyLogic : IProxyLogic, IEventSubscriber<ProfileModel>
 	{
-		private readonly IProxyRepostory _proxyRepostory;
+		private readonly IProxyRepository _proxyRepository;
 		private readonly IReportHandler _reportHandler;
-		public ProxyLogic(IProxyRepostory proxyRepostory, IReportHandler reportHandler)
+		public ProxyLogic(IProxyRepository proxyRepository, IReportHandler reportHandler)
 		{
-			_proxyRepostory = proxyRepostory;
+			_proxyRepository = proxyRepository;
 			_reportHandler = reportHandler;
 			_reportHandler.SetupReportHandler("/Logic/Proxy");
 		}
@@ -126,7 +127,7 @@ namespace QuarklessLogic.Logic.ProxyLogic
 			try
 			{
 				if (proxies.Any(s => string.IsNullOrEmpty(s.Address))) return false;
-				_proxyRepostory.AddProxies(proxies);
+				_proxyRepository.AddProxies(proxies);
 				return true;
 			}
 			catch (Exception ee)
@@ -140,7 +141,7 @@ namespace QuarklessLogic.Logic.ProxyLogic
 		{
 			try
 			{
-				_proxyRepostory.AddProxy(proxy);
+				_proxyRepository.AddProxy(proxy);
 				return true;
 			}
 			catch (Exception ee)
@@ -153,7 +154,7 @@ namespace QuarklessLogic.Logic.ProxyLogic
 		{
 			try
 			{
-				var results = await _proxyRepostory.AssignProxy(assignedTo);
+				var results = await _proxyRepository.AssignProxy(assignedTo);
 				return results;
 			}
 			catch (Exception ee)
@@ -164,7 +165,7 @@ namespace QuarklessLogic.Logic.ProxyLogic
 		}
 		public async Task<IEnumerable<ProxyModel>> GetAllAssignedProxies()
 		{
-			var results = await _proxyRepostory.GetAllAssignedProxies();
+			var results = await _proxyRepository.GetAllAssignedProxies();
 			return results;
 		}
 
@@ -261,7 +262,7 @@ namespace QuarklessLogic.Logic.ProxyLogic
 		}
 		public async Task<ProxyModel> GetProxyAssignedTo(string accountId, string instagramAccountId)
 		{
-			var results = await _proxyRepostory.GetAssignedProxyOf(accountId, instagramAccountId);
+			var results = await _proxyRepository.GetAssignedProxyOf(accountId, instagramAccountId);
 			return results ?? null;
 		}
 
@@ -438,7 +439,7 @@ namespace QuarklessLogic.Logic.ProxyLogic
 			{
 				if ((await GetProxyAssignedTo(assignedTo.Account_Id, assignedTo.InstaId)) != null)
 				{
-					var results = await _proxyRepostory.RemoveUserFromProxy(assignedTo);
+					var results = await _proxyRepository.RemoveUserFromProxy(assignedTo);
 					return results;
 				}
 				return false;
@@ -448,6 +449,15 @@ namespace QuarklessLogic.Logic.ProxyLogic
 				_reportHandler.MakeReport($"Failed to assign proxy to user: {assignedTo.Account_Id}, error: {ee}");
 				return false;
 			}
+		}
+
+		public async Task Handle(ProfileModel @event)
+		{
+			await AssignProxy(new AssignedTo
+			{
+				Account_Id = @event.Account_Id, 
+				InstaId = @event.InstagramAccountId
+			});
 		}
 	}
 }

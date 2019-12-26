@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using QuarklessContexts.Models.Profiles;
+using QuarklessContexts.Models.Topics;
 
 namespace QuarklessContexts.Models.QueryModels.Settings
 {
 	[Serializable]
 	public class ProfileConfiguration
 	{
-		public IEnumerable<Topic> Topics { get; set; }
+		public IEnumerable<CTopic> Categories { get; set; }
 		public Dictionary<string,string> Languages { get; set; }
 		public IEnumerable<string> ColorsAllowed { get; set; }
 		public bool CanUserEditProfile { get; set; } = true;

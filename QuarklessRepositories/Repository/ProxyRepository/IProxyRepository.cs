@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace QuarklessRepositories.ProxyRepository
 {
-	public interface IProxyRepostory
+	public interface IProxyRepository
 	{
 		void AddProxies(List<ProxyModel> proxies);
 		void AddProxy(ProxyModel proxy);

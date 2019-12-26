@@ -30,7 +30,6 @@ namespace Quarkless
 
         public void ConfigureServices(IServiceCollection services)
         {
-			//var hosts = Dns.GetHostEntry("quarkless.security.transport");
 	        var cIn = new ClientRequester(SERVER_IP);
 	        if (!cIn.TryConnect().GetAwaiter().GetResult())
 		        return;
@@ -56,8 +55,9 @@ namespace Quarkless
 			        ServiceTypes.AddHangFrameworkServices,
 			        ServiceTypes.AddLogics,
 			        ServiceTypes.AddRepositories,
-			        ServiceTypes.AddRequestLogging
-		        }
+			        ServiceTypes.AddRequestLogging,
+					ServiceTypes.AddEventServices
+				}
 	        });
 
 	        services.Append(servicesAfar);
@@ -92,7 +92,6 @@ namespace Quarkless
 						builder.AllowAnyMethod();
 					});
 			});
-
 			services.AddHangfire(options =>
 			{
 			//	options.UseFilter(new ProlongExpirationTimeAttribute());
@@ -121,6 +120,9 @@ namespace Quarkless
 					UseTransactions = true
 				});
 			});
+
+			
+
 			GlobalConfiguration.Configuration.UseActivator(new WorkerActivator(services.BuildServiceProvider(false)));
 			GlobalConfiguration.Configuration.UseSerializerSettings(new Newtonsoft.Json.JsonSerializerSettings()
 			{

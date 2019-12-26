@@ -14,17 +14,22 @@ namespace QuarklessRepositories.Repository.TopicLookupRepository
 		private readonly IRepositoryContext _context;
 		public TopicLookupRepository(IRepositoryContext context) => _context = context;
 
-		public async Task<string> AddTopic(CTopic topic)
+		public async Task<AddTopicResponse> AddTopic(CTopic topic)
 		{
 			try
 			{
+				var response = new AddTopicResponse();
 				var searchTopic = (await GetTopicsName(topic.Name)).FirstOrDefault();
 				if (searchTopic != null)
-					return searchTopic._id;
-
+				{
+					response.Exists = true;
+					response.Id = searchTopic._id;
+					return response;
+				}
 				topic._id = ObjectId.GenerateNewId((int) DateTime.UtcNow.Ticks).ToString();
 				await _context.TopicLookup.InsertOneAsync(topic);
-				return topic._id;
+				response.Id = topic._id;
+				return response;
 			}
 			catch (Exception err)
 			{

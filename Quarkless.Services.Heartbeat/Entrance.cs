@@ -46,7 +46,8 @@ namespace Quarkless.Services.Heartbeat
 					ServiceTypes.AddContexts,
 					ServiceTypes.AddHandlers,
 					ServiceTypes.AddLogics,
-					ServiceTypes.AddRepositories
+					ServiceTypes.AddRepositories,
+					ServiceTypes.AddEventServices
 				}
 			});
 			return services;

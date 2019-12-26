@@ -17,7 +17,7 @@ namespace QuarklessLogic.Handlers.WorkerManagerService
 		Task<TResult> PerformQueryTask<TResult>(
 			Func<Worker, int, Task<TResult>> action, int limit);
 
-		Task<TResult> PerformAction<TResult>(Func<Worker, TResult> action);
+		TResult PerformAction<TResult>(Func<Worker, TResult> action);
 
 		Task<TResult> PerformAction<TResult>(
 			Func<Worker, Task<TResult>> action);

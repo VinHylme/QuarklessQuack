@@ -70,7 +70,7 @@ export default {
 			})
 		})
 	},
-    SearchByTopic({commit}, data){
+  SearchByTopic({commit}, data){
       return new Promise((resolve, reject)=>{
         QueryServices.SearchByTopic(data.query, data.instagramAccountId, data.limit).then(resp=>{
           resolve(resp);
@@ -163,6 +163,16 @@ export default {
     GetUsersTargetList({commit}, data){
       return new Promise((resolve, reject)=>{
         QueryServices.GetUsersTargetList(data.instagramAccountId, data.topic).then(resp=>{
+          resolve(resp);
+        }).catch((err)=>{
+          reject(err);
+        })
+      })
+    },
+    ReleatedTopicByParent({commit}, parentId)
+    {
+      return new Promise((resolve, reject)=>{
+        QueryServices.ReleatedTopicByParent(parentId).then(resp=>{
           resolve(resp);
         }).catch((err)=>{
           reject(err);
@@ -460,6 +470,15 @@ export default {
           commit('failed_to_retrieve_profile_config');
           reject(err);
         })
+      })
+    },
+    AddProfileTopics({commit}, addProfileTopicRequest){
+      return new Promise((resolve, reject)=>{
+        AccountServices.AddProfileTopics(addProfileTopicRequest).then(resp=>{
+           resolve(resp);
+        }).catch(err=>{
+          reject(err);
+        }) 
       })
     },
     UpdateProfile({commit}, profileData){

@@ -6,7 +6,7 @@ namespace QuarklessRepositories.Repository.TopicLookupRepository
 {
 	public interface ITopicLookupRepository
 	{
-		Task<string> AddTopic(CTopic topic);
+		Task<AddTopicResponse> AddTopic(CTopic topic);
 		Task<List<string>> AddTopics(List<CTopic> topics);
 		Task<CTopic> GetTopicById(string id);
 		Task<List<CTopic>> GetTopicsByParentId(string parentId);

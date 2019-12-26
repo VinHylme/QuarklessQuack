@@ -58,12 +58,11 @@ namespace Quarkless.Services.Heartbeat
 
 				var topicSelect = topicTotal.Distinct().TakeAny(takeTopicAmount).ToList();
 
-				await _workerManager.PerformTaskOnWorkers(workers =>
+				await _workerManager.PerformTaskOnWorkers(async workers =>
 				{
 					var top = workers.PerformAction(async worker =>
 					{
-						var instagramSearch = _searchProvider.InstagramSearch(worker.Client,
-							worker.Client.GetContext.Proxy);
+						var instagramSearch = _searchProvider.InstagramSearch(worker.Client, worker.Client.GetContext.Proxy);
 						var topMedias = await instagramSearch.SearchMediaDetailInstagram(topicSelect, limit);
 
 						if (topMedias != null)
@@ -111,7 +110,7 @@ namespace Quarkless.Services.Heartbeat
 							});
 						}
 					});
-					Task.WaitAll(top, recent);
+					await Task.WhenAll(top, recent);
 				});
 			}
 			catch (Exception ee)

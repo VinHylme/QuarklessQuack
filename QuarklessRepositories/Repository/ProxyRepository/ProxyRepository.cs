@@ -8,7 +8,7 @@ using QuarklessContexts.Models.Proxies;
 
 namespace QuarklessRepositories.ProxyRepository
 {
-	public class ProxyRepository : IProxyRepostory
+	public class ProxyRepository : IProxyRepository
 	{
 		private readonly IRepositoryContext _context;
 

@@ -46,9 +46,7 @@ namespace QuarklessRepositories.ProfileRepository
 				await _context.Profiles.InsertOneAsync(profile);
 				return profile;
 			}
-#pragma warning disable CS0168 // Variable is declared but never used
 			catch (Exception ee)
-#pragma warning restore CS0168 // Variable is declared but never used
 			{
 				return null;
 			}
@@ -70,6 +68,21 @@ namespace QuarklessRepositories.ProfileRepository
 			}
 		}
 
+		public async Task<ProfileModel> GetProfile(string profileId)
+		{
+			try
+			{
+				var builders = Builders<ProfileModel>.Filter;
+				var filter = builders.Eq("_id", ObjectId.Parse(profileId));
+				var profiles = await _context.Profiles.FindAsync(filter);
+				return profiles.SingleOrDefault();
+			}
+			catch (Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+				return null;
+			}
+		}
 		public async Task<IEnumerable<ProfileModel>> GetProfiles(string accountId)
 		{
 			try
@@ -92,9 +105,9 @@ namespace QuarklessRepositories.ProfileRepository
 				var updList = new List<UpdateDefinition<ProfileModel>>();
 				var filter = Builders<ProfileModel>.Filter.Eq("_id",profileId);
 				var updates = Builders<ProfileModel>.Update;
-				var IgnoreNullValues = profile.Recreate();
+				var ignoreNullValues = profile.Recreate();
 
-				foreach (var valuesToTake in IgnoreNullValues)
+				foreach (var valuesToTake in ignoreNullValues)
 				{
 					updList.Add(updates.Set(valuesToTake.Key, valuesToTake.Value));
 				}
@@ -104,9 +117,7 @@ namespace QuarklessRepositories.ProfileRepository
 
 				return result.ModifiedCount;
 			}
-#pragma warning disable CS0168 // Variable is declared but never used
 			catch (Exception ee)
-#pragma warning restore CS0168 // Variable is declared but never used
 			{
 				return null;
 			}

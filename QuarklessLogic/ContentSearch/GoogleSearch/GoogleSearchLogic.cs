@@ -154,7 +154,7 @@ namespace QuarklessLogic.ContentSearch.GoogleSearch
 			}
 		}
 
-		public async Task<IEnumerable<string>> GetSuggestions(string query)
+		public async Task<List<string>> GetSuggestions(string query)
 		{
 			var results = new List<string>();
 			using (var driver = _seleniumClient.CreateDriver())

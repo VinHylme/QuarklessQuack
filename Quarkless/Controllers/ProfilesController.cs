@@ -70,7 +70,18 @@ namespace Quarkless.Controllers
 			{
 				return Ok($"Modified: {res}");
 			}
-			return BadRequest("Please provide valid id");
+			return BadRequest("Failed to update profile");
+		}
+
+		[HttpPost]
+		[Route("api/profiles/addprofiletopics/")]
+		public async Task<IActionResult> AddProfileTopics(ProfileTopicAddRequest profileTopics)
+		{
+			if (_userContext.CurrentUser == null) return BadRequest("Please provide valid id");
+			var res = await _profileLogic.AddProfileTopics(profileTopics);
+			if (res)
+				return Ok("Added topics");
+			return BadRequest("Failed to add");
 		}
 	}
 }

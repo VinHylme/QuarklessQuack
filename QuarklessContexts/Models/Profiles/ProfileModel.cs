@@ -76,6 +76,11 @@ namespace QuarklessContexts.Models.Profiles
 		public List<string> RelatedTopics { get; set; }
 	}
 
+	public class ProfileTopicAddRequest
+	{
+		public string ProfileId { get; set; }
+		public IEnumerable<CTopic> Topics { get; set; }
+	}
 	public class ProfileModel
 	{
 		[BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)]

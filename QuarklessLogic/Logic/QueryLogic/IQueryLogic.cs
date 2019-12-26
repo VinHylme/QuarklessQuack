@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using InstagramApiSharp.Classes.Models;
 using QuarklessContexts.Models.LookupModels;
+using QuarklessContexts.Models.Topics;
 
 namespace QuarklessLogic.Logic.QueryLogic
 {
@@ -13,6 +14,7 @@ namespace QuarklessLogic.Logic.QueryLogic
 	{
 		Task<IEnumerable<CommentMedia>> GetRecentComments(ProfileRequest profile);
 		Task<ProfileConfiguration> GetProfileConfig();
+		Task<IEnumerable<CTopic>> GetRelatedTopics(string topicParentId);
 		object SearchPlaces(string query);
 		object AutoCompleteSearchPlaces(string query, int radius = 500);
 		Task<Media> SimilarImagesSearch(string userId, int limit = 1, int offset = 0, IEnumerable<string> urls = null, bool moreAccurate = false);

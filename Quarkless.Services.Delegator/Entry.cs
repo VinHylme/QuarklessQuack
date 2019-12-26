@@ -68,7 +68,8 @@ namespace Quarkless.Services.Delegator
 					ServiceTypes.AddContexts,
 					ServiceTypes.AddHandlers,
 					ServiceTypes.AddLogics,
-					ServiceTypes.AddRepositories
+					ServiceTypes.AddRepositories,
+					ServiceTypes.AddEventServices
 				}
 			});
 			return services;
