@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using QuarklessContexts.Models.Options;
+using LanguageDetection.Core;
 
 namespace QuarklessLogic.Handlers.TranslateService
 {
@@ -53,23 +54,26 @@ namespace QuarklessLogic.Handlers.TranslateService
 
 	public class TranslateService : ITranslateService
 	{
+		private readonly LanguageDetector _detector;
 		private readonly ISeleniumClient _seleniumClient;
 		private readonly IRestSharpClientManager _restSharpClient;
-		private readonly string _yandexAPIKey;
-		private readonly string _detectAPIKey;
-		private readonly string _naturalLanguageProcessingAPI;
+		private readonly string _yandexApiKey;
+		private readonly string _detectApiKey;
+		private readonly string _naturalLanguageProcessingApi;
 		public TranslateService(IOptions<TranslateOptions> tOptions, ISeleniumClient seleniumClient, 
 			IRestSharpClientManager restSharpClient)
 		{
 			_restSharpClient = restSharpClient;
 			_seleniumClient = seleniumClient;
-			_yandexAPIKey = tOptions.Value.YandexAPIKey;
-			_detectAPIKey = tOptions.Value.DetectLangAPIKey;
-			_naturalLanguageProcessingAPI = tOptions.Value.NaturalLanguageAPIPath;
+			_yandexApiKey = tOptions.Value.YandexAPIKey;
+			_detectApiKey = tOptions.Value.DetectLangAPIKey;
+			_naturalLanguageProcessingApi = tOptions.Value.NaturalLanguageAPIPath;
 			_seleniumClient.AddArguments(
 				"--headless",
 				"--enable-features=NetworkService"
 			);
+			_detector = new LanguageDetector();
+			_detector.AddAllLanguages();
 		}
 		static int pos = 0;
 		public void AddProxy(ProxyModel proxy)
@@ -81,12 +85,14 @@ namespace QuarklessLogic.Handlers.TranslateService
 			_seleniumClient.AddArguments($"--proxy-server={proxyLine}");
 		}
 
-		object lockObject = new object();
+		public bool IsLanguageIn(string text, string language = "en")
+			=> (!_detector.Detect(text).Equals(language));
+
 		public IEnumerable<string> DetectLanguage(params string[] texts)
 		{
 			try
 			{
-				lock (lockObject)
+				lock (texts)
 				{
 					if (texts.Length <= 0)
 						return new List<string>();
@@ -95,7 +101,7 @@ namespace QuarklessLogic.Handlers.TranslateService
 					{
 						Text = items.Distinct().ToList()
 					};
-					var results = _restSharpClient.PostRequest(_naturalLanguageProcessingAPI + "detectLanguage",
+					var results = _restSharpClient.PostRequest(_naturalLanguageProcessingApi + "detectLanguage",
 						null, JsonConvert.SerializeObject(detect));
 					if (!results.IsSuccessful) return new List<string>();
 					var resParsed = JsonConvert.DeserializeObject<DetectLanguageResponse>(results.Content);
@@ -110,7 +116,7 @@ namespace QuarklessLogic.Handlers.TranslateService
 		}
 		public IEnumerable<string> DetectLanguageYandex(params string[] texts)
 		{
-			var trykey = _yandexAPIKey.Split('|');
+			var trykey = _yandexApiKey.Split('|');
 			if (pos >= trykey.Length)
 			{
 				var res = DetectLanguageRest(texts);
@@ -147,7 +153,7 @@ namespace QuarklessLogic.Handlers.TranslateService
 		{
 
 			string url = "https://ws.detectlanguage.com/";
-			var res = _restSharpClient.PostRequest(url,"/0.2/detect",JsonConvert.SerializeObject(new { q = texts }),username: _detectAPIKey ,password:"");
+			var res = _restSharpClient.PostRequest(url,"/0.2/detect",JsonConvert.SerializeObject(new { q = texts }),username: _detectApiKey ,password:"");
 			if (!res.IsSuccessful) return DetectLanguageViaGoogle(texts: texts);
 			var batchResult = JsonConvert.DeserializeObject<BatchResult>(res.Content);
 			return batchResult.data.detections.Select(s => s.FirstOrDefault()?.language);

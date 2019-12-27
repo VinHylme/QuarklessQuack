@@ -34,7 +34,7 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 		{
 			try
 			{
-				List<FilterDefinition<MediaCorpus>> filterList = new List<FilterDefinition<MediaCorpus>>();
+				var filterList = new List<FilterDefinition<MediaCorpus>>();
 				var builders = Builders<MediaCorpus>.Filter;
 
 				if (searchRepository == null)
@@ -45,6 +45,7 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 				{
 					filterList.AddRange(searchRepository);
 				}
+
 				var filter = builders.And(filterList);
 				var options = new FindOptions<MediaCorpus, MediaCorpus>();
 				if (limit != -1)

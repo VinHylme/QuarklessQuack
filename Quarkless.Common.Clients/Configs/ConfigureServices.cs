@@ -92,6 +92,7 @@ using QuarklessContexts.Models.APILogger;
 using QuarklessContexts.Models.InstagramAccounts;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.SecurityLayerModels;
+using QuarklessContexts.Models.ServicesModels.FetcherModels;
 using QuarklessLogic.ContentSearch.InstagramSearch;
 using QuarklessLogic.Handlers.ContentInfoBuilder;
 using QuarklessLogic.Handlers.EventHandlers;

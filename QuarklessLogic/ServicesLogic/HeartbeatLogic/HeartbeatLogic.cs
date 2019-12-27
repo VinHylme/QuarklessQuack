@@ -4,24 +4,23 @@ using System.Linq;
 using System.Threading.Tasks;
 using InstagramApiSharp.Classes.Models;
 using Newtonsoft.Json;
-using QuarklessContexts.Extensions;
-using QuarklessContexts.Models.ServicesModels.Corpus;
-using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
-using QuarklessLogic.Handlers.Util;
-using QuarklessLogic.Logic.HashtagLogic;
-using QuarklessLogic.ServicesLogic.CorpusLogic;
 using QuarklessRepositories.RedisRepository.HeartBeaterRedis;
 using MoreLinq;
+using QuarklessContexts.Models.ServicesModels.FetcherModels;
+using QuarklessLogic.Handlers.EventHandlers;
+
 namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 {
 	public class HeartbeatLogic : IHeartbeatLogic
 	{
 		private readonly IHeartbeatRepository _heartbeatRepository;
-		public HeartbeatLogic(IHeartbeatRepository heartbeatRepository)
+		private readonly IEventPublisher _eventPublisher;
+		public HeartbeatLogic(IHeartbeatRepository heartbeatRepository, IEventPublisher eventPublisher)
 		{
 			_heartbeatRepository = heartbeatRepository;
+			_eventPublisher = eventPublisher;
 		}
 		public async Task AddMetaData<T>(MetaDataType metaDataType, string topic, __Meta__<T> data, string userId = null)
 		{
@@ -123,6 +122,41 @@ namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 				//	}
 				//}
 				#endregion
+
+				switch (metaDataType)
+				{
+					case MetaDataType.FetchMediaByTopic:
+					case MetaDataType.FetchMediaByTopicRecent:
+					case MetaDataType.FetchMediaByLikers:
+					case MetaDataType.FetchMediaByCommenters:
+						var mediasObject = await GetMetaData<Media>(metaDataType, topic, userId);
+						if (mediasObject == null || !mediasObject.Any())
+							break;
+
+						_eventPublisher.Publish(new MetaDataMediaRefresh{
+							MetaDataType = metaDataType, 
+							Topic =  topic, 
+							UserId = userId,
+							Medias = mediasObject.SelectMany(_=>_.ObjectItem.Medias).ToList()
+						});
+						break;
+					case MetaDataType.FetchCommentsViaPostsLiked:
+					case MetaDataType.FetchCommentsViaPostCommented:
+						var commentObject =
+							await GetMetaData<List<UserResponse<InstaComment>>>(metaDataType, topic, userId);
+
+						if (commentObject == null || !commentObject.Any())
+							break;
+
+						_eventPublisher.Publish(new MetaDataCommentRefresh
+						{
+							MetaDataType = metaDataType,
+							Topic = topic,
+							UserId = userId,
+							Comments = commentObject.SelectMany(_=>_.ObjectItem).ToList()
+						});
+						break;
+				}
 
 				await _heartbeatRepository.RefreshMetaData(metaDataType, topic, userId);
 			}

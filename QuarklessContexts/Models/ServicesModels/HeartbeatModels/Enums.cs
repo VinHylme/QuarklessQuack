@@ -4,7 +4,7 @@
 	{
 		None,
 		FetchMediaForSpecificUserGoogle,
-		FetchMediaForSepcificUserYandexQuery,
+		FetchMediaForSpecificUserYandexQuery,
 		FetchMediaForSpecificUserYandex,
 
 		FetchUserOwnProfile,
@@ -31,7 +31,6 @@
 		FetchCommentsViaUserFeed,
 
 		FetchUserDirectInbox,
-
 		UsersRecentComments
 	}
 }

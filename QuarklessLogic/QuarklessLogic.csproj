@@ -24,6 +24,7 @@
     <ProjectReference Include="..\InstagramApiSharp\InstagramApiSharp.csproj" />
     <ProjectReference Include="..\Quarkless.Analyser\Quarkless.Analyser.csproj" />
     <ProjectReference Include="..\Quarkless.Interfacing\Quarkless.Interfacing.csproj" />
+    <ProjectReference Include="..\Quarkless.LanguageDetection.Core\Quarkless.LanguageDetection.Core.csproj" />
     <ProjectReference Include="..\Quarkless.Vision\Quarkless.Vision.csproj" />
     <ProjectReference Include="..\QuarklessRepositories\QuarklessRepositories.csproj" />
   </ItemGroup>

@@ -6,4 +6,8 @@ namespace QuarklessLogic.Handlers.EventHandlers
 	{
 		Task Handle(TEvent @event);
 	}
+	public interface IEventSubscriberSync<in TEvent>
+	{
+		void Handle(TEvent @event);
+	}
 }

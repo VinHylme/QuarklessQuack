@@ -181,7 +181,7 @@ namespace QuarklessLogic.Logic.QueryLogic
 		}
 
 		public async Task<IEnumerable<CTopic>> GetRelatedTopics(string topicParentId)
-			=> await _topicLookupLogic.GetTopicByParentId(topicParentId);
+			=> await _topicLookupLogic.GetTopicsByParentId(topicParentId);
 		public async Task<ProfileConfiguration> GetProfileConfig()
 		{
 			var topics = await _topicLookupLogic.GetCategories();
@@ -200,7 +200,8 @@ namespace QuarklessLogic.Logic.QueryLogic
 		public async Task<IEnumerable<string>> BuildHashtags(SuggestHashtagRequest suggestHashtagRequest)
 		{
 			return await _hashtagGenerator.SuggestHashtags(suggestHashtagRequest.ProfileTopic,
-				suggestHashtagRequest.MediaTopic, suggestHashtagRequest.PickAmount, suggestHashtagRequest.MediaUrls);
+				suggestHashtagRequest.MediaTopic, pickAmount:suggestHashtagRequest.PickAmount,
+				images:suggestHashtagRequest.MediaUrls);
 		}
 		public async Task<SubTopics> GetRelatedKeywords(string topicName)
 		{

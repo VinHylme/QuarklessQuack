@@ -14,8 +14,8 @@ namespace QuarklessLogic.ContentSearch.InstagramSearch
 		Task<List<UserResponse<UserSuggestionDetails>>> GetSuggestedPeopleToFollow(int limit);
 		Task<IEnumerable<UserResponse<string>>> GetUserFollowingList(string username, int limit, string query = null);
 		Task<InstaFullUserInfo> SearchInstagramFullUserDetail(long userId);
-		Task<List<UserResponse<InstaComment>>> SearchInstagramMediaCommenters(string mediaId, int limit);
-		Task<List<UserResponse<string>>> SearchInstagramMediaLikers(string mediaId);
+		Task<List<UserResponse<InstaComment>>> SearchInstagramMediaCommenters(CTopic mediaTopic, string mediaId, int limit);
+		Task<List<UserResponse<string>>> SearchInstagramMediaLikers(CTopic mediaTopic, string mediaId);
 		Task<Media> SearchRecentLocationMediaDetailInstagram(Location location, int limit);
 		Task<Media> SearchTopLocationMediaDetailInstagram(Location location, int limit);
 		Task<Media> SearchMediaDetailInstagram(IEnumerable<string> topics, int limit, bool isRecent = false);

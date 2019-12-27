@@ -7,8 +7,6 @@ using System.Collections.Generic;
 using InstagramApiSharp;
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Models;
-using LanguageDetection;
-using MongoDB.Bson;
 using MoreLinq;
 using QuarklessLogic.Logic.HashtagLogic;
 using QuarklessContexts.Models.InstagramAccounts;
@@ -17,6 +15,7 @@ using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using QuarklessContexts.Models.Topics;
 using QuarklessLogic.ContentSearch.GoogleSearch;
 using QuarklessLogic.Handlers.ClientProvider;
+using QuarklessLogic.Handlers.Util;
 using QuarklessLogic.Handlers.WorkerManagerService;
 using QuarklessLogic.Logic.InstagramAccountLogic;
 using QuarklessLogic.Logic.ProfileLogic;
@@ -32,7 +31,6 @@ namespace Quarkless.Services.DataFetcher
 		private double _intervalWaitBetweenHashtagsAndMediaSearch;
 		private int _mediaFetchAmount, _commentFetchAmount;
 		
-		private readonly LanguageDetector _detector;
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
 		private readonly IProfileLogic _profileLogic;
 		private readonly IAPIClientContext _clientContext;
@@ -43,11 +41,12 @@ namespace Quarkless.Services.DataFetcher
 		private readonly IGoogleSearchLogic _googleSearchLogic;
 		private readonly ITopicLookupLogic _topicLookup;
 		private readonly IWorkerManager _workerManager;
+		private readonly IUtilProviders _utilProviders;
 
 		public Fetcher(IInstagramAccountLogic instagramAccountLogic, 
 			IAPIClientContext clientContext, IResponseResolver responseResolver, IProfileLogic profileLogic,
 			IMediaCorpusLogic mediaCorpusLogic, ICommentCorpusLogic commentCorpusLogic, IHashtagLogic hashtagCorpusLogic,
-			IGoogleSearchLogic googleSearchLogic, ITopicLookupLogic topicLookup)
+			IGoogleSearchLogic googleSearchLogic, ITopicLookupLogic topicLookup, IUtilProviders utilProviders)
 		{
 			_instagramAccountLogic = instagramAccountLogic;
 			_profileLogic = profileLogic;
@@ -60,11 +59,10 @@ namespace Quarkless.Services.DataFetcher
 
 			_googleSearchLogic = googleSearchLogic;
 			_topicLookup = topicLookup;
+			_utilProviders = utilProviders;
 
 			_workerManager = new WorkerManager(clientContext, instagramAccountLogic, 3, 1);
 
-			_detector = new LanguageDetector();
-			_detector.AddAllLanguages();
 		}
 		#endregion
 
@@ -85,6 +83,7 @@ namespace Quarkless.Services.DataFetcher
 			_commentFetchAmount = settings.CommentFetchAmount;
 			#endregion
 
+			Console.Read();
 
 			await _workerManager.PerformTaskOnWorkers(async workers =>
 			{
@@ -144,68 +143,14 @@ namespace Quarkless.Services.DataFetcher
 					.Select(_ => _profileLogic.GetProfile(_.AccountId, _.Id).Result.ProfileTopic)
 					.SelectMany(_ =>
 					{
-						var topics = new List<CTopic>(_topicLookup.GetTopicByParentId(_.Category._id).Result);
+						var topics = new List<CTopic>(_topicLookup.GetTopicsByParentId(_.Category._id).Result);
 						return topics;
 					}).Distinct().Shuffle().ToList();
 
 
 
-//				foreach (var topic in customerTopics)
-//				{
-//					Console.WriteLine("Started on category: {0}", topic);
-//					Console.WriteLine("----------------------------------------------------------------------");
-//					while (_workerBatches.IsEmpty) //wait for worker to be available before continuing;
-//						await Task.Delay(TimeSpan.FromSeconds(0.35));
-//
-//					_workerBatches.TryDequeue(out var workers);
-//					_ = BatchOperation(topic.Name, new ConcurrentQueue<ShortInstagramAccountModel>(workers));
-//
-//					if (!customerTopics.Last().Equals(topic)) continue;
-//					while (_workerBatches.Count != initialWorkerAmount) //wait for all to finish;
-//						await Task.Delay(TimeSpan.FromSeconds(0.35));
-//				}
 			}
 		}
-
-		private async Task BatchBuildTopicIndex(string category, ConcurrentQueue<ShortInstagramAccountModel> workers)
-		{
-			var initialWorkerAmount = workers.Count;
-			workers.TryDequeue(out var worker);
-
-			var id = await _topicLookup.AddTopic(new CTopic
-			{
-				Name = category,
-				ParentTopicId = BsonObjectId.Empty.AsObjectId.ToString()
-			});
-			if (string.IsNullOrEmpty(id)) return;
-
-			var clientContainer = new APIClientContainer(_clientContext, worker.AccountId, worker.Id);
-			var hashtags =
-				await clientContainer.Hashtag.SearchHashtagAsync(category);
-
-			var totalTopics = new List<CTopic>();
-
-			if (hashtags.Succeeded && hashtags.Value.Any())
-			{
-				totalTopics.AddRange(hashtags.Value.Select(_=>new CTopic
-				{
-					Name = _.Name,
-					ParentTopicId = id
-				}));
-			}
-			var related = await _googleSearchLogic.GetSuggestions(category);
-			if(category.Any())
-				totalTopics.AddRange(related.Select(_=>new CTopic
-				{
-					Name = _,
-					ParentTopicId = id
-				}));
-
-			await _topicLookup.AddTopics(totalTopics);
-			workers.Enqueue(worker);
-			//_workerBatches.Enqueue(workers);
-		}
-
 		#region Search
 		private async Task<IResult<InstaSectionMedia>> SearchTopMedias(APIClientContainer container, IEnumerable<InstaHashtag> hashtags,
 			int limit)
@@ -332,7 +277,7 @@ namespace Quarkless.Services.DataFetcher
 						.RemoveVerticalSeparationFromText()
 						.RemoveLargeSpacesInText();
 
-					if (!_detector.Detect(caption).Equals("en")) return;
+					if (!_utilProviders.TranslateService.IsLanguageIn(caption)) return;
 					if (!string.IsNullOrEmpty(caption) || !string.IsNullOrWhiteSpace(caption))
 					{
 						await Task.Delay(TimeSpan.FromSeconds(SecureRandom.NextDouble() + 1));

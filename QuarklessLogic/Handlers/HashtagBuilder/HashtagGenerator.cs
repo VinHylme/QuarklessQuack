@@ -2,14 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using MongoDB.Bson;
 using MoreLinq;
 using Quarkless.Vision;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.Topics;
 using QuarklessLogic.Logic.HashtagLogic;
-using QuarklessLogic.Logic.ResponseLogic;
 using QuarklessLogic.Logic.TopicLookupLogic;
 
 namespace QuarklessLogic.Handlers.HashtagBuilder
@@ -19,173 +17,144 @@ namespace QuarklessLogic.Handlers.HashtagBuilder
 		private readonly ITopicLookupLogic _topicLookup;
 		private readonly IHashtagLogic _hashtagLogic;
 		private readonly IVisionClient _visionClient;
-		public HashtagGenerator(IHashtagLogic hashtagLogic,
-			IVisionClient client, ITopicLookupLogic topicLookup)
+		public HashtagGenerator(IHashtagLogic hashtagLogic, IVisionClient client, ITopicLookupLogic topicLookup)
 		{
 			_hashtagLogic = hashtagLogic;
 			_visionClient = client;
 			_topicLookup = topicLookup;
 		}
 
-		public async Task<List<string>> SuggestHashtags(Topic profileTopic, CTopic mediaTopic = null, 
-			int pickAmount = 20, IEnumerable<string> imageUrls = null)
+		public async Task<List<string>> GetHashtagsFromMediaSearch(string topic, int limit)
 		{
-			if(pickAmount < 5)
-				throw new Exception("Pick amount should be greater than 8");
-
-			const int hashtagSearchLimit = 10;
-			var hashtagPickAmount = pickAmount / 2;
-
-			var suggestedHashtags = new List<string>();
-			var keywords = new List<KeyWordsContainer>();
-
-			#region Initialise Keywords
-
-			// By Vision API
-			if (imageUrls != null && imageUrls.Any())
-			{
-				if (imageUrls.First().IsBase64String())
-				{
-					var response = _visionClient.AnnotateImages(imageUrls
-							.Select(_=>Convert.FromBase64String(_.Split(",")[1])))
-						?.SelectMany(image => image)
-						?.OrderByDescending(c => c.Description)
-						?.Select(_ => new KeyWordsContainer(_.Description, true));
-					if (response != null && response.Any())
-						keywords.AddRange(response);
-				}
-				else
-				{
-					var response = _visionClient.AnnotateImages(imageUrls)
-						?.SelectMany(image => image)
-						?.OrderByDescending(c => c.Description)
-						?.Select(_ => new KeyWordsContainer(_.Description, true));
-					if (response != null && response.Any())
-						keywords.AddRange(response);
-				}
-			}
-
-			// By Media Topic
-			if(mediaTopic!=null)
-				keywords.Add(new KeyWordsContainer(mediaTopic.Name, true));
+			var results = new List<string>();
+			if (string.IsNullOrEmpty(topic))
+				return results;
+			var response = await _topicLookup.GetMediasFromTopic(topic, limit);
 			
-			// By Profile Category Name
-			keywords.Add(new KeyWordsContainer(profileTopic.Category.Name, false));
-
-			// By Subtopics
-			keywords.AddRange(profileTopic.Topics
-				.Select(_ => new KeyWordsContainer(_.Name, false)));
-
-			//order by the best match for media
-			keywords = keywords.OrderByDescending(_ => _.IsLikely)
-				.DistinctBy(x=>x.Keyword)
-				.ToList();
-			#endregion
-
-			var positionCurrent = 0;
+			if (!response.Any())
+				return results;
 			
-			//todo: some modifications, if not found query instagram (possibly using a worker)
-			//todo: analyse first image with that tag if any found => store hashtags
-			//todo: store the keyword in the lookup table for future analysis and building of hashtags
-			//todo: e.g; keyword => search insta => get random media => get hashtag and send
-			//Take some from hashtag table
-			while (suggestedHashtags.Count <= hashtagPickAmount)
-			{
-				if (keywords.Count < positionCurrent)
-					break;
+			results.AddRange(response.SelectMany(_=>_.Caption?.Text.FilterHashtags()));
 
-				var keyword = keywords[positionCurrent++];
-				var hashtags = await _hashtagLogic.GetHashtagsFromRepositoryByTopic(keyword.Keyword, hashtagSearchLimit);
-				if (!hashtags.Any()) continue;
-				var pickHashtag = hashtags.OrderByDescending(x => x.Topic.Similarity(keyword.Keyword)).First();
-				suggestedHashtags.AddRange(pickHashtag.Hashtags.TakeAny(hashtagPickAmount));
-			}
-
-			positionCurrent = 0;
-
-			//Take some from topic lookup table
-			while (suggestedHashtags.Count <= hashtagPickAmount)
-			{
-				if (keywords.Count < positionCurrent)
-					break;
-
-				var keyword = keywords[positionCurrent++];
-				var topicsRelated = (await _topicLookup.GetTopicByNameLike(keyword.Keyword))
-					.Where(t => t.ParentTopicId != BsonObjectId.Empty.AsObjectId.ToString())
-					.DistinctBy(c=>c.Name);
-				if(topicsRelated.Any())
-					suggestedHashtags.AddRange(topicsRelated
-						.Select(_=> "#" + _.Name.ToLower()));
-				else
-				{
-					string parentId;
-
-					if (mediaTopic!=null && keyword.Keyword.String == mediaTopic.Name.ToLower())
-						parentId = mediaTopic.ParentTopicId;
-					else if (keyword.Keyword.String == profileTopic.Category.Name.ToLower())
-						parentId = profileTopic.Category.ParentTopicId;
-					else if (profileTopic.Topics.Any(x => x.Name.ToLower() == keyword.Keyword.String))
-						parentId = profileTopic.Topics.Single(x => x.Name.ToLower() == keyword.Keyword.String)
-							.ParentTopicId;
-					else
-						parentId = profileTopic.Category.ParentTopicId;
-					
-					await _topicLookup.AddTopic(new CTopic
-					{
-						ParentTopicId = parentId,
-						Name = keyword.Keyword
-					});
-				}
-			}
-
-			if (suggestedHashtags.Count < 8)
-			{
-				var topicFromLookup = await _topicLookup.GetTopicByParentId(profileTopic.Category.ParentTopicId);
-				if(topicFromLookup.Any())
-					suggestedHashtags.AddRange(topicFromLookup.Select(c=> "#" + c.Name.ToLower()));
-			}
-
-			if (suggestedHashtags.Count > pickAmount)
-			{
-				suggestedHashtags = suggestedHashtags.Take(pickAmount).ToList();
-			}
-
-			return suggestedHashtags;
+			return results.Where(_=>!string.IsNullOrEmpty(_) 
+				&& _.Length > 2).ToList();
 		}
 
-//		public async Task<IEnumerable<string>> BuildHashtags(string topic, string subcategory, 
-//			string language = null, int limit = 1, int pickRate = 20)
-//		{
-//			var hashtagResults = (await _hashtagLogic.GetHashtagsByTopicAndLanguage(topic.OnlyWords(),
-//				language?.ToUpper().OnlyWords(), 
-//				language?.MapLanguages().OnlyWords(), limit))
-//				.Shuffle().ToList();
-//			
-//			var clean = new Regex(@"[^\w\d]");
-//			if (hashtagResults.Count <= 0) return null;
-//			var hashtags = new List<string>();
-//			while (hashtags.Count < pickRate)
-//			{
-//				var chosenHashtags = new List<string>();
-//
-//				foreach (var hashtagResult in hashtagResults)
-//				{
-//					if (string.IsNullOrEmpty(hashtagResult.Language)) continue;
-//					var hashtagLanguage = clean.Replace(hashtagResult.Language.ToLower(), "");
-//					var languageSelected = clean.Replace(language.MapLanguages().ToLower(), "");
-//
-//					if (hashtagLanguage == languageSelected)
-//						chosenHashtags.AddRange(hashtagResult.Hashtags);
-//				}
-//
-//				if (chosenHashtags.Count <= 0) continue;
-//				var chosenHashtagsFiltered = chosenHashtags.Where(space => space.Count(oc => oc == ' ') <= 1);
-//				var hashtagsFiltered = chosenHashtagsFiltered as string[] ?? chosenHashtagsFiltered.ToArray();
-//				if (!hashtagsFiltered.Any()) return null;
-//				hashtags.AddRange(hashtagsFiltered.Where(s => s.Length >= 3 && s.Length <= 30));
-//			}
-//			return hashtags;
-//		}
+		public async Task<List<string>> SuggestHashtags(Topic profileTopic = null, CTopic mediaTopic = null, IEnumerable<string> images = null,
+			int pickAmount = 20, int keywordsFetchAmount = 4, 
+			IEnumerable<string> preDefinedHashtagsToUse = null, int retries = 3)
+		{
+			if (pickAmount < 5)
+				throw new Exception("Pick amount should be greater than 8");
+			if(mediaTopic == null && images == null)
+				throw new Exception("Please provide at least a media topic or one image");
 
+			#region Initialise Amount 
+			var amount = (int) (pickAmount * 0.50);
+			#endregion
+
+			var suggestedHashtags = new List<string>();
+			if (preDefinedHashtagsToUse != null)
+				suggestedHashtags.AddRange(preDefinedHashtagsToUse);
+
+			#region Initialise Keywords From Google Vision
+			var visionResults = new List<string>();
+
+			// By Vision API
+			if (images != null && images.Any())
+			{
+				if (images.First().IsBase64String())
+				{
+					var response = _visionClient.AnnotateImages(images
+							.Select(_ => Convert.FromBase64String(_.Split(",")[1])))
+						?.SelectMany(image => image)
+						.OrderByDescending(x=>x.Score)
+						.Select(_ => _.Description);
+
+					if (response != null && response.Any())
+						visionResults.AddRange(response);
+				}
+				else
+				{
+					var response = _visionClient.AnnotateImages(images)
+						?.SelectMany(image => image)
+						.OrderByDescending(x => x.Score)
+						.Select(_ => _.Description);
+
+					if (response != null && response.Any())
+						visionResults.AddRange(response);
+				}
+			}
+
+			//order by the best match for media
+			visionResults = visionResults.DistinctBy(x => x).ToList();
+			#endregion
+
+			var hashtags = new List<string>();
+
+			if (mediaTopic != null)
+			{
+				// add related topics
+				suggestedHashtags.AddRange((await _topicLookup.GetTopicsByParentId(mediaTopic._id))
+					.Select(_ => _.Name)
+					.TakeAny(amount));
+
+				//build from database of hashtags
+				var resDb = await _hashtagLogic.GetHashtagsFromRepositoryByTopic(mediaTopic.Name, 25);
+				if(resDb!=null && resDb.Any())
+					hashtags.AddRange(resDb.SelectMany(_=>_.Hashtags));
+				else
+				{
+					var getFromMedias = await GetHashtagsFromMediaSearch(mediaTopic.Name, 1);
+					if (getFromMedias.Any())
+						hashtags.AddRange(getFromMedias);
+				}
+			}
+
+			foreach (var keyword in visionResults.Take(keywordsFetchAmount).TakeAny(1))
+			{
+				var resultBuild = await _topicLookup.BuildRelatedTopics(new CTopic
+					{
+						Name = keyword, 
+						ParentTopicId = mediaTopic?._id
+					},
+
+					false,false);
+
+				if (resultBuild == null || !resultBuild.Any()) continue;
+				hashtags.AddRange(resultBuild);
+
+				var getFromMedias =
+					await GetHashtagsFromMediaSearch(resultBuild.TakeAny(1).First(), 1);
+
+				if (getFromMedias.Any())
+					hashtags.AddRange(getFromMedias.OrderByDescending(_=>_.ToLower()
+						.Similarity(keyword.RemoveLargeSpacesInText(1).ToLower())));
+			}
+
+			var squashHashtags = hashtags.TakeAny(pickAmount - suggestedHashtags.Count);
+			suggestedHashtags.AddRange(squashHashtags);
+
+			if (suggestedHashtags.Count > pickAmount)
+				suggestedHashtags = suggestedHashtags.Take(pickAmount).ToList();
+
+			if (profileTopic !=null && profileTopic.Topics.Any())
+			{
+				var resultProfileTopic = await _topicLookup
+					.GetTopicsByParentId(profileTopic.Topics.TakeAny(1).First()._id);
+				if (resultProfileTopic.Any())
+				{
+					suggestedHashtags.RemoveRange(suggestedHashtags.Count - 5, 5);
+					suggestedHashtags.AddRange(resultProfileTopic.Select(_ => _.Name).TakeAny(5));
+				}
+			}
+			
+			if (suggestedHashtags.Count < 10 && retries > 0)
+				return await SuggestHashtags(profileTopic, mediaTopic, images,
+					(pickAmount - suggestedHashtags.Count), keywordsFetchAmount,
+					suggestedHashtags, --retries);
+
+			return suggestedHashtags.Select(_=>"#"+_.RemoveFirstHashtagCharacter()).ToList();
+		}
 	}
 }

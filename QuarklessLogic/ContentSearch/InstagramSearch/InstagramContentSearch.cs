@@ -137,7 +137,7 @@ namespace QuarklessLogic.ContentSearch.InstagramSearch
 			}));
 			return usersTotals;
 		}
-		public async Task<List<UserResponse<string>>> SearchInstagramMediaLikers(string mediaId)
+		public async Task<List<UserResponse<string>>> SearchInstagramMediaLikers(CTopic mediaTopic, string mediaId)
 		{
 			var userLikerResult = await _responseResolver.WithClient(_container).WithResolverAsync
 				(await _container.Media.GetMediaLikersAsync(mediaId));
@@ -151,13 +151,14 @@ namespace QuarklessLogic.ContentSearch.InstagramSearch
 					FullName = s.FullName,
 					IsPrivate = s.IsPrivate,
 					IsVerified = s.IsVerified,
-					ProfilePicture = s.ProfilePicture + "||" + s.ProfilePictureId
+					ProfilePicture = s.ProfilePicture + "||" + s.ProfilePictureId,
+					Topic = mediaTopic
 				}).ToList();
 			}
 
 			return null;
 		}
-		public async Task<List<UserResponse<InstaComment>>> SearchInstagramMediaCommenters(string mediaId, int limit)
+		public async Task<List<UserResponse<InstaComment>>> SearchInstagramMediaCommenters(CTopic mediaTopic, string mediaId, int limit)
 		{
 			try { 
 				var userCommentResult = await _responseResolver.WithClient(_container).WithResolverAsync
@@ -173,7 +174,8 @@ namespace QuarklessLogic.ContentSearch.InstagramSearch
 					IsVerified = res.User.IsVerified,
 					ProfilePicture = res?.User?.ProfilePicture,
 					UserId = res.User.Pk,
-					Username = res.User.UserName
+					Username = res.User.UserName,
+					Topic = mediaTopic
 				})
 				.ToList();
 			}

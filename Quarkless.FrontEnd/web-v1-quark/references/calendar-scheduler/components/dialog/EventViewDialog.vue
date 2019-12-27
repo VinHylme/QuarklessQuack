@@ -198,7 +198,7 @@ export default {
           const request = {
             profileTopic: this.profile.profileTopic,
             mediaTopic: this.mediaTopic,
-            pickAmount: 25,
+            pickAmount: 28,
             mediaUrls: this.medias.map(res=>res.url)
           }
           state.dispatch('BuildTags', request).then(resp=>{
@@ -421,11 +421,11 @@ textarea{
   float:center !important;
   height: $height !important;
   width: $width/1.5 !important;
-  object-fit:fill !important;
+  object-fit:contain !important;
   background-color: transparent !important; 
   &.isImage{
     width:$width;
-    object-fit: scale-down;
+    object-fit: contain;
   }
 }
 .v-cal-dialog .v-cal-dialog-card__body{

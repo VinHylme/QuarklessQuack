@@ -15,7 +15,10 @@ namespace QuarklessContexts.Extensions
 		public static string MatchOnlyPhoneNumbers => @"\d{7,}";
 		public static string MatchOnlyWebAddresses => @"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:\/?#[\]@!\$&'\(\)\*\+,;=.]+$";
 		public static string MatchSpaceAtEnd => @"[^\w]$";
+		public static string MatchFirstOccurrenceOfHashtagCharacter => @"#";
 
+		public static string RemoveFirstHashtagCharacter(this string text) =>
+			Regex.Replace(text, MatchFirstOccurrenceOfHashtagCharacter, "");
 		public static string RemoveSpaceAtEnd(this string text) =>
 			Regex.Replace(text, MatchSpaceAtEnd, "");
 		public static string RemoveHorizontalSeparationFromText(this string text) =>

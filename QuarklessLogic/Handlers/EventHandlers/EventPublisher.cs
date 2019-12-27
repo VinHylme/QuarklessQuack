@@ -15,7 +15,7 @@ namespace QuarklessLogic.Handlers.EventHandlers
 		{
 			using (_scope)
 			{
-				var handlers = _scope.ServiceProvider.GetServices<IEventSubscriber<TEvent>>();
+				var handlers = _scope.ServiceProvider.GetServices<IEventSubscriberSync<TEvent>>();
 				foreach (var eventSubscriber in handlers)
 				{
 					eventSubscriber.Handle(@event);

@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Common.Clients;
 using QuarklessContexts.Extensions;
+using QuarklessContexts.Models.ServicesModels.FetcherModels;
+using QuarklessLogic.Handlers.EventHandlers;
 using QuarklessLogic.ServicesLogic;
 
 namespace Quarkless.Services.DataFetcher
@@ -50,6 +52,9 @@ namespace Quarkless.Services.DataFetcher
 
 			IServiceCollection services = new ServiceCollection();
 			services.AddSingleton<IFetcher, Fetcher>();
+			services.AddTransient<IFetchResolver, FetchResolver>();
+			services.AddTransient<IEventSubscriberSync<MetaDataMediaRefresh>, FetchResolver>();
+			services.AddTransient<IEventSubscriberSync<MetaDataCommentRefresh>, FetchResolver>();
 			services.Append(InitialiseClientServices());
 			var buildService = services.BuildServiceProvider();
 
@@ -64,7 +69,7 @@ namespace Quarkless.Services.DataFetcher
 				BuildInitialTopics = buildInitialTopics
 			};
 
-			await buildService.GetService<IFetcher>().Begin(settings);
+			await buildService.GetService<IFetchResolver>().StartService();
 		}
 
 		#region Build Services
@@ -99,7 +104,8 @@ namespace Quarkless.Services.DataFetcher
 					ServiceTypes.AddContexts,
 					ServiceTypes.AddHandlers,
 					ServiceTypes.AddLogics,
-					ServiceTypes.AddRepositories
+					ServiceTypes.AddRepositories,
+					ServiceTypes.AddEventServices
 				}
 			});
 			return services;

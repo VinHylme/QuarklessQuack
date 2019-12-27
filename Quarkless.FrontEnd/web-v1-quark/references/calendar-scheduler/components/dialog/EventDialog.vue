@@ -413,7 +413,7 @@
                     const request = {
                         profileTopic: this.profile.profileTopic,
                         mediaTopic: null,
-                        pickAmount: 25,
+                        pickAmount: 28,
                         mediaUrls: this.postDataBuild.media.map(res=>res.url)
                     }
                     state.dispatch('BuildTags', request).then(resp=>{
@@ -598,7 +598,7 @@
     .media-container{
         height: 410px;
         width: 480px;
-        object-fit: fill;
+        object-fit: contain;
 	}
    // border: 1px dashed #f1f1f1;
     background:#23232338;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using InstagramApiSharp.Classes.Models;
+using MoreLinq;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.ResponseModels;
@@ -45,18 +46,16 @@ namespace Quarkless.Services.Heartbeat
 			try
 			{
 				var topicTotal = new List<CTopic>();
-				_customer.Profile.ProfileTopic.Topics.ForEach(topic =>
-				{
-					topicTotal.Add(topic);
-					var relatedTopic = _topicLookup.GetTopicByParentId(topic._id).Result;
-					if(relatedTopic.Any())
-						topicTotal.AddRange(relatedTopic);
-				});
+				if (!_customer.Profile.ProfileTopic.Topics.Any())
+					return;
 
+				var profileSubTopic = _customer.Profile.ProfileTopic.Topics.TakeAny(1).First();
+				topicTotal.AddRange(_topicLookup.GetTopicsByParentId(profileSubTopic._id).Result);
+				
 				if (!topicTotal.Any()) 
 					return;
 
-				var topicSelect = topicTotal.Distinct().TakeAny(takeTopicAmount).ToList();
+				var topicSelect = topicTotal.DistinctBy(x=>x.Name).TakeAny(takeTopicAmount).ToList();
 
 				await _workerManager.PerformTaskOnWorkers(async workers =>
 				{
@@ -533,7 +532,7 @@ namespace Quarkless.Services.Heartbeat
 
 						foreach (var media in mediasForUser)
 						{
-							var comments = await instagramSearch.SearchInstagramMediaCommenters(media.MediaId, limit);
+							var comments = await instagramSearch.SearchInstagramMediaCommenters(media.Topic, media.MediaId, limit);
 
 							await _heartbeatLogic.AddMetaData(MetaDataType.UsersRecentComments,
 								_customer.Profile.ProfileTopic.Category._id,
@@ -579,7 +578,7 @@ namespace Quarkless.Services.Heartbeat
 
 							foreach (var media in medias.ObjectItem.Medias.Where(t => t.MediaFrom == MediaFrom.Instagram))
 							{
-								var suggested = await instagramSearch.SearchInstagramMediaLikers(media.MediaId);
+								var suggested = await instagramSearch.SearchInstagramMediaLikers(media.Topic, media.MediaId);
 								if (suggested == null) return;
 								if (suggested.Count < 1) return;
 								var separateSuggested = suggested.TakeAny(takeUserMediaAmount).ToList().CutObject(cutBy);
@@ -691,7 +690,7 @@ namespace Quarkless.Services.Heartbeat
 								    media.MediaFrom == MediaFrom.Instagram && media.MediaId != null)
 								{
 									var suggested = await instagramSearch
-										.SearchInstagramMediaCommenters(media.MediaId, limit);
+										.SearchInstagramMediaCommenters(media.Topic, media.MediaId, limit);
 
 									if (suggested == null) return;
 									if (suggested.Count < 1) return;
@@ -754,7 +753,7 @@ namespace Quarkless.Services.Heartbeat
 									{
 
 										var suggested = await instagramSearch
-											.SearchInstagramMediaCommenters(media.MediaId, limit);
+											.SearchInstagramMediaCommenters(media.Topic, media.MediaId, limit);
 
 										if (suggested != null)
 										{
@@ -878,13 +877,11 @@ namespace Quarkless.Services.Heartbeat
 				if (!metaS.Any() || metaS.Where(x => x != null)
 					.All(s => !s.SeenBy.Any(sb => sb.User == by.User && sb.ActionType == by.ActionType)))
 				{
-					var selectSubTopic = _customer.Profile.ProfileTopic.Topics.TakeAny(1).SingleOrDefault();
-					if (selectSubTopic == null)
+					if (!_customer.Profile.ProfileTopic.Topics.Any())
 						return;
 
-					var relatedTopic = await _topicLookup.GetTopicByParentId(selectSubTopic._id);
-					relatedTopic.Add(selectSubTopic);
-
+					var selectProfileSubTopic = _customer.Profile.ProfileTopic.Topics.TakeAny(1).First();
+					var relatedTopic = await _topicLookup.GetTopicsByParentId(selectProfileSubTopic._id);
 					var searchQueryTopics = relatedTopic.TakeAny(1).SingleOrDefault();
 
 					var prf = _customer.Profile;
@@ -932,7 +929,7 @@ namespace Quarkless.Services.Heartbeat
 			{
 				// should have proxy for scrape
 
-				var res = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaForSepcificUserYandexQuery,
+				var res = await _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaForSpecificUserYandexQuery,
 					_customer.Profile.ProfileTopic.Category._id, _customer.InstagramAccount.Id);
 
 				var by = new By { ActionType = 0, User = _customer.InstagramAccount.Id };
@@ -940,12 +937,11 @@ namespace Quarkless.Services.Heartbeat
 				var metaS = res as __Meta__<Media>[] ?? res.ToArray();
 				if (!metaS.Any() || metaS.Where(x => x != null).All(s => !s.SeenBy.Any(sb => sb.User == by.User && sb.ActionType == by.ActionType)))
 				{
-					var selectSubTopic = _customer.Profile.ProfileTopic.Topics.TakeAny(1).SingleOrDefault();
-					if (selectSubTopic == null)
+					if (!_customer.Profile.ProfileTopic.Topics.Any())
 						return;
 
-					var relatedTopic = await _topicLookup.GetTopicByParentId(selectSubTopic._id);
-					relatedTopic.Add(selectSubTopic);
+					var selectProfileSubTopic = _customer.Profile.ProfileTopic.Topics.TakeAny(1).First();
+					var relatedTopic = await _topicLookup.GetTopicsByParentId(selectProfileSubTopic._id);
 
 					var searchQuery = relatedTopic.TakeAny(1).SingleOrDefault();
 
@@ -973,12 +969,12 @@ namespace Quarkless.Services.Heartbeat
 							{
 								case ResponseCode.Success:
 									{
-										await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaForSepcificUserYandexQuery,
+										await _heartbeatLogic.RefreshMetaData(MetaDataType.FetchMediaForSpecificUserYandexQuery,
 											_customer.Profile.ProfileTopic.Category._id, _customer.InstagramAccount.Id);
 										var cut = yan.Result.CutObjects(cutBy).ToList();
 										cut.ForEach(async x =>
 										{
-											await _heartbeatLogic.AddMetaData(MetaDataType.FetchMediaForSepcificUserYandexQuery,
+											await _heartbeatLogic.AddMetaData(MetaDataType.FetchMediaForSpecificUserYandexQuery,
 												_customer.Profile.ProfileTopic.Category._id,
 												new __Meta__<Media>(x), _customer.InstagramAccount.Id);
 										});
