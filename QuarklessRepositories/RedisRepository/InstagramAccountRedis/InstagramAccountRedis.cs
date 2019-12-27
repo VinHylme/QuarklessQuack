@@ -20,13 +20,13 @@ namespace QuarklessRepositories.RedisRepository.InstagramAccountRedis
 		public async Task<IEnumerable<ShortInstagramAccountModel>> GetInstagramAccountActiveDetail()
 		{
 			var results = new List<ShortInstagramAccountModel>();
-			var res = _redisClient.Database(0).GetKeys(1000).Where(s=>s.ToString().Split(':').ElementAtOrDefault(1) == RedisKeys.HashtagGrowKeys.Usersessions.ToString()).ToList();
+			var res = _redisClient.Database(0).GetKeys(1000).Where(s=>s.ToString().Split(':').ElementAtOrDefault(1) == RedisKeys.HashtagGrowKeys.UserSessions.ToString()).ToList();
 			foreach(var _ in res)
 			{
 				var segragate = Regex.Match(_.ToString(),@"\(.*?\)").Value.Replace(")","").Replace("(","").Split(':');
 				if (segragate == null || segragate.Length <= 1) continue;
 				var userkeyid = $"{segragate[0]}:{segragate[1]}";
-				var response = await _redisClient.Database(0).StringGet(userkeyid, RedisKeys.HashtagGrowKeys.Usersessions);
+				var response = await _redisClient.Database(0).StringGet(userkeyid, RedisKeys.HashtagGrowKeys.UserSessions);
 				if (string.IsNullOrEmpty(response)) continue;
 				var objectIns = JsonConvert.DeserializeObject<ShortInstagramAccountModel>(response);
 				if(objectIns.AgentState == (int)AgentState.Running)
@@ -39,13 +39,13 @@ namespace QuarklessRepositories.RedisRepository.InstagramAccountRedis
 		public async Task<IEnumerable<ShortInstagramAccountModel>> GetWorkerAccounts()
 		{
 			var results = new List<ShortInstagramAccountModel>();
-			var res = _redisClient.Database(0).GetKeys(1000).Where(s => s.ToString().Split(':').ElementAtOrDefault(1) == RedisKeys.HashtagGrowKeys.Usersessions.ToString()).ToList();
+			var res = _redisClient.Database(0).GetKeys(1000).Where(s => s.ToString().Split(':').ElementAtOrDefault(1) == RedisKeys.HashtagGrowKeys.UserSessions.ToString()).ToList();
 			foreach (var _ in res)
 			{
 				var segragate = Regex.Match(_.ToString(), @"\(.*?\)").Value.Replace(")", "").Replace("(", "").Split(':');
 				if (segragate == null || segragate.Length <= 1) continue;
 				var userkeyid = $"{segragate[0]}:{segragate[1]}";
-				var response = await _redisClient.Database(0).StringGet(userkeyid, RedisKeys.HashtagGrowKeys.Usersessions);
+				var response = await _redisClient.Database(0).StringGet(userkeyid, RedisKeys.HashtagGrowKeys.UserSessions);
 				if (string.IsNullOrEmpty(response)) continue;
 				var objectIns = JsonConvert.DeserializeObject<ShortInstagramAccountModel>(response);
 				if (objectIns.Type == 1)
@@ -59,7 +59,7 @@ namespace QuarklessRepositories.RedisRepository.InstagramAccountRedis
 		{
 			ShortInstagramAccountModel user = null;
 			var userkeyid = $"{userId}:{instaId}";
-			var res = await _redisClient.Database(0).StringGet(userkeyid, RedisKeys.HashtagGrowKeys.Usersessions);
+			var res = await _redisClient.Database(0).StringGet(userkeyid, RedisKeys.HashtagGrowKeys.UserSessions);
 			if (!string.IsNullOrEmpty(res))
 			{
 				user = JsonConvert.DeserializeObject<ShortInstagramAccountModel>(res);
@@ -69,14 +69,14 @@ namespace QuarklessRepositories.RedisRepository.InstagramAccountRedis
 		public async Task<bool> AccountExists(string userId, string instaId)
 		{
 			var userkeyid = $"{userId}:{instaId}";
-			return await _redisClient.Database(0).KeyExists(userkeyid, RedisKeys.HashtagGrowKeys.Usersessions);
+			return await _redisClient.Database(0).KeyExists(userkeyid, RedisKeys.HashtagGrowKeys.UserSessions);
 		}
 		public async Task SetInstagramAccountDetail(string userId, string instaId, ShortInstagramAccountModel value)
 		{
 			var userkeyid = $"{userId}:{instaId}";
 			var getcurrentinplace = await GetInstagramAccountDetail(userId,instaId) ?? new ShortInstagramAccountModel();
 			var newvalue = value.CreateNewObjectIgnoringNulls(getcurrentinplace);
-			await _redisClient.Database(0).StringSet(userkeyid, RedisKeys.HashtagGrowKeys.Usersessions, JsonConvert.SerializeObject(newvalue));
+			await _redisClient.Database(0).StringSet(userkeyid, RedisKeys.HashtagGrowKeys.UserSessions, JsonConvert.SerializeObject(newvalue));
 		}
 	}
 }

@@ -2,41 +2,83 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using InstagramApiSharp.Classes.Models;
+using QuarklessContexts.Enums;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.ServicesModels.Corpus;
 using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 using QuarklessContexts.Models.ServicesModels.FetcherModels;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
-using QuarklessLogic.Handlers.EventHandlers;
 using QuarklessLogic.Logic.HashtagLogic;
 using QuarklessLogic.ServicesLogic.CorpusLogic;
+using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using TimeSpan = System.TimeSpan;
 
-namespace Quarkless.Services.DataFetcher
+namespace Quarkless.Services.DataFetcher.FetchResolver
 {
-	public class FetchResolver :IFetchResolver , IEventSubscriberSync<MetaDataMediaRefresh>, IEventSubscriberSync<MetaDataCommentRefresh>
+	public class FetchResolver : IFetchResolver
 	{
 		private readonly IMediaCorpusLogic _mediaCorpusLogic;
 		private readonly ICommentCorpusLogic _commentCorpusLogic;
 		private readonly IHashtagLogic _hashtagCorpusLogic;
+		private readonly IHeartbeatLogic _heartbeatLogic;
 		private readonly ConcurrentQueue<MetaDataMediaRefresh> _mediasWork;
 		private readonly ConcurrentQueue<MetaDataCommentRefresh> _commentsWork;
 		private int _totalWorkers = 10;
+		private readonly int _updateLoopTime;
+		private Timer _timer;
+
 		public FetchResolver(IMediaCorpusLogic mediaCorpusLogic, ICommentCorpusLogic commentCorpusLogic, 
-			IHashtagLogic hashtagCorpusLogic)
+			IHashtagLogic hashtagCorpusLogic, IHeartbeatLogic heartbeatLogic)
 		{
 			_mediaCorpusLogic = mediaCorpusLogic;
 			_commentCorpusLogic = commentCorpusLogic;
 			_hashtagCorpusLogic = hashtagCorpusLogic;
+			_heartbeatLogic = heartbeatLogic;
 
 			_mediasWork = new ConcurrentQueue<MetaDataMediaRefresh>();
 			_commentsWork = new ConcurrentQueue<MetaDataCommentRefresh>();
+			_updateLoopTime = (int)TimeSpan.FromMinutes(1).TotalMilliseconds;
+			_timer = SetTimer();
+		}
+		private Timer SetTimer()
+		{
+			return new Timer(async _ => await OnCallBack(), null, _updateLoopTime, Timeout.Infinite);
+		}
+		private async Task OnCallBack()
+		{
+			_timer.Dispose();
+
+			var mediasResults = await _heartbeatLogic.GetTempMetaData<MetaDataMediaRefresh>(MetaDataTempType.Medias);
+
+			if (mediasResults != null && mediasResults.Any())
+			{
+				foreach (var mediasResult in mediasResults)
+				{
+					AddMedias(mediasResult);
+				}
+				await _heartbeatLogic.DeleteMetaDataTemp(MetaDataTempType.Medias);
+			}
+
+			var commentsResults = await _heartbeatLogic.GetTempMetaData<MetaDataCommentRefresh>(MetaDataTempType.Comments);
+
+			if (commentsResults != null && commentsResults.Any())
+			{
+				foreach (var commentsResult in commentsResults)
+				{
+					AddComments(commentsResult);
+				}
+				await _heartbeatLogic.DeleteMetaDataTemp(MetaDataTempType.Comments);
+			}
+
+			_timer = SetTimer();
 		}
 
 		public async Task StartService()
 		{
+			await OnCallBack();
 			while (true)
 			{
 				if (_totalWorkers > 0)
@@ -48,6 +90,10 @@ namespace Quarkless.Services.DataFetcher
 			}
 		}
 
+		/// <summary>
+		/// todo: need to relate the topics together somehow, and possibly store on a individual basis
+		/// </summary>
+		/// <returns></returns>
 		private async Task BeginMediaWork()
 		{
 			if(_mediasWork.IsEmpty)
@@ -175,22 +221,21 @@ namespace Quarkless.Services.DataFetcher
 				Console.WriteLine("Adding Comments fetched {0}", comments.Count);
 				await _commentCorpusLogic.AddComments(comments);
 			}
-
 			_totalWorkers++;
 		}
 
-		public void Handle(MetaDataMediaRefresh @event)
+		public void AddMedias(MetaDataMediaRefresh medias)
 		{
-			if (@event.Medias.Count > 0)
+			if (medias.Medias.Count > 0)
 			{
-				_mediasWork.Enqueue(@event);
+				_mediasWork.Enqueue(medias);
 			}
 		}
-		public void Handle(MetaDataCommentRefresh @event)
+		public void AddComments(MetaDataCommentRefresh comments)
 		{
-			if (@event.Comments.Count > 0)
+			if (comments.Comments.Count > 0)
 			{
-				_commentsWork.Enqueue(@event);
+				_commentsWork.Enqueue(comments);
 			}
 		}
 	}

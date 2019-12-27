@@ -30,7 +30,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Quarkless.Common.Clients\Quarkless.Common.Clients.csproj" />
-    <ProjectReference Include="..\QuarklessContexts\QuarklessContexts.csproj" />
   </ItemGroup>
 
 </Project>

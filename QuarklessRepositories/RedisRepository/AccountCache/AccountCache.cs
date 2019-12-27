@@ -15,7 +15,7 @@ namespace QuarklessRepositories.RedisRepository.AccountCache
 		public async Task<AccountUser> GetAccount(string userId)
 		{
 			string userkeyid = $"{userId}";
-			var res = await _redisClient.Database(0).StringGet(userkeyid, RedisKeys.HashtagGrowKeys.Usersessions);
+			var res = await _redisClient.Database(0).StringGet(userkeyid, RedisKeys.HashtagGrowKeys.UserSessions);
 			if (res != null && !string.IsNullOrEmpty(res))
 			{
 				return JsonConvert.DeserializeObject<AccountUser>(res);
@@ -26,7 +26,7 @@ namespace QuarklessRepositories.RedisRepository.AccountCache
 		{
 			string userkeyid = $"{value.UserName}";
 
-			await _redisClient.Database(0).StringSet(userkeyid, RedisKeys.HashtagGrowKeys.Usersessions, JsonConvert.SerializeObject(value), expiry: System.TimeSpan.FromHours(1));
+			await _redisClient.Database(0).StringSet(userkeyid, RedisKeys.HashtagGrowKeys.UserSessions, JsonConvert.SerializeObject(value), expiry: System.TimeSpan.FromHours(1));
 		}
 	}
 }

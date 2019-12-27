@@ -11,6 +11,7 @@ using System.Linq;
 using InstagramApiSharp.Classes.Models;
 using QuarklessLogic.Handlers.RequestBuilder.Constants;
 using QuarklessContexts.Classes.Carriers;
+using QuarklessContexts.Models.ServicesModels.FetcherModels;
 using QuarklessLogic.Handlers.ContentInfoBuilder;
 using QuarklessLogic.Logic.StorageLogic;
 
@@ -54,16 +55,20 @@ namespace Quarkless.Services.ActionBuilders.MaintainActions
 		}
 		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
-			ResultCarrier<IEnumerable<TimelineEventModel>> Results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
+			var results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
 			if (actionOptions != null)
 			{
 				var accountCheckerActionOptions = actionOptions as AccountCheckerActionOptions;
-				var currentUsersMedia = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchUserOwnProfile, user.Profile.ProfileTopic.Category._id, user.Profile.InstagramAccountId)
-										.GetAwaiter().GetResult().ToList();
+				var currentUsersMedia = _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
+					{
+						MetaDataType = MetaDataType.FetchUserOwnProfile,
+						ProfileCategoryTopicId = user.Profile.ProfileTopic.Category._id, 
+						InstagramId = user.ShortInstagram.Id
+					}).GetAwaiter().GetResult().ToList();
 
 				var postAnalyser = accountCheckerActionOptions.PostAnalyser;
 				//remove duplicates from user's gallery
-				List<ContainMedia> usersMediaInBytes = new List<ContainMedia>();
+				var usersMediaInBytes = new List<ContainMedia>();
 				{
 					foreach(var userMedia in currentUsersMedia)
 					{
@@ -87,7 +92,7 @@ namespace Quarkless.Services.ActionBuilders.MaintainActions
 					var duplicates = postAnalyser.Manipulation.ImageEditor.DuplicateImages(images.Select(s=>s.mediaData),0.95);
 					var enumerable = duplicates as byte[][] ?? duplicates.ToArray();
 					if(duplicates!=null && enumerable.Count() > 0) { 
-						List<TimelineEventModel> tosend = new List<TimelineEventModel>();
+						var tosend = new List<TimelineEventModel>();
 						for (int x = 0; x < enumerable.Count(); x++)
 						{
 							RestModel restModel = new RestModel
@@ -103,18 +108,18 @@ namespace Quarkless.Services.ActionBuilders.MaintainActions
 								ExecutionTime = accountCheckerActionOptions.ExecutionTime.AddMinutes((_accountCheckerStrategySettings.OffsetPerAction.TotalMinutes)) 
 							});
 						}
-						Results.IsSuccesful = true;
-						Results.Results = tosend;
-						return Results;
+						results.IsSuccesful = true;
+						results.Results = tosend;
+						return results;
 					}
 				}
 			}
-			Results.IsSuccesful = false;
-			Results.Info = new ErrorResponse
+			results.IsSuccesful = false;
+			results.Info = new ErrorResponse
 			{
 				Message = $"accountcheck option is empty, user: {user.OAccountId}, instaId: {user.OInstagramAccountUsername}"
 			};
-			return Results;
+			return results;
 		}
 	}
 }

@@ -15,6 +15,7 @@ using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using QuarklessContexts.Models.ServicesModels.FetcherModels;
 using QuarklessContexts.Models.Topics;
 using QuarklessLogic.Handlers.ContentInfoBuilder;
 using QuarklessLogic.Logic.StorageLogic;
@@ -53,17 +54,32 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				ActionType = (int)ActionType.CreateCommentMedia,
 				User = user.Profile.InstagramAccountId
 			};
-			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByUserLocationTargetList, user.Profile.ProfileTopic.Category._id,user.Profile.InstagramAccountId)
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
+				{
+					MetaDataType = MetaDataType.FetchMediaByUserLocationTargetList, 
+					ProfileCategoryTopicId = user.Profile.ProfileTopic.Category._id,
+					InstagramId = user.ShortInstagram.Id
+				})
 				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Medias.Count > 0);
+
 			if (fetchMedias == null) return null;
-			var meta_S = fetchMedias as __Meta__<Media>[] ?? fetchMedias.ToArray();
-			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
-			if (@select == null) return null;
-			@select.SeenBy.Add(@by);
-			_heartbeatLogic.UpdateMetaData<Media>(MetaDataType.FetchMediaByUserLocationTargetList, user.Profile.ProfileTopic.Category._id, @select,user.Profile.InstagramAccountId).GetAwaiter().GetResult();
-			return new HolderComment { Topic = user.Profile.ProfileTopic.Category, MediaId = @select.ObjectItem.Medias.FirstOrDefault()?.MediaId };
+			var metaS = fetchMedias as Meta<Media>[] ?? fetchMedias.ToArray();
+			var select = metaS.ElementAtOrDefault(SecureRandom.Next(metaS.Count()));
+			if (select == null) return null;
+			select.SeenBy.Add(by);
+
+			_heartbeatLogic.UpdateMetaData<Media>(new MetaDataCommitRequest<Media>
+			{
+				MetaDataType = MetaDataType.FetchMediaByUserLocationTargetList,
+				ProfileCategoryTopicId = user.Profile.ProfileTopic.Category._id,
+				InstagramId = user.ShortInstagram.Id,
+				Data = select,
+			}).GetAwaiter().GetResult();
+
+			return new HolderComment { Topic = user.Profile.ProfileTopic.Category, MediaId = select.ObjectItem.Medias.FirstOrDefault()?.MediaId };
 		}
+
 		private HolderComment CommentingByTopic()
 		{
 			var by = new By
@@ -71,34 +87,64 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				ActionType = (int)ActionType.CreateCommentMedia,
 				User = user.Profile.InstagramAccountId
 			};
-			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByCommenters,user.Profile.ProfileTopic.Category._id)
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
+				{
+					MetaDataType = MetaDataType.FetchMediaByCommenters,
+					ProfileCategoryTopicId = user.Profile.ProfileTopic.Category._id,
+					InstagramId = user.ShortInstagram.Id
+				})
 				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Medias.Count > 0);
-			var meta_S = fetchMedias as __Meta__<Media>[] ?? fetchMedias.ToArray();
-			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
-				if (@select == null) return null;
-				@select.SeenBy.Add(@by);
-			_heartbeatLogic.UpdateMetaData<Media>(MetaDataType.FetchMediaByCommenters,user.Profile.ProfileTopic.Category._id, @select).GetAwaiter().GetResult();
-			return new HolderComment { Topic = user.Profile.ProfileTopic.Category, MediaId = @select.ObjectItem.Medias.FirstOrDefault()?.MediaId};
+
+			var metaS = fetchMedias as Meta<Media>[] ?? fetchMedias.ToArray();
+
+			var select = metaS.ElementAtOrDefault(SecureRandom.Next(metaS.Count()));
+				if (select == null) return null;
+				select.SeenBy.Add(by);
+
+			_heartbeatLogic.UpdateMetaData<Media>(new MetaDataCommitRequest<Media>
+			{
+				MetaDataType = MetaDataType.FetchMediaByCommenters,
+				ProfileCategoryTopicId = user.Profile.ProfileTopic.Category._id,
+				InstagramId = user.ShortInstagram.Id,
+				Data = select
+			}).GetAwaiter().GetResult();
+			return new HolderComment { Topic = user.Profile.ProfileTopic.Category, MediaId = select.ObjectItem.Medias.FirstOrDefault()?.MediaId};
 		}
+
 		private HolderComment CommentingByLikers()
 		{
 			var by = new By
 			{
 				ActionType = (int)ActionType.CreateCommentMedia,
-				User = user.Profile.InstagramAccountId
+				User = user.ShortInstagram.Id
 			};
-			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByLikers, user.Profile.ProfileTopic.Category._id)
+			var fetchMedias = _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
+				{
+					MetaDataType = MetaDataType.FetchMediaByLikers,
+					ProfileCategoryTopicId = user.Profile.ProfileTopic.Category._id,
+					InstagramId = user.ShortInstagram.Id
+				})
 				.GetAwaiter().GetResult().Where(exclude=>!exclude.SeenBy.Any(e=>e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Medias.Count > 0);
+			
 			if (fetchMedias == null) return null;
-			var meta_S = fetchMedias as __Meta__<Media>[] ?? fetchMedias.ToArray();
-			var select = meta_S.ElementAtOrDefault(SecureRandom.Next(meta_S.Count()));
-			if (@select == null) return null;
-			@select.SeenBy.Add(@by);
-			_heartbeatLogic.UpdateMetaData<Media>(MetaDataType.FetchMediaByCommenters, user.Profile.ProfileTopic.Category._id, @select).GetAwaiter().GetResult();
-			return new HolderComment { Topic = user.Profile.ProfileTopic.Category, MediaId = @select.ObjectItem.Medias.FirstOrDefault()?.MediaId };
+			var metaS = fetchMedias as Meta<Media>[] ?? fetchMedias.ToArray();
+
+			var select = metaS.ElementAtOrDefault(SecureRandom.Next(metaS.Count()));
+			if (select == null) return null;
+
+			select.SeenBy.Add(by);
+			_heartbeatLogic.UpdateMetaData<Media>(new MetaDataCommitRequest<Media>
+			{
+				MetaDataType = MetaDataType.FetchMediaByCommenters,
+				ProfileCategoryTopicId = user.Profile.ProfileTopic.Category._id,
+				InstagramId = user.ShortInstagram.Id,
+				Data = select
+			}).GetAwaiter().GetResult();
+			return new HolderComment { Topic = user.Profile.ProfileTopic.Category, MediaId = select.ObjectItem.Medias.FirstOrDefault()?.MediaId };
 		}
+
 		public IActionCommit IncludeStrategy(IStrategySettings strategy)
 		{
 			commentingStrategySettings = strategy as CommentingStrategySettings;

@@ -6,12 +6,13 @@
 		{
 			Timeline,
 			TimelineLog,
-			Usersessions,
+			UserSessions,
 			MetaData,
+			MetaDataTemp,
 			Corpus,
 			SearchSession,
 			UserLibrary,
-			APILog,
+			ApiLog,
 			Logger,
 			LookUp
 		}

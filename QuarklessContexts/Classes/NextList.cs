@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
-namespace Quarkless.Services.Delegator
+namespace QuarklessContexts.Classes
 {
 	public class NextList<T> : IEnumerable<T>
 	{

@@ -79,13 +79,13 @@ namespace Quarkless.Services.Heartbeat
 			var userTargetList = await Task.Run(async () => await _metadataExtract.BuildUsersTargetListMedia(1))
 				.ContinueWith(async x =>
 				{
-					await _metadataExtract.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserTargetList, MetaDataType.FetchCommentsViaUserTargetList, true, 2, takeMediaAmount: 14, takeUserAmount: 200);
+					await _metadataExtract.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserTargetList, MetaDataType.FetchCommentsViaUserTargetList, 2, takeMediaAmount: 14, takeUserAmount: 200);
 				});
 
 			var locTargetList = await Task.Run(async () => await _metadataExtract.BuildLocationTargetListMedia(1))
 				.ContinueWith(async s =>
 				{
-					await _metadataExtract.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserLocationTargetList, MetaDataType.FetchCommentsViaLocationTargetList, true, 2, takeMediaAmount: 14, takeUserAmount: 200);
+					await _metadataExtract.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserLocationTargetList, MetaDataType.FetchCommentsViaLocationTargetList, 2, takeMediaAmount: 14, takeUserAmount: 200);
 				});
 
 			Task.WaitAll(userTargetList, locTargetList);
@@ -110,7 +110,7 @@ namespace Quarkless.Services.Heartbeat
 			{
 				await _metadataExtract.BuildUsersFollowSuggestions(2);
 				await _metadataExtract.BuildUsersInbox();
-				await _metadataExtract.BuildCommentsFromSpecifiedSource(MetaDataType.FetchUsersFeed, MetaDataType.FetchCommentsViaUserFeed, true);
+				await _metadataExtract.BuildCommentsFromSpecifiedSource(MetaDataType.FetchUsersFeed, MetaDataType.FetchCommentsViaUserFeed);
 			});
 			Task.WaitAll(profileRefresh, followerList, followingList, feedRefresh);
 			Console.WriteLine("Ended User Info Extract for {0}", _customer.InstagramAccount.Username);

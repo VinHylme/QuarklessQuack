@@ -5,18 +5,20 @@ using QuarklessContexts.Models.ServicesModels.SearchModels;
 
 namespace QuarklessContexts.Models.ServicesModels.FetcherModels
 {
-	public class MetaDataMediaRefresh
+	public class MetaDataMediaRefresh : IMetaDataRequest
 	{
+		public string Uuid { get; set; }
 		public MetaDataType MetaDataType { get; set; }
-		public string Topic { get; set; }
-		public string UserId { get; set; }
+		public string ProfileCategoryTopicId { get; set; }
+		public string InstagramId { get; set; }
 		public List<MediaResponse> Medias;
 	}
-	public class MetaDataCommentRefresh
+	public class MetaDataCommentRefresh : IMetaDataRequest
 	{
+		public string Uuid { get; set; }
 		public MetaDataType MetaDataType { get; set; }
-		public string Topic { get; set; }
-		public string UserId { get; set; }
+		public string ProfileCategoryTopicId { get; set; }
+		public string InstagramId { get; set; }
 		public List<UserResponse<InstaComment>> Comments;
 	}
 }

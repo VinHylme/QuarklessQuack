@@ -7,12 +7,12 @@ namespace QuarklessContexts.Models.ServicesModels.HeartbeatModels
 		public string User { get; set; }
 		public int ActionType { get; set;}
 	}
-	public class __Meta__<T>
+	public class Meta<T>
 	{
 		public T ObjectItem { get; set; }
 		public List<By> SeenBy { get; set; } = new List<By>();
 
-		public __Meta__(T objectItem)
+		public Meta(T objectItem)
 		{
 			this.ObjectItem = objectItem;
 		}

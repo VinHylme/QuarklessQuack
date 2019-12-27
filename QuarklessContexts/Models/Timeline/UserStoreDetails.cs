@@ -12,7 +12,7 @@ namespace QuarklessContexts.Models.Timeline
 		public ProfileModel Profile { get; set; }
 
 		[JsonIgnore]
-		public ShortInstagramAccountModel shortInstagram { get; set; }
+		public ShortInstagramAccountModel ShortInstagram { get; set; }
 
 		[JsonIgnore]
 		public IEnumerable<MessagesLib> MessagesTemplates { get; set;  }

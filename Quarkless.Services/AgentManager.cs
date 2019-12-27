@@ -456,7 +456,7 @@ namespace Quarkless.Services
 						var profile = await _profileLogic.GetProfile(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser);
 						if (profile == null) return;
 						
-						userStoreDetails.shortInstagram = shortInstagram;
+						userStoreDetails.ShortInstagram = shortInstagram;
 						userStoreDetails.Profile = profile;
 						userStoreDetails.MessagesTemplates = await _libraryLogic.GetSavedMessagesForUser(shortInstagram.Id);
 						

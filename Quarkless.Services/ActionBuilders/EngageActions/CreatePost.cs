@@ -21,6 +21,7 @@ using QuarklessContexts.Models.MediaModels;
 using QuarklessContexts.Classes.Carriers;
 using MoreLinq;
 using Quarkless.Analyser.Extensions;
+using QuarklessContexts.Models.ServicesModels.FetcherModels;
 using QuarklessLogic.Handlers.ContentInfoBuilder;
 using QuarklessLogic.Logic.StorageLogic;
 namespace Quarkless.Services.ActionBuilders.EngageActions
@@ -28,7 +29,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 	#region Object types for this class
 	internal struct MediaData
 	{
-		public __Meta__<Media> SelectedMedia;
+		public Meta<Media> SelectedMedia;
 		public byte[] MediaBytes;
 		public string Url { get; set; }
 		public InstaMediaType MediaType { get; set; }
@@ -123,7 +124,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 			}
 			try
 			{
-				var totalResults = new List<__Meta__<Media>>();
+				var totalResults = new List<Meta<Media>>();
 				var selectedAction = MetaDataType.None;
 				var allowedSearchTypes = new List<SearchType>();
 
@@ -141,8 +142,12 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 				switch (searchTypeSelected)
 				{
 					case SearchType.Google:
-						var googleResults = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaForSpecificUserGoogle,
-							user.Profile.ProfileTopic.Category._id, user.Profile.InstagramAccountId).Result;
+						var googleResults = _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
+						{
+							MetaDataType = MetaDataType.FetchMediaForSpecificUserGoogle,
+							ProfileCategoryTopicId = user.Profile.ProfileTopic.Category._id,
+							InstagramId = user.Profile.InstagramAccountId
+						}).Result;
 
 						selectedAction = MetaDataType.FetchMediaForSpecificUserGoogle;
 						if (googleResults != null)
@@ -153,7 +158,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						{
 							var action = new[] { 0, 1 };
 							var pickedRandom = action.ElementAt(SecureRandom.Next(action.Length-1));
-							var userId = user.OInstagramAccountUser;
+							var userId = user.ShortInstagram.Id;
 							var selected = MetaDataType.FetchMediaByUserTargetList;
 							if(pickedRandom == 1)
 							{
@@ -161,14 +166,22 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 								selected = MetaDataType.FetchMediaByTopic;
 							}
 
-							totalResults = _heartbeatLogic.GetMetaData<Media>(selected, 
-								user.Profile.ProfileTopic.Category._id, userId).Result.ToList();
+							totalResults = _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
+							{
+								MetaDataType = selected,
+								ProfileCategoryTopicId = user.Profile.ProfileTopic.Category._id,
+								InstagramId = userId
+							}).Result.ToList();
 							
 							selectedAction = selected;
 						}
 						else { 
-							totalResults = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaByTopic,
-								user.Profile.ProfileTopic.Category._id).Result.ToList();
+							totalResults = _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
+							{
+								MetaDataType = MetaDataType.FetchMediaByTopic,
+								ProfileCategoryTopicId = user.Profile.ProfileTopic.Category._id,
+								InstagramId = user.ShortInstagram.Id
+							}).Result.ToList();
 							
 							selectedAction = MetaDataType.FetchMediaByTopic;
 						}
@@ -176,8 +189,12 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					case SearchType.Yandex:
 						if (user.Profile.Theme.ImagesLike != null && user.Profile.Theme.ImagesLike.Count > 0)
 						{
-							var yandexResults = _heartbeatLogic.GetMetaData<Media>(MetaDataType.FetchMediaForSpecificUserYandex,
-								user.Profile.ProfileTopic.Category._id, user.Profile.InstagramAccountId).Result;
+							var yandexResults = _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
+							{
+								MetaDataType = MetaDataType.FetchMediaForSpecificUserYandex,
+								ProfileCategoryTopicId = user.Profile.ProfileTopic.Category._id,
+								InstagramId = user.ShortInstagram.Id
+							}).Result;
 							
 							selectedAction = MetaDataType.FetchMediaForSpecificUserYandex;
 							if (yandexResults != null)
@@ -235,13 +252,24 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					result.SeenBy.Add(@by);
 					if (selectedAction == MetaDataType.FetchMediaByTopic)
 					{
-						_heartbeatLogic.UpdateMetaData(selectedAction, user.Profile.ProfileTopic.Category._id, result)
+						_heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
+							{
+								MetaDataType = selectedAction, 
+								ProfileCategoryTopicId = user.Profile.ProfileTopic.Category._id,
+								InstagramId = user.ShortInstagram.Id,
+								Data = result
+							})
 							.GetAwaiter().GetResult();
 					}
 					else
 					{
-						_heartbeatLogic.UpdateMetaData(selectedAction, user.Profile.ProfileTopic.Category._id, result, 
-							user.Profile.InstagramAccountId).GetAwaiter().GetResult();
+						_heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
+						{
+							MetaDataType = selectedAction, 
+							ProfileCategoryTopicId = user.Profile.ProfileTopic.Category._id,
+							InstagramId = user.Profile.InstagramAccountId,
+							Data = result
+						}).GetAwaiter().GetResult();
 					}
 
 					if (media.MediaType == InstaMediaType.Carousel && currentAmount < carouselAmount)
@@ -471,12 +499,12 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 							MediaTopic = selectedImageMedia.Topic,
 							MediaInfo = mediaInfo,
 							Image = imageUpload,
-							Location = user.shortInstagram.Location !=null ? new InstaLocationShort
+							Location = user.ShortInstagram.Location !=null ? new InstaLocationShort
 							{
-								Address = user.shortInstagram.Location.Address,
-								Lat = user.shortInstagram.Location.Coordinates.Latitude,
-								Lng = user.shortInstagram.Location.Coordinates.Longitude,
-								Name = user.shortInstagram.Location.City
+								Address = user.ShortInstagram.Location.Address,
+								Lat = user.ShortInstagram.Location.Coordinates.Latitude,
+								Lng = user.ShortInstagram.Location.Coordinates.Longitude,
+								Name = user.ShortInstagram.Location.City
 							} : null
 						};
 						
@@ -500,12 +528,12 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						{
 							MediaTopic = selectedCarouselMedia.Topic,
 							MediaInfo = mediaInfo,
-							Location = user.shortInstagram.Location != null ? new InstaLocationShort
+							Location = user.ShortInstagram.Location != null ? new InstaLocationShort
 							{
-								Address = user.shortInstagram.Location.Address,
-								Lat = user.shortInstagram.Location.Coordinates.Latitude,
-								Lng = user.shortInstagram.Location.Coordinates.Longitude,
-								Name = user.shortInstagram.Location.City
+								Address = user.ShortInstagram.Location.Address,
+								Lat = user.ShortInstagram.Location.Coordinates.Latitude,
+								Lng = user.ShortInstagram.Location.Coordinates.Longitude,
+								Name = user.ShortInstagram.Location.City
 							} : null,
 							Album = selectedMedia.MediaData.Select(f => new InstaAlbumUpload
 							{
@@ -550,12 +578,12 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 						{
 							MediaTopic = selectedVideoMedia.Topic,
 							MediaInfo = mediaInfo,
-							Location = user.shortInstagram.Location != null ? new InstaLocationShort
+							Location = user.ShortInstagram.Location != null ? new InstaLocationShort
 							{
-								Address = user.shortInstagram.Location.Address,
-								Lat = user.shortInstagram.Location.Coordinates.Latitude,
-								Lng = user.shortInstagram.Location.Coordinates.Longitude,
-								Name = user.shortInstagram.Location.City
+								Address = user.ShortInstagram.Location.Address,
+								Lat = user.ShortInstagram.Location.Coordinates.Latitude,
+								Lng = user.ShortInstagram.Location.Coordinates.Longitude,
+								Name = user.ShortInstagram.Location.City
 							} : null,
 							Video = new InstaVideoUpload
 							{

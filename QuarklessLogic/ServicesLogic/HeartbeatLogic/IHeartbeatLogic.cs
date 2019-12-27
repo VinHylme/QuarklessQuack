@@ -1,17 +1,19 @@
 ﻿using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
-using QuarklessContexts.Models.ServicesModels.SearchModels;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using QuarklessContexts.Enums;
+using QuarklessContexts.Models.ServicesModels.FetcherModels;
 
 namespace QuarklessLogic.ServicesLogic.HeartbeatLogic
 {
 	public interface IHeartbeatLogic
 	{
-		Task RefreshMetaData(MetaDataType metaDataType, string topic, string userId = null);
-		Task AddMetaData<T>(MetaDataType metaDataType, string topic, __Meta__<T> data, string userId = null);
-		Task UpdateMetaData<T>(MetaDataType metaDataType, string topic, __Meta__<T> data, string userId = null);
-		Task<IEnumerable<__Meta__<T>>> GetMetaData<T>(MetaDataType metaDataType, string topic, string userId = null);
-		Task<__Meta__<Media>> GetMediaMetaData(MetaDataType metaDataType, string topic);
-		Task<__Meta__<List<UserResponse<string>>>> GetUserFromLikers(MetaDataType metaDataType, string topic);
+		Task RefreshMetaData(MetaDataFetchRequest request);
+		Task AddMetaData<TInput>(MetaDataCommitRequest<TInput> request);
+		Task UpdateMetaData<TInput>(MetaDataCommitRequest<TInput> request);
+		Task<IEnumerable<Meta<TInput>>> GetMetaData<TInput>(MetaDataFetchRequest request);
+
+		Task<IEnumerable<TResults>> GetTempMetaData<TResults>(MetaDataTempType type);
+		Task DeleteMetaDataTemp(MetaDataTempType type);
 	}
 }

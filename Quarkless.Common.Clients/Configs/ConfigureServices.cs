@@ -53,7 +53,6 @@ using QuarklessLogic.Logic.ResponseLogic;
 using QuarklessLogic.Logic.StorageLogic;
 using QuarklessLogic.Logic.TimelineEventLogLogic;
 using QuarklessLogic.QueueLogic.Services;
-using QuarklessLogic.ServicesLogic;
 using QuarklessLogic.ServicesLogic.AgentLogic;
 using QuarklessLogic.ServicesLogic.CorpusLogic;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;

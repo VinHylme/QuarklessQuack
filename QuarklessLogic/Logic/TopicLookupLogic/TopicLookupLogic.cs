@@ -114,7 +114,7 @@ namespace QuarklessLogic.Logic.TopicLookupLogic
 			if (topic == null || string.IsNullOrEmpty(topic.Name) 
 			                  || string.IsNullOrWhiteSpace(topic.Name) 
 			                  || topic.Name.Length<=2) 
-				throw new Exception("Topic cannot be empty");
+				throw new Exception("ProfileCategoryTopicId cannot be empty");
 
 			var response = await _topicLookupRepository.AddTopic(topic);
 			topic._id = response.Id;

@@ -16,7 +16,7 @@ namespace QuarklessRepositories.RedisRepository.APILogger
 		{
 			try
 			{
-				await _redis.SetAdd("Users",RedisKeys.HashtagGrowKeys.APILog, JsonConvert.SerializeObject(apiLogMeta),
+				await _redis.SetAdd("Users",RedisKeys.HashtagGrowKeys.ApiLog, JsonConvert.SerializeObject(apiLogMeta),
 					TimeSpan.FromDays(80));
 			}
 			catch (Exception ee)
@@ -26,8 +26,8 @@ namespace QuarklessRepositories.RedisRepository.APILogger
 		}
 		public async Task<IEnumerable<ApiLogMetaData>> GetAllLogData()
 		{
-			return await _redis.GetMembers<ApiLogMetaData>("Users", RedisKeys.HashtagGrowKeys.APILog);
-			//return JsonConvert.DeserializeObject<IEnumerable<ApiLogMetaData>>(await _redis.StringGet(RedisKeys.HashtagGrowKeys.APILog));
+			return await _redis.GetMembers<ApiLogMetaData>("Users", RedisKeys.HashtagGrowKeys.ApiLog);
+			//return JsonConvert.DeserializeObject<IEnumerable<ApiLogMetaData>>(await _redis.StringGet(RedisKeys.HashtagGrowKeys.ApiLog));
 		}
 	}
 }

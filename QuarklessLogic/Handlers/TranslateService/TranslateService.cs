@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using QuarklessContexts.Models.Options;
-using LanguageDetection.Core;
 
 namespace QuarklessLogic.Handlers.TranslateService
 {
@@ -54,7 +53,6 @@ namespace QuarklessLogic.Handlers.TranslateService
 
 	public class TranslateService : ITranslateService
 	{
-		private readonly LanguageDetector _detector;
 		private readonly ISeleniumClient _seleniumClient;
 		private readonly IRestSharpClientManager _restSharpClient;
 		private readonly string _yandexApiKey;
@@ -72,8 +70,7 @@ namespace QuarklessLogic.Handlers.TranslateService
 				"--headless",
 				"--enable-features=NetworkService"
 			);
-			_detector = new LanguageDetector();
-			_detector.AddAllLanguages();
+
 		}
 		static int pos = 0;
 		public void AddProxy(ProxyModel proxy)
@@ -84,9 +81,6 @@ namespace QuarklessLogic.Handlers.TranslateService
 			proxyLine = string.IsNullOrEmpty(proxy.Username) ? $"{proxy.Address}:{proxy.Port}" : $"{proxy.Username}:{proxy.Password}@{proxy.Address}:{proxy.Port}";
 			_seleniumClient.AddArguments($"--proxy-server={proxyLine}");
 		}
-
-		public bool IsLanguageIn(string text, string language = "en")
-			=> (!_detector.Detect(text).Equals(language));
 
 		public IEnumerable<string> DetectLanguage(params string[] texts)
 		{
