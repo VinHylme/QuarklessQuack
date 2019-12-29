@@ -1,5 +1,4 @@
-﻿using Quarkless.Interfacing.Objects;
-using QuarklessContexts.Models.Profiles;
+﻿using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.QueryModels.Settings;
 using QuarklessContexts.Models.ServicesModels.SearchModels;
 using System.Collections.Generic;

@@ -69,6 +69,7 @@ namespace QuarklessRepositories.RedisRepository.HeartBeaterRedis
 							MetaDataType = request.MetaDataType,
 							ProfileCategoryTopicId = request.ProfileCategoryTopicId,
 							InstagramId = request.InstagramId,
+							AccountId = request.AccountId,
 							Medias = mediasObject.SelectMany(_ => _.ObjectItem.Medias).ToList()
 						};
 
@@ -90,6 +91,7 @@ namespace QuarklessRepositories.RedisRepository.HeartBeaterRedis
 							MetaDataType = request.MetaDataType,
 							ProfileCategoryTopicId = request.ProfileCategoryTopicId,
 							InstagramId = request.InstagramId,
+							AccountId = request.AccountId,
 							Comments = commentObject.SelectMany(_ => _.ObjectItem).ToList()
 						};
 

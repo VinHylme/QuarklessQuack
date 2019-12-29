@@ -45,6 +45,30 @@ namespace QuarklessRepositories.Repository.ServicesRepositories.HashtagsReposito
 				return false;
 			}
 		}
+		public async Task<IEnumerable<HashtagsModel>> GetHashtags(int topicHashCode, int limit = -1, bool skip = true)
+		{
+			var results = new List<HashtagsModel>();
+			try
+			{
+				var filters = Builders<HashtagsModel>.Filter.Eq(_ => _.From.TopicHash, topicHashCode);
+				var len = await _context.Hashtags.CountDocumentsAsync(filters);
+				if (len <= 0) return results;
+				var options = new FindOptions<HashtagsModel, HashtagsModel>()
+				{
+					Skip = skip ? SecureRandom.Next((int)len / 2) : 0
+				};
+				if (limit != -1)
+					options.Limit = limit;
+				var res = await _context.Hashtags.FindAsync(filters, options);
+				results = res.ToList();
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err.Message);
+			}
+
+			return results;
+		}
 		public async Task<IEnumerable<HashtagsModel>> GetHashtags(IEnumerable<FilterDefinition<HashtagsModel>> searchRepository = null, int limit = -1)
 		{
 			try
@@ -78,7 +102,7 @@ namespace QuarklessRepositories.Repository.ServicesRepositories.HashtagsReposito
 		{
 			try
 			{
-				var query = new FilterDefinitionBuilder<HashtagsModel>().Regex(_ => _.Topic,
+				var query = new FilterDefinitionBuilder<HashtagsModel>().Regex(_ => _.From.TopicRequest.Name,
 					BsonRegularExpression.Create(new Regex("^" + topic + "$", RegexOptions.IgnoreCase)));
 				return (await _context.Hashtags.FindAsync(query, new FindOptions<HashtagsModel, HashtagsModel>
 				{
@@ -101,11 +125,11 @@ namespace QuarklessRepositories.Repository.ServicesRepositories.HashtagsReposito
 				FilterDefinition<HashtagsModel> filters;
 				if (string.IsNullOrEmpty(language) && string.IsNullOrEmpty(mapedLang))
 				{
-					filters = builders.Eq(_ => _.Topic, topic);
+					filters = builders.Eq(_ => _.From.TopicRequest.Name, topic);
 				}
 				else
 				{
-					filters = builders.Eq(_ => _.Topic, topic) & (builders.Eq(_ => _.Language, language) | builders.Eq(_ => _.Language, mapedLang));
+					filters = builders.Eq(_ => _.From.TopicRequest.Name, topic) & (builders.Eq(_ => _.Language, language) | builders.Eq(_ => _.Language, mapedLang));
 				}
 				var options = new FindOptions<HashtagsModel, HashtagsModel>();
 				if (limit != -1)
@@ -121,17 +145,5 @@ namespace QuarklessRepositories.Repository.ServicesRepositories.HashtagsReposito
 			}
 		}
 
-		public async Task UpdateAllMediasLanguagesToLower()
-		{
-			var res = (await _context.Hashtags.DistinctAsync(_ => _.Language, _ => true)).ToList();
-			foreach (var lang in res)
-			{
-				if (lang.Length > 3)
-				{
-					var updateDef = Builders<HashtagsModel>.Update.Set(o => o.Language, lang.MapLanguages());
-					await _context.Hashtags.UpdateManyAsync(_ => _.Language == lang, updateDef);
-				}
-			}
-		}
 	}
 }

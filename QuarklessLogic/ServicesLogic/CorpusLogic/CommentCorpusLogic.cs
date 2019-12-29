@@ -2,7 +2,9 @@
 using QuarklessRepositories.RedisRepository.CorpusCache.CommentCorpusCache;
 using QuarklessRepositories.Repository.CorpusRepositories.Comments;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using QuarklessContexts.Models.Topics;
 
 namespace QuarklessLogic.ServicesLogic.CorpusLogic
 {
@@ -21,12 +23,16 @@ namespace QuarklessLogic.ServicesLogic.CorpusLogic
 			await _commentCorpusRepository.AddComments(comments);
 			//await _commentCorpusCache.AddComments(comments);
 		}
-		public async Task<IEnumerable<CommentCorpus>> GetComments(string topic, string lang, int limit = -1, bool skip = true)
+
+		public async Task<IEnumerable<CommentCorpus>> GetComments(int topicHashCode, int limit = -1, bool skip = true)
 		{
-			return await _commentCorpusRepository.GetComments(topic, lang, limit, skip);
+			return await _commentCorpusRepository.GetComments(topicHashCode, limit, skip);
 		}
 
-		public async Task UpdateAllCommentsLanguagesToLower() => await _commentCorpusRepository.UpdateAllCommentsLanguagesToLower();
+//		public async Task<IEnumerable<CommentCorpus>> GetComments(string topic, string lang, int limit = -1, bool skip = true)
+//		{
+//			return await _commentCorpusRepository.GetComments(topic, lang, limit, skip);
+//		}
 		public async Task<long> CommentsCount(string topic) => await _commentCorpusRepository.GetCommentsCount(topic);
 
 	}

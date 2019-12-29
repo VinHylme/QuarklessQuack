@@ -8,7 +8,6 @@ namespace QuarklessContexts.Models.ServicesModels.Corpus
 		[BsonId]
 		[BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)] 
 		public string _id { get; set; }
-		public string Topic { get; set; }
 		public string MediaId { get ;set; }
 		public string Comment { get; set; }
 		public string Language { get; set; }
@@ -17,5 +16,6 @@ namespace QuarklessContexts.Models.ServicesModels.Corpus
 		public int NumberOfLikes { get; set; }
 		public int NumberOfReplies { get; set; }
 		public string Username { get; set; }
+		public From From { get; set; }
 	}
 }

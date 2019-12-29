@@ -5,6 +5,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Handlers\TextGeneration\EmojiList.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Handlers\TextGeneration\EmojiList.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Logic\ShopLogic\" />
     <Folder Include="Logic\StoriesLogic\" />
   </ItemGroup>

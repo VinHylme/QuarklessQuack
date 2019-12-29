@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Quarkless.Interfacing.Objects;
 using QuarklessContexts.Models.LookupModels;
+using QuarklessContexts.Objects;
 
 namespace QuarklessLogic.Logic.LookupLogic
 {

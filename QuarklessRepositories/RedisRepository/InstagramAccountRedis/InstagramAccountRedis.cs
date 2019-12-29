@@ -1,11 +1,11 @@
 ﻿using Newtonsoft.Json;
-using Quarkless.Extensions;
 using QuarklessContexts.Models.InstagramAccounts;
 using QuarklessRepositories.RedisRepository.RedisClient;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using QuarklessContexts.Extensions;
 
 namespace QuarklessRepositories.RedisRepository.InstagramAccountRedis
 {

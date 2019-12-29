@@ -59,7 +59,6 @@ namespace QuarklessLogic.Handlers.HashtagBuilder
 
 			#region Initialise Keywords From Google Vision
 			var visionResults = new List<string>();
-
 			// By Vision API
 			if (images != null && images.Any())
 			{
@@ -67,22 +66,35 @@ namespace QuarklessLogic.Handlers.HashtagBuilder
 				{
 					var response = _visionClient.AnnotateImages(images
 							.Select(_ => Convert.FromBase64String(_.Split(",")[1])))
-						?.SelectMany(image => image)
 						.OrderByDescending(x=>x.Score)
 						.Select(_ => _.Description);
 
-					if (response != null && response.Any())
-						visionResults.AddRange(response);
+					var web = await _visionClient.DetectImageWebEntities(images
+						.Select(_ => Convert.FromBase64String(_.Split(",")[1])));
+
+					if(web.Any())
+						visionResults.AddRange(web
+							.SelectMany(_=>_.WebEntities)
+							.OrderByDescending(_=>_.Score).Select(_=>_.Description).Take(keywordsFetchAmount));
+
+					if (response.Any())
+						visionResults.AddRange(response.Take(keywordsFetchAmount));
 				}
 				else
 				{
 					var response = _visionClient.AnnotateImages(images)
-						?.SelectMany(image => image)
 						.OrderByDescending(x => x.Score)
 						.Select(_ => _.Description);
 
-					if (response != null && response.Any())
-						visionResults.AddRange(response);
+					var web = await _visionClient.DetectImageWebEntities(images.ToArray());
+
+					if (web.Any())
+						visionResults.AddRange(web
+							.SelectMany(_ => _.WebEntities)
+							.OrderByDescending(_ => _.Score).Select(_ => _.Description).Take(keywordsFetchAmount));
+
+					if (response.Any())
+						visionResults.AddRange(response.Take(keywordsFetchAmount));
 				}
 			}
 
@@ -91,70 +103,76 @@ namespace QuarklessLogic.Handlers.HashtagBuilder
 			#endregion
 
 			var hashtags = new List<string>();
-
-			if (mediaTopic != null)
+			try
 			{
-				// add related topics
-				suggestedHashtags.AddRange((await _topicLookup.GetTopicsByParentId(mediaTopic._id))
-					.Select(_ => _.Name)
-					.TakeAny(amount));
-
-				//build from database of hashtags
-				var resDb = await _hashtagLogic.GetHashtagsFromRepositoryByTopic(mediaTopic.Name, 25);
-				if(resDb!=null && resDb.Any())
-					hashtags.AddRange(resDb.SelectMany(_=>_.Hashtags));
-				else
+				if (mediaTopic != null)
 				{
-					var getFromMedias = await GetHashtagsFromMediaSearch(mediaTopic.Name, 1);
-					if (getFromMedias.Any())
-						hashtags.AddRange(getFromMedias);
-				}
-			}
+					// add related topics
+					suggestedHashtags.AddRange((await _topicLookup.GetTopicsByParentId(mediaTopic._id))
+						.Select(_ => _.Name)
+						.TakeAny(amount));
 
-			foreach (var keyword in visionResults.Take(keywordsFetchAmount).TakeAny(1))
-			{
-				var resultBuild = await _topicLookup.BuildRelatedTopics(new CTopic
+					//build from database of hashtags
+					var resDb = await _hashtagLogic.GetHashtagsFromRepositoryByTopic(mediaTopic.Name, 25);
+					if (resDb != null && resDb.Any())
+						hashtags.AddRange(resDb.SelectMany(_ => _.Hashtags));
+					else
 					{
-						Name = keyword, 
-						ParentTopicId = mediaTopic?._id
-					},
-
-					false,false);
-
-				if (resultBuild == null || !resultBuild.Any()) continue;
-				hashtags.AddRange(resultBuild);
-
-				var getFromMedias =
-					await GetHashtagsFromMediaSearch(resultBuild.TakeAny(1).First(), 1);
-
-				if (getFromMedias.Any())
-					hashtags.AddRange(getFromMedias.OrderByDescending(_=>_.ToLower()
-						.Similarity(keyword.RemoveLargeSpacesInText(1).ToLower())));
-			}
-
-			var squashHashtags = hashtags.TakeAny(pickAmount - suggestedHashtags.Count);
-			suggestedHashtags.AddRange(squashHashtags);
-
-			if (suggestedHashtags.Count > pickAmount)
-				suggestedHashtags = suggestedHashtags.Take(pickAmount).ToList();
-
-			if (profileTopic !=null && profileTopic.Topics.Any())
-			{
-				var resultProfileTopic = await _topicLookup
-					.GetTopicsByParentId(profileTopic.Topics.TakeAny(1).First()._id);
-				if (resultProfileTopic.Any())
-				{
-					suggestedHashtags.RemoveRange(suggestedHashtags.Count - 5, 5);
-					suggestedHashtags.AddRange(resultProfileTopic.Select(_ => _.Name).TakeAny(5));
+						var getFromMedias = await GetHashtagsFromMediaSearch(mediaTopic.Name, 1);
+						if (getFromMedias.Any())
+							hashtags.AddRange(getFromMedias);
+					}
 				}
-			}
-			
-			if (suggestedHashtags.Count < 10 && retries > 0)
-				return await SuggestHashtags(profileTopic, mediaTopic, images,
-					(pickAmount - suggestedHashtags.Count), keywordsFetchAmount,
-					suggestedHashtags, --retries);
 
-			return suggestedHashtags.Select(_=>"#"+_.RemoveFirstHashtagCharacter()).ToList();
+				foreach (var keyword in visionResults.TakeAny(1))
+				{
+					var resultBuild = await _topicLookup.BuildRelatedTopics(new CTopic
+						{
+							Name = keyword,
+							ParentTopicId = mediaTopic?._id
+						},
+						false, false);
+
+					if (resultBuild == null || !resultBuild.Any()) continue;
+					hashtags.AddRange(resultBuild);
+
+					var getFromMedias =
+						await GetHashtagsFromMediaSearch(resultBuild.TakeAny(1).First(), 1);
+
+					if (getFromMedias.Any())
+						hashtags.AddRange(getFromMedias.OrderByDescending(_ => _.ToLower()
+							.Similarity(keyword.RemoveLargeSpacesInText(1).ToLower())));
+				}
+
+				var squashHashtags = hashtags.TakeAny(pickAmount - suggestedHashtags.Count);
+				suggestedHashtags.AddRange(squashHashtags);
+
+				if (suggestedHashtags.Count > pickAmount)
+					suggestedHashtags = suggestedHashtags.Take(pickAmount).ToList();
+
+				if (profileTopic != null && profileTopic.Topics.Any())
+				{
+					var resultProfileTopic = await _topicLookup
+						.GetTopicsByParentId(profileTopic.Topics.TakeAny(1).First()._id);
+					if (resultProfileTopic.Any())
+					{
+						suggestedHashtags.RemoveRange(suggestedHashtags.Count - 5, 5);
+						suggestedHashtags.AddRange(resultProfileTopic.Select(_ => _.Name).TakeAny(5));
+					}
+				}
+
+				if (suggestedHashtags.Count < 10 && retries > 0)
+					return await SuggestHashtags(profileTopic, mediaTopic, images,
+						(pickAmount - suggestedHashtags.Count), keywordsFetchAmount,
+						suggestedHashtags, --retries);
+
+				return suggestedHashtags.Select(_ => "#" + _.RemoveFirstHashtagCharacter()).ToList();
+			}
+			catch(Exception err)
+			{
+				Console.WriteLine(err.Message);
+				return new List<string>();
+			}
 		}
 	}
 }

@@ -1,4 +1,4 @@
-﻿using Quarkless.Interfacing.Objects;
+﻿using QuarklessContexts.Objects;
 
 namespace QuarklessLogic.Handlers.HashtagBuilder
 {

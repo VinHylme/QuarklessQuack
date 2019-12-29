@@ -10,7 +10,6 @@ namespace QuarklessContexts.Models.ServicesModels.Corpus
 		[BsonId]
 		[BsonRepresentation(MongoDB.Bson.BsonType.ObjectId)] 
 		public string _id { get; set; }
-		public string Topic { get; set; }
 		public string MediaId { get; set; }
 		public string Caption { get; set; }
 		public string OriginalCaption { get; set; }
@@ -22,5 +21,6 @@ namespace QuarklessContexts.Models.ServicesModels.Corpus
 		public string Username { get; set; }
 		public string Language { get; set; }
 		public DateTime TakenAt { get; set; }
+		public From From { get; set; }
 	}
 }

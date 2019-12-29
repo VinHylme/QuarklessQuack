@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 
-namespace Quarkless.Interfacing.Objects
+namespace QuarklessContexts.Objects
 {
 	/// <summary>
 	/// String object which are always lowered

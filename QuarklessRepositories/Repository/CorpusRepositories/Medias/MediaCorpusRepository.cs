@@ -3,14 +3,10 @@ using QuarklessContexts.Models.ServicesModels.Corpus;
 using QuarklessRepositories.RepositoryClientManager;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
-using MoreLinq;
 using System.Threading.Tasks;
 using MongoDB.Bson;
 using QuarklessContexts.Extensions;
-using QuarklessContexts.Models.CorpusModels;
-using QuarklessContexts.Models.ServicesModels.DatabaseModels;
 
 namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 {
@@ -64,31 +60,33 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 		{
 			var builders = Builders<MediaCorpus>.Filter;
 			FilterDefinition<MediaCorpus> filters;
-			filters = builders.Eq(_ => _.Topic, topic);
+			filters = builders.Eq(_ => _.From.TopicRequest.Name, topic);
 			return await _context.CorpusMedia.CountDocumentsAsync(filters);
 		}
-
-		public async Task UpdateTopicName(string topic, string newTopic)
+		public async Task<IEnumerable<MediaCorpus>> GetMedias(int topicHashCode, int limit = -1, bool skip = true)
 		{
-			var updateDef = Builders<MediaCorpus>.Update.Set(o => o.Topic, newTopic);
-			var updateDef2 = Builders<CommentCorpus>.Update.Set(o => o.Topic, newTopic);
-			var updateDef3 = Builders<HashtagsModel>.Update.Set(o => o.Topic, newTopic);
-
-			await _context.CorpusMedia.UpdateManyAsync(o => o.Topic == topic, updateDef);
-			await _context.CorpusComments.UpdateManyAsync(o => o.Topic == topic, updateDef2);
-			await _context.Hashtags.UpdateManyAsync(o => o.Topic == topic, updateDef3);
-		}
-
-		public async Task UpdateAllMediasLanguagesToLower()
-		{
-			var res = (await _context.CorpusMedia.DistinctAsync(_ => _.Language, _ => true)).ToList();
-			foreach (var lang in res)
+			var results = new List<MediaCorpus>();
+			try
 			{
-				var updateDef = Builders<MediaCorpus>.Update.Set(o => o.Language, lang.ToLower());
-				await _context.CorpusMedia.UpdateManyAsync(_ => _.Language == lang, updateDef);
+				var filters = Builders<MediaCorpus>.Filter.Eq(_ => _.From.TopicHash, topicHashCode);
+				var len = await _context.CorpusMedia.CountDocumentsAsync(filters);
+				if (len <= 0) return results;
+				var options = new FindOptions<MediaCorpus, MediaCorpus>()
+				{
+					Skip = skip ? SecureRandom.Next((int)len / 2) : 0
+				};
+				if (limit != -1)
+					options.Limit = limit;
+				var res = await _context.CorpusMedia.FindAsync(filters, options);
+				results = res.ToList();
 			}
-		}
+			catch (Exception err)
+			{
+				Console.WriteLine(err.Message);
+			}
 
+			return results;
+		}
 		public async Task<IEnumerable<MediaCorpus>> GetMedias(string topic, string language = null, 
 			int limit = -1, bool skip = true)
 		{
@@ -99,13 +97,13 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Medias
 
 				if(string.IsNullOrEmpty(language))
 				{
-					filters = builders.Regex(_ => _.Topic, 
+					filters = builders.Regex(_ => _.From.TopicRequest.Name, 
 						BsonRegularExpression.Create(new Regex("^" + topic + "$", RegexOptions.IgnoreCase)));
 				}
 				else
 				{
 
-					filters = builders.Eq(_ => _.Topic, topic) & (builders.Eq(_ => _.Language, language));
+					filters = builders.Eq(_ => _.From.TopicRequest.Name, topic) & (builders.Eq(_ => _.Language, language));
 				}
 
 				var len = await _context.CorpusMedia.CountDocumentsAsync(filters);

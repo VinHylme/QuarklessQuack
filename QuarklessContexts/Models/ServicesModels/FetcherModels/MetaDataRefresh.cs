@@ -11,6 +11,7 @@ namespace QuarklessContexts.Models.ServicesModels.FetcherModels
 		public MetaDataType MetaDataType { get; set; }
 		public string ProfileCategoryTopicId { get; set; }
 		public string InstagramId { get; set; }
+		public string AccountId { get; set; }
 		public List<MediaResponse> Medias;
 	}
 	public class MetaDataCommentRefresh : IMetaDataRequest
@@ -19,6 +20,7 @@ namespace QuarklessContexts.Models.ServicesModels.FetcherModels
 		public MetaDataType MetaDataType { get; set; }
 		public string ProfileCategoryTopicId { get; set; }
 		public string InstagramId { get; set; }
+		public string AccountId { get; set; }
 		public List<UserResponse<InstaComment>> Comments;
 	}
 }

@@ -21,17 +21,11 @@ namespace QuarklessLogic.ServicesLogic.CorpusLogic
 			await _mediaCorpusRepository.AddMedias(medias);
 		}
 
-		public async Task UpdateTopicName(string topic, string newTopic)
-		{
-			await _mediaCorpusRepository.UpdateTopicName(topic, newTopic);
-		}
-
-		public async Task UpdateAllMediasLanguagesToLower() => await _mediaCorpusRepository.UpdateAllMediasLanguagesToLower();
 		public Task AddMedia(MediaCorpus mediaCorpus) => _mediaCorpusRepository.AddMedia(mediaCorpus);
 
-		public async Task<IEnumerable<MediaCorpus>> GetMedias(string topic, string lang, int limit = -1, bool skip = true)
+		public async Task<IEnumerable<MediaCorpus>> GetMedias(int topicHash, int limit = -1, bool skip = true)
 		{
-			return await _mediaCorpusRepository.GetMedias(topic, lang, limit, skip);
+			return await _mediaCorpusRepository.GetMedias(topicHash, limit, skip);
 		}
 
 		public async Task<long> MediasCount(string topic) => await _mediaCorpusRepository.GetMediasCount(topic);

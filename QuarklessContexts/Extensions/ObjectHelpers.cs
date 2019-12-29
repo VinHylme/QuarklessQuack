@@ -3,15 +3,30 @@ using System.Collections.Generic;
 using System.Linq;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace Quarkless.Extensions
+namespace QuarklessContexts.Extensions
 {
 	public static class ObjectHelpers
 	{
+		public static T GetAt<T>(this IEnumerable<T> items, int position) => items.ElementAtOrDefault(position);
+
+		public static bool IsGreaterThan<T>(this IEnumerable<T> items, IEnumerable<T> target) =>
+			items.Count() > target.Count();
+		public static int TimesBy(this IEnumerable<int> values)
+		{
+			return values.Aggregate(0, (current, value) => current * value);
+		}
+		public static int CalculateTotalHash(this IEnumerable<object> values)
+		{
+			return TimesBy(values.Select(x => x.GetHashCode()));
+		}
+		public static int CalculateTotalHash(params object[] values)
+		{
+			return TimesBy(values.Select(x => x.GetHashCode()));
+		}
 		public static TResult IfNotNull<TInput, TResult>(this TInput o, Func<TInput, TResult> evaluator)
 		where TResult : class where TInput : class
 		{
-			if (o == null) return null;
-			return evaluator(o);
+			return o == null ? null : evaluator(o);
 		}
 		public static TInput CreateNewObjectIgnoringNulls<TInput>(this TInput @object, TInput target) where TInput : new()
 		{

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using Quarkless.Extensions;
+using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.Profiles;
 using QuarklessRepositories.RepositoryClientManager;
 

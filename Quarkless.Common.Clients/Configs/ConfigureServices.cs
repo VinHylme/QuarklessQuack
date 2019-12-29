@@ -138,7 +138,6 @@ namespace Quarkless.Common.Clients.Configs
 			services.AddTransient<IMediaCorpusLogic, MediaCorpusLogic>();
 			services.AddTransient<IQueryLogic, QueryLogic>();
 			services.AddSingleton<IInstagramContentSearch, InstagramContentSearch>();
-			services.AddTransient<ISearchingCache, SearchingCache>();
 			services.AddTransient<ILibraryLogic, LibraryLogic>();
 			services.AddTransient<ITimelineEventLogLogic, TimelineEventLogLogic>();
 			services.AddTransient<IEmailService, EmailService>();
@@ -312,8 +311,10 @@ namespace Quarkless.Common.Clients.Configs
 				IsOnWindows = IsWindows
 			}));
 			services.AddSingleton<IUrlReader>(new UrlReader(accessors.ApiBasePath));
+			services.AddTransient<ISearchingCache, SearchingCache>();
+			services.AddSingleton<IVisionClient, VisionClient>
+				(s => new VisionClient(accessors.VisionCredentials, s.GetService<ISearchingCache>()));
 
-			services.AddSingleton<IVisionClient>(new VisionClient(accessors.VisionCredentials));
 		}
 		public static void AddRepositories(this IServiceCollection services)
 		{

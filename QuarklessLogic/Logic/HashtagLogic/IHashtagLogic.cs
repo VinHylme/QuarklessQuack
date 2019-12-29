@@ -21,8 +21,9 @@ namespace QuarklessLogic.Logic.HashtagLogic
 		Task<IResult<bool>> UnFollowHashtagAsync(string tagName);
 		Task AddHashtagsToRepository(IEnumerable<HashtagsModel> hashtags);
 		Task<List<HashtagsModel>> GetHashtagsFromRepositoryByTopic(string topic, int limit = 1);
-		Task<IEnumerable<HashtagsModel>> GetHashtagsByTopicAndLanguage(string topic, string lang, string langmapped, int limit =1);
-		Task UpdateAllMediasLanguagesToLower();
+
+		Task<IEnumerable<HashtagsModel>> GetHashtags(int topicHashCode, int limit = -1, bool skip = true);
+		//Task<IEnumerable<HashtagsModel>> GetHashtagsByTopicAndLanguage(string topic, string lang, string langmapped, int limit =1);
 
 	}
 }

@@ -4,8 +4,10 @@ using QuarklessContexts.Models.QueryModels;
 using QuarklessRepositories.RedisRepository.RedisClient;
 using StackExchange.Redis;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using QuarklessContexts.Extensions;
 
 namespace QuarklessRepositories.RedisRepository.SearchCache
 {
@@ -16,6 +18,37 @@ namespace QuarklessRepositories.RedisRepository.SearchCache
 		{
 			_redis = redisClient;
 		}
+
+		public async Task<List<TResult>> GetSearchData<TResult>(string id)
+		{
+			var results = new List<TResult>();
+			try
+			{
+				RedisKey key = $"{id}:{typeof(TResult).Name}";
+				var res = await _redis.GetMembers<IEnumerable<TResult>>(key, RedisKeys.HashtagGrowKeys.SearchSession);
+				results.AddRange(res.SelectMany(_ => _));
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err.Message);
+			}
+
+			return results;
+		}
+		public async Task AddSearchData<TResult>(string id, IEnumerable<TResult> data)
+		{
+			try
+			{
+				RedisKey key = $"{id}:{typeof(TResult).Name}";
+				await _redis.SetAdd(key, RedisKeys.HashtagGrowKeys.SearchSession, data.ToJsonString(),
+					TimeSpan.FromHours(1));
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err.Message);
+			}
+		}
+
 		public async Task StoreSearchData(string userId, SearchRequest search, string instagramId = null, string profileId = null)
 		{
 			try

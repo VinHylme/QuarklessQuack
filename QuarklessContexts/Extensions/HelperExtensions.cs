@@ -11,12 +11,66 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
 using Microsoft.Extensions.DependencyInjection;
+using QuarklessContexts.Models.Topics;
 using Exception = System.Exception;
 
 namespace QuarklessContexts.Extensions
 {
 	public static class HelperExtensions
 	{
+		public static int ComputeTopicHashCode(this IEnumerable<CTopic> topics)
+			=> topics.Take(2).Sum(x => x.Name.ToByteArray().ComputeHash());
+
+		public static int ComputeTotalHash(this IEnumerable<byte[]> items)
+		{
+			return items.Sum(_ => _.ComputeHash());
+		}
+		public static int ComputeTotalHash(this IEnumerable<string> items)
+		{
+			return items.Sum(_ => _.ToByteArray().ComputeHash());
+		}
+		public static int ComputeHash(this byte[] data)
+		{
+			if (data == null) return -1;
+			unchecked
+			{
+				const int p = 16777619;
+				var hash = (int)2166136261;
+
+				foreach (var t in data)
+					hash = (hash ^ t) * p;
+
+				hash += hash << 13;
+				hash ^= hash >> 7;
+				hash += hash << 3;
+				hash ^= hash >> 17;
+				hash += hash << 5;
+				return hash;
+			}
+		}
+		public static byte[] ToByteArray(this string item)
+		{
+			if (item == null) throw new NullReferenceException("Item cannot be null");
+			var result = new byte[item.Length];
+			for (var x = 0; x < item.Length; x++)
+			{
+				result[x] = Convert.ToByte(item[x]);
+			}
+
+			return result;
+		}
+		public static string FromByteArray(this byte[] items)
+		{
+			if (items == null) throw new NullReferenceException("Item cannot be null");
+			var result = string.Empty;
+
+			foreach (var t in items)
+			{
+				result += Convert.ToChar(t);
+			}
+
+			return result;
+		}
 		public static List<string> NormaliseStringList(this List<string> items)
 		{
 			var splitDualCategories = items
@@ -333,7 +387,8 @@ namespace QuarklessContexts.Extensions
 				return null;
 			}
 		}
-		public static void SaveAsJSON<T>(this IEnumerable<T> @obj, string filePath)
+
+		public static void SaveAsJson<T>(this IEnumerable<T> @obj, string filePath)
 		{
 			using (var writter = new StreamWriter(filePath, true))
 			{

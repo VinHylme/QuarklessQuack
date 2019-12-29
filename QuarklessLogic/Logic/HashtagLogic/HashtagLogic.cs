@@ -102,26 +102,31 @@ namespace QuarklessLogic.Logic.HashtagLogic
 
 		public async Task<List<HashtagsModel>> GetHashtagsFromRepositoryByTopic(string topic, int limit = 1)
 			=> await _hashtagsRepository.GetHashtagsByTopic(topic, limit);
-		public async Task<IEnumerable<HashtagsModel>> GetHashtagsByTopicAndLanguage(string topic, string lang, string langmapped, int limit = 1)
+
+		public async Task<IEnumerable<HashtagsModel>> GetHashtags(int topicHashCode, int limit = -1, bool skip = true)
 		{
-			try
-			{
-				var cacheRes = await _hashtagCorpusCache.GetHashtags(topic, lang, limit);
-				var hashtagsByTopicAndLanguage = cacheRes as HashtagsModel[] ?? cacheRes.ToArray();
-				if(hashtagsByTopicAndLanguage.Any())
-					return hashtagsByTopicAndLanguage;
-				else
-				{
-					return await _hashtagsRepository.GetHashtags(topic, lang, langmapped, limit);
-				}
-			}
-			catch(Exception ee)
-			{
-				_reportHandler.MakeReport(ee);
-				return null;
-			}
+			return await _hashtagsRepository.GetHashtags(topicHashCode, limit, skip);
 		}
-		public async Task UpdateAllMediasLanguagesToLower() => await _hashtagsRepository.UpdateAllMediasLanguagesToLower();
+
+//		public async Task<IEnumerable<HashtagsModel>> GetHashtagsByTopicAndLanguage(string topic, string lang, string langmapped, int limit = 1)
+//		{
+//			try
+//			{
+//				var cacheRes = await _hashtagCorpusCache.GetHashtags(topic, lang, limit);
+//				var hashtagsByTopicAndLanguage = cacheRes as HashtagsModel[] ?? cacheRes.ToArray();
+//				if(hashtagsByTopicAndLanguage.Any())
+//					return hashtagsByTopicAndLanguage;
+//				else
+//				{
+//					return await _hashtagsRepository.GetHashtags(topic, lang, langmapped, limit);
+//				}
+//			}
+//			catch(Exception ee)
+//			{
+//				_reportHandler.MakeReport(ee);
+//				return null;
+//			}
+//		}
 		#endregion
 	}
 }

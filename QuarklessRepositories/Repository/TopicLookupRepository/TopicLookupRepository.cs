@@ -55,7 +55,7 @@ namespace QuarklessRepositories.Repository.TopicLookupRepository
 		{
 			try
 			{
-				var filter = new FilterDefinitionBuilder<CTopic>().Eq("Id",ObjectId.Parse(id));
+				var filter = new FilterDefinitionBuilder<CTopic>().Eq("_id",ObjectId.Parse(id));
 				var result = await _context.TopicLookup.FindAsync(filter);
 				return result.Single();
 			}

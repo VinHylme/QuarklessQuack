@@ -4,35 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
-using Quarkless.Interfacing.Objects;
+using QuarklessContexts.Objects;
 using QuarklessRepositories.RedisRepository.LoggerStoring;
 
 namespace Quarkless.Interfacing
 {
-	public static class CommonExtensions
-	{
-		public static T GetAt<T>(this IEnumerable<T> items, int position) => items.ElementAtOrDefault(position);
-
-		public static bool IsGreaterThan<T>(this IEnumerable<T> items, IEnumerable<T> target) =>
-			items.Count() > target.Count();
-		public static int TimesMultimple(this IEnumerable<int> values)
-		{
-			var total = 0;
-			foreach(var value in values)
-				total*=value;
-			return total;
-		}
-		public static int CalculateTotalHash(this IEnumerable<object> values)
-		{
-			return TimesMultimple(values.Select(x=>x.GetHashCode()));
-		}
-		public static int CalculateTotalHash(params object[] values)
-		{
-			return TimesMultimple(values.Select(x=>x.GetHashCode()));
-		}
-
-	}
-
 	/// <summary>
 	/// Trying out new thing, make this the base of everything, to make life easier with logging, and other things
 	/// </summary>
@@ -48,9 +24,6 @@ namespace Quarkless.Interfacing
 
 		public List<T> EmptyList<T>() => new List<T>();
 		public List<T> List<T>(IEnumerable<T> items) => items.ToList();
-
-		//public int Len<T>(T genericObject) => Marshal.SizeOf(genericObject);
-
 		public int Len(string @string) => @string.Length;
 		public int Len(IEnumerable<object> @array) => @array.Count();
 		public long Len(object @object)
@@ -67,7 +40,7 @@ namespace Quarkless.Interfacing
 		public void PrintLn(object message) => Console.WriteLine(message);
 
 		/// <summary>
-		/// Basically encapulated try catch with log
+		/// Basically encapsulated try catch with log
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="code"></param>
@@ -184,6 +157,5 @@ namespace Quarkless.Interfacing
 				SeverityLevel = SeverityLevel.Exception
 			});
 		}
-
 	}
 }

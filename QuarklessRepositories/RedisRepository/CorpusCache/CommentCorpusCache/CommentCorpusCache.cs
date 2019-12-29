@@ -22,13 +22,13 @@ namespace QuarklessRepositories.RedisRepository.CorpusCache.CommentCorpusCache
 		{
 			await WithExceptionLogAsync(async () =>
 			{
-				var seperateByLanguageAndTopic = comments.GroupBy(_ => new { _.Language, _.Topic }).Where(_ => _ != null);
+				var seperateByLanguageAndTopic = comments.GroupBy(_ => new { _.Language, _.From.TopicRequest }).Where(_ => _ != null);
 				foreach (var item in seperateByLanguageAndTopic)
 				{
-					if (string.IsNullOrEmpty(item.Key.Topic) || string.IsNullOrEmpty(item.Key.Language)) continue;
+					if (item.Key.TopicRequest == null|| string.IsNullOrEmpty(item.Key.Language)) continue;
 					else
 					{
-						string uniqueId = "Comments:" + item.Key.Topic + ":" + item.Key.Language;
+						string uniqueId = "Comments:" + item.Key.TopicRequest.Name + ":" + item.Key.Language;
 						if (!string.IsNullOrEmpty(uniqueId))
 						{
 							await _redisClient.Database(0).SetAdd(uniqueId, RedisKeys.HashtagGrowKeys.Corpus, JsonConvert.SerializeObject(item), TimeSpan.FromDays(9999));

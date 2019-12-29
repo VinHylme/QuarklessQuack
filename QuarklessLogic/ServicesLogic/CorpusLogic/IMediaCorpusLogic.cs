@@ -7,10 +7,9 @@ namespace QuarklessLogic.ServicesLogic.CorpusLogic
 	public interface IMediaCorpusLogic
 	{
 		Task AddMedias(IEnumerable<MediaCorpus> medias);
-		Task<IEnumerable<MediaCorpus>> GetMedias(string topic, string lang, int limit = -1, bool skip = true);
+		Task<IEnumerable<MediaCorpus>> GetMedias(int topicHash, int limit = -1, bool skip = true);
+		//Task<IEnumerable<MediaCorpus>> GetMedias(string topic, string lang, int limit = -1, bool skip = true);
 		Task<long> MediasCount(string topic);
-		Task UpdateTopicName(string topic, string newTopic);
-		Task UpdateAllMediasLanguagesToLower();
 		Task AddMedia(MediaCorpus mediaCorpus);
 	}
 }

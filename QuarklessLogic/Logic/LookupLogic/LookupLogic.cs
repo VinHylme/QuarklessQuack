@@ -1,5 +1,4 @@
 ﻿using Quarkless.Interfacing;
-using Quarkless.Interfacing.Objects;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.LookupModels;
 using QuarklessContexts.Models.Sections;
@@ -7,6 +6,7 @@ using QuarklessRepositories.RedisRepository.LoggerStoring;
 using QuarklessRepositories.RedisRepository.LookupCache;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using QuarklessContexts.Objects;
 
 namespace QuarklessLogic.Logic.LookupLogic
 {

@@ -8,4 +8,9 @@
     <PackageReference Include="Google.Cloud.Vision.V1" Version="1.7.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\QuarklessContexts\QuarklessContexts.csproj" />
+    <ProjectReference Include="..\QuarklessRepositories\QuarklessRepositories.csproj" />
+  </ItemGroup>
+
 </Project>

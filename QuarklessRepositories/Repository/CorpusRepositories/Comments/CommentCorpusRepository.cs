@@ -40,15 +40,6 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Comments
 			}
 		}
 
-		public async Task UpdateAllCommentsLanguagesToLower()
-		{
-			var res = (await _context.CorpusComments.DistinctAsync(_ => _.Language, _ => true)).ToList();
-			foreach (var lang in res)
-			{
-				var updateDef = Builders<CommentCorpus>.Update.Set(o => o.Language, lang.ToLower());
-				await _context.CorpusComments.UpdateManyAsync(_ => _.Language == lang, updateDef);
-			}
-		}
 		public async Task<IEnumerable<CommentCorpus>> GetComments(IEnumerable<FilterDefinition<CommentCorpus>> searchRepository = null, int limit = -1)
 		{
 			try
@@ -78,6 +69,31 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Comments
 				return null;
 			}
 		}
+
+		public async Task<IEnumerable<CommentCorpus>> GetComments(int topicHashCode, int limit = -1, bool skip = true)
+		{
+			var results = new List<CommentCorpus>();
+			try
+			{
+				var filters = Builders<CommentCorpus>.Filter.Eq(_ => _.From.TopicHash, topicHashCode);
+				var len = await _context.CorpusComments.CountDocumentsAsync(filters);
+				if (len <= 0) return results;
+				var options = new FindOptions<CommentCorpus, CommentCorpus>()
+				{
+					Skip = skip ? SecureRandom.Next((int)len / 2) : 0
+				};
+				if (limit != -1)
+					options.Limit = limit;
+				var res = await _context.CorpusComments.FindAsync(filters, options);
+				results = res.ToList();
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err.Message);
+			}
+
+			return results;
+		}
 		public async Task<IEnumerable<CommentCorpus>> GetComments(string topic, string language = null,  int limit = -1, bool skip = true)
 		{
 			try
@@ -86,12 +102,12 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Comments
 				FilterDefinition<CommentCorpus> filters;
 				if (string.IsNullOrEmpty(language))
 				{
-					filters = builders.Eq(_ => _.Topic,
+					filters = builders.Eq(_ => _.From.TopicRequest.Name,
 						BsonRegularExpression.Create(new Regex("^" + topic + "$", RegexOptions.IgnoreCase)));
 				}
 				else
 				{
-					filters = builders.Eq(_ => _.Topic, topic) & (builders.Eq(_ => _.Language, language));
+					filters = builders.Eq(_ => _.From.TopicRequest.Name, topic) & (builders.Eq(_ => _.Language, language));
 				}
 
 				var len = await _context.CorpusComments.CountDocumentsAsync(filters);
@@ -104,7 +120,7 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Comments
 					options.Limit = limit;
 
 				var res = await _context.CorpusComments.FindAsync(filters, options);
-				return res.ToList();
+				return res?.ToList();
 			}
 			catch (Exception e)
 			{
@@ -117,7 +133,7 @@ namespace QuarklessRepositories.Repository.CorpusRepositories.Comments
 		{
 			var builders = Builders<CommentCorpus>.Filter;
 			FilterDefinition<CommentCorpus> filters;
-			filters = builders.Eq(_ => _.Topic, topic);
+			filters = builders.Eq(_ => _.From.TopicRequest.Name, topic);
 			return await _context.CorpusComments.CountDocumentsAsync(filters);
 		}
 	}

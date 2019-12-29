@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using InstagramApiSharp;
 using InstagramApiSharp.Classes.Models;
+using MongoDB.Bson;
 using MoreLinq;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.Profiles;
@@ -12,6 +13,7 @@ using QuarklessLogic.ContentSearch.GoogleSearch;
 using QuarklessLogic.Handlers.EventHandlers;
 using QuarklessLogic.Handlers.WorkerManagerService;
 using QuarklessLogic.Logic.ProfileLogic;
+using QuarklessRepositories.RedisRepository.SearchCache;
 using QuarklessRepositories.Repository.TopicLookupRepository;
 
 namespace QuarklessLogic.Logic.TopicLookupLogic
@@ -22,13 +24,15 @@ namespace QuarklessLogic.Logic.TopicLookupLogic
 		private readonly ITopicLookupRepository _topicLookupRepository;
 		private readonly IGoogleSearchLogic _googleSearchLogic;
 		private readonly IWorkerManager _workerManager;
+		private readonly ISearchingCache _searchingCache;
 		public TopicLookupLogic(ITopicLookupRepository repository, IWorkerManager workerManager, 
-			IGoogleSearchLogic googleSearchLogic, IProfileLogic profileLogic)
+			IGoogleSearchLogic googleSearchLogic, IProfileLogic profileLogic, ISearchingCache searchingCache)
 		{
 			_workerManager = workerManager;
 			_topicLookupRepository = repository;
 			_googleSearchLogic = googleSearchLogic;
 			_profileLogic = profileLogic;
+			_searchingCache = searchingCache;
 		}
 
 		public async Task<List<InstaMedia>> GetMediasFromTopic(string topic, int limit)
@@ -36,6 +40,10 @@ namespace QuarklessLogic.Logic.TopicLookupLogic
 			var medias = new List<InstaMedia>();
 			if (string.IsNullOrEmpty(topic))
 				return medias;
+			var cacheResults = await _searchingCache.GetSearchData<InstaMedia>(topic);
+			if (cacheResults.Any())
+				return cacheResults;
+
 			await _workerManager.PerformTaskOnWorkers(async workers =>
 			{
 				await workers.PerformAction(async worker =>
@@ -48,12 +56,18 @@ namespace QuarklessLogic.Logic.TopicLookupLogic
 					}
 				});
 			});
+
+			if(medias.Any())
+				await _searchingCache.AddSearchData(topic, medias);
 			return medias;
 		}
 		public async Task<List<string>> BuildRelatedTopics(CTopic topic, bool saveToDb, bool includeGoogleSuggest = true)
 		{
 			var responseResults = new List<string>();
 			const int instagramTopicTakeAmount = 12;
+			var cacheResults = await _searchingCache.GetSearchData<string>(topic.Name);
+			if (cacheResults.Any())
+				return cacheResults;
 			await _workerManager.PerformTaskOnWorkers(async workers =>
 			{
 				await workers.PerformAction(async worker =>
@@ -107,6 +121,10 @@ namespace QuarklessLogic.Logic.TopicLookupLogic
 					}
 				});
 			});
+
+			if(responseResults.Any())
+				await _searchingCache.AddSearchData(topic.Name, responseResults);
+			
 			return responseResults;
 		}
 		public async Task<TopicResponse> AddTopic(CTopic topic, bool includeGoogleSuggest = true)
@@ -131,6 +149,46 @@ namespace QuarklessLogic.Logic.TopicLookupLogic
 			return results;
 		}
 
+		public async Task<CTopic> GetHighestParent(CTopic topic)
+		{
+			if(topic._id == null) throw new Exception("Id Cannot be null");
+			if (topic.ParentTopicId == BsonObjectId.Empty.AsObjectId.ToString()) return topic;
+
+			var results = await GetTopicById(topic.ParentTopicId);
+
+			if (results == null) return null;
+
+			return await GetHighestParent(results);
+		}
+		public async Task<List<CTopic>> GetHighestParents(CTopic topic)
+		{
+			if (topic._id == null) throw new Exception("Id Cannot be null");
+			var topicResults = new Stack<CTopic>();
+			topicResults.Push(topic);
+
+			if (topic.ParentTopicId == BsonObjectId.Empty.AsObjectId.ToString())
+				return topicResults.ToList();
+
+			const int maxIteration = 100;
+			var current = 0;
+
+			do
+			{
+				var results = await GetTopicById(topic.ParentTopicId);
+				if (results == null) break;
+
+				topicResults.Push(results);
+
+				if (results.ParentTopicId == BsonObjectId.Empty.AsObjectId.ToString())
+					break;
+
+				topic = results;
+				current++;
+
+			} while (current < maxIteration);
+
+			return topicResults.ToList();
+		}
 		public async Task<List<string>> AddTopics(List<CTopic> topics)
 		{
 			return await _topicLookupRepository.AddTopics(topics);
