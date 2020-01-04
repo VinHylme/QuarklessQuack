@@ -24,6 +24,7 @@ namespace Quarkless.Security.AccessorSupport
 		string SchedulerDatabase { get; }
 		string ControlDatabase { get; }
 		string ContentDatabase { get; }
+		string AccountCreationDatabase { get; }
 		string BasePath { get; }
 		string TempVideoPath { get;  }
 		string TempImagePath { get;  }

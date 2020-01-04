@@ -109,6 +109,7 @@ namespace Quarkless.Security.ServerListener.ServEntry
 				RedisConnectionString = a.RedisConnectionString,
 				MainDatabase = a.MainDatabase,
 				ControlDatabase = a.ControlDatabase,
+				AccountCreationDatabase = a.AccountCreationDatabase,
 				FrontEnd = a.FrontEnd,
 				IpRateLimiting = a.IpRateLimiting,
 				IpRateLimitPolicies = a.IpRateLimitPolicies,

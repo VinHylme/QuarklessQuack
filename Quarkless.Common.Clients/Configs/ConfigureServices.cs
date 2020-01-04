@@ -104,6 +104,11 @@ using QuarklessLogic.QueueLogic.Jobs.JobRunner;
 using QuarklessRepositories.Repository.RepositoryClientManager;
 using QuarklessRepositories.Repository.TopicLookupRepository;
 using IpRateLimitPolicies = AspNetCoreRateLimit.IpRateLimitPolicies;
+using Quarkless.InstagramCreator.Repository;
+using Quarkless.EmailServices.Repository;
+using Quarkless.Repository.MongoContext;
+using Quarkless.Repository.MongoContext.Models;
+
 #endregion
 
 namespace Quarkless.Common.Clients.Configs
@@ -314,7 +319,12 @@ namespace Quarkless.Common.Clients.Configs
 			services.AddTransient<ISearchingCache, SearchingCache>();
 			services.AddSingleton<IVisionClient, VisionClient>
 				(s => new VisionClient(accessors.VisionCredentials, s.GetService<ISearchingCache>()));
-
+			services.AddTransient<IMongoClientContext, MongoClientContext>(s =>
+				new MongoClientContext(new MongoOptions
+				{
+					ConnectionString = accessors.ConnectionString,
+					MainDatabase = accessors.AccountCreationDatabase
+				}));
 		}
 		public static void AddRepositories(this IServiceCollection services)
 		{
@@ -341,6 +351,8 @@ namespace Quarkless.Common.Clients.Configs
 			services.AddTransient<IRedisClient, RedisClient>();
 			services.AddTransient<IAccountCache, AccountCache>();
 			services.AddTransient<ITopicLookupRepository, TopicLookupRepository>();
+			services.AddTransient<IInstagramAccountCreatorRepository, InstagramAccountCreatorRepository>();
+			services.AddTransient<IEmailAccountCreatorRepository, EmailAccountCreatorRepository>();
 		}
 		public static void AddHandlers(this IServiceCollection services)
 		{

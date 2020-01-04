@@ -55,6 +55,7 @@ namespace Quarkless.Security.AccessorSupport
 		public string SchedulerDatabase => _configuration["ConnectionStrings:DatabaseNames:Scheduler"];
 		public string ControlDatabase => _configuration["ConnectionStrings:DatabaseNames:Control"];
 		public string ContentDatabase => _configuration["ConnectionStrings:DatabaseNames:Content"];
+		public string AccountCreationDatabase => _configuration["ConnectionStrings:DatabaseNames:AccountCreator"];
 		public string TempVideoPath => _configuration["MediaPath:videosTempPath"];
 		public string TempImagePath => _configuration["MediaPath:imagesTempPath"];
 		public string FfmpegPath => _configuration["Ffmpeg"];

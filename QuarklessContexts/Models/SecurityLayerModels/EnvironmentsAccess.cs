@@ -27,6 +27,7 @@ namespace QuarklessContexts.Models.SecurityLayerModels
 		public string SchedulerDatabase { get; set; }
 		public string ControlDatabase { get; set; }
 		public string ContentDatabase { get; set; }
+		public string AccountCreationDatabase { get; set; }
 		public string TempVideoPath { get; set; }
 		public string TempImagePath { get; set; }
 		public string FfmpegPath { get; set; }

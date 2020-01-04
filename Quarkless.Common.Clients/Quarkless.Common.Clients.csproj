@@ -11,6 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Quarkless.Api.Operations\Quarkless.EmailServices.Repository\Quarkless.EmailServices.Repository.csproj" />
+    <ProjectReference Include="..\..\Quarkless.Api.Operations\Quarkless.InstagramCreator.Repository\Quarkless.InstagramCreator.Repository.csproj" />
     <ProjectReference Include="..\Quarkless.Analyser\Quarkless.Analyser.csproj" />
     <ProjectReference Include="..\Quarkless.Vision\Quarkless.Vision.csproj" />
     <ProjectReference Include="..\QuarklessContexts\QuarklessContexts.csproj" />
