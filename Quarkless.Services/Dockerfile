@@ -1,10 +1,10 @@
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.0-buster-slim AS base
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1.0-buster-slim AS base
 RUN apt-get update && apt-get install -y libgdiplus
 RUN apt-get update && apt-get install libfontconfig1 nano -y
 
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/core/sdk:3.0-buster AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1.100-buster AS build
 WORKDIR /src
 
 ADD Quarkless.Analyser/References /app

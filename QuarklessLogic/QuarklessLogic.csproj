@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,13 +21,13 @@
 
   <ItemGroup>
     <PackageReference Include="Amazon.AspNetCore.Identity.Cognito" Version="1.0.3" />
-    <PackageReference Include="AWSSDK.S3" Version="3.3.110.7" />
+    <PackageReference Include="AWSSDK.S3" Version="3.3.110.8" />
     <PackageReference Include="Bogus" Version="28.4.4" />
     <PackageReference Include="MailKit" Version="2.4.1" />
     <PackageReference Include="morelinq" Version="3.3.2" />
     <PackageReference Include="Selenium.Chrome.WebDriver" Version="79.0.0" />
     <PackageReference Include="Selenium.WebDriver" Version="3.141.0" />
-    <PackageReference Include="Stripe.net" Version="34.9.0" />
+    <PackageReference Include="Stripe.net" Version="34.11.0" />
     <PackageReference Include="TextCopy" Version="3.0.0" />
   </ItemGroup>
 
