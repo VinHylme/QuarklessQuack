@@ -63,6 +63,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.EmailServices.Rep
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.InstagramCreator.Repository", "..\Quarkless.Api.Operations\Quarkless.InstagramCreator.Repository\Quarkless.InstagramCreator.Repository.csproj", "{C350C5D9-CAB1-4DD6-B8E0-9A8F8D35C6CC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quarkless.Services.Pipeline", "Quarkless.Services.Pipline\Quarkless.Services.Pipeline.csproj", "{8C67611D-E568-4789-A1FC-FA681E3345A5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -145,6 +147,10 @@ Global
 		{C350C5D9-CAB1-4DD6-B8E0-9A8F8D35C6CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C350C5D9-CAB1-4DD6-B8E0-9A8F8D35C6CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C350C5D9-CAB1-4DD6-B8E0-9A8F8D35C6CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C67611D-E568-4789-A1FC-FA681E3345A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C67611D-E568-4789-A1FC-FA681E3345A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C67611D-E568-4789-A1FC-FA681E3345A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C67611D-E568-4789-A1FC-FA681E3345A5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -170,6 +176,7 @@ Global
 		{7E0D8530-1255-4B06-9323-3C0AA0861DE4} = {16C91A67-21A8-470D-BA07-AE90A10C5B36}
 		{B6EE1A14-6831-4A2C-BF9F-9BD9592EF366} = {16C91A67-21A8-470D-BA07-AE90A10C5B36}
 		{C350C5D9-CAB1-4DD6-B8E0-9A8F8D35C6CC} = {16C91A67-21A8-470D-BA07-AE90A10C5B36}
+		{8C67611D-E568-4789-A1FC-FA681E3345A5} = {D779DD59-6EB7-407F-B623-8BD381F042B7}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D3E4C3A5-ADB4-4A48-9A99-78BD4FDE9AE6}

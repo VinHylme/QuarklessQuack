@@ -6,6 +6,8 @@ namespace Quarkless.Vision
 {
 	public interface IVisionClient
 	{
+		Task<IEnumerable<EntityAnnotation>> DetectText(params string[] imageUrls);
+		Task<IEnumerable<EntityAnnotation>> DetectText(IEnumerable<byte[]> imageBytes);
 		Task<IEnumerable<WebDetection>> DetectImageWebEntities(IEnumerable<byte[]> imageBytes);
 		Task<IEnumerable<WebDetection>> DetectImageWebEntities(params string[] imageUrls);
 		Task<IEnumerable<ImageProperties>> DetectImageProperties(params string[] imageUrls);

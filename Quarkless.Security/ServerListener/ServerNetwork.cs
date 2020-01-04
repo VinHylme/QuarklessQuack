@@ -91,7 +91,9 @@ namespace Quarkless.Security.ServerListener
 				
 				var socket = (Socket)asyncResult.AsyncState;
 				var client = _clients.GetClient(socket);
+
 				var received = socket.EndReceive(asyncResult);
+				
 				var dataBuffer = new byte[received];
 				Array.Copy(_buffer, dataBuffer, received);
 				var data = Encoding.ASCII.GetString(dataBuffer);
@@ -100,15 +102,13 @@ namespace Quarkless.Security.ServerListener
 
 				switch (tryParse)
 				{
-					case InitCommandArgs arg:
+					case ArgData arg:
 						if (!client.IsValidated)
-						{
-							var validated = client.ValidateClient(arg.Client);
-							socket.SendResponse(validated ? "Validated;" : "Invalid Request");
-						}
-						break;
-					case BuildCommandArgs arg:
-						socket.SendResponse(client.GetEnvData());
+							socket.SendResponse(client.ValidateClient(arg.Client)
+								? client.GetEnvData()
+								: string.Empty);
+						else
+							socket.SendResponse(client.GetEnvData());
 						break;
 					case GetPublicEndpointCommandArgs arg:
 						socket.SendResponse(client.GetPublicEndpoints());

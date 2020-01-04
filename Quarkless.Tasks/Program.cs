@@ -27,26 +27,11 @@ namespace Quarkless.Tasks
 
 			var caller = MakeConfigurationBuilder().GetSection(CLIENT_SECTION).Get<AvailableClient>();
 
-			var validate = cIn.Send(new InitCommandArgs
-			{
-				Client = caller,
-				CommandName = "Validate Client"
-			});
-			if (!(bool)validate)
-				throw new Exception("Could not validated");
+			var services = cIn.Build(caller, ServiceTypes.AddHangFrameworkServices);
+			if(services == null)
+				throw new Exception("Failed to retrieve services");
 
-			var services = (IServiceCollection) cIn.Send(new BuildCommandArgs()
-			{
-				CommandName = "Build Services",
-				ServiceTypes = new[]
-				{
-					ServiceTypes.AddHangFrameworkServices
-				}
-			});
-			var endPoints = (EndPoints) cIn.Send(new GetPublicEndpointCommandArgs
-			{
-				CommandName = "Get Public Endpoints",
-			});
+			var endPoints = (EndPoints) cIn.GetPublicEndPoints(new GetPublicEndpointCommandArgs());
 			var connectionMultiplexer = ConnectionMultiplexer.Connect(endPoints.RedisCon);
 
 			GlobalConfiguration.Configuration.UseRedisStorage(connectionMultiplexer, new Hangfire.Redis.RedisStorageOptions

@@ -219,9 +219,35 @@ namespace Quarkless.Services
 			var scheduled = _timelineLogic.GetScheduledEventsForUser(accountId, instagramId,150);
 			return scheduled?.Count() ?? -1;
 		}
-		private Limits SetLimits(AuthTypes authType)
+
+		private Limits SetLimits(AuthTypes authType, bool isWarmingUp = false)
 		{
-			// hardcoded values for now, probably will take from app variable
+			if (isWarmingUp)
+			{
+				return new Limits
+				{
+					DailyLimits = new DailyActions
+					{
+						SendMessageLimit = 1,
+						CreateCommentLimit = 4,
+						CreatePostLimit = 2,
+						FollowPeopleLimit = 12,
+						FollowTopicLimit = 12,
+						LikeCommentLimit = 20,
+						LikePostLimit = 20
+					},
+					HourlyLimits = new HourlyActions
+					{
+						SendMessageLimit = 1,
+						CreatePostLimit = 1,
+						CreateCommentLimit = 1,
+						FollowPeopleLimit = 2,
+						FollowTopicLimit = 2,
+						LikeCommentLimit = 4,
+						LikePostLimit = 4
+					}
+				};
+			}
 			switch (authType)
 			{
 				case AuthTypes.Admin:
@@ -393,7 +419,7 @@ namespace Quarkless.Services
 			}
 		}
 
-		// TODO: Need to create a warm up function which does basic routine for 2 days 
+		// TODO: Need to create a warm up function which does basic routine and increases over time until 2 weeks
 		// TODO: MAKE SURE ALL USERS ARE BUSINESS ACCOUNTS AND USERS OVER 100 FOLLOWERS
 		// TODO: BASE THEIR POSTING ON WHICH HOUR WAS MOST POPULAR
 		public async Task Begin(string userId, string instagramAccountId)
@@ -553,7 +579,7 @@ namespace Quarkless.Services
 						var followScheduleOptions = new FollowActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1, 4)), FollowActionType.Any);
 						var commentScheduleOptions = new CommentingActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1, 4)), CommentingActionType.Any);
 						var likecommentScheduleOptions = new LikeCommentActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(4)), LikeCommentActionType.Any);
-						var sendMessageScheduleoptions = new SendDirectMessageActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1, 5)), MessagingReachType.Any, 1, _postAnalyser);
+						//var sendMessageScheduleoptions = new SendDirectMessageActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1, 5)), MessagingReachType.Any, 1, _postAnalyser);
 
 						//actionsContainerManager.AddAction(sendMessageAction, sendMessageScheduleoptions, 0.05);
 						actionsContainerManager.AddAction(postAction, postScheduleOptions, 0.05);

@@ -63,6 +63,61 @@ namespace Quarkless.Common.Clients
 		private IServiceCollection BuildServices(in EnvironmentsAccess access, params ServiceTypes[] serviceTypes)
 			=> Config.BuildServices(access, serviceTypes);
 
+		public IServiceCollection Build(AvailableClient client, params ServiceTypes[] servicesToBuild)
+		{
+			try
+			{
+				var argData = new ArgData
+				{
+					Client = client,
+					Services = servicesToBuild
+				};
+				var request = Encoding.ASCII.GetBytes(argData.Serialize());
+
+				_clientSocket.Send(request);
+
+				var bytesReceived = new byte[BYTE_LIMIT];
+				var requestReceivedLen = _clientSocket.Receive(bytesReceived);
+				var data = new byte[requestReceivedLen];
+				Array.Copy(bytesReceived, data, requestReceivedLen);
+
+				var response = Encoding.ASCII.GetString(data);
+
+				return response != null
+					? BuildServices(response.Deserialize<EnvironmentsAccess>(), servicesToBuild)
+					: null;
+			}
+			catch(Exception err)
+			{
+				Console.WriteLine(err.Message);
+				return null;
+			}
+		}
+		public EndPoints GetPublicEndPoints(GetPublicEndpointCommandArgs args)
+		{
+			try
+			{
+				var request = Encoding.ASCII.GetBytes(args.Serialize());
+
+				_clientSocket.Send(request);
+
+				var bytesReceived = new byte[BYTE_LIMIT];
+				var requestReceivedLen = _clientSocket.Receive(bytesReceived);
+				var data = new byte[requestReceivedLen];
+				Array.Copy(bytesReceived, data, requestReceivedLen);
+
+				var response = Encoding.ASCII.GetString(data);
+
+				return response.Deserialize<EndPoints>();
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err.Message);
+				return null;
+			}
+		}
+
+		/*
 		public object Send(object dataToSend)
 		{
 			try
@@ -75,6 +130,7 @@ namespace Quarkless.Common.Clients
 				var data = new byte[requestReceivedLen];
 				Array.Copy(bytesReceived, data, requestReceivedLen);
 				var response = Encoding.ASCII.GetString(data);
+
 				switch (dataToSend)
 				{
 					case InitCommandArgs arg:
@@ -93,6 +149,6 @@ namespace Quarkless.Common.Clients
 				Console.WriteLine(ee.Message);
 				return null;
 			}
-		}
+		}*/
 	}
 }

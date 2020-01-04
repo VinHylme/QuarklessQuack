@@ -10,6 +10,7 @@
 		Blocked = 5,
 		Challenge = 6,
 		AwaitingActionFromUser = 7,
-		Working = 8
+		Working = 8,
+		WarmingUp = 9
 	}
 }

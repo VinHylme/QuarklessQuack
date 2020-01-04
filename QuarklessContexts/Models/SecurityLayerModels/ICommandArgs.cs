@@ -2,6 +2,5 @@
 {
 	public interface ICommandArgs
 	{
-		string CommandName { get; set; } 
 	}
 }

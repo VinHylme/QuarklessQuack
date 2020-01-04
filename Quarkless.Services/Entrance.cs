@@ -49,36 +49,19 @@ namespace Quarkless.Services
 
 			var caller = MakeConfigurationBuilder().GetSection(CLIENT_SECTION).Get<AvailableClient>();
 
-			var validate = cIn.Send(new InitCommandArgs
-			{
-				Client = caller,
-				CommandName = "Validate Client"
-			});
-			if (!(bool)validate)
-				throw new Exception("Could not validated");
+			var services = cIn.Build(caller, ServiceTypes.AddConfigurators,
+				ServiceTypes.AddLogics,
+				ServiceTypes.AddContexts,
+				ServiceTypes.AddHandlers,
+				ServiceTypes.AddAuthHandlers,
+				ServiceTypes.AddRepositories,
+				ServiceTypes.AddHangFrameworkServices,
+				ServiceTypes.AddEventServices);
 
-			var services = (IServiceCollection) cIn.Send(new BuildCommandArgs()
-			{
-				CommandName = "Build Services",
-				ServiceTypes = new[]
-				{
-					ServiceTypes.AddConfigurators,
-					ServiceTypes.AddLogics,
-					ServiceTypes.AddContexts,
-					ServiceTypes.AddHandlers,
-					ServiceTypes.AddAuthHandlers,
-					ServiceTypes.AddRepositories,
-					ServiceTypes.AddHangFrameworkServices,
-					ServiceTypes.AddEventServices
-				}
-			});
+			if(services == null) 
+				throw new Exception("Could not retrieve services");
 
-			
-
-			var endPoints = (EndPoints) cIn.Send(new GetPublicEndpointCommandArgs
-			{
-				CommandName = "Get Public Endpoints",
-			});
+			var endPoints = cIn.GetPublicEndPoints(new GetPublicEndpointCommandArgs());
 
 			//cIn.TryDisconnect();
 			var redis = ConnectionMultiplexer.Connect(endPoints.RedisCon);

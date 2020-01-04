@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Google.Apis.Auth.OAuth2;
+using Google.Cloud.Speech.V1;
 using Google.Cloud.Vision.V1;
 using Grpc.Auth;
 using QuarklessContexts.Extensions;
@@ -13,16 +14,71 @@ namespace Quarkless.Vision
 {
 	public class VisionClient : IVisionClient
 	{
+		private readonly SpeechClient _speechClient;
 		private readonly ImageAnnotatorClient _client;
 		private readonly ISearchingCache _searchingCache;
 		public VisionClient(string credentialJson, ISearchingCache cache)
 		{
 			var credential = GoogleCredential.FromJson(credentialJson).CreateScoped(ImageAnnotatorClient.DefaultScopes);
-			var channel = new Grpc.Core.Channel(ImageAnnotatorClient.DefaultEndpoint.ToString(), credential.ToChannelCredentials());
-			_client = ImageAnnotatorClient.Create(channel);
+			var visionChannel = new Grpc.Core.Channel(ImageAnnotatorClient.DefaultEndpoint.ToString(), credential.ToChannelCredentials());
+			var speechChannel = new Grpc.Core.Channel(SpeechClient.DefaultEndpoint.ToString(), credential.ToChannelCredentials());
+			_client = ImageAnnotatorClient.Create(visionChannel);
+			_speechClient = SpeechClient.Create(speechChannel);
 			_searchingCache = cache;
 		}
 
+		public async Task<IEnumerable<EntityAnnotation>> DetectText(params string[] imageUrls)
+		{
+			var hashId = imageUrls.ComputeTotalHash().ToString();
+			var cacheCheck = await _searchingCache.GetSearchData<EntityAnnotation>(hashId);
+
+			if (cacheCheck.Any())
+				return cacheCheck;
+
+			var textResults = new List<EntityAnnotation>();
+			foreach (var imageUrl in imageUrls)
+			{
+				try
+				{
+					var response = await _client.DetectTextAsync(Image.FromUri(imageUrl));
+					textResults.AddRange(response);
+				}
+				catch(Exception err)
+				{
+					Console.WriteLine(err.Message);
+				}
+			}
+
+			if (textResults.Any())
+				await _searchingCache.AddSearchData(hashId, textResults);
+			return textResults;
+		}
+		public async Task<IEnumerable<EntityAnnotation>> DetectText(IEnumerable<byte[]> imageBytes)
+		{
+			var hashId = imageBytes.ComputeTotalHash().ToString();
+			var cacheCheck = await _searchingCache.GetSearchData<EntityAnnotation>(hashId);
+
+			if (cacheCheck.Any())
+				return cacheCheck;
+
+			var textResults = new List<EntityAnnotation>();
+			foreach (var image in imageBytes)
+			{
+				try
+				{
+					var response = await _client.DetectTextAsync(Image.FromBytes(image));
+					textResults.AddRange(response);
+				}
+				catch (Exception err)
+				{
+					Console.WriteLine(err.Message);
+				}
+			}
+
+			if (textResults.Any())
+				await _searchingCache.AddSearchData(hashId, textResults);
+			return textResults;
+		}
 		public async Task<IEnumerable<WebDetection>> DetectImageWebEntities(params string[] imageUrls)
 		{
 			var hashId = imageUrls.ComputeTotalHash().ToString();

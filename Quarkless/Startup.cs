@@ -30,42 +30,27 @@ namespace Quarkless
 
         public void ConfigureServices(IServiceCollection services)
         {
-	        var cIn = new ClientRequester(SERVER_IP);
-	        if (!cIn.TryConnect().GetAwaiter().GetResult())
+	        var clientRequester = new ClientRequester(SERVER_IP);
+	        if (!clientRequester.TryConnect().GetAwaiter().GetResult())
 		        return;
 
 	        var caller = Configuration.GetSection(CLIENT_SECTION).Get<AvailableClient>();
-	        var validate = cIn.Send(new InitCommandArgs
-	        {
-		        Client = caller,
-		        CommandName = "Validate Client"
-	        });
-	        if (!(bool)validate)
-		        return;
 	        
-	        var servicesAfar = (IServiceCollection) cIn.Send(new BuildCommandArgs()
-	        {
-		        CommandName = "Build Services",
-		        ServiceTypes = new[]
-		        {
-			        ServiceTypes.AddAuthHandlers,
-			        ServiceTypes.AddConfigurators,
-			        ServiceTypes.AddContexts,
-			        ServiceTypes.AddHandlers,
-			        ServiceTypes.AddHangFrameworkServices,
-			        ServiceTypes.AddLogics,
-			        ServiceTypes.AddRepositories,
-			        ServiceTypes.AddRequestLogging,
-					ServiceTypes.AddEventServices
-				}
-	        });
-			
-	        services.Append(servicesAfar);
+	        var sentServices = clientRequester.Build(caller, ServiceTypes.AddAuthHandlers,
+		        ServiceTypes.AddConfigurators,
+		        ServiceTypes.AddContexts,
+		        ServiceTypes.AddHandlers,
+		        ServiceTypes.AddHangFrameworkServices,
+		        ServiceTypes.AddLogics,
+		        ServiceTypes.AddRepositories,
+		        ServiceTypes.AddRequestLogging,
+		        ServiceTypes.AddEventServices);
+	        if (sentServices == null)
+		        throw new Exception("Failed to build services");
 
-	        var endPoints = (EndPoints) cIn.Send(new GetPublicEndpointCommandArgs
-	        {
-		        CommandName = "Get Public Endpoints",
-	        });
+	        services.Append(sentServices);
+
+	        var endPoints = clientRequester.GetPublicEndPoints(new GetPublicEndpointCommandArgs());
 	        
 	        //cIn.TryDisconnect();
 	        var redis = ConnectionMultiplexer.Connect(endPoints.RedisCon);

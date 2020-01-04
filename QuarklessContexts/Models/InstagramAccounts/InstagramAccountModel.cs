@@ -6,6 +6,9 @@ using System;
 
 namespace QuarklessContexts.Models.InstagramAccounts
 {
+	//todo: Need Email Account details stored here for during the verification process
+	//todo: Need to handle new accounts created to be set as warming up
+	//todo: Account types = 0: Normal User, 1: Worker User, 2: Fetcher User (Extract data over api on behalf of user)
 	public class InstagramAccountModel
 	{
 		[BsonId]
@@ -21,6 +24,7 @@ namespace QuarklessContexts.Models.InstagramAccounts
 		public Location Location { get; set; }
 		public string Password { get; set; }
 		public string Email { get; set; }
+		public string EmailPassword { get; set; }
 		public string PhoneNumber { get; set; }
 		public long? FollowersCount { get; set; }
 		public long? FollowingCount { get; set; }
@@ -28,6 +32,7 @@ namespace QuarklessContexts.Models.InstagramAccounts
 		public int? Type { get; set; } //0 = normal account, 1 = learner account
 		public string Device { get; set; }
 		public int? AgentState { get; set; }
+
 		[BsonRepresentation(BsonType.DateTime)]
 		public DateTime? LastPurgeCycle { get; set; }
 

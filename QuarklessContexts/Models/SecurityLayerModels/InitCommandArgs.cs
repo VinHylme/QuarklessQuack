@@ -3,9 +3,10 @@
 namespace QuarklessContexts.Models.SecurityLayerModels
 {
 	[Serializable]
-	public class InitCommandArgs : ICommandArgs
+	public class ArgData : ICommandArgs
 	{
-		public string CommandName { get; set; }
 		public AvailableClient Client { get; set; }
+		public ServiceTypes[] Services { get; set; }
 	}
+
 }
