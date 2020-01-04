@@ -23,6 +23,7 @@
     <PackageReference Include="Amazon.AspNetCore.Identity.Cognito" Version="1.0.3" />
     <PackageReference Include="AWSSDK.S3" Version="3.3.110.7" />
     <PackageReference Include="Bogus" Version="28.4.4" />
+    <PackageReference Include="MailKit" Version="2.4.1" />
     <PackageReference Include="morelinq" Version="3.3.2" />
     <PackageReference Include="Selenium.Chrome.WebDriver" Version="79.0.0" />
     <PackageReference Include="Selenium.WebDriver" Version="3.141.0" />

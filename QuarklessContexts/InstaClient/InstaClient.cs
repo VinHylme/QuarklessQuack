@@ -17,36 +17,39 @@ namespace QuarklessContexts.InstaClient
 {
 	public class InstaClient : IInstaClient
 	{
-		public IInstaApi ReturnClient { get; private set; }
 		private const InstaApiVersionType INSTAGRAM_VERSION = InstaApiVersionType.Version123;
-
+		public IInstaApi ReturnClient => api;
 		private string StateString { get; set; }
+		private IInstaApi api { get; set; }
 
 		public InstaClient Empty()
 		{
-			if (ReturnClient != null) { return this;}
-			ReturnClient = InstaApiBuilder.CreateBuilder()
+			var instaApi = InstaApiBuilder.CreateBuilder()
 			.UseLogger(new DebugLogger(LogLevel.All))
 			.SetRequestDelay(RequestDelay.FromSeconds(0, 2))
 			.Build();
-			ReturnClient.SetApiVersion(INSTAGRAM_VERSION);
-			return this;
+			instaApi.SetApiVersion(INSTAGRAM_VERSION);
+			return new InstaClient()
+			{
+				api = instaApi
+			};
 		}
-
 		public InstaClient Empty(ProxyModel proxy, bool genDevice = false)
 		{
-			//if(_client != null) return this;
-			ReturnClient = InstaApiBuilder.CreateBuilder()
+			var instaApi = InstaApiBuilder.CreateBuilder()
 				.UseLogger(new DebugLogger(LogLevel.All))
 				.SetRequestDelay(RequestDelay.FromSeconds(0, 2))
 				.Build();
 
 			if(genDevice)
-				ReturnClient.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
+				instaApi.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
 
-			ReturnClient.SetApiVersion(INSTAGRAM_VERSION);
-			ReturnClient.UseHttpClientHandler(SetupProxy(proxy));
-			return this;
+			instaApi.SetApiVersion(INSTAGRAM_VERSION);
+			instaApi.UseHttpClientHandler(SetupProxy(proxy));
+			return new InstaClient()
+			{
+				api = instaApi
+			};
 		}
 
 		private HttpClientHandler SetupProxy(ProxyModel proxyModel)
@@ -82,6 +85,7 @@ namespace QuarklessContexts.InstaClient
 					.UseLogger(new DebugLogger(LogLevel.All))
 					.SetRequestDelay(RequestDelay.FromSeconds(1, 2))
 					.Build();
+
 				instanceNew.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
 				instanceNew.SetApiVersion(INSTAGRAM_VERSION);
 				instanceNew.SetUser(new UserSessionData
@@ -89,23 +93,19 @@ namespace QuarklessContexts.InstaClient
 					UserName = instagramAccount.InstagramAccount?.Username, 
 					Password = instagramAccount.InstagramAccount?.Password
 				});
+
 				if (instagramAccount.Proxy != null)
 					instanceNew.UseHttpClientHandler(SetupProxy(instagramAccount.Proxy));
 
 				var res = instanceNew.LoginAsync().GetAwaiter().GetResult();
-				if (res.Succeeded)
+
+				if (!res.Succeeded) throw new Exception("Failed to login");
+				var stateDataAsString = instanceNew.GetStateDataAsString();
+				return new InstaClient()
 				{
-					var stateDataAsString = instanceNew.GetStateDataAsString();
-					return new InstaClient()
-					{
-						ReturnClient = instanceNew,
-						StateString = stateDataAsString
-					};
-				}
-				else
-				{
-					throw new Exception("Failed to login");
-				}
+					api = instanceNew,
+					StateString = stateDataAsString
+				};
 			}
 			else { 
 				var instance = InstaApiBuilder.CreateBuilder()
@@ -122,32 +122,25 @@ namespace QuarklessContexts.InstaClient
 
 				instance.LoadStateDataFromString(JsonConvert.SerializeObject(instagramAccount.InstagramAccount.State));
 
-				if (!instance.IsUserValidated() || instance.Username!=instagramAccount.InstagramAccount.Username)
-				{
-					instance.SetUser(new UserSessionData() { UserName = instagramAccount.InstagramAccount.Username, Password = instagramAccount.InstagramAccount.Password});
-					var res = instance.LoginAsync().GetAwaiter().GetResult();
-					if (res.Succeeded)
+				if (instance.IsUserValidated() && instance.Username == instagramAccount.InstagramAccount.Username)
+					return new InstaClient()
 					{
-						var stateDataAsString = instance.GetStateDataAsString();
-						return new InstaClient()
-						{
-							ReturnClient = instance,
-							StateString = stateDataAsString
-						};
-					}
-					else
-					{
-						throw new Exception("Failed to login");
-					}
-				}
-
+						api = instance,
+						StateString = JsonConvert.SerializeObject(instagramAccount.InstagramAccount.State),
+					};
+				instance.SetUser(new UserSessionData() { UserName = instagramAccount.InstagramAccount.Username, Password = instagramAccount.InstagramAccount.Password});
+				var res = instance.LoginAsync().GetAwaiter().GetResult();
+				if (!res.Succeeded) throw new Exception("Failed to login");
+				var stateDataAsString = instance.GetStateDataAsString();
 				return new InstaClient()
 				{
-					ReturnClient = instance,
-					StateString = JsonConvert.SerializeObject(instagramAccount.InstagramAccount.State),
+					api = instance,
+					StateString = stateDataAsString
 				};
 			}
 		}
+
+		#region State Manager	
 		public InstaClient StateClient(string state)
 		{
 			if (string.IsNullOrEmpty(state))
@@ -162,65 +155,62 @@ namespace QuarklessContexts.InstaClient
 			anotherInstance.LoadStateDataFromString(state);
 				return new InstaClient() 
 				{ 
+					api = anotherInstance,
 					StateString = state,
-					ReturnClient = anotherInstance,
 				};
 		}
-		#region State Manager
-		/// <summary>
-		/// Set statestring variable
-		/// </summary>
 		public async Task<string> GetStateDataFromString()
 		{
-			StateString =	await ReturnClient.GetStateDataAsStringAsync();
+			StateString = await api.GetStateDataAsStringAsync();
 			return StateString;
 		}
-		/// <summary>
-		/// sets the state in client
-		/// </summary>
-		/// <param name="state"></param>
 		public async void LoadStateDataFromStringAsync(string state)
 		{
-			await ReturnClient.LoadStateDataFromStringAsync(state);
+			await api.LoadStateDataFromStringAsync(state);
 		}
 		public async Task<IResult<InstaChallengeRequireVerifyMethod>> GetChallengeRequireVerifyMethodAsync(string username, string password)
 		{
-			ReturnClient.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
-			ReturnClient.SetUser(new UserSessionData
+			api.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
+			api.SetUser(new UserSessionData
 			{
 				Password = password,
 				UserName = username
 			});
-			ReturnClient.SetApiVersion(INSTAGRAM_VERSION);
-			return await ReturnClient.GetChallengeRequireVerifyMethodAsync();
+			api.SetApiVersion(INSTAGRAM_VERSION);
+			return await api.GetChallengeRequireVerifyMethodAsync();
 		}
 		public async Task<IResult<InstaLoginResult>> SubmitChallangeCode(string username, string password, InstaChallengeLoginInfo instaChallengeLoginInfo, string code)
 		{
-			ReturnClient.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
-			ReturnClient.SetUser(new UserSessionData
+			api.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
+			api.SetUser(new UserSessionData
 			{
 				Password = password,
 				UserName = username
 			});
-			ReturnClient.ChallengeLoginInfo = instaChallengeLoginInfo;
-			ReturnClient.SetApiVersion(INSTAGRAM_VERSION);
-			return await ReturnClient.VerifyCodeForChallengeRequireAsync(code);
+			api.ChallengeLoginInfo = instaChallengeLoginInfo;
+			api.SetApiVersion(INSTAGRAM_VERSION);
+			return await api.VerifyCodeForChallengeRequireAsync(code);
 		}
 		#endregion
 
-
-		public async Task<IResult<InstaLoginResult>> TryLogin(string username, string password)
+		public async Task<IResult<string>> TryLogin(string username, string password, AndroidDevice device)
 		{
-			UserSessionData userSessionData = new UserSessionData
+			var instanceNew = InstaApiBuilder.CreateBuilder()
+				.UseLogger(new DebugLogger(LogLevel.All))
+				.SetRequestDelay(RequestDelay.FromSeconds(1, 2))
+				.Build();
+			instanceNew.SetDevice(device);
+			instanceNew.SetApiVersion(INSTAGRAM_VERSION);
+			instanceNew.SetUser(new UserSessionData
 			{
 				UserName = username,
 				Password = password
-			};
-			ReturnClient.SetUser(userSessionData);
-			ReturnClient.SetApiVersion(INSTAGRAM_VERSION);
+			});
 
-			return await ReturnClient.LoginAsync();
+			var results = await instanceNew.LoginAsync();
+			return results.Succeeded 
+				? new Result<string>(results.Succeeded, await instanceNew.GetStateDataAsStringAsync(), results.Info) 
+				: new Result<string>(results.Succeeded, null, results.Info);
 		}
-
 	}
 }

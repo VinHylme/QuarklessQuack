@@ -8,7 +8,7 @@ namespace QuarklessLogic.Handlers.ContentInfoBuilder
 {
 	public interface IContentInfoBuilder
 	{
-		Task<string> GenerateComment(CTopic mediaTopic);
+		string GenerateComment(CTopic mediaTopic);
 
 		Task<MediaInfo> GenerateMediaInfo(Topic profileTopic, CTopic mediaTopic, 
 			string credit = null, int hashtagPickAmount = 20, IEnumerable<string> medias = null);

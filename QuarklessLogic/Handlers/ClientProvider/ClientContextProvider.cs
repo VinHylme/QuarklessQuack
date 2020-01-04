@@ -49,22 +49,23 @@ namespace QuarklessLogic.Handlers.ClientProvider
 		private readonly IProfileLogic _profileLogic;
 		private readonly IReportHandler _reportHandler;
 		private readonly IInstaClient _instaClient;
+
 		public ClientContextProvider(IInstagramAccountLogic instagramAccountLogic,
-			IProfileLogic profileLogic, IProxyLogic proxyLogic, IReportHandler reportHandler, IInstaClient instaClient)
+			IProfileLogic profileLogic, IProxyLogic proxyLogic, 
+			IReportHandler reportHandler, IInstaClient instaClient)
 		{
 			_instagramAccountLogic = instagramAccountLogic;
 			_profileLogic = profileLogic;
 			_proxyLogic = proxyLogic;
 			_reportHandler = reportHandler;
-			_reportHandler.SetupReportHandler("/Logic/ClientContextProvider");
 			_instaClient = instaClient;
+			_reportHandler.SetupReportHandler("/Logic/ClientContextProvider");
 		}
 
 		public async Task<ContextContainer> Get(string accId, string insAccId)
 		{
 			return await GetClient(accId, insAccId);
 		}
-
 		public InstaClient InitialClientGenerate()
 		{
 			try
@@ -77,18 +78,16 @@ namespace QuarklessLogic.Handlers.ClientProvider
 				return null;
 			}
 		}
-
 		public InstaClient InitialClientGenerateWithProxy(ProxyModel model, bool genDevice = false) => this._instaClient.Empty(model, genDevice);
-
 		private async Task<ContextContainer> GetClient(string accountId, string instagramAccountId)
 		{
 			try
 			{
 				var instagramAccount = await _instagramAccountLogic.GetInstagramAccount(accountId, instagramAccountId);
+				
 				if (instagramAccount == null)
-				{
 					return null;
-				}
+				
 				var profileOfInstagramAccountModel = await _profileLogic.GetProfile(accountId, instagramAccountId);
 				var proxyOfInstagramAccountModel = await _proxyLogic.GetProxyAssignedTo(accountId, instagramAccountId);
 
@@ -98,7 +97,9 @@ namespace QuarklessLogic.Handlers.ClientProvider
 					Profile = profileOfInstagramAccountModel,
 					Proxy = proxyOfInstagramAccountModel
 				});
+
 				var stateExtracted = JsonConvert.DeserializeObject<StateData>(await client.GetStateDataFromString());
+				
 				if (client?.ReturnClient != null)
 				{
 					if (stateExtracted.SameAs(instagramAccount.State))
@@ -130,12 +131,17 @@ namespace QuarklessLogic.Handlers.ClientProvider
 							Profile = profileOfInstagramAccountModel,
 							Proxy = proxyOfInstagramAccountModel
 						};
+
 					instagramAccount.FullName = stateExtracted.UserSession.LoggedInUser.FullName;
-					instagramAccount.ProfilePicture = stateExtracted.UserSession.LoggedInUser.ProfilePicture ?? stateExtracted.UserSession.LoggedInUser.ProfilePicUrl;
-					await _instagramAccountLogic.PartialUpdateInstagramAccount(accountId, instagramAccountId, new InstagramAccountModel
+					instagramAccount.ProfilePicture = stateExtracted.UserSession.LoggedInUser.ProfilePicture 
+						?? stateExtracted.UserSession.LoggedInUser.ProfilePicUrl;
+
+					await _instagramAccountLogic.PartialUpdateInstagramAccount(accountId, instagramAccountId, 
+						new InstagramAccountModel
 					{
 						State = stateExtracted,
 					});
+
 					return new ContextContainer
 					{
 						ActionClient = client.ReturnClient,

@@ -19,7 +19,15 @@ namespace QuarklessContexts.Extensions
 	public static class HelperExtensions
 	{
 		public static int ComputeTopicHashCode(this IEnumerable<CTopic> topics)
-			=> topics.Take(2).Sum(x => x.Name.ToByteArray().ComputeHash());
+		{
+			int total = 0;
+			foreach (var topic in topics.Take(2).Select(_=>_.Name.ToByteArray()))
+			{
+				total ^= topic.ComputeHash();
+			}
+			return total;
+		}
+			
 
 		public static int ComputeTotalHash(this IEnumerable<byte[]> items)
 		{
@@ -29,6 +37,7 @@ namespace QuarklessContexts.Extensions
 		{
 			return items.Sum(_ => _.ToByteArray().ComputeHash());
 		}
+
 		public static int ComputeHash(this byte[] data)
 		{
 			if (data == null) return -1;
@@ -50,26 +59,11 @@ namespace QuarklessContexts.Extensions
 		}
 		public static byte[] ToByteArray(this string item)
 		{
-			if (item == null) throw new NullReferenceException("Item cannot be null");
-			var result = new byte[item.Length];
-			for (var x = 0; x < item.Length; x++)
-			{
-				result[x] = Convert.ToByte(item[x]);
-			}
-
-			return result;
+			return Encoding.UTF32.GetBytes(item);
 		}
 		public static string FromByteArray(this byte[] items)
 		{
-			if (items == null) throw new NullReferenceException("Item cannot be null");
-			var result = string.Empty;
-
-			foreach (var t in items)
-			{
-				result += Convert.ToChar(t);
-			}
-
-			return result;
+			return Encoding.UTF32.GetString(items);
 		}
 		public static List<string> NormaliseStringList(this List<string> items)
 		{

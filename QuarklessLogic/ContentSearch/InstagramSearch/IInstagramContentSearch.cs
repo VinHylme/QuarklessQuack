@@ -20,10 +20,8 @@ namespace QuarklessLogic.ContentSearch.InstagramSearch
 		Task<Media> SearchTopLocationMediaDetailInstagram(Location location, int limit);
 		Task<Media> SearchMediaDetailInstagram(IEnumerable<string> topics, int limit, bool isRecent = false);
 		Task<Media> SearchMediaDetailInstagram(IEnumerable<CTopic> topics, int limit, bool isRecent = false);
-		Task<Media> SearchMediaInstagram(IEnumerable<CTopic> topics, InstaMediaType mediaType, int limit);
-		Task<Media> SearchMediaUser(string username = null, int limit = 1);
 		Task<Media> SearchUserFeedMediaDetailInstagram(string[] seenMedias = null, bool requestRefresh = false, int limit = 1);
-		Task<Media> SearchUsersMediaDetailInstagram(string userName, int limit);
+		Task<Media> SearchUsersMediaDetailInstagram(CTopic topic, string userName, int limit);
 		Task<InstaDirectInboxContainer> SearchUserInbox(int limit = 1);
 	}
 }

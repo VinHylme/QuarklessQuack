@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using QuarklessContexts.Models.InstagramAccounts;
 using QuarklessContexts.Models.ServicesModels.HeartbeatModels;
 using QuarklessLogic.ContentSearch.GoogleSearch;
 using QuarklessLogic.ContentSearch.YandexSearch;
@@ -40,19 +41,20 @@ namespace Quarkless.Services.Heartbeat
 				await _metadataExtract.BuildUserFromLikers(takeMediaAmount: 12, takeUserMediaAmount: 400));
 			var commenter = Task.Run(async () =>
 				await _metadataExtract.BuildUsersFromCommenters(takeMediaAmount: 12, takeUserMediaAmount: 400));
-			Task.WaitAll(liker, commenter);
+
+			await Task.WhenAll(liker, commenter);
 
 			var mediaLiker = _metadataExtract.BuildMediaFromUsersLikers(takeMediaAmount: 12, takeUserMediaAmount: 50);
-			var mediaCommenter = _metadataExtract.BuildMediaFromUsersCommenters(takeMediaAmount: 12, takeUserMediaAmount: 50);
-			Task.WaitAll(mediaLiker, mediaCommenter);
+			var mediaCommenter = _metadataExtract.BuildMediaFromUsersCommenters(takeMediaAmount: 7, takeUserMediaAmount: 50);
+			await Task.WhenAll(mediaLiker, mediaCommenter);
 
 			var commentMediaLiker = _metadataExtract.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByLikers,
-				MetaDataType.FetchCommentsViaPostsLiked, limit: 2, takeMediaAmount: 12, takeUserAmount: 400);
+				MetaDataType.FetchCommentsViaPostsLiked, limit: 2, takeMediaAmount: 7, takeUserAmount: 400);
 
 			var commentMediaCommenter = _metadataExtract.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByCommenters,
-				MetaDataType.FetchCommentsViaPostCommented, limit: 2, takeMediaAmount: 12, takeUserAmount: 400);
+				MetaDataType.FetchCommentsViaPostCommented, limit: 2, takeMediaAmount: 7, takeUserAmount: 400);
 
-			Task.WaitAll(commentMediaLiker, commentMediaCommenter);
+			await Task.WhenAll(commentMediaLiker, commentMediaCommenter);
 			Console.WriteLine("Ended Base Extract for {0}", _customer.InstagramAccount.Username);
 		}
 
@@ -79,16 +81,18 @@ namespace Quarkless.Services.Heartbeat
 			var userTargetList = await Task.Run(async () => await _metadataExtract.BuildUsersTargetListMedia(1))
 				.ContinueWith(async x =>
 				{
-					await _metadataExtract.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserTargetList, MetaDataType.FetchCommentsViaUserTargetList, 2, takeMediaAmount: 14, takeUserAmount: 200);
+					await _metadataExtract.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserTargetList, 
+						MetaDataType.FetchCommentsViaUserTargetList, 2, takeMediaAmount: 7, takeUserAmount: 200);
 				});
 
 			var locTargetList = await Task.Run(async () => await _metadataExtract.BuildLocationTargetListMedia(1))
 				.ContinueWith(async s =>
 				{
-					await _metadataExtract.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserLocationTargetList, MetaDataType.FetchCommentsViaLocationTargetList, 2, takeMediaAmount: 14, takeUserAmount: 200);
+					await _metadataExtract.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByUserLocationTargetList, 
+						MetaDataType.FetchCommentsViaLocationTargetList, 2, takeMediaAmount: 7, takeUserAmount: 200);
 				});
 
-			Task.WaitAll(userTargetList, locTargetList);
+			await Task.WhenAll(userTargetList, locTargetList);
 			Console.WriteLine("Ended Target Extract for {0}", _customer.InstagramAccount.Username);
 		}
 
@@ -99,20 +103,26 @@ namespace Quarkless.Services.Heartbeat
 		public async Task UserInformationExtract()
 		{
 			Console.WriteLine("Began User Info Extract for {0}", _customer.InstagramAccount.Username);
-			var profileRefresh = Task.Run(async () => await _metadataExtract.BuildUsersOwnMedias(3))
+			var profileRefresh = Task.Run(async () => await _metadataExtract.BuildUsersOwnMedias())
 				.ContinueWith(async x => { await _metadataExtract.BuildUsersRecentComments(); });
 
 			var followingList = Task.Run(async () => await _metadataExtract.BuildUserFollowList());
 
 			var followerList = Task.Run(async () => await _metadataExtract.BuildUserFollowerList());
 
-			var feedRefresh = await Task.Run(async () => await _metadataExtract.BuildUsersFeed()).ContinueWith(async x =>
+			if (_customer.InstagramAccount.AgentState == (int) AgentState.Running)
 			{
-				await _metadataExtract.BuildUsersFollowSuggestions(2);
-				await _metadataExtract.BuildUsersInbox();
-				await _metadataExtract.BuildCommentsFromSpecifiedSource(MetaDataType.FetchUsersFeed, MetaDataType.FetchCommentsViaUserFeed);
-			});
-			Task.WaitAll(profileRefresh, followerList, followingList, feedRefresh);
+				var feedRefresh = await Task.Run(async () => await _metadataExtract.BuildUsersFeed())
+					.ContinueWith(async x =>
+					{
+						await _metadataExtract.BuildUsersFollowSuggestions(2);
+						await _metadataExtract.BuildUsersInbox();
+						await _metadataExtract.BuildCommentsFromSpecifiedSource(MetaDataType.FetchUsersFeed,
+							MetaDataType.FetchCommentsViaUserFeed, takeMediaAmount: 7);
+					});
+				await Task.WhenAll(feedRefresh);
+			}
+			await Task.WhenAll(profileRefresh, followerList, followingList);
 			Console.WriteLine("Ended User Info Extract for {0}", _customer.InstagramAccount.Username);
 		}
 	}

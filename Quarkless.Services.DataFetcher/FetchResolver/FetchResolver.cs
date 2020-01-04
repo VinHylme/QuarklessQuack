@@ -87,6 +87,7 @@ namespace Quarkless.Services.DataFetcher.FetchResolver
 
 		public async Task StartService()
 		{
+			var messages = await _utilProviders.EmailService.GetUnreadEmails("douniaouseb@gmail.com","Sherox.101");
 			Console.Read();
 			await OnCallBack();
 			while (true)
@@ -100,22 +101,22 @@ namespace Quarkless.Services.DataFetcher.FetchResolver
 			}
 		}
 
-		/// <summary>
-		/// todo: need to relate the topics together somehow, and possibly store on a individual basis
-		/// </summary>
-		/// <returns></returns>
 		private async Task BeginMediaWork()
 		{
 			if(_mediasWork.IsEmpty)
 				return;
 
 			_totalWorkers--;
+			_mediasWork.TryDequeue(out var mediaData);
 			try
 			{
-				_mediasWork.TryDequeue(out var mediaData);
 				foreach (var media in mediaData.Medias)
 				{
+					if(media.Caption == null)
+						continue;
 					var hashtags = media.Caption.FilterHashtags().ToList();
+					if(media.Topic == null) 
+						continue;
 					var topicTree = await _topicLookupLogic.GetHighestParents(media.Topic);
 					if (!topicTree.Any())
 						continue;
@@ -181,7 +182,8 @@ namespace Quarkless.Services.DataFetcher.FetchResolver
 			}
 			catch (Exception err)
 			{
-				Console.WriteLine(err.Message);
+				Console.WriteLine(err.Message + Environment.NewLine + err.StackTrace);
+				_mediasWork.Enqueue(mediaData);
 			}
 			finally
 			{
@@ -195,16 +197,19 @@ namespace Quarkless.Services.DataFetcher.FetchResolver
 				return;
 
 			_totalWorkers--;
+			_commentsWork.TryDequeue(out var commentData);
 			try
 			{
-				_commentsWork.TryDequeue(out var commentData);
-
 				var comments = new List<CommentCorpus>();
 
 				void AddInnerComments(IEnumerable<UserResponse<InstaComment>> commentsIn)
 				{
 					foreach (var comment in commentsIn)
 					{
+						if(comment.Object?.Text == null)
+							continue;
+						if (comment.Topic == null)
+							continue;
 						var topicTree = _topicLookupLogic.GetHighestParents(comment.Topic).Result;
 						if (!topicTree.Any())
 							continue;
@@ -280,7 +285,8 @@ namespace Quarkless.Services.DataFetcher.FetchResolver
 					}
 				}
 
-				AddInnerComments(commentData.Comments);
+				if (commentData.Comments != null)
+					AddInnerComments(commentData.Comments);
 
 				if (comments.Any())
 				{
@@ -290,7 +296,8 @@ namespace Quarkless.Services.DataFetcher.FetchResolver
 			}
 			catch (Exception err)
 			{
-				Console.WriteLine(err.Message);
+				Console.WriteLine(err.Message + Environment.NewLine + err.StackTrace);
+				_commentsWork.Enqueue(commentData);
 				
 			}
 			finally

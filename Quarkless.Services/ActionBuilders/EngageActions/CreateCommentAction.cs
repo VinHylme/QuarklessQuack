@@ -219,7 +219,7 @@ namespace Quarkless.Services.ActionBuilders.EngageActions
 					}
 					var createComment = new CreateCommentRequest
 					{
-						Text = _builder.GenerateComment(nominatedMedia.Topic).Result
+						Text = _builder.GenerateComment(nominatedMedia.Topic)
 					};
 					var restModel = new RestModel
 					{

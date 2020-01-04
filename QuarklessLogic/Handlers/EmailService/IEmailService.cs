@@ -1,11 +1,10 @@
-﻿using System.Threading.Tasks;
-using QuarklessContexts.Models.FakerModels;
-using QuarklessContexts.Models.Proxies;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace QuarklessLogic.Handlers.EmailService
 {
 	public interface IEmailService
 	{
-		Task CreateGmailEmail(ProxyModel proxy,FakerModel person);
+		Task<List<string>> GetUnreadEmails(string email, string password);
 	}
 }

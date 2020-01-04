@@ -3,10 +3,13 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using InstagramApiSharp.Classes;
 using MoreLinq;
+using Newtonsoft.Json;
 using QuarklessContexts.Models.InstagramAccounts;
 using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Logic.InstagramAccountLogic;
+using QuarklessLogic.Logic.ResponseLogic;
 
 namespace QuarklessLogic.Handlers.WorkerManagerService
 {
@@ -21,10 +24,13 @@ namespace QuarklessLogic.Handlers.WorkerManagerService
 	{
 		#region Private Declare
 		private Timer _timer;
+		private Timer _refreshTimer;
 		private ConcurrentQueue<Workers> _batchWorkers;
 		private readonly int _updateLoopTime;
+		private readonly int _refreshLoopTime;
 		private readonly IAPIClientContext _context;
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
+		private readonly IResponseResolver _responseResolver;
 		private int _batchSize;
 		private int _workerAccountType;
 		private int _accountWorkersFetched;
@@ -32,13 +38,17 @@ namespace QuarklessLogic.Handlers.WorkerManagerService
 
 		#region Init
 		public WorkerManager(IAPIClientContext context, IInstagramAccountLogic instagramAccountLogic, 
+			IResponseResolver responseResolver,
 			int batchSize = 1, int workerAccountType = 1)
 		{
 			_context = context;
 			_instagramAccountLogic = instagramAccountLogic;
+			_responseResolver = responseResolver;
 			_batchSize = batchSize;
 			_workerAccountType = workerAccountType;
 			_updateLoopTime = (int)TimeSpan.FromMinutes(8).TotalMilliseconds;
+			_refreshLoopTime = (int) TimeSpan.FromMinutes(30).TotalMilliseconds;
+			RefreshAccounts().GetAwaiter().GetResult();
 			_batchWorkers = SetBatchWorkers();
 			_timer = SetWorkerPoolTimer();
 		}
@@ -47,12 +57,90 @@ namespace QuarklessLogic.Handlers.WorkerManagerService
 		#region Worker & Timer Setters
 		private Timer SetWorkerPoolTimer()
 		{
-			return new Timer(_=>OnCallBack(), null, _updateLoopTime, Timeout.Infinite);
+			return new Timer(_=> OnCallBack(), null, _updateLoopTime, Timeout.Infinite);
+		}
+
+		private Timer SetRefreshAccountsTimer()
+		{
+			return new Timer(async _=> await OnRefreshCallback(), null, _refreshLoopTime, Timeout.Infinite);
+		}
+
+		private async Task OnRefreshCallback()
+		{
+			_refreshTimer.Dispose();
+			await RefreshAccounts();
+			OnCallBack();
+			_refreshTimer = SetRefreshAccountsTimer();
+		}
+		private async Task RefreshAccounts()
+		{
+			var workerAccountsTotal = _instagramAccountLogic.GetInstagramAccountsFull(_workerAccountType).Result;
+
+			foreach (var accountModel in workerAccountsTotal)
+			{
+				if(accountModel.AgentState == null) 
+					continue;
+
+				switch ((AgentState)accountModel.AgentState)
+				{
+					case AgentState.Blocked:
+						var updateResults = await _instagramAccountLogic.PartialUpdateInstagramAccount(
+							accountModel.AccountId, accountModel._id,
+							new InstagramAccountModel
+							{
+								AgentState = (int) AgentState.DeepSleep,
+								SleepTimeRemaining =  DateTime.UtcNow.AddHours(2)
+							});
+						break;
+					case AgentState.Challenge:
+						var client = new APIClientContainer(_context, accountModel.AccountId, accountModel._id);
+						var loginAttempt = await _responseResolver.WithClient(client)
+							.WithResolverAsync(await _context.EmptyClient
+								.TryLogin(accountModel.Username, accountModel.Password, accountModel.State.DeviceInfo));
+
+						if (loginAttempt == null) break;
+
+						if (!loginAttempt.Succeeded) break;
+
+						var newState = JsonConvert.DeserializeObject<StateData>(loginAttempt.Value);
+
+						var updateResult = await _instagramAccountLogic.PartialUpdateInstagramAccount(
+							accountModel.AccountId, accountModel._id,
+							new InstagramAccountModel
+							{
+								State = newState
+							});
+						break;
+					case AgentState.DeepSleep:
+						if (accountModel.SleepTimeRemaining == null)
+						{
+							await _instagramAccountLogic.PartialUpdateInstagramAccount(
+								accountModel.AccountId, accountModel._id,
+								new InstagramAccountModel
+								{
+									AgentState = (int)AgentState.NotStarted
+								});
+						}
+						else if (DateTime.UtcNow > accountModel.SleepTimeRemaining.Value)
+						{
+							await _instagramAccountLogic.PartialUpdateInstagramAccount(
+								accountModel.AccountId, accountModel._id,
+								new InstagramAccountModel
+								{
+									AgentState = (int) AgentState.NotStarted
+								});
+						}
+						break;
+					case AgentState.Working:
+					case AgentState.Running:
+						continue;
+				}
+			}
 		}
 		private ConcurrentQueue<Workers> SetBatchWorkers()
 		{
 			var accounts = _instagramAccountLogic.GetInstagramAccounts(_workerAccountType).Result
-				?.Where(_=>_.AgentState != (int) AgentState.Working)
+				?.Where(_=>_.AgentState != (int) AgentState.Working && _.AgentState != (int) AgentState.Blocked)
 				.Batch(_batchSize)
 				.ToList();
 

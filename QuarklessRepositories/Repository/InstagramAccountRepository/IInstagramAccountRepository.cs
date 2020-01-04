@@ -10,6 +10,7 @@ namespace QuarklessRepositories.InstagramAccountRepository
 	{
 		Task<IEnumerable<ShortInstagramAccountModel>> GetActiveAgentInstagramAccounts(int actionExType = -1);
 		Task<IEnumerable<ShortInstagramAccountModel>> GetInstagramAccounts(int type);
+		Task<IEnumerable<InstagramAccountModel>> GetInstagramAccountsFull(int type);
 		Task<ResultCarrier<IEnumerable<InstagramAccountModel>>> GetInstagramAccountsOfUser(string accountId, int type);
 		Task<ResultCarrier<InstagramAccountModel>> GetInstagramAccount(string accountId, string instagramAccountId);
 		Task<InstagramAccountModel> AddInstagramAccount(InstagramAccountModel instagramAccount);

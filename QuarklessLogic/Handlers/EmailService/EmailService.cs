@@ -1,62 +1,111 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using MailKit;
+using MailKit.Net.Imap;
+using MailKit.Search;
 using OpenQA.Selenium;
-using QuarklessContexts.Extensions;
-using QuarklessContexts.Models.FakerModels;
-using QuarklessContexts.Models.Proxies;
 using QuarklessLogic.ContentSearch.SeleniumClient;
-using QuarklessLogic.Handlers.ReportHandler;
 
 namespace QuarklessLogic.Handlers.EmailService
 {
 	public class EmailService : IEmailService
 	{
+		private const string GMAIL_URL_LOGIN = "https://accounts.google.com/signin/v2/identifier?continue=https%3A%2F%2Fmail.google.com%2Fmail%2F&service=mail&sacu=1&rip=1&flowName=GlifWebSignIn&flowEntry=ServiceLogin";
+		private const string GMAIL_MAIL_SERVER = "imap.gmail.com";
+		private const int GMAIL_MAIL_PORT = 993;
+		private readonly string _mailServer;
+		private readonly int _port;
+		private readonly bool _ssl;
 		private readonly ISeleniumClient _seleniumClient;
-		private readonly IReportHandler _reportHandler;
-		public EmailService(ISeleniumClient seleniumClient, IReportHandler reportHandler)
+		public EmailService(ISeleniumClient seleniumClient)
 		{
-			_reportHandler = reportHandler;
-			_reportHandler.SetupReportHandler("EmailService");
 			_seleniumClient = seleniumClient;
 			_seleniumClient.AddArguments(
-				//"--headless",
-				"--enable-features=NetworkService"
-			);
+			//	"headless",
+				"--ignore-certificate-errors");
+			_mailServer = GMAIL_MAIL_SERVER;
+			_port = GMAIL_MAIL_PORT;
+			_ssl = true;
 		}
 
-		public async Task CreateGmailEmail(ProxyModel proxy, FakerModel person)
+		public async Task<IWebDriver> LoginToGmailAccount(string email, string password)
 		{
-			if (proxy != null)
+			try
 			{
-				var proxyLine = string.IsNullOrEmpty(proxy.Username) ? $"http://{proxy.Address}:{proxy.Port}" : $"http://{proxy.Username}:{proxy.Password}@{proxy.Address}:{proxy.Port}";
-				_seleniumClient.AddArguments($"--proxy-server={proxyLine}");
-			}
-			using (var driver = _seleniumClient.CreateDriver())
-			{
-				try
+				using (var client = _seleniumClient.CreateDriver())
 				{
-					driver.Navigate().GoToUrl("https://accounts.google.com/signup/v2/webcreateaccount?biz=false&flowName=GlifWebSignIn&flowEntry=SignUp");
-					await Task.Delay(SecureRandom.Next(1500,2000));
-					driver.FindElement(By.Name("firstName")).SendKeys(person.FirstName);
-					await Task.Delay(SecureRandom.Next(1500,2000));
-					driver.FindElement(By.Name("lastName")).SendKeys(person.LastName);
-					await Task.Delay(SecureRandom.Next(1500,2000));
-					driver.FindElement(By.Name("lastName")).SendKeys(person.LastName);
-					await Task.Delay(SecureRandom.Next(1500,2000));
-					driver.FindElement(By.Name("Username")).SendKeys(person.Username);
-					await Task.Delay(SecureRandom.Next(1500,2000));
-					driver.FindElement(By.Name("Passwd")).SendKeys(person.Password);
-					await Task.Delay(SecureRandom.Next(1500,2000));
-					driver.FindElement(By.Name("ConfirmPasswd")).SendKeys(person.Password);
-					await Task.Delay(SecureRandom.Next(1500,2000));
-					driver.FindElement(By.ClassName("RveJvd")).Click();
-				}
-				catch (Exception ee)
-				{
-					Console.WriteLine(ee);
-					_reportHandler.MakeReport(ee);
+					client.Navigate().GoToUrl(new Uri(GMAIL_URL_LOGIN));
+					await Task.Delay(TimeSpan.FromSeconds(3));
+					var idElement = client.FindElement(By.XPath("//input[contains(@id,'identifierId')]"));
+					idElement.SendKeys(email);
+					var nextButton = client.FindElement(By.XPath("//div[contains(@id,'identifierNext')]"));
+					nextButton.Click();
+					await Task.Delay(TimeSpan.FromSeconds(2));
+					var passElement = client.FindElement(By.Name("password"));
+					passElement.SendKeys(password);
+					var passNextButton = client.FindElement(By.Id("passwordNext"));
+					passNextButton.Click();
+					await Task.Delay(TimeSpan.FromSeconds(4));
+					var p = client.PageSource;
+					var dashboard = client.FindElement(By.Id(":l2"));
+					if (dashboard != null)
+						return client;
 				}
 			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err);
+			}
+
+			return null;
 		}
-	}
+
+		public async Task<List<string>> GetUnreadEmails(string email, string password)
+		{
+			var messages = new List<string>();
+			using (var client = await LoginToGmailAccount(email, password))
+			{
+				if (client == null)
+					return messages;
+				var tr = client.FindElements(By.XPath("//div[@class='zA zE']"));
+
+			}
+
+			return messages;
+		}
+		public IEnumerable<string> GetUnreadMails(string login, string password)
+		{
+			var messages = new List<string>();
+			try
+			{
+				using (var client = new ImapClient())
+				{
+					client.Connect(_mailServer, _port, _ssl);
+
+					client.AuthenticationMechanisms.Remove("XOAUTH2");
+
+					client.Authenticate(login, password);
+
+					var inbox = client.Inbox;
+					inbox.Open(FolderAccess.ReadOnly);
+					var results = inbox.Search(SearchOptions.All, SearchQuery.Not(SearchQuery.Seen));
+					foreach (var uniqueId in results.UniqueIds)
+					{
+						var message = inbox.GetMessage(uniqueId);
+
+						messages.Add(message.HtmlBody);
+					}
+
+					client.Disconnect(true);
+				}
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err);
+			}
+
+			return messages;
+		}
+    }
 }

@@ -11,6 +11,7 @@ COPY ["InstagramApiSharp/InstagramApiSharp.csproj", "InstagramApiSharp/"]
 COPY ["QuarklessRepositories/QuarklessRepositories.csproj", "QuarklessRepositories/"]
 COPY ["QuarklessContexts/QuarklessContexts.csproj", "QuarklessContexts/"]
 COPY ["Quarkless.Interfacing/Quarkless.Interfacing.csproj", "Quarkless.Interfacing/"]
+COPY ["Quarkless.Vision/Quarkless.Vision.csproj", "Quarkless.Vision/"]
 COPY ["Quarkless.Analyser/Quarkless.Analyser.csproj", "Quarkless.Analyser/"]
 
 RUN dotnet restore "Quarkless.Services.Heartbeat/Quarkless.Services.Heartbeat.csproj"

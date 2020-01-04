@@ -6,8 +6,10 @@ using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.SearchProvider;
 using QuarklessLogic.Handlers.WorkerManagerService;
 using QuarklessLogic.Logic.InstagramAccountLogic;
+using QuarklessLogic.Logic.InstaUserLogic;
 using QuarklessLogic.Logic.ProfileLogic;
 using QuarklessLogic.Logic.ProxyLogic;
+using QuarklessLogic.Logic.ResponseLogic;
 using QuarklessLogic.Logic.TopicLookupLogic;
 using QuarklessLogic.ServicesLogic.HeartbeatLogic;
 
@@ -25,7 +27,7 @@ namespace Quarkless.Services.Heartbeat
 		public HeartbeatService(IProfileLogic profileLogic, 
 			IProxyLogic proxyLogic,  IHeartbeatLogic heartbeatLogic, 
 			ISearchProvider searchProvider, IAPIClientContext context,
-			IInstagramAccountLogic accountLogic, ITopicLookupLogic topicLookup)
+			IInstagramAccountLogic accountLogic, ITopicLookupLogic topicLookup, IResponseResolver responseResolver)
 		{
 			_profileLogic = profileLogic;
 			_proxyLogic = proxyLogic;
@@ -33,7 +35,7 @@ namespace Quarkless.Services.Heartbeat
 			_instagramAccountLogic = accountLogic;
 			_topicLookup = topicLookup;
 			_searchProvider = searchProvider;
-			_workerManager = new WorkerManager(context, _instagramAccountLogic, 2, 1);
+			_workerManager = new WorkerManager(context, _instagramAccountLogic, responseResolver,2, 1);
 		}
 
 		/// <summary>
@@ -54,10 +56,21 @@ namespace Quarkless.Services.Heartbeat
 		public async Task Start(CustomerAccount customer, ExtractOperationType operation)
 		{
 			var currentAccount = await _instagramAccountLogic.GetInstagramAccountShort(customer.UserId, customer.InstagramAccountId);
-			if (currentAccount == null)
-				return;
-			if (currentAccount.AgentState != (int) AgentState.Running)
-				return;
+			if (currentAccount?.AgentState == null) return;
+
+			switch ((AgentState) currentAccount.AgentState)
+			{
+				case AgentState.Running:
+				case AgentState.Blocked:
+				case AgentState.Sleeping:
+				case AgentState.Challenge:
+					break;
+				case AgentState.AwaitingActionFromUser:
+				case AgentState.DeepSleep:
+				case AgentState.NotStarted:
+				case AgentState.Stopped:
+					return;
+			}
 
 			await PerformTask(await GetFullUserDetails(currentAccount), operation);
 		}
@@ -82,7 +95,7 @@ namespace Quarkless.Services.Heartbeat
 				case ExtractOperationType.UserInfo:
 					await metaBuilder.UserInformationExtract(); 
 					Console.WriteLine("Waiting before next cycle...");
-					await Task.Delay(TimeSpan.FromMinutes(1));
+					await Task.Delay(TimeSpan.FromMinutes(1.35));
 					break;
 				case ExtractOperationType.TargetListing:
 					await metaBuilder.TargetListingExtract();

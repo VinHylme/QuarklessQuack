@@ -75,22 +75,14 @@ namespace QuarklessRepositories.ProxyRepository
 			var builders = Builders<ProxyModel>.Filter;
 			var filter = builders.Eq("AssignedTo.Account_Id",accountId) & builders.Eq("AssignedTo.InstaId", instagramAccountId);
 			var results = await _context.Proxies.FindAsync(filter);
-			if (results != null)
-			{
-				return results.FirstOrDefault();
-			}
-			return null;
+			return results?.FirstOrDefault();
 		}
 
 		public async Task<ProxyModel> GetAssignedProxyByInstaId(string instagramAccountId)
 		{
 			var filter = Builders<ProxyModel>.Filter.Eq("AssignedTo.InstaId",instagramAccountId);
 			var results = await _context.Proxies.FindAsync(filter);
-			if (results != null)
-			{
-				return results.FirstOrDefault();
-			}
-			return null;
+			return results?.FirstOrDefault();
 		}
 
 		public async Task<bool> RemoveUserFromProxy(AssignedTo assignedTo)
@@ -108,11 +100,7 @@ namespace QuarklessRepositories.ProxyRepository
 			{
 				var proxy = await _context.Proxies.UpdateOneAsync(updatefilters, update);
 
-				if (proxy.IsAcknowledged)
-				{
-					return true;
-				}
-				return false;
+				return proxy.IsAcknowledged;
 			}
 			catch
 			{

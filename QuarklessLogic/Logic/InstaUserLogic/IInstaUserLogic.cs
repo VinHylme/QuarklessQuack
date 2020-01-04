@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using InstagramApiSharp.Classes;
+using InstagramApiSharp.Classes.Android.DeviceInfo;
 using InstagramApiSharp.Classes.Models;
 using InstagramApiSharp.Enums;
 using QuarklessContexts.Models.FakerModels;
@@ -11,13 +12,13 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 	public interface IInstaUserLogic
 	{
 		Task<Tempo> CreateAccount(ProxyModel proxy);
-		InstaChallengeLoginInfo GetChallangeInfo();
-		Task<SubmitChallengeResponse> SubmitChallangeCode(string username, string password, InstaChallengeLoginInfo instaChallengeLoginInfo, string code);
+		InstaChallengeLoginInfo GetChallengeInfo();
+		Task<SubmitChallengeResponse> SubmitChallengeCode(string username, string password, InstaChallengeLoginInfo instaChallengeLoginInfo, string code);
 		Task<IResult<InstaChallengeRequireEmailVerify>> RequestVerifyCodeToEmailForChallengeRequireAsync(string username, string password);
-		Task<IResult<InstaChallengeRequireSMSVerify>> RequestVerifyCodeToSMSForChallengeRequireAsync(string username, string password);
+		Task<IResult<InstaChallengeRequireSMSVerify>> RequestVerifyCodeToSmsForChallengeRequireAsync(string username, string password);
 		Task<IResult<InstaChallengeRequireVerifyMethod>> GetChallengeRequireVerifyMethodAsync(string username, string password);
 		Task<string> GetStateDataFromString();
-		Task<IResult<InstaLoginResult>> TryLogin(string username, string password);
+		Task<IResult<string>> TryLogin(string username, string password, AndroidDevice device);
 		Task<IResult<bool>> AcceptConsent();
 		Task<IResult<InstaActivityFeed>> GetRecentActivityFeedAsync(int limit);
 		Task<IResult<InstaFriendshipStatus>> AcceptFriendshipRequestAsync(long userId);

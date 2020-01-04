@@ -208,15 +208,17 @@ namespace Quarkless.Analyser.Extensions
 			}
 			return frequency;
 		}
-		public static bool SimilarColors(this IEnumerable<Color> @freq, IEnumerable<Color> target, double threshhold = 0)
+		public static bool SimilarColors(this IEnumerable<Color> freq, IEnumerable<Color> profileColors, 
+			double threshHold = 0)
 		{
 			var contains = 0;
-			foreach (var tc in target)
+			foreach (var profileColor in profileColors)
 			{
-				var diffMin = freq.Select(x => ColorDiff(x, tc)).Min(s => s);
-				var maximus = tc.R + tc.G + tc.B;
-				var targetPerc = Math.Abs((maximus * threshhold) - maximus);
-				if (diffMin < targetPerc)
+				var diffMin = freq.Select(x => ColorDiff(x, profileColor)).Min(s => s);
+				var tcR = profileColor.R + profileColor.G + profileColor.B;
+				var targetPercentage = Math.Abs((tcR * threshHold) - tcR);
+
+				if (diffMin < targetPercentage)
 				{
 					contains++;
 				}

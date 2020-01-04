@@ -1,8 +1,6 @@
 ﻿using InstagramApiSharp.Classes;
 using QuarklessContexts.Classes.Carriers;
 using QuarklessContexts.Models.InstagramAccounts;
-using QuarklessContexts.Models.Proxies;
-using QuarklessLogic.Logic.ProxyLogic;
 using QuarklessRepositories.InstagramAccountRepository;
 using QuarklessRepositories.RedisRepository.InstagramAccountRedis;
 using System;
@@ -17,15 +15,13 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 	public class InstagramAccountLogic : IInstagramAccountLogic
 	{
 		private readonly IInstagramAccountRepository _instagramAccountRepository;
-		private readonly IInstagramAccountRedis _instagramAccountRedis;
 		private readonly IEventPublisher _publisher;
 		private readonly IReportHandler _reportHandler;
-		public InstagramAccountLogic(IInstagramAccountRepository instagramAccountRepository, 
-			IInstagramAccountRedis instagramAccountRedis, IEventPublisher publisher, IReportHandler reportHandler)
+		public InstagramAccountLogic(IInstagramAccountRepository instagramAccountRepository,
+		IEventPublisher publisher, IReportHandler reportHandler)
 		{
 			_publisher = publisher;
 			_instagramAccountRepository = instagramAccountRepository;
-			_instagramAccountRedis = instagramAccountRedis;
 			_reportHandler = reportHandler;
 			_reportHandler.SetupReportHandler("InstagramAccountLogic");
 		}
@@ -87,11 +83,11 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 				return resultCarrier;
 			}	
 		}
-		public async Task<StateData> GetInstagramAccountStateData(string accountId, string InstagramAccountId)
+		public async Task<StateData> GetInstagramAccountStateData(string accountId, string instagramAccountId)
 		{
 			try
 			{
-				var state  = await _instagramAccountRepository.GetInstagramAccountStateData(accountId, InstagramAccountId);
+				var state  = await _instagramAccountRepository.GetInstagramAccountStateData(accountId, instagramAccountId);
 				return state.Results ?? null;
 			}
 			catch(Exception ee)
@@ -153,6 +149,19 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 				return account.Results;
 			}
 			catch(Exception ee)
+			{
+				_reportHandler.MakeReport(ee);
+				return null;
+			}
+		}
+		public async Task<IEnumerable<InstagramAccountModel>> GetInstagramAccountsFull(int type)
+		{
+			try
+			{
+				var account = await _instagramAccountRepository.GetInstagramAccountsFull(type);
+				return account;
+			}
+			catch (Exception ee)
 			{
 				_reportHandler.MakeReport(ee);
 				return null;
@@ -298,7 +307,5 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 				_reportHandler.MakeReport(ee);
 			}
 		}
-
-
 	}
 }

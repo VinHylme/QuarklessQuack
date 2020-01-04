@@ -651,7 +651,7 @@ namespace Quarkless.Services
 									{
 										_timelineLogic.DeleteEvent(_.ItemId);
 									});
-									shortInstagram.SleepTimeRemaining = DateTime.UtcNow.AddHours(24);
+									shortInstagram.SleepTimeRemaining = DateTime.UtcNow.AddHours(6);
 									shortInstagram.AgentState = (int)AgentState.DeepSleep;
 									await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser, new InstagramAccountModel
 									{

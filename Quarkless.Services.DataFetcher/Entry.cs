@@ -70,6 +70,7 @@ namespace Quarkless.Services.DataFetcher
 					ServiceTypes.AddEventServices
 				}
 			});
+			//cIn.TryDisconnect();
 			return services;
 		}
 		#endregion

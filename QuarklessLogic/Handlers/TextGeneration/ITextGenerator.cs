@@ -11,7 +11,7 @@ namespace QuarklessLogic.Handlers.TextGeneration
 			EmojiType fallback = EmojiType.Smileys);
 		Task<string> GenerateCommentByMarkovChain(CTopic mediaTopic, int limit,
 			EmojiType fallback = EmojiType.Smileys);
-		string MarkovTextGenerator(string filePath, int limit, int size, bool exact = false);
-		string MarkovTextGenerator(string filePath, int type, string topic, string language, int size, int limit);
+//		string MarkovTextGenerator(string filePath, int limit, int size, bool exact = false);
+//		string MarkovTextGenerator(string filePath, int type, string topic, string language, int size, int limit);
 	}
 }

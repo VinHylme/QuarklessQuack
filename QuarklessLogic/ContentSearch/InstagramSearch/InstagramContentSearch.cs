@@ -358,7 +358,7 @@ namespace QuarklessLogic.ContentSearch.InstagramSearch
 			return medias;
 		}
 
-		public async Task<Media> SearchUsersMediaDetailInstagram(string userName, int limit)
+		public async Task<Media> SearchUsersMediaDetailInstagram(CTopic topic, string userName, int limit)
 		{
 			var medias = await _responseResolver.WithClient(_container).WithResolverAsync
 				(await _container.User.GetUserMediaAsync(userName, PaginationParameters.MaxPagesToLoad(limit)));
@@ -393,6 +393,7 @@ namespace QuarklessLogic.ContentSearch.InstagramSearch
 							CommentCount = s.CommentsCount,
 							MediaFrom = MediaFrom.Instagram,
 							MediaType = s.MediaType,
+							Topic = topic,
 							User = new UserResponse
 							{
 								FullName = s.User.FullName,

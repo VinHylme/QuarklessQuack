@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using InstagramApiSharp.Classes;
+using InstagramApiSharp.Classes.Android.DeviceInfo;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using QuarklessContexts.Contexts;
@@ -41,11 +42,11 @@ namespace Quarkless.Controllers
 
 		[HttpPut]
 		[Route("api/insta/challange/submitCode/{code}")]
-		public async Task<IActionResult> SubmitChallangeCode([FromBody]SubmitVerifyCodeRequest model,[FromRoute] string code)
+		public async Task<IActionResult> SubmitChallengeCode([FromBody]SubmitVerifyCodeRequest model,[FromRoute] string code)
 		{
 			if(string.IsNullOrEmpty(_userContext.CurrentUser))
 				return BadRequest("Invalid Request");
-			var res = await _instaUserLogic.SubmitChallangeCode(model.Username, model.Password, model.ChallangeLoginInfo, code);
+			var res = await _instaUserLogic.SubmitChallengeCode(model.Username, model.Password, model.ChallangeLoginInfo, code);
 			if (!res.Result.Succeeded) return NotFound(res.Result.Info);
 			if (string.IsNullOrEmpty(res.InstagramId)) return Ok(true);
 			await _instagramAccountLogic.EmptyChallengeInfo(res.InstagramId);
@@ -58,7 +59,7 @@ namespace Quarkless.Controllers
 			try
 			{
 				if (string.IsNullOrEmpty(_userContext.CurrentUser)) return BadRequest("Not authenticated");
-				var loginRes = await _instaUserLogic.TryLogin(addInstagram.Username, addInstagram.Password);
+				var loginRes = await _instaUserLogic.TryLogin(addInstagram.Username, addInstagram.Password, AndroidDeviceGenerator.GetRandomAndroidDevice());
 				if (loginRes == null) return NotFound("Could not authenticate the account");
 				if (loginRes.Succeeded) { 
 					var state = JsonConvert.DeserializeObject<StateData>(await _instaUserLogic.GetStateDataFromString());
@@ -70,40 +71,42 @@ namespace Quarkless.Controllers
 				}
 				else
 				{
-					if (loginRes.Value != InstaLoginResult.ChallengeRequired) return NotFound(loginRes.Info);
-					var challange = await _instaUserLogic.GetChallengeRequireVerifyMethodAsync(addInstagram.Username, addInstagram.Password);
-					if (!challange.Succeeded) return NotFound(loginRes.Info);
-					if (challange.Value.SubmitPhoneRequired)
+					if (loginRes.Info.ResponseType != ResponseType.ChallengeRequired) 
+						return NotFound(loginRes.Info);
+
+					var requireVerifyMethodAsync = await _instaUserLogic.GetChallengeRequireVerifyMethodAsync(addInstagram.Username, addInstagram.Password);
+					if (!requireVerifyMethodAsync.Succeeded) return NotFound(loginRes.Info);
+					if (requireVerifyMethodAsync.Value.SubmitPhoneRequired)
 					{
 
 					}
 					else
 					{
-						if (challange.Value.StepData == null) return NotFound(loginRes.Info);
-						if (!string.IsNullOrEmpty(challange.Value.StepData.PhoneNumber))
+						if (requireVerifyMethodAsync.Value.StepData == null) return NotFound(loginRes.Info);
+						if (!string.IsNullOrEmpty(requireVerifyMethodAsync.Value.StepData.PhoneNumber))
 						{
 							//verify phone
-							var code = await _instaUserLogic.RequestVerifyCodeToSMSForChallengeRequireAsync(addInstagram.Username, addInstagram.Password);
+							var code = await _instaUserLogic.RequestVerifyCodeToSmsForChallengeRequireAsync(addInstagram.Username, addInstagram.Password);
 							if (code.Succeeded)
 							{
 								return Ok(new 
 								{ 
 									Verify = "phone", 
-									Details = challange.Value.StepData.PhoneNumber,
-									ChallangePath = _instaUserLogic.GetChallangeInfo(),
+									Details = requireVerifyMethodAsync.Value.StepData.PhoneNumber,
+									ChallangePath = _instaUserLogic.GetChallengeInfo(),
 									Resp = code.Value
 								});
 							}
 						}
 
-						if (string.IsNullOrEmpty(challange.Value.StepData.Email))
+						if (string.IsNullOrEmpty(requireVerifyMethodAsync.Value.StepData.Email))
 							return NotFound(loginRes.Info);
 						{
 							var code = await _instaUserLogic.RequestVerifyCodeToEmailForChallengeRequireAsync(addInstagram.Username, addInstagram.Password);
 							return Ok(new { 
 								Verify = "email", 
-								Details = challange.Value.StepData.Email,
-								ChallangePath = _instaUserLogic.GetChallangeInfo(),
+								Details = requireVerifyMethodAsync.Value.StepData.Email,
+								ChallangePath = _instaUserLogic.GetChallengeInfo(),
 								Resp = code.Value });
 						}
 					}
@@ -123,21 +126,28 @@ namespace Quarkless.Controllers
 			{
 				if (string.IsNullOrEmpty(_userContext.CurrentUser)) return Forbid("User does not exist");
 				var instaDetails = await _instagramAccountLogic.GetInstagramAccount(_userContext.CurrentUser,instagramAccountId);
+				
 				if (instaDetails == null || string.IsNullOrEmpty(instaDetails.Username))
 					return NotFound("Could not find account");
+				
 				var loginRes = await _responseResolver
 					.WithClient(new APIClientContainer(_clientContext, _userContext.CurrentUser, instagramAccountId))
-					.WithResolverAsync(await _instaUserLogic.TryLogin(instaDetails.Username, instaDetails.Password), 
+					.WithResolverAsync(await _instaUserLogic.TryLogin(instaDetails.Username, instaDetails.Password, instaDetails.State.DeviceInfo), 
 						ActionType.RefreshLogin, instagramAccountId);
 				
 				if (loginRes == null) return Ok(false);
 				if (!loginRes.Succeeded) return NotFound(loginRes.Info);
-				var newState = JsonConvert.DeserializeObject<StateData>(await _instaUserLogic.GetStateDataFromString());
-				await _instagramAccountLogic.PartialUpdateInstagramAccount(_userContext.CurrentUser,instagramAccountId,
+
+				var newState = JsonConvert.DeserializeObject<StateData>(loginRes.Value);
+				
+				await _instagramAccountLogic.PartialUpdateInstagramAccount(_userContext.CurrentUser,
+					instagramAccountId,
 					new InstagramAccountModel
 					{
-						State = newState
+						State = newState,
+						AgentState = (int) AgentState.Running
 					});
+
 				return Ok(true);
 			}
 			catch(Exception ee)

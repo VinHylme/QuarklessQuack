@@ -168,7 +168,7 @@ namespace QuarklessLogic.Logic.ResponseLogic
 												{
 													Verify = "phone",
 													Details = challenge.Value.StepData.PhoneNumber,
-													ChallangePath = GetChallangeInfo()
+													ChallangePath = GetChallengeInfo()
 												}
 											});
 									}
@@ -187,7 +187,7 @@ namespace QuarklessLogic.Logic.ResponseLogic
 												{
 													Verify = "email",
 													Details = challenge.Value.StepData.Email,
-													ChallangePath = GetChallangeInfo()
+													ChallangePath = GetChallengeInfo()
 												}
 											});
 									}
@@ -315,7 +315,7 @@ namespace QuarklessLogic.Logic.ResponseLogic
 												{
 													Verify = "phone",
 													Details = challenge.Value.StepData.PhoneNumber,
-													ChallangePath = GetChallangeInfo()
+													ChallangePath = GetChallengeInfo()
 												}
 											});
 									}
@@ -334,7 +334,7 @@ namespace QuarklessLogic.Logic.ResponseLogic
 												{
 													Verify = "email",
 													Details = challenge.Value.StepData.Email,
-													ChallangePath = GetChallangeInfo()
+													ChallangePath = GetChallengeInfo()
 												}
 											});
 									}
@@ -371,7 +371,6 @@ namespace QuarklessLogic.Logic.ResponseLogic
 						});
 					break;
 				case ResponseType.OK:
-
 					break;
 				case ResponseType.MediaNotFound:
 					break;
@@ -464,7 +463,7 @@ namespace QuarklessLogic.Logic.ResponseLogic
 				return null;
 			}
 		}
-		private InstaChallengeLoginInfo GetChallangeInfo()
+		private InstaChallengeLoginInfo GetChallengeInfo()
 		{
 			try
 			{
@@ -472,7 +471,7 @@ namespace QuarklessLogic.Logic.ResponseLogic
 			}
 			catch (Exception ee)
 			{
-				Expect(ee.Message, nameof(GetChallangeInfo), AccountId, InstagramAccountId).GetAwaiter().GetResult();
+				Expect(ee.Message, nameof(GetChallengeInfo), AccountId, InstagramAccountId).GetAwaiter().GetResult();
 				return null;
 			}
 		}

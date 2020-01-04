@@ -6,6 +6,7 @@ using QuarklessLogic.Handlers.ClientProvider;
 using QuarklessLogic.Handlers.ReportHandler;
 using System;
 using System.Threading.Tasks;
+using InstagramApiSharp.Classes.Android.DeviceInfo;
 using QuarklessContexts.Models.FakerModels;
 using QuarklessContexts.Models.InstagramAccounts;
 using QuarklessContexts.Models.Proxies;
@@ -16,23 +17,22 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 	public class InstaUserLogic : IInstaUserLogic
 	{
 		private readonly IReportHandler _reportHandler;
-		private readonly IAPIClientContainer Client;
+		private readonly IAPIClientContainer _clientContainer;
 		private readonly IUtilProviders _utilProviders;
-		public InstaUserLogic(IAPIClientContainer clientContexter, 
+		public InstaUserLogic(IAPIClientContainer clientContainer, 
 			IReportHandler reportHandler, IUtilProviders utilProviders)
 		{
-			Client = clientContexter;
+			_clientContainer = clientContainer;
 			_reportHandler = reportHandler;
 			_utilProviders = utilProviders;
 			_reportHandler.SetupReportHandler("Logic/InstaUser");
 		}
 
-		public async Task<IResult<InstaLoginResult>> TryLogin(string username, string password)
+		public async Task<IResult<string>> TryLogin(string username, string password, AndroidDevice device)
 		{
 			try
 			{
-				return await Client.EmptyClient.TryLogin(username, password);
-				
+				return await _clientContainer.EmptyClient.TryLogin(username, password, device);
 			}
 			catch (Exception ee)
 			{
@@ -49,13 +49,13 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 				IResult<InstaAccountCreation> res;
 				if (proxy != null)
 				{
-					res = await Client.EmpClientWithProxy(proxy, true).ReturnClient.CreateNewAccountAsync(
+					res = await _clientContainer.EmpClientWithProxy(proxy, true).ReturnClient.CreateNewAccountAsync(
 						person.Username, person.Password, person.Email,
 						person.FirstName);
 				}
 				else
 				{
-					res = await Client.EmptyClient.ReturnClient.CreateNewAccountAsync(
+					res = await _clientContainer.EmptyClient.ReturnClient.CreateNewAccountAsync(
 						person.Username, person.Password, person.Email, person.FirstName);
 				}
 
@@ -85,7 +85,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.GetContext.ActionClient.AcceptConsentAsync();
+				return await _clientContainer.GetContext.ActionClient.AcceptConsentAsync();
 			}
 			catch(Exception ee)
 			{
@@ -97,7 +97,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.EmptyClient.GetStateDataFromString();
+				return await _clientContainer.EmptyClient.GetStateDataFromString();
 			}
 			catch (Exception ee)
 			{
@@ -109,7 +109,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.AcceptFriendshipRequestAsync(userId);
+				return await _clientContainer.User.AcceptFriendshipRequestAsync(userId);
 			}
 			catch (Exception ee)
 			{
@@ -122,7 +122,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.EmptyClient.ReturnClient.RequestVerifyCodeToEmailForChallengeRequireAsync();
+				return await _clientContainer.EmptyClient.ReturnClient.RequestVerifyCodeToEmailForChallengeRequireAsync();
 			}
 			catch(Exception ee)
 			{
@@ -130,11 +130,11 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 				return null;
 			}
 		}
-		public async Task<IResult<InstaChallengeRequireSMSVerify>> RequestVerifyCodeToSMSForChallengeRequireAsync(string username, string password)
+		public async Task<IResult<InstaChallengeRequireSMSVerify>> RequestVerifyCodeToSmsForChallengeRequireAsync(string username, string password)
 		{
 			try
 			{
-				return await Client.EmptyClient.ReturnClient.RequestVerifyCodeToSMSForChallengeRequireAsync();
+				return await _clientContainer.EmptyClient.ReturnClient.RequestVerifyCodeToSMSForChallengeRequireAsync();
 			}
 			catch (Exception ee)
 			{
@@ -142,11 +142,11 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 				return null;
 			}
 		}
-		public InstaChallengeLoginInfo GetChallangeInfo()
+		public InstaChallengeLoginInfo GetChallengeInfo()
 		{
 			try
 			{
-				return Client.EmptyClient.ReturnClient.ChallengeLoginInfo;
+				return _clientContainer.EmptyClient.ReturnClient.ChallengeLoginInfo;
 			}
 			catch (Exception ee)
 			{
@@ -158,7 +158,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.EmptyClient.GetChallengeRequireVerifyMethodAsync(username,password);
+				return await _clientContainer.EmptyClient.GetChallengeRequireVerifyMethodAsync(username,password);
 			}
 			catch(Exception ee)
 			{
@@ -167,15 +167,15 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 			}
 		}
 
-		public async Task<SubmitChallengeResponse> SubmitChallangeCode(string username, string password, InstaChallengeLoginInfo instaChallengeLoginInfo, string code)
+		public async Task<SubmitChallengeResponse> SubmitChallengeCode(string username, string password, InstaChallengeLoginInfo instaChallengeLoginInfo, string code)
 		{
 			try
 			{
-				var res = await Client.EmptyClient.SubmitChallangeCode(username, password, instaChallengeLoginInfo, code);
+				var res = await _clientContainer.EmptyClient.SubmitChallangeCode(username, password, instaChallengeLoginInfo, code);
 				return new SubmitChallengeResponse
 				{
 					Result = res,
-					InstagramId = Client?.GetContext?.InstagramAccount?.Id
+					InstagramId = _clientContainer?.GetContext?.InstagramAccount?.Id
 				};
 			}
 			catch (Exception ee)
@@ -189,7 +189,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.BlockUserAsync(userId);
+				return await _clientContainer.User.BlockUserAsync(userId);
 			}
 			catch (Exception ee)
 			{
@@ -201,7 +201,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.FavoriteUserAsync(userId);
+				return await _clientContainer.User.FavoriteUserAsync(userId);
 			}
 			catch (Exception ee)
 			{
@@ -213,7 +213,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.FavoriteUserStoriesAsync(userId);
+				return await _clientContainer.User.FavoriteUserStoriesAsync(userId);
 			}
 			catch (Exception ee)
 			{
@@ -225,7 +225,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.FollowUserAsync(userId);
+				return await _clientContainer.User.FollowUserAsync(userId);
 			}
 			catch (Exception ee)
 			{
@@ -237,7 +237,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.GetCurrentUserFollowersAsync(PaginationParameters.MaxPagesToLoad(limit));
+				return await _clientContainer.User.GetCurrentUserFollowersAsync(PaginationParameters.MaxPagesToLoad(limit));
 			}
 			catch (Exception ee)
 			{
@@ -249,7 +249,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.GetFollowingRecentActivityFeedAsync(PaginationParameters.MaxPagesToLoad(limit));
+				return await _clientContainer.User.GetFollowingRecentActivityFeedAsync(PaginationParameters.MaxPagesToLoad(limit));
 			}
 			catch (Exception ee)
 			{
@@ -261,7 +261,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.GetFriendshipStatusesAsync(userIds);
+				return await _clientContainer.User.GetFriendshipStatusesAsync(userIds);
 			}
 			catch (Exception ee)
 			{
@@ -273,7 +273,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.GetFullUserInfoAsync(userId);
+				return await _clientContainer.User.GetFullUserInfoAsync(userId);
 			}
 			catch (Exception ee)
 			{
@@ -285,7 +285,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.GetPendingFriendRequestsAsync();
+				return await _clientContainer.User.GetPendingFriendRequestsAsync();
 			}
 			catch (Exception ee)
 			{
@@ -297,7 +297,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.GetRecentActivityFeedAsync(PaginationParameters.MaxPagesToLoad(limit));
+				return await _clientContainer.User.GetRecentActivityFeedAsync(PaginationParameters.MaxPagesToLoad(limit));
 			}
 			catch (Exception ee)
 			{
@@ -309,7 +309,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.GetSuggestionDetailsAsync(userId,chainedUserIds);
+				return await _clientContainer.User.GetSuggestionDetailsAsync(userId,chainedUserIds);
 			}
 			catch (Exception ee)
 			{
@@ -321,7 +321,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.GetSuggestionUsersAsync(PaginationParameters.MaxPagesToLoad(limit));
+				return await _clientContainer.User.GetSuggestionUsersAsync(PaginationParameters.MaxPagesToLoad(limit));
 			}
 			catch (Exception ee)
 			{
@@ -333,7 +333,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.GetUserAsync(username);
+				return await _clientContainer.User.GetUserAsync(username);
 			}
 			catch (Exception ee)
 			{
@@ -345,7 +345,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.GetUserFollowersAsync(username, PaginationParameters.MaxPagesToLoad(limit), query, mutalfirst);
+				return await _clientContainer.User.GetUserFollowersAsync(username, PaginationParameters.MaxPagesToLoad(limit), query, mutalfirst);
 			}
 			catch (Exception ee)
 			{
@@ -357,7 +357,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.GetUserFollowingAsync(username, PaginationParameters.MaxPagesToLoad(limit), query);
+				return await _clientContainer.User.GetUserFollowingAsync(username, PaginationParameters.MaxPagesToLoad(limit), query);
 			}
 			catch (Exception ee)
 			{
@@ -369,7 +369,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.GetUserFromNametagAsync(nametagmage);
+				return await _clientContainer.User.GetUserFromNametagAsync(nametagmage);
 			}
 			catch (Exception ee)
 			{
@@ -381,7 +381,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.GetUserInfoByIdAsync(userpk);
+				return await _clientContainer.User.GetUserInfoByIdAsync(userpk);
 			}
 			catch (Exception ee)
 			{
@@ -393,7 +393,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.GetUserInfoByUsernameAsync(username);
+				return await _clientContainer.User.GetUserInfoByUsernameAsync(username);
 			}
 			catch (Exception ee)
 			{
@@ -405,7 +405,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.GetUserMediaAsync(username, PaginationParameters.MaxPagesToLoad(limit));
+				return await _clientContainer.User.GetUserMediaAsync(username, PaginationParameters.MaxPagesToLoad(limit));
 			}
 			catch (Exception ee)
 			{
@@ -417,7 +417,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.GetUserShoppableMediaAsync(username, PaginationParameters.MaxPagesToLoad(limit));
+				return await _clientContainer.User.GetUserShoppableMediaAsync(username, PaginationParameters.MaxPagesToLoad(limit));
 			}
 			catch (Exception ee)
 			{
@@ -429,7 +429,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.GetUserTagsAsync(username, PaginationParameters.MaxPagesToLoad(limit));
+				return await _clientContainer.User.GetUserTagsAsync(username, PaginationParameters.MaxPagesToLoad(limit));
 			}
 			catch (Exception ee)
 			{
@@ -441,7 +441,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.HideMyStoryFromUserAsync(userid);
+				return await _clientContainer.User.HideMyStoryFromUserAsync(userid);
 			}
 			catch (Exception ee)
 			{
@@ -453,7 +453,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.IgnoreFriendshipRequestAsync(userid);
+				return await _clientContainer.User.IgnoreFriendshipRequestAsync(userid);
 			}
 			catch (Exception ee)
 			{
@@ -465,7 +465,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.MarkUserAsOverageAsync(userid);
+				return await _clientContainer.User.MarkUserAsOverageAsync(userid);
 			}
 			catch (Exception ee)
 			{
@@ -477,7 +477,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.MuteFriendStoryAsync(userid);
+				return await _clientContainer.User.MuteFriendStoryAsync(userid);
 			}
 			catch (Exception ee)
 			{
@@ -489,7 +489,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.MuteUserMediaAsync(userid, muteOption);
+				return await _clientContainer.User.MuteUserMediaAsync(userid, muteOption);
 			}
 			catch (Exception ee)
 			{
@@ -501,7 +501,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.RemoveFollowerAsync(userid);
+				return await _clientContainer.User.RemoveFollowerAsync(userid);
 			}
 			catch (Exception ee)
 			{
@@ -513,7 +513,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.ReportUserAsync(userid);
+				return await _clientContainer.User.ReportUserAsync(userid);
 			}
 			catch (Exception ee)
 			{
@@ -525,7 +525,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.TranslateBiographyAsync(userid);
+				return await _clientContainer.User.TranslateBiographyAsync(userid);
 			}
 			catch (Exception ee)
 			{
@@ -537,7 +537,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.UnBlockUserAsync(userid);
+				return await _clientContainer.User.UnBlockUserAsync(userid);
 			}
 			catch (Exception ee)
 			{
@@ -549,7 +549,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.UnFavoriteUserAsync(userid);
+				return await _clientContainer.User.UnFavoriteUserAsync(userid);
 			}
 			catch (Exception ee)
 			{
@@ -561,7 +561,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.UnFavoriteUserStoriesAsync(userid);
+				return await _clientContainer.User.UnFavoriteUserStoriesAsync(userid);
 			}
 			catch (Exception ee)
 			{
@@ -573,7 +573,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.UnFollowUserAsync(userid);
+				return await _clientContainer.User.UnFollowUserAsync(userid);
 			}
 			catch (Exception ee)
 			{
@@ -585,7 +585,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.UnHideMyStoryFromUserAsync(userid);
+				return await _clientContainer.User.UnHideMyStoryFromUserAsync(userid);
 			}
 			catch (Exception ee)
 			{
@@ -597,7 +597,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.UnMuteFriendStoryAsync(userid);
+				return await _clientContainer.User.UnMuteFriendStoryAsync(userid);
 			}
 			catch (Exception ee)
 			{
@@ -609,7 +609,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				return await Client.User.UnMuteUserMediaAsync(userid, muteOption);
+				return await _clientContainer.User.UnMuteUserMediaAsync(userid, muteOption);
 			}
 			catch (Exception ee)
 			{

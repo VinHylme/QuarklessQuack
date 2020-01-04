@@ -191,7 +191,6 @@ namespace QuarklessLogic.ContentSearch.YandexSearch
 			_seleniumClient = seleniumClient;
 			_seleniumClient.AddArguments(
 				"headless",
-				"--log-level=3",
 				"--ignore-certificate-errors");
 		}
 

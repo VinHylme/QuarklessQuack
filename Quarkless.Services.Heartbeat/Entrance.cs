@@ -50,6 +50,7 @@ namespace Quarkless.Services.Heartbeat
 					ServiceTypes.AddEventServices
 				}
 			});
+			//cIn.TryDisconnect();
 			return services;
 		}
 		private static Task WithExceptionLogAsync(Func<Task> actionAsync)

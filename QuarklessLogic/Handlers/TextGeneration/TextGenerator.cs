@@ -30,8 +30,11 @@ Symbols:❤️🧡💛💚💙💜🖤💔❣️💕💞💓💗💖💘💝💟
 		private readonly ICommentCorpusLogic _commentCorpusLogic;
 		private readonly IMediaCorpusLogic _mediaCorpusLogic;
 		private readonly ITopicLookupLogic _topicLookup;
+
 		private readonly Dictionary<EmojiType, string> _emojiDict;
-		public TextGenerator(ICommentCorpusLogic commentCorpusLogic, IMediaCorpusLogic mediaCorpusLogic, ITopicLookupLogic topicLookup)
+
+		public TextGenerator(ICommentCorpusLogic commentCorpusLogic, IMediaCorpusLogic mediaCorpusLogic, 
+			ITopicLookupLogic topicLookup)
 		{
 			_commentCorpusLogic = commentCorpusLogic;
 			_mediaCorpusLogic = mediaCorpusLogic;
@@ -45,16 +48,6 @@ Symbols:❤️🧡💛💚💙💜🖤💔❣️💕💞💓💗💖💘💝💟
 						(splitText[0].GetValueFromDescription<EmojiType>(),splitText[1].Split("/r")[0]);
 				}));
 		}
-
-		#region MARKOV TEXT GENERATION 
-		public string MarkovTextGenerator(string filePath, int limit, int size, bool exact = false)
-		{
-			if (!File.Exists(filePath)) { Console.WriteLine("Input file doesn't exist"); return null; }
-			var s = Regex.Replace(File.ReadAllText(filePath), @"\s+", " ").TrimEnd(' ');
-			var t = MarkovHelper.BuildTDict(s, size);
-			return MarkovHelper.BuildString(t, limit, exact).TrimEnd(' ');
-		}
-
 		public string GenerateNRandomEmojies(EmojiType set, int iterationMax)
 		{
 			var results = string.Empty;
@@ -76,6 +69,22 @@ Symbols:❤️🧡💛💚💙💜🖤💔❣️💕💞💓💗💖💘💝💟
 			return results;
 		}
 
+		public async Task<string> GenerateText(CTopic mediaTopic, int length, 
+			EmojiType fallbackOnFail = EmojiType.Smileys)
+		{
+			var results = string.Empty;
+			var tree = await _topicLookup.GetHighestParents(mediaTopic);
+
+			if (!tree.Any())
+				GenerateNRandomEmojies(fallbackOnFail, SecureRandom.Next(2, 4));
+
+			var topicHash = tree.ComputeTopicHashCode();
+
+			return results;
+		}
+
+		#region MARKOV TEXT GENERATION 
+	
 		public async Task<string> GenerateCaptionByMarkovChain(CTopic mediaTopic, int limit, 
 			EmojiType fallback = EmojiType.Smileys)
 		{
@@ -145,22 +154,32 @@ Symbols:❤️🧡💛💚💙💜🖤💔❣️💕💞💓💗💖💘💝💟
 			var dCommentDict = MarkovHelper.BuildTDict(dataComment, takeSize / 2);
 			return MarkovHelper.BuildString(dCommentDict, limit, true).TrimEnd(' ').Replace(",", " ");
 		}
-		public string MarkovTextGenerator(string filePath, int type, string topic, string language, int size, int limit)
-		{
-			if (type < 0 && type > 2) throw new Exception("invalid type");
-			var joinedPath = string.Format(filePath,
-				type == 0 ? "_comments" : type == 1 ? "_captions" : type == 2 ? "_bios" : null);
 
-			var reader = File.ReadAllLines(joinedPath).Skip(1).Select(_=>_.Split(",")).
-				Where(l=>l.Count(p=>!string.IsNullOrEmpty(p))==3).
-				Select(v=>new { Text = v[0].Replace("\"", ""), Topic = v[1].Replace("\"", ""), Language = v[2].Replace("\"", "") })
-				.Where(x=>!x.Text.Contains("@"));
+		//		public string MarkovTextGenerator(string filePath, int type, string topic, string language, int size, int limit)
+		//		{
+		//			if (type < 0 && type > 2) throw new Exception("invalid type");
+		//			var joinedPath = string.Format(filePath,
+		//				type == 0 ? "_comments" : type == 1 ? "_captions" : type == 2 ? "_bios" : null);
+		//
+		//			var reader = File.ReadAllLines(joinedPath).Skip(1).Select(_=>_.Split(",")).
+		//				Where(l=>l.Count(p=>!string.IsNullOrEmpty(p))==3).
+		//				Select(v=>new { Text = v[0].Replace("\"", ""), Topic = v[1].Replace("\"", ""), Language = v[2].Replace("\"", "") })
+		//				.Where(x=>!x.Text.Contains("@"));
+		//
+		//			if(!reader.Any()) return null;
+		//			var s = Regex.Replace(string.Join(',', reader.Select(sa => sa.Text)), @"\s+", " ").TrimEnd(' ');
+		//			var t = MarkovHelper.BuildTDict(s, size);
+		//			return MarkovHelper.BuildString(t, limit, true).TrimEnd(' ');
+		//		}
 
-			if(!reader.Any()) return null;
-			var s = Regex.Replace(string.Join(',', reader.Select(sa => sa.Text)), @"\s+", " ").TrimEnd(' ');
-			var t = MarkovHelper.BuildTDict(s, size);
-			return MarkovHelper.BuildString(t, limit, true).TrimEnd(' ');
-		}
+		//		public string MarkovTextGenerator(string filePath, int limit, int size, bool exact = false)
+		//		{
+		//			if (!File.Exists(filePath)) { Console.WriteLine("Input file doesn't exist"); return null; }
+		//			var s = Regex.Replace(File.ReadAllText(filePath), @"\s+", " ").TrimEnd(' ');
+		//			var t = MarkovHelper.BuildTDict(s, size);
+		//			return MarkovHelper.BuildString(t, limit, exact).TrimEnd(' ');
+		//		}
+
 		#endregion
 	}
 }

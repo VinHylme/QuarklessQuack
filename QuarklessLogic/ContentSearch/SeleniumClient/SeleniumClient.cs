@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Remote;
+using OpenQA.Selenium.Support.UI;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.Options;
 using QuarklessContexts.Models.ResponseModels;
@@ -19,7 +20,10 @@ using Cookie = OpenQA.Selenium.Cookie;
 
 namespace QuarklessLogic.ContentSearch.SeleniumClient
 {
+	public static class WebDriverExtensions
+	{
 
+	}
 	public class SeleniumClient : ISeleniumClient
 	{
 		private readonly object _locker = new object();

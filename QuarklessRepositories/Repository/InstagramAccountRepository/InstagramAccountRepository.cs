@@ -207,7 +207,13 @@ namespace QuarklessRepositories.InstagramAccountRepository
 				UserId = r.UserId
 			});
 		}
-
+		public async Task<IEnumerable<InstagramAccountModel>> GetInstagramAccountsFull(int type)
+		{
+			var builders = Builders<InstagramAccountModel>.Filter;
+			var filter = builders.Eq(_ => _.Type, type);
+			var res = await _context.InstagramAccounts.FindAsync(filter);
+			return res.ToList();
+		}
 		//public async Task<ResultBase<InstagramClientAccount>> GetClientAccount(string accountId, string instagramAccountId)
 		//{
 		//	ResultBase<InstagramClientAccount> resultBase = new ResultBase<InstagramClientAccount>();

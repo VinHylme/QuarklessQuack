@@ -72,11 +72,15 @@ namespace Quarkless.Services
 					ServiceTypes.AddEventServices
 				}
 			});
+
+			
+
 			var endPoints = (EndPoints) cIn.Send(new GetPublicEndpointCommandArgs
 			{
 				CommandName = "Get Public Endpoints",
 			});
 
+			//cIn.TryDisconnect();
 			var redis = ConnectionMultiplexer.Connect(endPoints.RedisCon);
 
 			services.AddTransient<IAgentManager, AgentManager>();

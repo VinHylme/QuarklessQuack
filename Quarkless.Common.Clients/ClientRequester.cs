@@ -30,7 +30,6 @@ namespace Quarkless.Common.Clients
 			{
 				try
 				{
-					var hos = Dns.GetHostName();
 					_clientSocket.Connect(_host, _inDocker ? 65115 : 65116);
 					return true;
 				}
@@ -49,12 +48,16 @@ namespace Quarkless.Common.Clients
 			{
 				if (!_clientSocket.Connected) return;
 				_clientSocket.Disconnect(false);
-				_clientSocket.Close();
-				_clientSocket.Dispose();
+				_clientSocket.Shutdown(SocketShutdown.Both);
 			}
 			catch (Exception ex)
 			{
 				Console.WriteLine(ex);
+			}
+			finally
+			{
+				_clientSocket.Close();
+				_clientSocket.Dispose();
 			}
 		}
 		private IServiceCollection BuildServices(in EnvironmentsAccess access, params ServiceTypes[] serviceTypes)

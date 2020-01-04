@@ -2,6 +2,7 @@
 using InstagramApiSharp.Classes;
 using QuarklessContexts.Models.InstagramAccounts;
 using System.Threading.Tasks;
+using InstagramApiSharp.Classes.Android.DeviceInfo;
 using QuarklessContexts.Models.Proxies;
 
 namespace QuarklessContexts.InstaClient
@@ -12,7 +13,7 @@ namespace QuarklessContexts.InstaClient
 		IInstaApi ReturnClient {get; }
 		InstaClient Empty(ProxyModel proxy, bool genDevice = false);
 		InstaClient GetClientFromModel(InstagramClientAccount instagramAccount);
-		Task<IResult<InstaLoginResult>> TryLogin(string username, string password);
+		Task<IResult<string>> TryLogin(string username, string password, AndroidDevice device);
 		Task<IResult<InstaChallengeRequireVerifyMethod>> GetChallengeRequireVerifyMethodAsync(string username, string password);
 		Task<IResult<InstaLoginResult>> SubmitChallangeCode(string username, string password, InstaChallengeLoginInfo instaChallengeLoginInfo, string code);
 	}

@@ -15,20 +15,21 @@ namespace QuarklessLogic.Handlers.ClientProvider
 		{
 			_clientContext = clientContext;
 			_userContext = userContext;
-			if(userContext?.FocusInstaAccount != null)
-				this.Context = _clientContext.Create(userContext.CurrentUser, userContext.FocusInstaAccount).GetAwaiter().GetResult();
+			if (userContext?.FocusInstaAccount != null)
+				this.Context = _clientContext.Create(userContext.CurrentUser, userContext.FocusInstaAccount).Result;
 		}
 		public APIClientContainer(IAPIClientContext clientContext, string userId, string instaId)
 		{
 			_clientContext = clientContext;
-			this.Context = _clientContext.Create(userId, instaId).GetAwaiter().GetResult();
+			this.Context = _clientContext.Create(userId, instaId).Result;
 		}
 
 		public ContextContainer GetContext => this.Context;
 
 		public InstaClient EmptyClient => _clientContext.EmptyClient;
 
-		public InstaClient EmpClientWithProxy (ProxyModel model, bool genDevice = false) => _clientContext.EmptyClientWithProxy(model, genDevice);
+		public InstaClient EmpClientWithProxy (ProxyModel model, bool genDevice = false) 
+			=> _clientContext.EmptyClientWithProxy(model, genDevice);
 
 		public IDiscoverProcessor Discover => Context.ActionClient.DiscoverProcessor;
 

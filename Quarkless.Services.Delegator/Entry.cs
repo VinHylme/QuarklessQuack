@@ -25,10 +25,13 @@ namespace Quarkless.Services.Delegator
 		private const string SERVER_IP = "localhost";
 
 		private const string HEARTBEAT_IMAGE_NAME = "quarkless/quarkless.services.heartbeat:latest";
-		private const string HEARTBEAT_CONTAINER_NAME = "/quarkless.heartbeat.";
+		private const string HEARTBEAT_CONTAINER_NAME = "quarkless.heartbeat.";
 
 		private const string AUTOMATOR_IMAGE_NAME = "quarkless/quarkless.services.automator:latest";
-		private const string AUTOMATOR_CONTAINER_NAME = "/quarkless.automator.";
+		private const string AUTOMATOR_CONTAINER_NAME = "quarkless.automator.";
+
+		private const string DATA_FETCHER_IMAGE_NAME = "quarkless/quarkless.services.datafetch:latest";
+		private const string DATA_FETCHER_CONTAINER_NAME = "quarkless.datafetch.";
 
 		private const string NETWORK_MODE = "localnet";
 		#endregion
@@ -72,6 +75,7 @@ namespace Quarkless.Services.Delegator
 					ServiceTypes.AddEventServices
 				}
 			});
+			//cIn.TryDisconnect();
 			return services;
 		}
 		#endregion
@@ -133,13 +137,36 @@ namespace Quarkless.Services.Delegator
 					{ "name",
 						new Dictionary<string, bool>
 						{
-							{name, true}
+							{"/"+name, true}
 						}
 					}
 				}
 			});
 		}
 
+		static async Task CreateAndRunDataFetchContainer()
+		{
+			await Client.Containers.CreateContainerAsync(new CreateContainerParameters
+			{
+				Image = DATA_FETCHER_IMAGE_NAME,
+				Name = $"{DATA_FETCHER_CONTAINER_NAME}Instance",
+				HostConfig = new HostConfig
+				{
+					NetworkMode = NETWORK_MODE,
+					RestartPolicy = new RestartPolicy()
+					{
+						Name = RestartPolicyKind.Always
+					}
+				},
+				AttachStderr = true,
+				AttachStdout = true
+			});
+			foreach (var container in await GetContainersByName(DATA_FETCHER_CONTAINER_NAME))
+			{
+				await Client.Containers.StartContainerAsync(container.ID, new ContainerStartParameters());
+				Console.WriteLine("Successfully started data fetch app with ID {0}", container.ID);
+			}
+		}
 		static async Task CreateAndRunHeartbeatContainers(List<ShortInstagramAccountModel> customers, ExtractOperationType type)
 		{
 			foreach (var customer in customers)
@@ -147,7 +174,7 @@ namespace Quarkless.Services.Delegator
 				await Client.Containers.CreateContainerAsync(new CreateContainerParameters
 				{
 					Image = HEARTBEAT_IMAGE_NAME,
-					Name = $"quarkless.heartbeat.{type.ToString()}.{customer.AccountId}.{customer.Id}",
+					Name = $"{HEARTBEAT_CONTAINER_NAME}{type.ToString()}.{customer.AccountId}.{customer.Id}",
 					HostConfig = new HostConfig
 					{
 						NetworkMode = NETWORK_MODE,
@@ -175,14 +202,14 @@ namespace Quarkless.Services.Delegator
 				Console.WriteLine("Successfully started heartbeat app with ID {0}", container.ID);
 			}
 		}
-		static async Task CreateAndAutomatorContainers(List<ShortInstagramAccountModel> customers)
+		static async Task CreateAndRunAutomatorContainers(List<ShortInstagramAccountModel> customers)
 		{
 			foreach (var customer in customers)
 			{
 				await Client.Containers.CreateContainerAsync(new CreateContainerParameters
 				{
 					Image = AUTOMATOR_IMAGE_NAME,
-					Name = $"quarkless.automator.{customer.AccountId}.{customer.Id}",
+					Name = $"{AUTOMATOR_CONTAINER_NAME}{customer.AccountId}.{customer.Id}",
 					HostConfig = new HostConfig
 					{
 						NetworkMode = NETWORK_MODE,
@@ -262,9 +289,9 @@ namespace Quarkless.Services.Delegator
 					var heartBeatPath = solutionPath + @"\Quarkless.Services.Heartbeat";
 					RunCommand($"cd {solutionPath} & docker build -t {HEARTBEAT_IMAGE_NAME} -f {heartBeatPath + @"\Dockerfile"} .");
 				}
-				catch (Exception ee)
+				catch (Exception err)
 				{
-					Console.WriteLine(ee);
+					Console.WriteLine(err.Message);
 				}
 			}
 
@@ -278,15 +305,39 @@ namespace Quarkless.Services.Delegator
 					var automatorPath = solutionPath + @"\Quarkless.Services";
 					RunCommand($"cd {solutionPath} & docker build -t {AUTOMATOR_IMAGE_NAME} -f {automatorPath + @"\Dockerfile"} .");
 				}
-				catch (Exception ee)
+				catch (Exception err)
 				{
-					Console.WriteLine(ee.Message);
+					Console.WriteLine(err.Message);
+				}
+			}
+
+			if (!images.Any(image => image.RepoTags.Contains(DATA_FETCHER_IMAGE_NAME)))
+			{
+				Console.WriteLine("Creating image for {0}", DATA_FETCHER_IMAGE_NAME);
+				try
+				{
+					var projPath = Directory.GetParent(Environment.CurrentDirectory.Split("bin")[0]).FullName;
+					var solutionPath = Directory.GetParent(projPath);
+					var dataFetchPath = solutionPath + @"\Quarkless.Services.DataFetcher";
+					RunCommand($"cd {solutionPath} & docker build -t {DATA_FETCHER_IMAGE_NAME} -f {dataFetchPath + @"\Dockerfile"} .");
+
+				}
+				catch (Exception err)
+				{
+					Console.WriteLine(err.Message);
 				}
 			}
 
 			Console.WriteLine("Clearing out current containers...");
-			Console.WriteLine("Beginning with heartbeat app...");
-			//get all heartbeat containers then remove them
+			foreach (var container in await GetContainersByName(DATA_FETCHER_CONTAINER_NAME))
+			{
+				Console.WriteLine("Removed {0}", container.ID);
+				await Client.Containers.RemoveContainerAsync(container.ID,
+					new ContainerRemoveParameters
+					{
+						Force = true
+					});
+			}
 			foreach (var container in await GetContainersByName(HEARTBEAT_CONTAINER_NAME))
 			{
 				Console.WriteLine("Removed {0}", container.ID);
@@ -296,8 +347,6 @@ namespace Quarkless.Services.Delegator
 						Force = true
 					});
 			}
-			Console.WriteLine("Finished with heartbeat, now starting automator");
-			//get all automation service containers then remove them
 			foreach (var container in await GetContainersByName(AUTOMATOR_CONTAINER_NAME))
 			{
 				Console.WriteLine("Removed {0}", container.ID);
@@ -321,9 +370,10 @@ namespace Quarkless.Services.Delegator
 			}
 			Console.WriteLine("Finished Heartbeat containers, now starting automator");
 
-			await Task.Delay(TimeSpan.FromMinutes(2.5)); // wait around 2.5 minutes before starting automation (populate data first)
+			await CreateAndRunDataFetchContainer();
 
-			await CreateAndAutomatorContainers(customers);
+			await Task.Delay(TimeSpan.FromMinutes(3)); // wait around 2.5 minutes before starting automation (populate data first)
+			await CreateAndRunAutomatorContainers(customers);
 			Console.WriteLine("Finished creating containers for automator");
 		}
 

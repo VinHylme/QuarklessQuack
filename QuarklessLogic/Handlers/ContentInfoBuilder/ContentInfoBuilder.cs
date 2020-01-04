@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using QuarklessContexts.Enums;
 using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.MediaModels;
 using QuarklessContexts.Models.Profiles;
@@ -13,11 +14,18 @@ namespace QuarklessLogic.Handlers.ContentInfoBuilder
 	public class ContentInfoBuilder : IContentInfoBuilder
 	{
 		private readonly IUtilProviders _utilProviders;
+		private readonly EmojiType[] _selectFrom = new[]
+		{
+			EmojiType.Smileys,
+			EmojiType.Symbols,
+			EmojiType.AnimalsNature
+		};
 		public ContentInfoBuilder(IUtilProviders utilProviders) 
 			=> _utilProviders = utilProviders;
 		
-		public async Task<string> GenerateComment(CTopic mediaTopic)
-			=> await _utilProviders.TextGenerator.GenerateCommentByMarkovChain(mediaTopic, SecureRandom.Next(1, 2));
+		public string GenerateComment(CTopic mediaTopic)
+			=> _utilProviders.TextGenerator.GenerateNRandomEmojies(_selectFrom.TakeAny(1).First(),
+				SecureRandom.Next(2, 4)); //await _utilProviders.TextGenerator.GenerateCommentByMarkovChain(mediaTopic, SecureRandom.Next(1, 2));
 
 		public async Task<MediaInfo> GenerateMediaInfo(Topic profileTopic, CTopic mediaTopic, 
 			string credit = null, int hashtagPickAmount = 20, IEnumerable<string> medias = null)
@@ -29,8 +37,9 @@ namespace QuarklessLogic.Handlers.ContentInfoBuilder
 				throw new Exception("Failed to find hashtags for image");
 			}
 
-			var caption = await _utilProviders.TextGenerator
-				.GenerateCaptionByMarkovChain(mediaTopic,SecureRandom.Next(1, 2));
+			var caption = _utilProviders.TextGenerator.GenerateNRandomEmojies(_selectFrom.TakeAny(1).First(),
+					SecureRandom.Next(2,5));
+				//.GenerateCaptionByMarkovChain(mediaTopic,SecureRandom.Next(1, 2));
 
 			return new MediaInfo
 			{
