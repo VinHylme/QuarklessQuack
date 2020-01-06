@@ -13,8 +13,8 @@ namespace QuarklessContexts.InstaClient
 		IInstaApi ReturnClient {get; }
 		InstaClient Empty(ProxyModel proxy, bool genDevice = false);
 		InstaClient GetClientFromModel(InstagramClientAccount instagramAccount);
-		Task<IResult<string>> TryLogin(string username, string password, AndroidDevice device);
+		Task<IResult<string>> TryLogin(string username, string password, AndroidDevice device, ProxyModel proxy = null);
 		Task<IResult<InstaChallengeRequireVerifyMethod>> GetChallengeRequireVerifyMethodAsync(string username, string password);
-		Task<IResult<InstaLoginResult>> SubmitChallangeCode(string username, string password, InstaChallengeLoginInfo instaChallengeLoginInfo, string code);
+		Task<IResult<InstaLoginResult>> SubmitChallengeCode(string username, string password, InstaChallengeLoginInfo instaChallengeLoginInfo, string code);
 	}
 }

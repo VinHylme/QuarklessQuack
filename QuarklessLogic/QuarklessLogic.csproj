@@ -27,6 +27,7 @@
     <PackageReference Include="morelinq" Version="3.3.2" />
     <PackageReference Include="Selenium.Chrome.WebDriver" Version="79.0.0" />
     <PackageReference Include="Selenium.WebDriver" Version="3.141.0" />
+    <PackageReference Include="SocksSharp" Version="1.1.1" />
     <PackageReference Include="Stripe.net" Version="34.11.0" />
     <PackageReference Include="TextCopy" Version="3.0.0" />
   </ItemGroup>

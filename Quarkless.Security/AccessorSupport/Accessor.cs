@@ -58,6 +58,7 @@ namespace Quarkless.Security.AccessorSupport
 		public string AccountCreationDatabase => _configuration["ConnectionStrings:DatabaseNames:AccountCreator"];
 		public string TempVideoPath => _configuration["MediaPath:videosTempPath"];
 		public string TempImagePath => _configuration["MediaPath:imagesTempPath"];
+		public string TempAudioPath => _configuration["MediaPath:audioTempPath"];
 		public string FfmpegPath => _configuration["Ffmpeg"];
 		public string ApiBasePath => _configuration["Endpoints:ApiBasePath"];
 		public string AutomatorEndPoint => _configuration["Endpoints:AutomatorPath"];

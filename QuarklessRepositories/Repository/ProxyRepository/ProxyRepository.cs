@@ -21,12 +21,10 @@ namespace QuarklessRepositories.ProxyRepository
 		{
 			await _context.Proxies.InsertManyAsync(proxies);
 		}
-
 		public async void AddProxy(ProxyModel proxy)
 		{
 			await _context.Proxies.InsertOneAsync(proxy);
 		}
-
 		public async Task<bool> AssignProxy(AssignedTo assignedTo)
 		{
 			assignedTo.AssignedDate = DateTime.UtcNow;
@@ -37,38 +35,24 @@ namespace QuarklessRepositories.ProxyRepository
 			{
 				var proxy = await _context.Proxies.UpdateOneAsync(filters, update);
 
-				if (proxy.IsAcknowledged)
-				{
-					return true;
-				}
-				return false;
+				return proxy.IsAcknowledged;
 			}
 			catch (Exception ee)
 			{
 				return false;
 			}
 		}
-
 		public async Task<IEnumerable<ProxyModel>> GetAllAssignedProxies()
 		{
 			//var filter = Builders<ProxyModel>.Filter.Ne("AssignedTo.InstaId", BsonNull.Value.AsNullableObjectId);
 			var results = await _context.Proxies.FindAsync(_=>true);
-			if (results != null)
-			{
-				return results.ToList();
-			}
-			return null;
+			return results?.ToList();
 		}
-
 		public async Task<IEnumerable<ProxyModel>> GetAssignedProxyByAccountId(string accountId)
 		{
 			var filter = Builders<ProxyModel>.Filter.Eq("AssignedTo.Account_Id", accountId);
 			var results = await _context.Proxies.FindAsync(filter);
-			if (results != null)
-			{
-				return results.ToList();
-			}
-			return null;
+			return results?.ToList();
 		}
 		public async Task<ProxyModel> GetAssignedProxyOf(string accountId, string instagramAccountId)
 		{
@@ -77,28 +61,26 @@ namespace QuarklessRepositories.ProxyRepository
 			var results = await _context.Proxies.FindAsync(filter);
 			return results?.FirstOrDefault();
 		}
-
 		public async Task<ProxyModel> GetAssignedProxyByInstaId(string instagramAccountId)
 		{
 			var filter = Builders<ProxyModel>.Filter.Eq("AssignedTo.InstaId",instagramAccountId);
 			var results = await _context.Proxies.FindAsync(filter);
 			return results?.FirstOrDefault();
 		}
-
 		public async Task<bool> RemoveUserFromProxy(AssignedTo assignedTo)
 		{
 			var builders = Builders<ProxyModel>.Filter;
-			var findfilters = builders.Eq("AssignedTo.Account_Id", assignedTo.Account_Id) & builders.Eq("AssignedTo.InstaId", assignedTo.InstaId);
+			var findFilters = builders.Eq("AssignedTo.Account_Id", assignedTo.Account_Id) & builders.Eq("AssignedTo.InstaId", assignedTo.InstaId);
 
-			var currentFindings = await _context.Proxies.FindAsync(findfilters,new FindOptions<ProxyModel, ProxyModel>() 
+			var currentFindings = await _context.Proxies.FindAsync(findFilters,new FindOptions<ProxyModel, ProxyModel>() 
 			{ 
 				Sort = Builders<ProxyModel>.Sort.Ascending(_=>_.AssignedTo.AssignedDate)
 			});
-			var updatefilters = builders.Eq("AssignedTo.Account_Id", assignedTo.Account_Id) & builders.Eq("AssignedTo.InstaId", assignedTo.InstaId) & builders.Eq("AssignedTo.AssignedDate",currentFindings.FirstOrDefault().AssignedTo.AssignedDate);
+			var updateFilter = builders.Eq("AssignedTo.Account_Id", assignedTo.Account_Id) & builders.Eq("AssignedTo.InstaId", assignedTo.InstaId) & builders.Eq("AssignedTo.AssignedDate",currentFindings.FirstOrDefault().AssignedTo.AssignedDate);
 			var update = Builders<ProxyModel>.Update.Set(_ => _.AssignedTo, new AssignedTo { });
 			try
 			{
-				var proxy = await _context.Proxies.UpdateOneAsync(updatefilters, update);
+				var proxy = await _context.Proxies.UpdateOneAsync(updateFilter, update);
 
 				return proxy.IsAcknowledged;
 			}

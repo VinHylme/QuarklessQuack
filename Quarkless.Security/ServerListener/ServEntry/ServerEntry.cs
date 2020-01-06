@@ -118,6 +118,7 @@ namespace Quarkless.Security.ServerListener.ServEntry
 				SeleniumChromeAddress = a.SeleniumChromeAddress,
 				TempImagePath = a.TempImagePath,
 				TempVideoPath = a.TempVideoPath,
+				TempAudioPath = a.TempAudioPath,
 				FfmpegPath = a.FfmpegPath,
 				VisionCredentials = a.VisionCredentials
 			};

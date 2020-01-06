@@ -99,13 +99,15 @@ namespace Quarkless.Controllers
 		[Route("api/admin/proxies/test/{ip}/{port}")]
 		public async Task<IActionResult> TestProxy(string ip, int port)
 		{
-			if (_userContext.IsAdmin && string.IsNullOrEmpty(ip) && port<=0)
+			if (!_userContext.IsAdmin || !string.IsNullOrEmpty(ip) || port > 0) return BadRequest("Failed");
+			var res = await _proxyLogic.TestProxy(new ProxyModel
 			{
-				var res = await _proxyLogic.TestProxy(new ProxyItem{ IP = ip, Port = port.ToString(), Proxy = ip+":"+port });
-				if (res)
-				{
-					return Ok($"Proxy works fine");
-				}
+				Address = ip,
+				Port = port
+			});
+			if (res)
+			{
+				return Ok($"Proxy works fine");
 			}
 			return BadRequest("Failed");
 		}

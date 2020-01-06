@@ -96,7 +96,8 @@ namespace QuarklessLogic.Handlers.WorkerManagerService
 						var client = new APIClientContainer(_context, accountModel.AccountId, accountModel._id);
 						var loginAttempt = await _responseResolver.WithClient(client)
 							.WithResolverAsync(await _context.EmptyClient
-								.TryLogin(accountModel.Username, accountModel.Password, accountModel.State.DeviceInfo));
+								.TryLogin(accountModel.Username, accountModel.Password, accountModel.State.DeviceInfo, 
+									client.GetContext.Proxy));
 
 						if (loginAttempt == null) break;
 

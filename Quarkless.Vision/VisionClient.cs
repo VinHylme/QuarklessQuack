@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Google.Apis.Auth.OAuth2;
@@ -27,6 +28,68 @@ namespace Quarkless.Vision
 			_searchingCache = cache;
 		}
 
+		#region Audio Client Stuff
+
+		public async Task<List<SpeechRecognitionResult>> RecogniseAudio(byte[] audio)
+		{
+			try
+			{
+				var results = await _speechClient.RecognizeAsync(new RecognitionConfig
+				{
+					Encoding = RecognitionConfig.Types.AudioEncoding.Linear16,
+					SampleRateHertz = 16000,
+					LanguageCode = "en"
+				}, RecognitionAudio.FromBytes(audio));
+
+				return results.Results?.ToList() ?? new List<SpeechRecognitionResult>();
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err.Message);
+				return new List<SpeechRecognitionResult>();
+			}
+		}
+		public async Task<List<SpeechRecognitionResult>> RecogniseAudio(string uri)
+		{
+			try
+			{
+				var results = await _speechClient.RecognizeAsync(new RecognitionConfig
+				{
+					Encoding = RecognitionConfig.Types.AudioEncoding.Linear16,
+					SampleRateHertz = 16000,
+					LanguageCode = "en"
+				}, RecognitionAudio.FetchFromUri(uri));
+
+				return results.Results?.ToList() ?? new List<SpeechRecognitionResult>();
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err.Message);
+				return new List<SpeechRecognitionResult>();
+			}
+		}
+		public async Task<List<SpeechRecognitionResult>> RecogniseAudio(Stream stream)
+		{
+			try
+			{
+				var results = await _speechClient.RecognizeAsync(new RecognitionConfig
+				{
+					Encoding = RecognitionConfig.Types.AudioEncoding.Linear16,
+					SampleRateHertz = 16000,
+					LanguageCode = "en"
+				}, RecognitionAudio.FromStream(stream));
+
+				return results.Results?.ToList() ?? new List<SpeechRecognitionResult>();
+			}
+			catch(Exception err)
+			{
+				Console.WriteLine(err.Message);
+				return new List<SpeechRecognitionResult>();
+			}
+		}
+		#endregion
+
+		#region Vision Client Stuff
 		public async Task<IEnumerable<EntityAnnotation>> DetectText(params string[] imageUrls)
 		{
 			var hashId = imageUrls.ComputeTotalHash().ToString();
@@ -331,5 +394,6 @@ namespace Quarkless.Vision
 				return Enumerable.Empty<EntityAnnotation>();
 			}
 		}
+		#endregion
 	}
 }

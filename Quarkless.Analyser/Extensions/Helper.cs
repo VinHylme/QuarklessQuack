@@ -9,6 +9,15 @@ namespace Quarkless.Analyser.Extensions
 {
 	public static class Helper
 	{
+		public static void CreateDirectoryIfDoesNotExist(params string[] paths)
+		{
+			foreach (var path in paths)
+			{
+				if (!Directory.Exists(path))
+					Directory.CreateDirectory(path);
+			}
+		}
+
 		public static byte[] BitmapToByte(this Bitmap bitmap)
 		{
 			using (var ms = new MemoryStream())

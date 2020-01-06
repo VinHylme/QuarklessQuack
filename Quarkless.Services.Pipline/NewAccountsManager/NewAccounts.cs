@@ -1,14 +1,12 @@
 ﻿using Quarkless.InstagramCreator.Repository;
 using QuarklessLogic.Logic.TopicLookupLogic;
 using System;
-using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Quarkless.Analyser;
 using Quarkless.Vision;
 using QuarklessContexts.Models.InstagramAccounts;
-using QuarklessLogic.Logic.InstagramAccountLogic;
-using QuarklessLogic.Logic.ProfileLogic;
 using QuarklessRepositories.InstagramAccountRepository;
 using QuarklessRepositories.ProfileRepository;
 
@@ -21,14 +19,17 @@ namespace Quarkless.Services.Pipeline.NewAccountsManager
 	public class Test : ITest
 	{
 		private readonly IVisionClient _client;
-		public Test(IVisionClient client)
+		private readonly IAudioEditor _audioEditor;
+		public Test(IVisionClient client, IAudioEditor audioEditor)
 		{
 			_client = client;
+			_audioEditor = audioEditor;
 		}
 
 		public async Task TestStart()
 		{
-
+			var audioFile = File.ReadAllBytes("audio.mp3");
+			var res = await _client.RecogniseAudio(_audioEditor.ConvertMp3ToWav(audioFile));
 		}
 	}
 	public class NewAccounts

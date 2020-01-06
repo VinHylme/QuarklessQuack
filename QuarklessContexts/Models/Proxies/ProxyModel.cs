@@ -13,6 +13,12 @@ namespace QuarklessContexts.Models.Proxies
 		[BsonRepresentation(BsonType.DateTime)]
 		public DateTime? AssignedDate { get; set; }
 	}
+
+	public enum ProxyType
+	{
+		Http,
+		Socks5
+	}
 	public class ProxyModel
 	{
 		[BsonId]
@@ -25,7 +31,6 @@ namespace QuarklessContexts.Models.Proxies
 		public bool NeedServerAuth { get; set; }
 		public string Username { get; set; }
 		public string Password { get; set; }
-		public string Type { get; set; }
-
+		public ProxyType Type { get; set; }
 	}
 }

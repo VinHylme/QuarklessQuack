@@ -308,13 +308,18 @@ namespace Quarkless.Common.Clients.Configs
 				options.ChromePath = accessors.SeleniumChromeAddress;
 			});
 
-			services.AddSingleton<IVideoEditor>(new VideoEditor(new MediaAnalyserOptions
+			services.AddSingleton<IFfmpegWrapper>(new FfmpegWrapper(new MediaAnalyserOptions
 			{
+				TempAudioPath = accessors.TempAudioPath,
 				TempImagePath = accessors.TempImagePath,
 				TempVideoPath = accessors.TempVideoPath,
 				FfmpegEnginePath = accessors.FfmpegPath,
 				IsOnWindows = IsWindows
 			}));
+
+			services.AddSingleton<IVideoEditor, VideoEditor>();
+			services.AddSingleton<IAudioEditor, AudioEditor>();
+
 			services.AddSingleton<IUrlReader>(new UrlReader(accessors.ApiBasePath));
 			services.AddTransient<ISearchingCache, SearchingCache>();
 			services.AddSingleton<IVisionClient, VisionClient>

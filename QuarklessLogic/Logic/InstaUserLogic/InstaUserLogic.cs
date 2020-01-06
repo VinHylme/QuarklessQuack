@@ -171,7 +171,7 @@ namespace QuarklessLogic.Logic.InstaUserLogic
 		{
 			try
 			{
-				var res = await _clientContainer.EmptyClient.SubmitChallangeCode(username, password, instaChallengeLoginInfo, code);
+				var res = await _clientContainer.EmptyClient.SubmitChallengeCode(username, password, instaChallengeLoginInfo, code);
 				return new SubmitChallengeResponse
 				{
 					Result = res,
