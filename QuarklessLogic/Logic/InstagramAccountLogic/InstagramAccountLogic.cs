@@ -31,6 +31,7 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 			var resultCarrier = new ResultCarrier<AddInstagramAccountResponse>();
 			try {
 				var device = state.DeviceInfo.DeviceModel;
+
 				var instagramAccountModel = new InstagramAccountModel
 				{
 					Device = device,
@@ -57,16 +58,24 @@ namespace QuarklessLogic.Logic.InstagramAccountLogic
 					ChallengeInfo = null,
 					UserId = null
 				};
+
 				var result = await _instagramAccountRepository.AddInstagramAccount(instagramAccountModel);
+
 				if(result!=null)
 				{
-					await _publisher.PublishAsync(result);
+					await _publisher.PublishAsync(new InstagramAccountPublishEventModel
+					{
+						InstagramAccount = result,
+						IpAddress = addInstagram.ComingFrom
+					});
+
 					resultCarrier.IsSuccesful = true;
 					resultCarrier.Results = new AddInstagramAccountResponse
 					{
 						AccountId = result.AccountId,
 						InstagramAccountId = result._id,
 					};
+
 					return resultCarrier;
 				}
 				resultCarrier.Info = new ErrorResponse{Message = $"Failed to add instagram user of {result.AccountId}, instagram account {result.Username}" };

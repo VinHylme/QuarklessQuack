@@ -64,7 +64,6 @@ namespace Quarkless.Filters
 				headers.Remove(header);
 			}
 			#endregion
-
 			async Task Execute()
 			{
 				var sw = Stopwatch.StartNew();

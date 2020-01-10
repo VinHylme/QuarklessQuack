@@ -7,6 +7,7 @@ namespace QuarklessContexts.Models.SecurityLayerModels
 	{
 		public AvailableClient Client { get; set; }
 		public ServiceTypes[] Services { get; set; }
+		public bool UseLocal { get; set; }
 	}
 
 }

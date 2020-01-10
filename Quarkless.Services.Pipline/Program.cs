@@ -14,7 +14,6 @@ namespace Quarkless.Services.Pipeline
 	public class Program
 	{
 		private const string CLIENT_SECTION = "Client";
-		private const string SERVER_IP = "security.quark";
 		static async Task Main(string[] args)
 		{
 			var service = InitialiseClientServices().BuildServiceProvider();
@@ -33,7 +32,7 @@ namespace Quarkless.Services.Pipeline
 		}
 		private static IServiceCollection InitialiseClientServices()
 		{
-			var cIn = new ClientRequester(SERVER_IP);
+			var cIn = new ClientRequester();
 			if (!cIn.TryConnect().GetAwaiter().GetResult())
 				throw new Exception("Invalid Client");
 

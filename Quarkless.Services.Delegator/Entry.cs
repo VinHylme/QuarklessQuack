@@ -22,7 +22,6 @@ namespace Quarkless.Services.Delegator
 		#region Constants
 		private const string DOCKER_URL = "npipe://./pipe/docker_engine";
 		private const string CLIENT_SECTION = "Client";
-		private const string SERVER_IP = "localhost";
 
 		private const string HEARTBEAT_IMAGE_NAME = "quarkless/quarkless.services.heartbeat:latest";
 		private const string HEARTBEAT_CONTAINER_NAME = "quarkless.heartbeat.";
@@ -48,7 +47,7 @@ namespace Quarkless.Services.Delegator
 		}
 		private static IServiceCollection InitialiseClientServices()
 		{
-			var cIn = new ClientRequester(SERVER_IP, false);
+			var cIn = new ClientRequester(true);
 			if (!cIn.TryConnect().GetAwaiter().GetResult())
 				throw new Exception("Invalid Client");
 

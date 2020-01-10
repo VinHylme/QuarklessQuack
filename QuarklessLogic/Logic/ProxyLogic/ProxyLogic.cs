@@ -15,7 +15,7 @@ using SocksSharp.Proxy;
 
 namespace QuarklessLogic.Logic.ProxyLogic
 {
-	public class ProxyLogic : IProxyLogic, IEventSubscriber<ProfileModel>
+	public class ProxyLogic : IProxyLogic, IEventSubscriber<ProfilePublishEventModel>
 	{
 		private readonly IProxyRepository _proxyRepository;
 		private readonly IReportHandler _reportHandler;
@@ -54,6 +54,20 @@ namespace QuarklessLogic.Logic.ProxyLogic
 				return false;
 			}
 		}
+
+
+		public async Task<bool> AssignSocks5Proxy(string accountId, string instagramAccountId, string userIp)
+		{
+			//todo: get location from user ip, and then find nearest proxy server for that location
+			//todo: once retrieved then test the proxy a few times, check if the ip is different
+			//todo: once successful, register the new proxy to the user
+			//todo: will need to test the proxy every day
+			return false;
+		}
+
+		//todo: change assign logic to work with the socks5 
+		//todo: user registers => take location => assign nearest location available for that user
+		//todo: think about when there are no proxies available 
 		public async Task<bool> AssignProxy(AssignedTo assignedTo)
 		{
 			try
@@ -75,8 +89,9 @@ namespace QuarklessLogic.Logic.ProxyLogic
 		public async Task<ProxyModel> GetProxyAssignedTo(string accountId, string instagramAccountId)
 		{
 			var results = await _proxyRepository.GetAssignedProxyOf(accountId, instagramAccountId);
-			return results ?? null;
+			return results;
 		}
+
 		public async Task<bool> RemoveUserFromProxy(AssignedTo assignedTo)
 		{
 			try
@@ -147,13 +162,12 @@ namespace QuarklessLogic.Logic.ProxyLogic
 				return false;
 			}
 		}
-
-		public async Task Handle(ProfileModel @event)
+		public async Task Handle(ProfilePublishEventModel @event)
 		{
 			await AssignProxy(new AssignedTo
 			{
-				Account_Id = @event.Account_Id, 
-				InstaId = @event.InstagramAccountId
+				Account_Id = @event.Profile.Account_Id, 
+				InstaId = @event.Profile.InstagramAccountId
 			});
 		}
 	}

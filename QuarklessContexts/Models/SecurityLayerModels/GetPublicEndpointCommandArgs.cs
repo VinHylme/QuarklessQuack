@@ -6,5 +6,6 @@ namespace QuarklessContexts.Models.SecurityLayerModels
 	public class GetPublicEndpointCommandArgs : ICommandArgs
 	{
 		public bool GetAll { get; set; } = true;
+		public bool UseLocal { get; set; }
 	}
 }

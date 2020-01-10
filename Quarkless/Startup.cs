@@ -20,7 +20,6 @@ namespace Quarkless
 	public class Startup
     {
 	    private const string CORS_POLICY = "HashtagGrowCORSPolicy";
-	    private const string SERVER_IP = "security.quark";
 		private const string CLIENT_SECTION = "Client";
         public Startup(IConfiguration configuration)
         {
@@ -30,7 +29,7 @@ namespace Quarkless
 
         public void ConfigureServices(IServiceCollection services)
         {
-	        var clientRequester = new ClientRequester(SERVER_IP);
+	        var clientRequester = new ClientRequester();
 	        if (!clientRequester.TryConnect().GetAwaiter().GetResult())
 		        return;
 
@@ -107,8 +106,6 @@ namespace Quarkless
 					UseTransactions = true
 				});
 			});
-
-			
 
 			GlobalConfiguration.Configuration.UseActivator(new WorkerActivator(services.BuildServiceProvider(false)));
 			GlobalConfiguration.Configuration.UseSerializerSettings(new Newtonsoft.Json.JsonSerializerSettings()

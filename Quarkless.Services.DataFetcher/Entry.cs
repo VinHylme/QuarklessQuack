@@ -16,7 +16,6 @@ namespace Quarkless.Services.DataFetcher
 	{
 		#region Declerations
 		private const string CLIENT_SECTION = "Client";
-		private const string SERVER_IP = "security.quark";
 		#endregion
 
 		static async Task Main(string[] args)
@@ -43,7 +42,7 @@ namespace Quarkless.Services.DataFetcher
 		}
 		private static IServiceCollection InitialiseClientServices()
 		{
-			var cIn = new ClientRequester(SERVER_IP);
+			var cIn = new ClientRequester();
 			if (!cIn.TryConnect().GetAwaiter().GetResult())
 				throw new Exception("Invalid Client");
 

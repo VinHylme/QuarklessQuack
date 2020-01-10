@@ -1,59 +1,12 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Net.Sockets;
 using Microsoft.Extensions.Configuration;
 using Quarkless.Security.AccessorSupport;
 using Quarkless.Security.Extensions;
-using QuarklessContexts.Extensions;
 using QuarklessContexts.Models.SecurityLayerModels;
 
 namespace Quarkless.Security.ServerListener.ServEntry
 {
-	internal sealed class ClientSocket
-	{
-		private readonly ServerEntry _serverEntry;
-		private readonly Socket _client;
-		public ClientSocket(Socket client)
-		{
-			_client = client;
-			_serverEntry = new ServerEntry();
-		}
-
-		public Socket GetClientSocket => _client;
-		public bool ValidateClient(AvailableClient availableClient) => _serverEntry.IsValidClient(availableClient);
-		public bool IsValidated => _serverEntry.IsValidated;
-		public string GetEnvData() => _serverEntry.RequestEnvData().Serialize();
-		public string GetPublicEndpoints() => _serverEntry.PublicEndpoints().Serialize();
-	}
-	internal sealed class ClientSockets : IEnumerable<ClientSocket>
-	{
-		private readonly List<ClientSocket> _clients;
-		public ClientSockets()
-		{
-			_clients = new List<ClientSocket>();
-		}
-
-		public void Clean() => _clients.Clear();
-		public void AddClient(ClientSocket client)
-		{
-			if(!_clients.Contains(client))
-				_clients.Add(client);
-		}
-		public object this[int index] => _clients.ElementAtOrDefault(index);
-		public ClientSocket GetClient(Socket client) => _clients.Find(c => c.GetClientSocket == client);
-		public IEnumerator<ClientSocket> GetEnumerator()
-		{
-			return _clients.GetEnumerator();
-		}
-		IEnumerator IEnumerable.GetEnumerator()
-		{
-			return GetEnumerator();
-		}
-	}
-
 	internal sealed class ServerEntry
 	{
 		private string _fileName = "appsettings{0}.json";
@@ -78,10 +31,10 @@ namespace Quarkless.Security.ServerListener.ServEntry
 				.Unlock(client.GetHashCode())
 				.Build()).AvailableClients;
 		}
-		public EndPoints PublicEndpoints()
+		public EndPoints PublicEndpoints(bool useLocal)
 		{
 			if(!_isValid) throw new Exception("Invalid Client");
-			var access = GetEnvData();
+			var access = GetEnvData(useLocal);
 			return new EndPoints
 			{
 				FrontEnd = access.FrontEnd,
@@ -89,9 +42,9 @@ namespace Quarkless.Security.ServerListener.ServEntry
 				AutomatorService = access.AutomatorEndPoint
 			};
 		}
-		public EnvironmentsAccess RequestEnvData()
+		public EnvironmentsAccess RequestEnvData(bool useLocal)
 		{
-			var a = GetEnvData();
+			var a = GetEnvData(useLocal);
 			return new EnvironmentsAccess
 			{
 				AwsOptions = a.AwsOptions(),
@@ -123,18 +76,14 @@ namespace Quarkless.Security.ServerListener.ServEntry
 				VisionCredentials = a.VisionCredentials
 			};
 		}
-		private IAccessor GetEnvData()
+		private IAccessor GetEnvData(bool useLocal)
 		{
 			if(_isValid)
-				return new Accessor(MakeConfigurationBuilder().Unlock(0).Build());
+				return new Accessor(MakeConfigurationBuilder(useLocal ? ".local" : "").Unlock(0).Build());
 			throw new Exception("Invalid Client");
 		}
 		private IConfigurationBuilder MakeConfigurationBuilder(string envType = "prod")
 		{
-
-#if DEBUG
-			envType = envType.Equals(".init") ? envType : ServerNetwork.IsDockerHost ? "" : ".local";
-#endif
 			return new ConfigurationBuilder()
 				.SetBasePath(Directory.GetCurrentDirectory().Split("bin")[0])
 				.AddJsonFile(string.Format(_fileName, envType));

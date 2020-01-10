@@ -18,6 +18,7 @@ namespace QuarklessContexts.Models.InstagramAccounts
 	{
 		public string Username { get; set; }
 		public string Password { get; set; }
+		public string ComingFrom { get; set; }
 		public int Type { get; set; }
 	}
 }

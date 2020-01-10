@@ -6,9 +6,11 @@ using System;
 
 namespace QuarklessContexts.Models.InstagramAccounts
 {
-	//todo: Need Email Account details stored here for during the verification process
-	//todo: Need to handle new accounts created to be set as warming up
-	//todo: Account types = 0: Normal User, 1: Worker User, 2: Fetcher User (Extract data over api on behalf of user)
+	public class InstagramAccountPublishEventModel
+	{
+		public InstagramAccountModel InstagramAccount { get; set; }
+		public string IpAddress { get; set; }
+	}
 	public class InstagramAccountModel
 	{
 		[BsonId]

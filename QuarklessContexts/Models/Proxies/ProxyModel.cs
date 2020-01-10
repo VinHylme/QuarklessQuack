@@ -7,6 +7,7 @@ namespace QuarklessContexts.Models.Proxies
 	public class AssignedTo
 	{
 		public string Account_Id { get; set; }
+
 		[BsonRepresentation(BsonType.ObjectId)]
 		public string InstaId { get; set; }
 

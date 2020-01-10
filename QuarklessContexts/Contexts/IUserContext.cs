@@ -6,6 +6,7 @@ namespace QuarklessContexts.Contexts
 	{
 		bool IsAdmin { get; }
 		string CurrentUser { get; }
+		string UserIpAddress { get; }
 		AuthTypes UserRoleLevel { get; }
 		string FocusInstaAccount { get; set; }
 		bool UserAccountExists { get; }

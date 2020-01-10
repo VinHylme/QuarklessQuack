@@ -11,7 +11,7 @@ using QuarklessLogic.Handlers.EventHandlers;
 
 namespace QuarklessLogic.Logic.ProfileLogic
 {
-	public class ProfileLogic : IProfileLogic, IEventSubscriber<InstagramAccountModel>
+	public class ProfileLogic : IProfileLogic, IEventSubscriber<InstagramAccountPublishEventModel>
 	{
 		private readonly IProfileRepository _profileRepository;
 		private readonly IEventPublisher _eventPublisher;
@@ -26,13 +26,17 @@ namespace QuarklessLogic.Logic.ProfileLogic
 			return _profileRepository.AddMediaUrl(profileId, mediaUrl);
 		}
 
-		public async Task<ProfileModel> AddProfile(ProfileModel profile, bool assignProxy = false)
+		public async Task<ProfileModel> AddProfile(ProfileModel profile, bool assignProxy = false, string ipAddress = null)
 		{
 			var results =  await _profileRepository.AddProfile(profile);
 			if (results == null) return null;
 
 			if(assignProxy)
-				await _eventPublisher.PublishAsync(results);
+				await _eventPublisher.PublishAsync(new ProfilePublishEventModel
+				{
+					Profile = results,
+					IpAddress = ipAddress
+				});
 			
 			return results;
 		}
@@ -75,12 +79,12 @@ namespace QuarklessLogic.Logic.ProfileLogic
 			return await _profileRepository.PartialUpdateProfile(profileId, profile);
 		}
 
-		public async Task Handle(InstagramAccountModel @event)
+		public async Task Handle(InstagramAccountPublishEventModel @event)
 		{
 			await AddProfile(new ProfileModel
 			{
-				Account_Id = @event.AccountId,
-				InstagramAccountId = @event._id,
+				Account_Id = @event.InstagramAccount.AccountId,
+				InstagramAccountId = @event.InstagramAccount._id,
 				ProfileTopic = new Topic
 				{
 					Category = null,
@@ -108,8 +112,7 @@ namespace QuarklessLogic.Logic.ProfileLogic
 				},
 				LocationTargetList = new List<Location>(),
 				UserTargetList = new List<string>(),
-				UserLocation = new Location()
-			}, true);
+			}, true, @event.IpAddress);
 		}
 	}
 }

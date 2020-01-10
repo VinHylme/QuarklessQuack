@@ -40,9 +40,6 @@ namespace Quarkless.Security.ServerListener
 		private readonly ClientSockets _clients;
 		private readonly byte[] _buffer;
 		private const int BYTE_LIMIT = 8192;
-		private static IPAddress IpAddress => Dns.GetHostEntry(Dns.GetHostName()).AddressList.Last();
-		private static readonly string _dockerHost = "quarkless.security";
-		internal static bool IsDockerHost = Dns.GetHostName() == _dockerHost;
 		public ServerNetwork()
 		{
 			_serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -52,10 +49,7 @@ namespace Quarkless.Security.ServerListener
 		}
 		private void Setup()
 		{
-			_serverSocket.Bind(IsDockerHost
-				? new IPEndPoint(IPAddress.Any, 65115)
-				: new IPEndPoint(IPAddress.Loopback, 65116));
-
+			_serverSocket.Bind(new IPEndPoint(IPAddress.Any, 65115));
 			_serverSocket.Listen(5);
 		}
 		public void StartAccepting()
@@ -105,13 +99,13 @@ namespace Quarkless.Security.ServerListener
 					case ArgData arg:
 						if (!client.IsValidated)
 							socket.SendResponse(client.ValidateClient(arg.Client)
-								? client.GetEnvData()
+								? client.GetEnvData(arg.UseLocal)
 								: string.Empty);
 						else
-							socket.SendResponse(client.GetEnvData());
+							socket.SendResponse(client.GetEnvData(arg.UseLocal));
 						break;
 					case GetPublicEndpointCommandArgs arg:
-						socket.SendResponse(client.GetPublicEndpoints());
+						socket.SendResponse(client.GetPublicEndpoints(arg.UseLocal));
 						break;
 				}
 

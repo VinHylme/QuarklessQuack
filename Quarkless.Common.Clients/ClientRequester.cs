@@ -11,14 +11,18 @@ namespace Quarkless.Common.Clients
 {
 	public class ClientRequester
 	{
+		private const string SERVER_IP = "security.quark";
 		private readonly Socket _clientSocket;
-		private readonly string _host;
-		private readonly bool _inDocker;
+		private readonly string _host = SERVER_IP;
 		private const int BYTE_LIMIT = 8192;
-		public ClientRequester(string host, bool inDocker = true)
+		private readonly bool _useLocalHost;
+		public ClientRequester(bool useLocalHostHost = false)
 		{
-			_host = host;
-			_inDocker = inDocker;
+			_useLocalHost = useLocalHostHost;
+
+			if (_useLocalHost)
+				_host = "localhost";
+
 			_clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 		}
 
@@ -29,7 +33,7 @@ namespace Quarkless.Common.Clients
 			{
 				try
 				{
-					_clientSocket.Connect(_host, _inDocker ? 65115 : 65116);
+					_clientSocket.Connect(_host, 65115);
 					return true;
 				}
 				catch (SocketException se)
@@ -68,6 +72,7 @@ namespace Quarkless.Common.Clients
 			{
 				var argData = new ArgData
 				{
+					UseLocal = _useLocalHost,
 					Client = client,
 					Services = servicesToBuild
 				};
@@ -96,10 +101,9 @@ namespace Quarkless.Common.Clients
 		{
 			try
 			{
+				args.UseLocal = _useLocalHost;
 				var request = Encoding.ASCII.GetBytes(args.Serialize());
-
 				_clientSocket.Send(request);
-
 				var bytesReceived = new byte[BYTE_LIMIT];
 				var requestReceivedLen = _clientSocket.Receive(bytesReceived);
 				var data = new byte[requestReceivedLen];
@@ -115,39 +119,5 @@ namespace Quarkless.Common.Clients
 				return null;
 			}
 		}
-
-		/*
-		public object Send(object dataToSend)
-		{
-			try
-			{
-				var request = dataToSend.Serialize();
-				var buffer = Encoding.ASCII.GetBytes(request);
-				_clientSocket.Send(buffer);
-				var bytesReceived = new byte[BYTE_LIMIT];
-				var requestReceivedLen = _clientSocket.Receive(bytesReceived);
-				var data = new byte[requestReceivedLen];
-				Array.Copy(bytesReceived, data, requestReceivedLen);
-				var response = Encoding.ASCII.GetString(data);
-
-				switch (dataToSend)
-				{
-					case InitCommandArgs arg:
-						return response == "Validated;";
-					case BuildCommandArgs arg:
-						var access = response.Deserialize<EnvironmentsAccess>();
-						return access != null ? BuildServices(access, arg.ServiceTypes) : null;
-					case GetPublicEndpointCommandArgs arg:
-						return response.Deserialize<EndPoints>();
-					default:
-						throw new Exception("Invalid Command");
-				}
-			}
-			catch (Exception ee)
-			{
-				Console.WriteLine(ee.Message);
-				return null;
-			}
-		}*/
 	}
 }

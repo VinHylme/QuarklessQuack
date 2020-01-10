@@ -21,17 +21,17 @@ namespace Quarkless.Tasks
 		}
 		private static void InitialiseClientServices()
 		{
-			var cIn = new ClientRequester("localhost");
-			if (!cIn.TryConnect().GetAwaiter().GetResult())
+			var clientRequester = new ClientRequester();
+			if (!clientRequester.TryConnect().GetAwaiter().GetResult())
 				throw new Exception("Invalid Client");
 
 			var caller = MakeConfigurationBuilder().GetSection(CLIENT_SECTION).Get<AvailableClient>();
 
-			var services = cIn.Build(caller, ServiceTypes.AddHangFrameworkServices);
+			var services = clientRequester.Build(caller, ServiceTypes.AddHangFrameworkServices);
 			if(services == null)
 				throw new Exception("Failed to retrieve services");
 
-			var endPoints = (EndPoints) cIn.GetPublicEndPoints(new GetPublicEndpointCommandArgs());
+			var endPoints = clientRequester.GetPublicEndPoints(new GetPublicEndpointCommandArgs());
 			var connectionMultiplexer = ConnectionMultiplexer.Connect(endPoints.RedisCon);
 
 			GlobalConfiguration.Configuration.UseRedisStorage(connectionMultiplexer, new Hangfire.Redis.RedisStorageOptions

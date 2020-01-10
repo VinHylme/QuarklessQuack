@@ -91,7 +91,6 @@ using QuarklessContexts.Models.APILogger;
 using QuarklessContexts.Models.InstagramAccounts;
 using QuarklessContexts.Models.Profiles;
 using QuarklessContexts.Models.SecurityLayerModels;
-using QuarklessContexts.Models.ServicesModels.FetcherModels;
 using QuarklessLogic.ContentSearch.InstagramSearch;
 using QuarklessLogic.Handlers.ContentInfoBuilder;
 using QuarklessLogic.Handlers.EventHandlers;
@@ -384,8 +383,8 @@ namespace Quarkless.Common.Clients.Configs
 		}
 		public static void AddEventServices(this IServiceCollection services)
 		{
-			services.AddTransient<IEventSubscriber<InstagramAccountModel>, ProfileLogic>();
-			services.AddTransient<IEventSubscriber<ProfileModel>, ProxyLogic>();
+			services.AddTransient<IEventSubscriber<InstagramAccountPublishEventModel>, ProfileLogic>();
+			services.AddTransient<IEventSubscriber<ProfilePublishEventModel>, ProxyLogic>();
 			services.AddTransient<IEventSubscriber<ProfileTopicAddRequest>, TopicLookupLogic>();
 			services.AddTransient<IEventPublisher, EventPublisher>(
 				s => new EventPublisher(services.BuildServiceProvider(false).CreateScope()));
