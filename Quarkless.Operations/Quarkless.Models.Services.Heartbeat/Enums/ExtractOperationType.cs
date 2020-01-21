@@ -2,6 +2,7 @@
 {
 	public enum ExtractOperationType
 	{
+		None = -1,
 		Base = 0,
 		External = 1,
 		UserInfo = 2,

@@ -368,40 +368,36 @@ namespace Quarkless.Run.Services.Delegator
 		private static bool IsRunning(string name) => Processes(name).Length > 0;
 		private static Process[] Processes(string name) => Process.GetProcessesByName(name);
 		private static void RunProcess(string file, string accountId, string instagramId, 
-			ExtractOperationType type, string env = "local")
+			ExtractOperationType type = ExtractOperationType.None, string env = "local")
 		{
 			try
 			{
-				var process = new Process()
+				var process = new Process
 				{
-					StartInfo = new ProcessStartInfo
+					StartInfo =
 					{
-						EnvironmentVariables =
-						{
-							{
-								"DOTNET_RUNNING_IN_CONTAINER", "false"
-							},
-							{
-								"DOTNET_ENV_RELEASE", env
-							},
-							{
-								"USER_ID", accountId
-							},
-							{
-								"USER_INSTAGRAM_ACCOUNT", instagramId
-							},
-							{
-								"OPERATION_TYPE",((int)type).ToString()
-							}
-						},
 						UseShellExecute = false,
 						CreateNoWindow = false,
 						RedirectStandardOutput = true,
 						RedirectStandardError = true,
 						RedirectStandardInput = true,
-						FileName = file,
+						FileName = file
 					}
 				};
+
+				process.StartInfo.EnvironmentVariables.Add("DOTNET_RUNNING_IN_CONTAINER","false");
+
+				if(process.StartInfo.EnvironmentVariables.ContainsKey("DOTNET_ENV_RELEASE"))
+					process.StartInfo.EnvironmentVariables["DOTNET_ENV_RELEASE"] = env;
+				else
+					process.StartInfo.EnvironmentVariables.Add("DOTNET_ENV_RELEASE", env);
+				
+				process.StartInfo.EnvironmentVariables.Add("USER_ID", accountId);
+				process.StartInfo.EnvironmentVariables.Add("USER_INSTAGRAM_ACCOUNT", instagramId);
+
+				if(type!= ExtractOperationType.None)
+					process.StartInfo.EnvironmentVariables.Add("OPERATION_TYPE", ((int)type).ToString());
+
 				process.ErrorDataReceived += (o, e) =>
 				{
 					Console.WriteLine(e.Data);
@@ -417,7 +413,6 @@ namespace Quarkless.Run.Services.Delegator
 				process.Start();
 				process.BeginOutputReadLine();
 				process.BeginErrorReadLine();
-				process.WaitForExit((int)TimeSpan.FromMinutes(3.5).TotalMilliseconds);
 			}
 			catch (Exception ee)
 			{
@@ -429,27 +424,26 @@ namespace Quarkless.Run.Services.Delegator
 		{
 			try
 			{
-				var process = new Process()
+				var process = new Process
 				{
-					StartInfo = new ProcessStartInfo
+					StartInfo =
 					{
-						EnvironmentVariables =
-						{
-							{
-								"DOTNET_RUNNING_IN_CONTAINER", "false"
-							},
-							{
-								"DOTNET_ENV_RELEASE", env
-							}
-						},
 						UseShellExecute = false,
 						CreateNoWindow = false,
 						RedirectStandardOutput = true,
 						RedirectStandardError = true,
 						RedirectStandardInput = true,
-						FileName = file,
+						FileName = file
 					}
 				};
+
+				process.StartInfo.EnvironmentVariables.Add("DOTNET_RUNNING_IN_CONTAINER", "false");
+
+				if (process.StartInfo.EnvironmentVariables.ContainsKey("DOTNET_ENV_RELEASE"))
+					process.StartInfo.EnvironmentVariables["DOTNET_ENV_RELEASE"] = env;
+				else
+					process.StartInfo.EnvironmentVariables.Add("DOTNET_ENV_RELEASE", env);
+
 				process.ErrorDataReceived += (o, e) =>
 				{
 					Console.WriteLine(e.Data);
@@ -536,7 +530,7 @@ namespace Quarkless.Run.Services.Delegator
 			await Task.Delay(TimeSpan.FromSeconds(45));
 			foreach (var customer in customers)
 			{
-				RunProcess(automationExe, env.GetDescription());
+				RunProcess(automationExe, customer.AccountId, customer.Id, ExtractOperationType.None, env.GetDescription());
 			}
 		}
 		#endregion
