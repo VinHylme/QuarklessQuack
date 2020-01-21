@@ -4,14 +4,16 @@ using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Android.DeviceInfo;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using QuarklessContexts.Contexts;
-using QuarklessContexts.Enums;
-using QuarklessContexts.Models.InstagramAccounts;
-using QuarklessContexts.Models.UserAuth.AuthTypes;
-using QuarklessLogic.Handlers.ClientProvider;
-using QuarklessLogic.Logic.InstagramAccountLogic;
-using QuarklessLogic.Logic.InstaUserLogic;
-using QuarklessLogic.Logic.ResponseLogic;
+using Quarkless.Base.InstagramUser;
+using Quarkless.Logic.InstagramClient;
+using Quarkless.Models.Auth.Enums;
+using Quarkless.Models.Auth.Interfaces;
+using Quarkless.Models.Common.Enums;
+using Quarkless.Models.InstagramAccounts;
+using Quarkless.Models.InstagramAccounts.Enums;
+using Quarkless.Models.InstagramAccounts.Interfaces;
+using Quarkless.Models.InstagramClient.Interfaces;
+using Quarkless.Models.ResponseResolver.Interfaces;
 
 namespace Quarkless.Controllers
 {
@@ -27,11 +29,11 @@ namespace Quarkless.Controllers
 		private readonly IInstaUserLogic _instaUserLogic;
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
 		private readonly IResponseResolver _responseResolver;
-		private readonly IAPIClientContext _clientContext;
+		private readonly IApiClientContext _clientContext;
 		public InstagramAccountController(IUserContext userContext, 
 			IInstagramAccountLogic instagramAccountLogic, 
 			IInstaUserLogic instaUserLogic, 
-			IResponseResolver responseResolver, IAPIClientContext clientContext)
+			IResponseResolver responseResolver, IApiClientContext clientContext)
 		{
 			_userContext = userContext;
 			_instagramAccountLogic = instagramAccountLogic;
@@ -46,7 +48,7 @@ namespace Quarkless.Controllers
 		{
 			if(string.IsNullOrEmpty(_userContext.CurrentUser))
 				return BadRequest("Invalid Request");
-			var res = await _instaUserLogic.SubmitChallengeCode(model.Username, model.Password, model.ChallangeLoginInfo, code);
+			var res = await _instaUserLogic.SubmitChallengeCode(model.Username, model.Password, model.ChallengeLoginInfo, code);
 			if (!res.Result.Succeeded) return NotFound(res.Result.Info);
 			if (string.IsNullOrEmpty(res.InstagramId)) return Ok(true);
 			await _instagramAccountLogic.EmptyChallengeInfo(res.InstagramId);
@@ -140,7 +142,7 @@ namespace Quarkless.Controllers
 					return NotFound("Could not find account");
 				
 				var loginRes = await _responseResolver
-					.WithClient(new APIClientContainer(_clientContext, _userContext.CurrentUser, instagramAccountId))
+					.WithClient(new ApiClientContainer(_clientContext, _userContext.CurrentUser, instagramAccountId))
 					.WithResolverAsync(await _instaUserLogic.TryLogin(instaDetails.Username, instaDetails.Password, instaDetails.State.DeviceInfo), 
 						ActionType.RefreshLogin, instagramAccountId);
 				

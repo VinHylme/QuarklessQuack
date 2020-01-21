@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="morelinq" Version="3.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Analyser\Quarkless.Analyser.csproj" />
+    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.Common\Quarkless.Models.Common.csproj" />
+    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.ContentInfo\Quarkless.Models.ContentInfo.csproj" />
+    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.Heartbeat\Quarkless.Models.Heartbeat.csproj" />
+    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.RequestBuilder\Quarkless.Models.RequestBuilder.csproj" />
+    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.Storage\Quarkless.Models.Storage.csproj" />
+    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.Timeline\Quarkless.Models.Timeline.csproj" />
+  </ItemGroup>
+
+</Project>

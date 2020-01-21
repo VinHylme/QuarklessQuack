@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="appconfigs.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EditorConfigFiles Include="appconfigs.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EditorConfigFiles>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Docker.DotNet" Version="3.125.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="3.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.Agent\Quarkless.Models.Agent.csproj" />
+    <ProjectReference Include="..\..\Quarkless.Models.Services.Heartbeat\Quarkless.Models.Services.Heartbeat.csproj" />
+  </ItemGroup>
+
+</Project>

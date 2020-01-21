@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.ApiLogger\Quarkless.Models.ApiLogger.csproj" />
+    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.Auth\Quarkless.Models.Auth.csproj" />
+  </ItemGroup>
+
+</Project>

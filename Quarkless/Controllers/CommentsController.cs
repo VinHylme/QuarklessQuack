@@ -2,13 +2,14 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using QuarklessContexts.Contexts;
-using QuarklessContexts.Enums;
-using QuarklessContexts.Models.Requests;
-using QuarklessContexts.Models.UserAuth.AuthTypes;
-using QuarklessLogic.Logic.CommentLogic;
-using QuarklessLogic.Logic.ResponseLogic;
-using QuarklessContexts.Extensions;
+using Quarkless.Base.InstagramComments;
+using Quarkless.Models.Auth.Enums;
+using Quarkless.Models.Auth.Interfaces;
+using Quarkless.Models.Comments;
+using Quarkless.Models.Common.Enums;
+using Quarkless.Models.Common.Extensions;
+using Quarkless.Models.ResponseResolver.Interfaces;
+
 namespace Quarkless.Controllers
 {
     [ApiController]

@@ -1,16 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using QuarklessContexts.Contexts;
-using QuarklessContexts.Enums;
-using QuarklessContexts.Extensions;
-using QuarklessContexts.Models.MessagingModels;
-using QuarklessContexts.Models.UserAuth.AuthTypes;
-using QuarklessLogic.Logic.MessagingLogic;
-using QuarklessLogic.Logic.ResponseLogic;
+using Quarkless.Models.Auth.Enums;
+using Quarkless.Models.Auth.Interfaces;
+using Quarkless.Models.Common.Enums;
+using Quarkless.Models.Common.Extensions;
+using Quarkless.Models.Messaging;
+using Quarkless.Models.Messaging.Interfaces;
+using Quarkless.Models.ResponseResolver.Interfaces;
 
 namespace Quarkless.Controllers
 {

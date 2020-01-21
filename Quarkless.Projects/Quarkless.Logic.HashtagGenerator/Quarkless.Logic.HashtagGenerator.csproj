@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="morelinq" Version="3.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quarkless.Models.HashtagGenerator\Quarkless.Models.HashtagGenerator.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Hashtag\Quarkless.Models.Hashtag.csproj" />
+    <ProjectReference Include="..\Quarkless.Vision\Quarkless.Vision.csproj" />
+  </ItemGroup>
+
+</Project>

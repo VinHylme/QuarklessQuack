@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quarkless.Models.ContentSearch\Quarkless.Models.ContentSearch.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Lookup\Quarkless.Models.Lookup.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Profile\Quarkless.Models.Profile.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.SearchResponse\Quarkless.Models.SearchResponse.csproj" />
+  </ItemGroup>
+
+</Project>

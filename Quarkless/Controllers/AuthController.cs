@@ -6,10 +6,10 @@ using Amazon.CognitoIdentityProvider;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
-using QuarklessContexts.Contexts.AccountContext;
-using QuarklessContexts.Models.UserAuth.Auth;
-using QuarklessContexts.Models.UserAuth.AuthTypes;
-using QuarklessLogic.Logic.AuthLogic.Auth;
+using Quarkless.Models.Auth;
+using Quarkless.Models.Auth.AccountContext;
+using Quarkless.Models.Auth.Enums;
+using Quarkless.Models.Auth.Interfaces;
 
 namespace Quarkless.Controllers
 {
@@ -30,7 +30,7 @@ namespace Quarkless.Controllers
 		{
 			var results = await _authHandler.Login(loginRequest);
 			if (results == null) return BadRequest("Invalid Request");
-			if (!results.IsSuccesful && results.Info.Message.Contains("not confirmed"))
+			if (!results.IsSuccessful && results.Info.Message.Contains("not confirmed"))
 			{
 				return Unauthorized(new
 				{
@@ -48,7 +48,7 @@ namespace Quarkless.Controllers
 					Username = loginRequest.Username
 				});
 			}
-			if (!results.IsSuccesful || results.Results.HttpStatusCode != System.Net.HttpStatusCode.OK)
+			if (!results.IsSuccessful || results.Results.HttpStatusCode != System.Net.HttpStatusCode.OK)
 				return BadRequest(results.Results.AuthenticationResult);
 
 			var responseConcatenate = new LoginResponse { 
@@ -77,7 +77,7 @@ namespace Quarkless.Controllers
 					return BadRequest("Invalid Parameter");
 				}
 				var results = await _authHandler.RefreshLogin(refreshToken.refreshToken, refreshToken.Username);
-				if (!results.IsSuccesful)
+				if (!results.IsSuccessful)
 					return NotFound(results.Info);
 
 				return Ok(results.Results);
@@ -94,7 +94,7 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> ResendConfirmation([FromRoute] string userName)
 		{
 			var results = await _authHandler.ResendConfirmationCode(userName);
-			if (results.IsSuccesful)
+			if (results.IsSuccessful)
 			{
 				return Ok(results.Results);
 			}
@@ -108,7 +108,7 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> ConfirmEmail([FromBody]SignupConfirmationModel signupConfirmationModel)
 		{
 			var results = await _authHandler.ConfirmSignUp(signupConfirmationModel);
-			if (results == null || !results.IsSuccesful) return BadRequest("Failed to confirm user");
+			if (results == null || !results.IsSuccessful) return BadRequest("Failed to confirm user");
 			var addUserToGroup = await _authHandler.AddUserToGroup(AuthTypes.TrialUsers.ToString(), signupConfirmationModel.Username);
 			if (addUserToGroup.Results != null) { 
 
@@ -163,7 +163,7 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> ChallangeNewPassword([FromBody]NewPasswordRequest newPasswordRequest)
 		{
 			var results = await _authHandler.SetNewPassword(newPasswordRequest);
-			if(results.Results!=null && results.IsSuccesful)
+			if(results.Results!=null && results.IsSuccessful)
 				return Ok(results.Results.AuthenticationResult);
 
 			return BadRequest($"Request Invalid: {results.Info.StatusCode}");

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="morelinq" Version="3.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quarkless.Events\Quarkless.Events.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.ContentSearch\Quarkless.Models.ContentSearch.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.InstagramClient\Quarkless.Models.InstagramClient.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Profile\Quarkless.Models.Profile.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Topic\Quarkless.Models.Topic.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.WorkerManager\Quarkless.Models.WorkerManager.csproj" />
+  </ItemGroup>
+
+</Project>

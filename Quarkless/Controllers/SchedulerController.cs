@@ -1,9 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using QuarklessContexts.Contexts;
-using QuarklessContexts.Models.UserAuth.AuthTypes;
-using QuarklessLogic.ServicesLogic.AgentLogic;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using Quarkless.Models.Agent.Interfaces;
+using Quarkless.Models.Auth.Enums;
+using Quarkless.Models.Auth.Interfaces;
 
 namespace Quarkless.Controllers
 {

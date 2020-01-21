@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using QuarklessContexts.Contexts;
-using QuarklessContexts.Models.Library;
-using QuarklessContexts.Models.UserAuth.AuthTypes;
-using QuarklessLogic.Logic.LibaryLogic;
+using Quarkless.Models.Auth.Enums;
+using Quarkless.Models.Auth.Interfaces;
+using Quarkless.Models.Library;
+using Quarkless.Models.Library.Interfaces;
 
 namespace Quarkless.Controllers
 {

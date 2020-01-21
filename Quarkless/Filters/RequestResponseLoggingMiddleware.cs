@@ -8,8 +8,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Options;
-using QuarklessContexts.Models.APILogger;
-using QuarklessRepositories.RedisRepository.APILogger;
+using Quarkless.Models.ApiLogger;
+using Quarkless.Models.ApiLogger.Interfaces;
 
 namespace Quarkless.Filters
 {
@@ -20,13 +20,13 @@ namespace Quarkless.Filters
 		private readonly RequestDelegate _next;
 		private readonly MaxConcurrentRequestsOptions _options;
 		private readonly MaxConcurrentRequestsEnqueuer _enqueuer;
-		private readonly IAPILogCache _apiLogCache;
+		private readonly IApiLogCache _apiLogCache;
 		private readonly SecurityHeadersPolicy _policy;
 		#endregion
 
 		public RequestResponseLoggingMiddleware(RequestDelegate next, 
 			SecurityHeadersPolicy securityHeadersPolicy, 
-			IAPILogCache apiLogCache,
+			IApiLogCache apiLogCache,
 			IOptions<MaxConcurrentRequestsOptions> options)
 		{
 			_concurrentRequestsCount = 0;

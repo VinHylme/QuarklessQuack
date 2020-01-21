@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\InstagramApiSharp\InstagramApiSharp.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Common\Quarkless.Models.Common.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.InstagramClient\Quarkless.Models.InstagramClient.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.InstagramSearch\Quarkless.Models.InstagramSearch.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Proxy\Quarkless.Models.Proxy.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.ResponseResolver\Quarkless.Models.ResponseResolver.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.SearchResponse\Quarkless.Models.SearchResponse.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Topic\Quarkless.Models.Topic.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SocksSharp" Version="1.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\InstagramApiSharp\InstagramApiSharp.csproj" />
+    <ProjectReference Include="..\Quarkless.Logic.Proxy\Quarkless.Logic.Proxy.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Auth\Quarkless.Models.Auth.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.InstagramClient\Quarkless.Models.InstagramClient.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Proxy\Quarkless.Models.Proxy.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.ReportHandler\Quarkless.Models.ReportHandler.csproj" />
+  </ItemGroup>
+
+</Project>

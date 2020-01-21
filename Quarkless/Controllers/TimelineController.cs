@@ -1,18 +1,16 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using QuarklessContexts.Contexts;
-using QuarklessContexts.Models.Timeline;
-using QuarklessContexts.Models.UserAuth.AuthTypes;
-using QuarklessLogic.Handlers.RequestBuilder.RequestBuilder;
-using QuarklessLogic.QueueLogic.Jobs.JobOptions;
-using QuarklessLogic.ServicesLogic.TimelineServiceLogic.TimelineLogic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using QuarklessContexts.Models.MediaModels;
-using QuarklessLogic.Logic.TimelineEventLogLogic;
-using QuarklessContexts.Models.MessagingModels;
-using QuarklessRepositories.RedisRepository.LookupCache;
+using Quarkless.Models.Auth.Enums;
+using Quarkless.Models.Auth.Interfaces;
+using Quarkless.Models.Lookup.Interfaces;
+using Quarkless.Models.Messaging;
+using Quarkless.Models.RequestBuilder.Interfaces;
+using Quarkless.Models.Timeline;
+using Quarkless.Models.Timeline.Interfaces;
+using Quarkless.Models.Timeline.TaskScheduler;
 
 namespace Quarkless.Controllers
 {
@@ -28,15 +26,13 @@ namespace Quarkless.Controllers
 		private readonly IRequestBuilder _requestBuilder;
 		private readonly ITimelineLogic _timelineLogic;
 		private readonly ITimelineEventLogLogic _timelineEventLogLogic;
-		private readonly ILookupCache _lookupCache;
 		public TimelineController(IUserContext userContext, ITimelineLogic timelineLogic, 
-			ITimelineEventLogLogic timelineEventLogLogic, IRequestBuilder requestBuilder, ILookupCache lookupCache)
+			ITimelineEventLogLogic timelineEventLogLogic, IRequestBuilder requestBuilder)
 		{
 			_userContext = userContext;
 			_timelineLogic = timelineLogic;
 			_timelineEventLogLogic = timelineEventLogLogic;
 			_requestBuilder = requestBuilder;
-			_lookupCache = lookupCache;
 		}
 
 		[HttpGet]

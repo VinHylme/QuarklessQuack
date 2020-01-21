@@ -2,16 +2,17 @@
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using QuarklessLogic.Handlers.WebHooks;
+using Quarkless.Logic.WebHooks;
+using Quarkless.Models.WebHooks.Interfaces;
 
 namespace Quarkless.Controllers
 {
 	public class HooksController : ControllerBase
 	{
-		private readonly IWebHookHandlers _hookHandlers;
-	    public HooksController(IWebHookHandlers hookHandlers)
+		private readonly IWebHookHandler _hookHandlers;
+	    public HooksController()
 	    {
-		    _hookHandlers = hookHandlers;
+		    _hookHandlers = new StripeWebHookHandler();
 	    }
 
 	    [HttpPost]
@@ -21,7 +22,7 @@ namespace Quarkless.Controllers
 		    try
 		    {
 			    var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
-				_hookHandlers.StripeHandler(json);
+				_hookHandlers.Handler(json);
 			    return Ok("Acknowledged");
 		    }
 		    catch (Exception ee)

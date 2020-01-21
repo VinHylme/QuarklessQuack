@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Base.ContentSearch\Quarkless.Base.ContentSearch.csproj" />
+    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Logic.Proxy\Quarkless.Logic.Proxy.csproj" />
+    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Logic.WorkerManager\Quarkless.Logic.WorkerManager.csproj" />
+    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.Heartbeat\Quarkless.Models.Heartbeat.csproj" />
+    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.WorkerManager\Quarkless.Models.WorkerManager.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Services.Heartbeat\Quarkless.Models.Services.Heartbeat.csproj" />
+  </ItemGroup>
+
+</Project>

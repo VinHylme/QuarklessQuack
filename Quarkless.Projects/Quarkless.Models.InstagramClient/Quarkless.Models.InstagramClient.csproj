@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quarkless.Models.InstagramAccounts\Quarkless.Models.InstagramAccounts.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Profile\Quarkless.Models.Profile.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Proxy\Quarkless.Models.Proxy.csproj" />
+  </ItemGroup>
+
+</Project>

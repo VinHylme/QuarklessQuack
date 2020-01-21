@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="morelinq" Version="3.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quarkless.Models.Comments\Quarkless.Models.Comments.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Media\Quarkless.Models.Media.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.TextGenerator\Quarkless.Models.TextGenerator.csproj" />
+  </ItemGroup>
+
+</Project>

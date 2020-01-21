@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MongoDB.Bson" Version="2.10.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quarkless.Models.SearchResponse\Quarkless.Models.SearchResponse.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Topic\Quarkless.Models.Topic.csproj" />
+  </ItemGroup>
+
+</Project>

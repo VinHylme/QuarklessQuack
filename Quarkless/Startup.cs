@@ -6,21 +6,19 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using QuarklessLogic.QueueLogic.Jobs.Filters;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
+using Quarkless.Extensions;
 using Quarkless.Filters;
-using QuarklessContexts.Models.SecurityLayerModels;
-using Quarkless.Common.Clients;
-using QuarklessContexts.Extensions;
+using Quarkless.Models.Timeline.TaskScheduler;
+using Quarkless.Models.Shared.Extensions;
 
 namespace Quarkless
 {
 	public class Startup
     {
 	    private const string CORS_POLICY = "HashtagGrowCORSPolicy";
-		private const string CLIENT_SECTION = "Client";
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -29,32 +27,20 @@ namespace Quarkless
 
         public void ConfigureServices(IServiceCollection services)
         {
-	        var clientRequester = new ClientRequester();
-	        if (!clientRequester.TryConnect().GetAwaiter().GetResult())
-		        return;
+	        var environments = new Config().Environments;
+	        var redis = ConnectionMultiplexer.Connect(environments.RedisConnectionString);
 
-	        var caller = Configuration.GetSection(CLIENT_SECTION).Get<AvailableClient>();
-	        
-	        var sentServices = clientRequester.Build(caller, ServiceTypes.AddAuthHandlers,
-		        ServiceTypes.AddConfigurators,
-		        ServiceTypes.AddContexts,
-		        ServiceTypes.AddHandlers,
-		        ServiceTypes.AddHangFrameworkServices,
-		        ServiceTypes.AddLogics,
-		        ServiceTypes.AddRepositories,
-		        ServiceTypes.AddRequestLogging,
-		        ServiceTypes.AddEventServices);
-	        if (sentServices == null)
-		        throw new Exception("Failed to build services");
-
-	        services.Append(sentServices);
-
-	        var endPoints = clientRequester.GetPublicEndPoints(new GetPublicEndpointCommandArgs());
-	        
-	        //cIn.TryDisconnect();
-	        var redis = ConnectionMultiplexer.Connect(endPoints.RedisCon);
-
-	        services.AddControllers();
+			#region Add Other Services
+			services.AddHangFrameworkServices();
+			services.AddLogicServices();
+			services.AddAuthHandlers();
+			services.AddRequestLogging();
+			services.AddConfigurators();
+			services.AddRepositories();
+			services.AddHandlers();
+			services.AddContexts();
+			services.AddEventServices();
+			services.AddControllers();
 	        services.AddOptions();
 			services.AddMemoryCache();
 			services.AddSingleton<IIpPolicyStore, DistributedCacheIpPolicyStore>();
@@ -72,7 +58,7 @@ namespace Quarkless
 				options.AddPolicy(CORS_POLICY,
 					builder=>
 					{
-						builder.WithOrigins(endPoints.FrontEnd, endPoints.AutomatorService);
+						builder.WithOrigins(environments.FrontEnd);
 						builder.AllowAnyOrigin();
 						builder.AllowAnyHeader();
 						builder.AllowAnyMethod();
@@ -106,8 +92,8 @@ namespace Quarkless
 					UseTransactions = true
 				});
 			});
+			#endregion
 
-			GlobalConfiguration.Configuration.UseActivator(new WorkerActivator(services.BuildServiceProvider(false)));
 			GlobalConfiguration.Configuration.UseSerializerSettings(new Newtonsoft.Json.JsonSerializerSettings()
 			{
 				ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
@@ -125,7 +111,9 @@ namespace Quarkless
             {
                 app.UseHsts();
             }
-			var jobServerOptions = new BackgroundJobServerOptions
+            GlobalConfiguration.Configuration.UseActivator(new WorkerActivator(app.ApplicationServices));
+
+            var jobServerOptions = new BackgroundJobServerOptions
 			{
 				WorkerCount = Environment.ProcessorCount * 5,
 				ServerName = $"ISE_{Environment.MachineName}.{Guid.NewGuid().ToString()}",

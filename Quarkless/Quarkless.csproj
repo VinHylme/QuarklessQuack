@@ -7,37 +7,124 @@
 	<GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
 	<UserSecretsId>aecd18cc-3bf5-4ceb-86b5-280866e45f4b</UserSecretsId>
     <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
-    <DockerfileRunArguments>--network name=localnet,alias=quarkless.local.api --name api.quark -p 51518:80</DockerfileRunArguments>
+    <DockerfileRunArguments>-e DOTNET_RUNNING_IN_CONTAINER=true --network name=localnet,alias=quarkless.local.api --name api.quark -p 51518:80</DockerfileRunArguments>
   </PropertyGroup>
   <ItemGroup>
 	<PackageReference Include="AspNetCoreRateLimit" Version="3.0.5" />
-	<PackageReference Include="Hangfire" Version="1.7.8" />
-	<PackageReference Include="Hangfire.Core" Version="1.7.8" />
-	<PackageReference Include="Amazon.AspNetCore.Identity.Cognito" Version="1.0.3" />
-    <PackageReference Include="AWSSDK.CognitoIdentity" Version="3.3.101.22" />
-    <PackageReference Include="AWSSDK.CognitoIdentityProvider" Version="3.3.107.14" />
-    <PackageReference Include="Hangfire.Redis.StackExchange" Version="1.8.0" />
-    <PackageReference Include="Microsoft.AspNet.WebApi.Cors" Version="5.2.7" />
-    <PackageReference Include="AWSSDK.S3" Version="3.3.110.8" />
+	<PackageReference Include="Hangfire" Version="1.7.9" />
+	<PackageReference Include="Hangfire.Core" Version="1.7.9" />
+	<PackageReference Include="Amazon.AspNetCore.Identity.Cognito" Version="1.0.4" />
+    <PackageReference Include="AWSSDK.CognitoIdentity" Version="3.3.101.28" />
+    <PackageReference Include="AWSSDK.CognitoIdentityProvider" Version="3.3.107.20" />
+    <PackageReference Include="Hangfire.Redis.StackExchange" Version="1.8.1" />
+    <PackageReference Include="AWSSDK.S3" Version="3.3.110.14" />
     <PackageReference Include="Amazon.Lambda.AspNetCoreServer" Version="4.1.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="3.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Cors" Version="2.2.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="3.1.0">
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="3.1.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.1.0">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.1.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.5" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.10" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Kubernetes.Tools.Targets" Version="1.0.0" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.0" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Quarkless.Api.Operations\Quarkless.EmailServices.Repository\Quarkless.EmailServices.Repository.csproj" />
+    <ProjectReference Include="..\..\Quarkless.Api.Operations\Quarkless.InstagramCreator.Repository\Quarkless.InstagramCreator.Repository.csproj" />
     <ProjectReference Include="..\InstagramApiSharp\InstagramApiSharp.csproj" />
-    <ProjectReference Include="..\Quarkless.Common.Clients\Quarkless.Common.Clients.csproj" />
-    <ProjectReference Include="..\QuarklessContexts\QuarklessContexts.csproj" />
-    <ProjectReference Include="..\QuarklessLogic\QuarklessLogic.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Analyser\Quarkless.Analyser.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Base.AccountOptions\Quarkless.Base.AccountOptions.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Base.ContentSearch\Quarkless.Base.ContentSearch.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Base.InstagramBusiness\Quarkless.Base.InstagramBusiness.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Base.InstagramCollections\Quarkless.Base.InstagramCollections.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Base.InstagramComments\Quarkless.Base.InstagramComments.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Base.InstagramDiscover\Quarkless.Base.InstagramDiscover.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Base.InstagramUser\Quarkless.Base.InstagramUser.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Events\Quarkless.Events.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Account\Quarkless.Logic.Account.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Agent\Quarkless.Logic.Agent.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Auth\Quarkless.Logic.Auth.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Comments\Quarkless.Logic.Comments.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Common\Quarkless.Logic.Common.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.ContentInfo\Quarkless.Logic.ContentInfo.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.ContentSearch\Quarkless.Logic.ContentSearch.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.HashtagGenerator\Quarkless.Logic.HashtagGenerator.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Hashtag\Quarkless.Logic.Hashtag.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Heartbeat\Quarkless.Logic.Heartbeat.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.InstagramAccounts\Quarkless.Logic.InstagramAccounts.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.InstagramClient\Quarkless.Logic.InstagramClient.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.InstagramSearch\Quarkless.Logic.InstagramSearch.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Library\Quarkless.Logic.Library.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Lookup\Quarkless.Logic.Lookup.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Media\Quarkless.Logic.Media.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Messaging\Quarkless.Logic.Messaging.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Profile\Quarkless.Logic.Profile.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Proxy\Quarkless.Logic.Proxy.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Query\Quarkless.Logic.Query.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.ReportHandler\Quarkless.Logic.ReportHandler.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.RequestBuilder\Quarkless.Logic.RequestBuilder.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.ResponseResolver\Quarkless.Logic.ResponseResolver.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.RestSharpClientManager\Quarkless.Logic.RestSharpClientManager.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.SeleniumClient\Quarkless.Logic.SeleniumClient.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Storage\Quarkless.Logic.Storage.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.TextGenerator\Quarkless.Logic.TextGenerator.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Timeline\Quarkless.Logic.Timeline.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Topic\Quarkless.Logic.Topic.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.TranslateService\Quarkless.Logic.TranslateService.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Utilities\Quarkless.Logic.Utilities.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.WebHooks\Quarkless.Logic.WebHooks.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.WorkerManager\Quarkless.Logic.WorkerManager.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.Account\Quarkless.Models.Account.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.Agent\Quarkless.Models.Agent.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.Comments\Quarkless.Models.Comments.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.ContentInfo\Quarkless.Models.ContentInfo.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.ContentSearch\Quarkless.Models.ContentSearch.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.HashtagGenerator\Quarkless.Models.HashtagGenerator.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.Hashtag\Quarkless.Models.Hashtag.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.Heartbeat\Quarkless.Models.Heartbeat.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.InstagramClient\Quarkless.Models.InstagramClient.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.InstagramSearch\Quarkless.Models.InstagramSearch.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.Lookup\Quarkless.Models.Lookup.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.Media\Quarkless.Models.Media.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.Proxy\Quarkless.Models.Proxy.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.Query\Quarkless.Models.Query.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.ReportHandler\Quarkless.Models.ReportHandler.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.RequestBuilder\Quarkless.Models.RequestBuilder.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.ResponseResolver\Quarkless.Models.ResponseResolver.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.RestSharpClientManager\Quarkless.Models.RestSharpClientManager.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.SeleniumClient\Quarkless.Models.SeleniumClient.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.Shared.Api\Quarkless.Models.Shared.Api.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.Shared\Quarkless.Models.Shared.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.Storage\Quarkless.Models.Storage.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.TextGenerator\Quarkless.Models.TextGenerator.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.Timeline\Quarkless.Models.Timeline.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.TranslateService\Quarkless.Models.TranslateService.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.Utilities\Quarkless.Models.Utilities.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.WebHooks\Quarkless.Models.WebHooks.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.WorkerManager\Quarkless.Models.WorkerManager.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.ApiLogger\Quarkless.Repository.ApiLogger.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.Auth\Quarkless.Repository.Auth.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.Comments\Quarkless.Repository.Comments.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.ContentSearch\Quarkless.Repository.ContentSearch.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.Hashtag\Quarkless.Repository.Hashtag.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.Heartbeat\Quarkless.Repository.Heartbeat.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.InstagramAccounts\Quarkless.Repository.InstagramAccounts.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.Library\Quarkless.Repository.Library.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.Lookup\Quarkless.Repository.Lookup.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.Media\Quarkless.Repository.Media.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.MongoContext\Quarkless.Repository.MongoContext.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.Profile\Quarkless.Repository.Profile.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.Proxy\Quarkless.Repository.Proxy.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.RedisClientContext\Quarkless.Repository.RedisContext.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.ReportHandler\Quarkless.Repository.ReportHandler.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.Timeline\Quarkless.Repository.Timeline.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.Topic\Quarkless.Repository.Topic.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Vision\Quarkless.Vision.csproj" />
   </ItemGroup>
 </Project>

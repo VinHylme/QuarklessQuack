@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using QuarklessContexts.Contexts;
-using QuarklessContexts.Models.UserAuth.AuthTypes;
-using QuarklessLogic.Logic.QueryLogic;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using QuarklessContexts.Models.QueryModels;
-using QuarklessContexts.Models.ServicesModels.SearchModels;
+using Quarkless.Models.Auth.Enums;
+using Quarkless.Models.Auth.Interfaces;
+using Quarkless.Models.Common.Models;
+using Quarkless.Models.ContentSearch.Models;
+using Quarkless.Models.Query;
+using Quarkless.Models.Query.Interfaces;
 
 namespace Quarkless.Controllers
 {
@@ -104,7 +105,7 @@ namespace Quarkless.Controllers
 			if(string.IsNullOrEmpty(_userContext.CurrentUser) || string.IsNullOrEmpty(queryObject.Query))
 				return BadRequest("Invalid Request");
 
-			return Ok(await _queryLogic.SearchMediasByLocation(new QuarklessContexts.Models.Profiles.Location
+			return Ok(await _queryLogic.SearchMediasByLocation(new Location
 			{
 				City = queryObject.Query
 			}, _userContext.CurrentUser, instagramId, limit));
@@ -128,7 +129,7 @@ namespace Quarkless.Controllers
 			if(string.IsNullOrEmpty(_userContext.CurrentUser) || string.IsNullOrEmpty(queryObject.Query))
 				return BadRequest("Invalid Request");
 
-			return Ok(await _queryLogic.SearchUsersByLocation(new QuarklessContexts.Models.Profiles.Location
+			return Ok(await _queryLogic.SearchUsersByLocation(new Location
 			{
 				City = queryObject.Query
 			}, _userContext.CurrentUser, instagramId, limit));

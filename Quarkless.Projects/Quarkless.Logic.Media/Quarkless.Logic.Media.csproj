@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quarkless.Analyser\Quarkless.Analyser.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.InstagramClient\Quarkless.Models.InstagramClient.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Media\Quarkless.Models.Media.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.ReportHandler\Quarkless.Models.ReportHandler.csproj" />
+  </ItemGroup>
+
+</Project>

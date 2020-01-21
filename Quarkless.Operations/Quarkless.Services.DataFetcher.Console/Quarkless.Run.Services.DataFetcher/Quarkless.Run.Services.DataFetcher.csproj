@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>..\..\..</DockerfileContext>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="appsettings.json" />
+    <None Remove="Quarkless.Run.Services.DataFetcher.runtimeconfig.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Quarkless.Run.Services.DataFetcher.runtimeconfig.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="3.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.Comments\Quarkless.Models.Comments.csproj" />
+    <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.Hashtag\Quarkless.Models.Hashtag.csproj" />
+    <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.Heartbeat\Quarkless.Models.Heartbeat.csproj" />
+    <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.Media\Quarkless.Models.Media.csproj" />
+    <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.Utilities\Quarkless.Models.Utilities.csproj" />
+    <ProjectReference Include="..\..\Quarkless.Models.Services.DataFetcher\Quarkless.Models.Services.DataFetcher.csproj" />
+  </ItemGroup>
+
+</Project>

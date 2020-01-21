@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Bogus" Version="28.4.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quarkless.Base.ContentSearch\Quarkless.Base.ContentSearch.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.EmailService\Quarkless.Models.EmailService.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.HashtagGenerator\Quarkless.Models.HashtagGenerator.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.TextGenerator\Quarkless.Models.TextGenerator.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.TranslateService\Quarkless.Models.TranslateService.csproj" />
+  </ItemGroup>
+
+</Project>

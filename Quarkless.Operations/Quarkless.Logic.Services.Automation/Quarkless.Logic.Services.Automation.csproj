@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AspNetCore.Identity.MongoDbCore" Version="1.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.Auth\Quarkless.Models.Auth.csproj" />
+    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.Comments\Quarkless.Models.Comments.csproj" />
+    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.InstagramSearch\Quarkless.Models.InstagramSearch.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Services.Automation\Quarkless.Models.Services.Automation.csproj" />
+  </ItemGroup>
+
+</Project>

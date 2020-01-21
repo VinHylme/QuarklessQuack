@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using QuarklessContexts.Contexts;
-using QuarklessContexts.Models.ApiModels;
-using QuarklessContexts.Models.UserAuth.AuthTypes;
-using QuarklessLogic.Logic.CollectionsLogic;
 using System.Threading.Tasks;
-using QuarklessContexts.Enums;
-using QuarklessLogic.Logic.ResponseLogic;
+using Quarkless.Base.InstagramCollections;
+using Quarkless.Base.InstagramCollections.Models;
+using Quarkless.Models.Auth.Enums;
+using Quarkless.Models.Auth.Interfaces;
+using Quarkless.Models.Common.Enums;
+using Quarkless.Models.ResponseResolver.Interfaces;
+
 
 namespace Quarkless.Controllers
 {

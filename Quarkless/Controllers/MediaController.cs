@@ -1,12 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using QuarklessContexts.Contexts;
-using QuarklessContexts.Models.MediaModels;
-using QuarklessContexts.Models.UserAuth.AuthTypes;
-using QuarklessLogic.Logic.MediaLogic;
 using System.Threading.Tasks;
-using QuarklessContexts.Enums;
-using QuarklessContexts.Extensions;
-using QuarklessLogic.Logic.ResponseLogic;
+using Quarkless.Models.Auth.Enums;
+using Quarkless.Models.Auth.Interfaces;
+using Quarkless.Models.Common.Enums;
+using Quarkless.Models.Common.Extensions;
+using Quarkless.Models.Media;
+using Quarkless.Models.Media.Interfaces;
+using Quarkless.Models.ResponseResolver.Interfaces;
 
 namespace Quarkless.Controllers
 {

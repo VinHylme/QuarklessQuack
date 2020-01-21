@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using QuarklessContexts.Contexts;
-using QuarklessContexts.Models.Account;
-using QuarklessLogic.Logic.AccountLogic;
+using Quarkless.Models.Account;
+using Quarkless.Models.Account.Interfaces;
+using Quarkless.Models.Auth.Interfaces;
 
 namespace Quarkless.Controllers
 {

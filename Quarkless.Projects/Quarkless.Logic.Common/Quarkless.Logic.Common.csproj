@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quarkless.Models.Common\Quarkless.Models.Common.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.ReportHandler\Quarkless.Models.ReportHandler.csproj" />
+  </ItemGroup>
+
+</Project>

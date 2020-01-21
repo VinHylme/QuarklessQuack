@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.3.100.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quarkless.Models.ApiLogger\Quarkless.Models.ApiLogger.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Auth\Quarkless.Models.Auth.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Shared\Quarkless.Models.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
