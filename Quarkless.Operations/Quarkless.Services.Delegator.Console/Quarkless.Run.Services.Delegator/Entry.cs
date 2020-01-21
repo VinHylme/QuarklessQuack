@@ -7,20 +7,25 @@ using System.Linq;
 using System.Threading.Tasks;
 using Docker.DotNet;
 using Docker.DotNet.Models;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Models.InstagramAccounts;
 using Quarkless.Models.Services.Heartbeat.Enums;
+using Microsoft.Extensions.DependencyInjection;
+using Quarkless.Models.Common.Extensions;
+using Quarkless.Models.Shared.Enums;
+using Quarkless.Run.Services.Delegator.Extensions;
+using SharedConfig = Quarkless.Models.Shared.Extensions.Config;
 
 namespace Quarkless.Run.Services.Delegator
 {
 	internal class Entry
 	{
-		#region Declerations
-		#region Constants
-		private const string DOCKER_URL = "npipe://./pipe/docker_engine";
-		private const string CLIENT_SECTION = "Client";
 
+		#region Declerations
+
+		#region Constants
+		#region Docker Constants
+
+		private const string DOCKER_URL = "npipe://./pipe/docker_engine";
 		private const string HEARTBEAT_IMAGE_NAME = "quarkless/quarkless.services.heartbeat:latest";
 		private const string HEARTBEAT_CONTAINER_NAME = "quarkless.heartbeat.";
 
@@ -29,18 +34,48 @@ namespace Quarkless.Run.Services.Delegator
 
 		private const string DATA_FETCHER_IMAGE_NAME = "quarkless/quarkless.services.datafetch:latest";
 		private const string DATA_FETCHER_CONTAINER_NAME = "quarkless.datafetch.";
-
+		
 		private const string NETWORK_MODE = "localnet";
-		#endregion
-		private static IAgentLogic _agentLogic; 
-		private static DockerClient Client => new DockerClientConfiguration(new Uri(DOCKER_URL)).CreateClient();
+
 		#endregion
 
-		#region Build Services
+		#region Localhost Build Constants
+
+		private const string RELEASE_PATH = @"bin\Release\publish";
+		private const string DOTNET_CORE_VERSION = "3.1";
+		private static string _debugPath = @$"bin\Debug\netcoreapp{DOTNET_CORE_VERSION}";
+
+		private const string OPERATIONS_FILE = @"Quarkless.Operations\";
+
+		private const string HEARTBEAT_FILE_NAME = "Quarkless.Run.Services.Heartbeat";
+		private const string HEARTBEAT_FILE_LOCATION =
+			OPERATIONS_FILE + @"Quarkless.Services.Heartbeat.Console\" + HEARTBEAT_FILE_NAME;
+
+		private const string AUTOMATOR_FILE_NAME = "Quarkless.Run.Services.Automation";
+		private const string AUTOMATOR_FILE_LOCATION =
+			OPERATIONS_FILE + @"Quarkless.Services.Automation.Console\" + AUTOMATOR_FILE_NAME;
+
+
+		private const string DATA_FETCHER_FILE_NAME = "Quarkless.Run.Services.DataFetcher";
+		private const string DATA_FETCHER_FILE_LOCATION =
+			OPERATIONS_FILE + @"Quarkless.Services.DataFetcher.Console\" + DATA_FETCHER_FILE_NAME;
+
+		#endregion
 		#endregion
 
-		#region Docker Api Stuff
-		static void RunCommand(string command)
+		private static IAgentLogic _agentLogic;
+		private static DockerClient Client;
+
+		#endregion
+		private static bool _inDockerContainer;
+
+		private static string HeartBeatServiceFilePath => SolutionPath + HEARTBEAT_FILE_LOCATION;
+		private static string DataFetcherServiceFilePath => SolutionPath + DATA_FETCHER_FILE_LOCATION;
+		private static string AutomationServicePath => SolutionPath + AUTOMATOR_FILE_LOCATION;
+		private static string SolutionPath => new SharedConfig().SolutionPath;
+
+		#region For Docker
+		static void RunCommandFromCmd(string command)
 		{
 			try
 			{
@@ -54,7 +89,7 @@ namespace Quarkless.Run.Services.Delegator
 						RedirectStandardError = true,
 						RedirectStandardInput = true,
 						FileName = "cmd.exe",
-						Arguments = "/C "+command
+						Arguments = "/C "+ command
 					}
 				};
 				process.ErrorDataReceived += (o, e) =>
@@ -86,6 +121,8 @@ namespace Quarkless.Run.Services.Delegator
 				Console.WriteLine(ee.Message);
 			}
 		}
+
+		#region Docker Api Stuff
 		static async Task<IList<ContainerListResponse>> GetContainersByName(string name)
 		{
 			return await Client.Containers.ListContainersAsync(new ContainersListParameters
@@ -102,7 +139,6 @@ namespace Quarkless.Run.Services.Delegator
 				}
 			});
 		}
-
 		static async Task CreateAndRunDataFetchContainer()
 		{
 			await Client.Containers.CreateContainerAsync(new CreateContainerParameters
@@ -230,12 +266,9 @@ namespace Quarkless.Run.Services.Delegator
 		/// Delete and Recreate the containers for each user
 		/// </summary>
 		/// <returns></returns>
-		private static async Task CarryOutOperation()
+		private static async Task CarryOutDockerOperation()
 		{
-			//var services = InitialiseClientServices().BuildServiceProvider();
-			//_agentLogic = services.GetService<IAgentLogic>();
-
-
+			#region Build Images if they don't Exist
 			var images = await Client.Images.ListImagesAsync(new ImagesListParameters());
 
 			if (!images.Any(image => image.RepoTags.Contains(HEARTBEAT_IMAGE_NAME)))
@@ -243,10 +276,7 @@ namespace Quarkless.Run.Services.Delegator
 				Console.WriteLine("Creating image for {0}", HEARTBEAT_IMAGE_NAME);
 				try
 				{
-					var projPath = Directory.GetParent(Environment.CurrentDirectory.Split("bin")[0]).FullName;
-					var solutionPath = Directory.GetParent(projPath);
-					var heartBeatPath = solutionPath + @"\Quarkless.Services.Heartbeat";
-					RunCommand($"cd {solutionPath} & docker build -t {HEARTBEAT_IMAGE_NAME} -f {heartBeatPath + @"\Dockerfile"} .");
+					RunCommandFromCmd($"cd {SolutionPath} & docker build -t {HEARTBEAT_IMAGE_NAME} -f {HeartBeatServiceFilePath + @"\Dockerfile"} .");
 				}
 				catch (Exception err)
 				{
@@ -259,10 +289,7 @@ namespace Quarkless.Run.Services.Delegator
 				Console.WriteLine("Creating image for {0}", AUTOMATOR_IMAGE_NAME);
 				try
 				{
-					var projPath = Directory.GetParent(Environment.CurrentDirectory.Split("bin")[0]).FullName;
-					var solutionPath = Directory.GetParent(projPath);
-					var automatorPath = solutionPath + @"\Quarkless.Services";
-					RunCommand($"cd {solutionPath} & docker build -t {AUTOMATOR_IMAGE_NAME} -f {automatorPath + @"\Dockerfile"} .");
+					RunCommandFromCmd($"cd {SolutionPath} & docker build -t {AUTOMATOR_IMAGE_NAME} -f {AutomationServicePath + @"\Dockerfile"} .");
 				}
 				catch (Exception err)
 				{
@@ -275,10 +302,7 @@ namespace Quarkless.Run.Services.Delegator
 				Console.WriteLine("Creating image for {0}", DATA_FETCHER_IMAGE_NAME);
 				try
 				{
-					var projPath = Directory.GetParent(Environment.CurrentDirectory.Split("bin")[0]).FullName;
-					var solutionPath = Directory.GetParent(projPath);
-					var dataFetchPath = solutionPath + @"\Quarkless.Services.DataFetcher";
-					RunCommand($"cd {solutionPath} & docker build -t {DATA_FETCHER_IMAGE_NAME} -f {dataFetchPath + @"\Dockerfile"} .");
+					RunCommandFromCmd($"cd {SolutionPath} & docker build -t {DATA_FETCHER_IMAGE_NAME} -f {DataFetcherServiceFilePath + @"\Dockerfile"} .");
 
 				}
 				catch (Exception err)
@@ -286,7 +310,9 @@ namespace Quarkless.Run.Services.Delegator
 					Console.WriteLine(err.Message);
 				}
 			}
+			#endregion
 
+			#region Clear Currently Running Containers
 			Console.WriteLine("Clearing out current containers...");
 			foreach (var container in await GetContainersByName(DATA_FETCHER_CONTAINER_NAME))
 			{
@@ -315,6 +341,7 @@ namespace Quarkless.Run.Services.Delegator
 						Force = true
 					});
 			}
+			#endregion
 
 			Console.WriteLine("Recreating new instances of containers");
 			// recreate the heartbeat containers for users
@@ -336,9 +363,198 @@ namespace Quarkless.Run.Services.Delegator
 			Console.WriteLine("Finished creating containers for automator");
 		}
 
-		static async Task Main(string[] args)
+		#endregion
+		#region For Running Locally
+		private static bool IsRunning(string name) => Processes(name).Length > 0;
+		private static Process[] Processes(string name) => Process.GetProcessesByName(name);
+		private static void RunProcess(string file, string accountId, string instagramId, 
+			ExtractOperationType type, string env = "local")
 		{
-			await CarryOutOperation();
+			try
+			{
+				var process = new Process()
+				{
+					StartInfo = new ProcessStartInfo
+					{
+						EnvironmentVariables =
+						{
+							{
+								"DOTNET_RUNNING_IN_CONTAINER", "false"
+							},
+							{
+								"DOTNET_ENV_RELEASE", env
+							},
+							{
+								"USER_ID", accountId
+							},
+							{
+								"USER_INSTAGRAM_ACCOUNT", instagramId
+							},
+							{
+								"OPERATION_TYPE",((int)type).ToString()
+							}
+						},
+						UseShellExecute = false,
+						CreateNoWindow = false,
+						RedirectStandardOutput = true,
+						RedirectStandardError = true,
+						RedirectStandardInput = true,
+						FileName = file,
+					}
+				};
+				process.ErrorDataReceived += (o, e) =>
+				{
+					Console.WriteLine(e.Data);
+				};
+				process.OutputDataReceived += (o, e) =>
+				{
+					Console.WriteLine(e.Data);
+				};
+				process.Exited += (o, e) =>
+				{
+
+				};
+				process.Start();
+				process.BeginOutputReadLine();
+				process.BeginErrorReadLine();
+				process.WaitForExit((int)TimeSpan.FromMinutes(3.5).TotalMilliseconds);
+			}
+			catch (Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+			}
+
+		}
+		private static void RunProcess(string file, string env="local")
+		{
+			try
+			{
+				var process = new Process()
+				{
+					StartInfo = new ProcessStartInfo
+					{
+						EnvironmentVariables =
+						{
+							{
+								"DOTNET_RUNNING_IN_CONTAINER", "false"
+							},
+							{
+								"DOTNET_ENV_RELEASE", env
+							}
+						},
+						UseShellExecute = false,
+						CreateNoWindow = false,
+						RedirectStandardOutput = true,
+						RedirectStandardError = true,
+						RedirectStandardInput = true,
+						FileName = file,
+					}
+				};
+				process.ErrorDataReceived += (o, e) =>
+				{
+					Console.WriteLine(e.Data);
+				};
+				process.OutputDataReceived += (o, e) =>
+				{
+					Console.WriteLine(e.Data);
+				};
+				process.Exited += (o, e) =>
+				{
+
+				};
+				process.Start();
+				process.BeginOutputReadLine();
+				process.BeginErrorReadLine();
+				process.WaitForExit((int)TimeSpan.FromMinutes(3.5).TotalMilliseconds);
+			}
+			catch (Exception ee)
+			{
+				Console.WriteLine(ee.Message);
+			}
+
+		}
+		/// <summary>
+		/// Use this if you don't want to run on docker
+		/// If you are developing on Production make sure that you have published the services files in the correct path
+		/// </summary>
+		/// <param name="useDebugFiles"></param>
+		private static async Task CarryOutLocalOperation(bool useDebugFiles = true)
+		{
+			var env = new SharedConfig().EnvironmentType;
+
+			#region Initialise File Paths
+			var configurationSolutionPath = useDebugFiles ? _debugPath : RELEASE_PATH;
+			var heartbeatExe = Path.Combine(HeartBeatServiceFilePath, @$"{configurationSolutionPath}\{HEARTBEAT_FILE_NAME}.exe");
+			var automationExe = Path.Combine(AutomationServicePath, @$"{configurationSolutionPath}\{AUTOMATOR_FILE_NAME}.exe");
+			var dataFetcherExe = Path.Combine(DataFetcherServiceFilePath, $"{RELEASE_PATH}/{DATA_FETCHER_FILE_NAME}.exe");
+			#endregion
+
+			#region If Processes are currently running then end them
+			if (IsRunning(heartbeatExe))
+			{
+				foreach (var process in Processes(heartbeatExe))
+				{
+					process.Kill(true);
+				}
+			}
+
+			if (IsRunning(dataFetcherExe))
+			{
+				foreach (var process in Processes(dataFetcherExe))
+				{
+					process.Kill(true);
+				}
+			}
+
+			if (IsRunning(automationExe))
+			{
+				foreach (var process in Processes(automationExe))
+				{
+					process.Kill(true);
+				}
+			}
+			#endregion
+
+			var customers = (await _agentLogic.GetAllAccounts(0))?.ToList();
+			if (customers == null || !customers.Any()) return;
+
+			var opsTypes = Enum.GetValues(typeof(ExtractOperationType)).Cast<ExtractOperationType>();
+
+			foreach (var operationType in opsTypes)
+			{
+				foreach (var customer in customers)
+				{
+					RunProcess(heartbeatExe, customer.AccountId, customer.Id, operationType, env.GetDescription());
+					await Task.Delay(TimeSpan.FromSeconds(1));
+				}
+			}
+
+			await Task.Delay(TimeSpan.FromSeconds(25));
+
+			//RunProcess(dataFetcherExe);
+
+			await Task.Delay(TimeSpan.FromSeconds(45));
+			foreach (var customer in customers)
+			{
+				RunProcess(automationExe, env.GetDescription());
+			}
+		}
+		#endregion
+
+		static async Task Main()
+		{
+			var services = new ServiceCollection();
+			services.IncludeServices();
+			_agentLogic = services.BuildServiceProvider().GetService<IAgentLogic>();
+			_inDockerContainer = new SharedConfig().InDockerContainer;
+
+			if (_inDockerContainer)
+				Client = new DockerClientConfiguration(new Uri(DOCKER_URL)).CreateClient();
+
+			if (_inDockerContainer)
+				await CarryOutDockerOperation();
+			else
+				await CarryOutLocalOperation(true);
 		}
 	}
 }

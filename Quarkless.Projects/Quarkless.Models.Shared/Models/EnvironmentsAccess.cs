@@ -26,5 +26,6 @@ namespace Quarkless.Models.Shared.Models
 		public string FfmpegPath { get; set; }
 		public string ApiBasePath { get; set; }
 		public string VisionCredentials { get; set; }
+		public string JsonStripeCredentials { get; set; }
 	}
 }

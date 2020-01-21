@@ -27,19 +27,19 @@ namespace Quarkless
 
         public void ConfigureServices(IServiceCollection services)
         {
-	        var environments = new Config().Environments;
-	        var redis = ConnectionMultiplexer.Connect(environments.RedisConnectionString);
+			//Environment.SetEnvironmentVariable("DOTNET_ENV_RELEASE","false");
+			
+			#region Add Services
+			services.IncludeHangFrameworkServices();
+			services.IncludeLogicServices();
+			services.IncludeAuthHandlers();
+			services.IncludeRequestLogging();
+			services.IncludeConfigurators();
+			services.IncludeRepositories();
+			services.IncludeHandlers();
+			services.IncludeContexts();
+			services.IncludeEventServices();
 
-			#region Add Other Services
-			services.AddHangFrameworkServices();
-			services.AddLogicServices();
-			services.AddAuthHandlers();
-			services.AddRequestLogging();
-			services.AddConfigurators();
-			services.AddRepositories();
-			services.AddHandlers();
-			services.AddContexts();
-			services.AddEventServices();
 			services.AddControllers();
 	        services.AddOptions();
 			services.AddMemoryCache();
@@ -54,6 +54,10 @@ namespace Quarkless
 			services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
 			services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 			services.AddSingleton<IRateLimitConfiguration, CustomRateLimitConfiguration>();
+
+			var environments = new Config().Environments;
+			var redis = ConnectionMultiplexer.Connect(environments.RedisConnectionString);
+
 			services.AddCors(options=>{
 				options.AddPolicy(CORS_POLICY,
 					builder=>

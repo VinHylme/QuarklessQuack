@@ -1,25 +1,11 @@
-﻿using Hangfire;
-using Microsoft.Extensions.Configuration;
-using StackExchange.Redis;
-using System;
-using System.IO;
+﻿using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Models.Services.Automation.Interfaces;
-using Quarkless.Logic.Services.Automation;
+using Quarkless.Run.Services.Automation.Extensions;
 
 namespace Quarkless.Run.Services.Automation
 {
-	public class ServiceReacher
-	{
-		private readonly IServiceProvider _serviceProvider;
-		public ServiceReacher(IServiceProvider serviceProvider)
-		{
-			_serviceProvider = serviceProvider;
-		}
-		public TInstance Get<TInstance>() => _serviceProvider.GetService<TInstance>();
-	}
-
 	public class Entrance
 	{
 		static void Main(string[] args)
@@ -27,13 +13,27 @@ namespace Quarkless.Run.Services.Automation
 			var environmentVariables = Environment.GetEnvironmentVariables();
 			var userId = environmentVariables["USER_ID"].ToString();
 			var instagramId = environmentVariables["USER_INSTAGRAM_ACCOUNT"].ToString();
+			
+			var services = new ServiceCollection();
 
-			// var results = WithExceptionLogAsync(async () =>
-			// {
-			// 	await InitialiseClientServices().Get<IAgentManager>().Begin(userId, instagramId);
-			// });
-			//Task.WaitAll(results);
+			services.IncludeHangFrameworkServices();
+			services.IncludeLogicServices();
+			services.IncludeRepositories();
+			services.IncludeAuthHandlers();
+			services.IncludeConfigurators();
+			services.IncludeContexts();
+			services.IncludeEventServices();
+			services.IncludeHandlers();
+			
+			var results = WithExceptionLogAsync(async () =>
+			{
+				using var scope = services.BuildServiceProvider().CreateScope();
+				await scope.ServiceProvider.GetService<IAgentManager>().Begin(userId, instagramId);
+			});
+
+			Task.WaitAll(results);
 		}
+
 		private static Task WithExceptionLogAsync(Func<Task> actionAsync)
 		{
 			try
