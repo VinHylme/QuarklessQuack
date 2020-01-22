@@ -13,7 +13,7 @@ services:
             - WORKER_OWNER=lemonkaces
         build:
             context: .
-            dockerfile: Quarkless.Services.DataFetcher/Dockerfile
+            dockerfile: Quarkless.Run.Services.DataFetcher/Dockerfile
         networks:
             localnet:
                 aliases: 

@@ -24,7 +24,7 @@ services:
         aliases: 
           - quarkless.local.redis
     volumes:
-      - ../db/redis-data:/data
+      - ../../../db/redis-data:/data
   mongo:
     image: mongo:latest
     hostname: quarkless.db.mongo

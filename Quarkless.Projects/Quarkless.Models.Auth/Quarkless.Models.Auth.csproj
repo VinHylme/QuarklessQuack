@@ -15,4 +15,8 @@
     <ProjectReference Include="..\Quarkless.Models.Common\Quarkless.Models.Common.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Filter\" />
+  </ItemGroup>
+
 </Project>

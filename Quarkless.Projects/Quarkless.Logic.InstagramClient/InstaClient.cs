@@ -56,7 +56,6 @@ namespace Quarkless.Logic.InstagramClient
 				api = instaApi
 			};
 		}
-
 		private HttpClient SetupProxy(ProxyModel proxy)
 		{
 			if (proxy == null)
