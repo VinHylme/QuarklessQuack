@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using Microsoft.Extensions.Configuration;
 
 namespace Quarkless.Models.Shared.Models
@@ -32,7 +33,10 @@ namespace Quarkless.Models.Shared.Models
 		public string FfmpegPath => _configuration["Ffmpeg"];
 		public string ApiBasePath => _configuration["Endpoints:ApiBasePath"];
 		public string AutomatorEndPoint => _configuration["Endpoints:AutomatorPath"];
-		public string JsonStripeCredentials => _configuration.GetSection("Stripe").Value;
+		public string JsonStripeCredentials =>"{" + string.Join(", ", _configuration.GetSection("Stripe")
+			.GetChildren()
+			.AsEnumerable()
+			.Select(_=> $"\"{_.Key}\": \"{_.Value ?? ""}\"")) +"}";
 		public string VisionCredentials(string path) => File.ReadAllText(Path.Combine(path,VISION_CREDENTIALS));
 		#endregion
 	}

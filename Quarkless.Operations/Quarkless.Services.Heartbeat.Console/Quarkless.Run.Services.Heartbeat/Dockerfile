@@ -1,7 +1,7 @@
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1.0-buster-slim AS base
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-buster-slim AS base
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1.100-buster AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1-buster AS build
 WORKDIR /src
 
 COPY ["Quarkless.Operations/Quarkless.Services.Heartbeat.Console/Quarkless.Run.Services.Heartbeat/Quarkless.Run.Services.Heartbeat.csproj", "Quarkless.Operations/Quarkless.Services.Heartbeat.Console/Quarkless.Run.Services.Heartbeat/"]

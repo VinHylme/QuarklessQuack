@@ -27,7 +27,6 @@ namespace Quarkless
 
         public void ConfigureServices(IServiceCollection services)
         {
-			//Environment.SetEnvironmentVariable("DOTNET_ENV_RELEASE","false");
 			
 			#region Add Services
 			services.IncludeHangFrameworkServices();

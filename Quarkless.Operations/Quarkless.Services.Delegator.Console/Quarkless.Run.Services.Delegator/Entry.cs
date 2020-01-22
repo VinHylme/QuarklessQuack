@@ -11,7 +11,6 @@ using Quarkless.Models.InstagramAccounts;
 using Quarkless.Models.Services.Heartbeat.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Models.Common.Extensions;
-using Quarkless.Models.Shared.Enums;
 using Quarkless.Run.Services.Delegator.Extensions;
 using SharedConfig = Quarkless.Models.Shared.Extensions.Config;
 

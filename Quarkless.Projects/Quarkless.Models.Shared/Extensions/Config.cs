@@ -17,9 +17,11 @@ namespace Quarkless.Models.Shared.Extensions
 		internal string ReferencePath()
 		{
 			const string localHostRefPath = @"References\AppSettings";
-			const string dockerRefPath = @"..\src\References\AppSettings";
+			const string dockerRefPath = @"References/AppSettings";
 
-			var referencesFilePath = !InDockerContainer ? Path.Combine(SolutionPath, localHostRefPath) : dockerRefPath;
+			var referencesFilePath = !InDockerContainer 
+				? Path.Combine(SolutionPath, localHostRefPath) 
+				: Path.Combine(Directory.GetParent(Environment.CurrentDirectory).FullName, "src", dockerRefPath);
 
 			return Path.GetFullPath(referencesFilePath);
 		}
@@ -27,7 +29,8 @@ namespace Quarkless.Models.Shared.Extensions
 		{
 			const string fileName = "appsettings{0}.json";
 			var configurationBuilder = new ConfigurationBuilder();
-			configurationBuilder.SetBasePath(ReferencePath());
+			var path = ReferencePath();
+			configurationBuilder.SetBasePath(path);
 
 			switch (EnvironmentType)
 			{
