@@ -1,5 +1,4 @@
 ﻿using Quarkless.Models.Services.Pipeline.Interfaces;
-using Quarkless.Models.WorkerManager.Interfaces;
 
 namespace Quarkless.Logic.Services.Pipeline
 {
