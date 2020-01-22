@@ -73,7 +73,7 @@ namespace Quarkless.Repository.Topic
 		{
 			try
 			{
-				var filter = new FilterDefinitionBuilder<CTopic>().Eq("ParentTopicId", ObjectId.Parse(parentId));
+				var filter = new FilterDefinitionBuilder<CTopic>().Eq("ParentTopicId", parentId);
 				var result = await _ctx.FindAsync(filter);
 				return result.ToList();
 			}

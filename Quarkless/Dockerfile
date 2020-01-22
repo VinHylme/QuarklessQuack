@@ -1,8 +1,8 @@
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.1.0-buster-slim AS base
 WORKDIR /app
-EXPOSE 80
 
 FROM mcr.microsoft.com/dotnet/core/sdk:3.1.100-buster AS build
+
 WORKDIR /src
 COPY ["Quarkless/Quarkless.csproj", "Quarkless/"]
 COPY ["Quarkless.Projects/Quarkless.Models.TranslateService/Quarkless.Models.TranslateService.csproj", "Quarkless.Projects/Quarkless.Models.TranslateService/"]

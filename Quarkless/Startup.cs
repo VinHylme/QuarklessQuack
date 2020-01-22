@@ -19,7 +19,9 @@ namespace Quarkless
 	public class Startup
     {
 	    private const string CORS_POLICY = "HashtagGrowCORSPolicy";
-        public Startup(IConfiguration configuration)
+	    private const string REDIS_DB_NAME = "Timeline";
+
+	    public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
         }
@@ -86,7 +88,7 @@ namespace Quarkless
 				options.UseRedisStorage(redis, new Hangfire.Redis.RedisStorageOptions
 				{
 					Db = 1,
-					Prefix = "Timeline",
+					Prefix = REDIS_DB_NAME,
 					SucceededListSize = 100000,
 					DeletedListSize = 100000,
 					ExpiryCheckInterval = TimeSpan.FromHours(1),

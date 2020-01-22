@@ -7,7 +7,7 @@
     <StartupObject />
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>..\..\..</DockerfileContext>
-    <DockerfileRunArguments>-p 51242:51242 -e USER_ID=lemonkaces -e USER_INSTAGRAM_ACCOUNT=5cf3d6b9871f49057c0169bc --network name=localnet,alias=quarkless.local.automator --name automator.quark</DockerfileRunArguments>
+    <DockerfileRunArguments>-e USER_ID=lemonkaces -e USER_INSTAGRAM_ACCOUNT=5cf3d6b9871f49057c0169bc -p 51242:51242 --network name=localnet,alias=quarkless.local.automator --name automator.quark</DockerfileRunArguments>
   </PropertyGroup>
 
   <ItemGroup>
