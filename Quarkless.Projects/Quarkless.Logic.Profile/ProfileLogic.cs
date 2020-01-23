@@ -57,14 +57,8 @@ namespace Quarkless.Logic.Profile
 			try
 			{
 				if (!profileTopics.Topics.Any()) return false;
-				var currentProfileVersion = await GetProfile(profileTopics.ProfileId);
-
-				var distinctTopics = profileTopics.Topics
-					.Where(_ => !currentProfileVersion.ProfileTopic.Topics.Any(x => x.Name.Equals(_.Name)))
-					.ToList();
-
-				if (!distinctTopics.Any()) return false;
-				profileTopics.Topics = distinctTopics;
+				//var currentProfileVersion = await GetProfile(profileTopics.ProfileId);
+				//profileTopics.Topics = currentProfileVersion.ProfileTopic.Topics.Union(profileTopics.Topics);
 				await _eventPublisher.PublishAsync(profileTopics);
 				return true;
 			}

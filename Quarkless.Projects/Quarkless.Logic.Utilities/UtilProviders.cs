@@ -14,12 +14,12 @@ namespace Quarkless.Logic.Utilities
 	public class UtilProviders : IUtilProviders
 	{
 		public UtilProviders(ITextGenerator textGenerator, IHashtagGenerator hashtagGenerator,
-			ITranslateService translateService, IEmailService emailService, ISearchProvider searchProvider)
+			ITranslateService translateService, ISearchProvider searchProvider)
 		{
 			TextGenerator = textGenerator;
 			HashtagGenerator = hashtagGenerator;
 			TranslateService = translateService;
-			EmailService = emailService;
+			//EmailService = emailService;
 			SearchProvider = searchProvider;
 		}
 		public ISearchProvider SearchProvider { get; }

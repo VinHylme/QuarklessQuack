@@ -16,14 +16,14 @@ namespace Quarkless.Models.Shared.Extensions
 		#region Internal Functions
 		internal string ReferencePath()
 		{
-			const string localHostRefPath = @"References\AppSettings";
-			const string dockerRefPath = @"../src/References/AppSettings";
+			// const string localHostRefPath = @"References\AppSettings";
+			// const string dockerRefPath = @"../src/References/AppSettings";
+			//
+			// var referencesFilePath = !InDockerContainer 
+			// 	? Path.Combine(SolutionPath, localHostRefPath) 
+			// 	: dockerRefPath;
 
-			var referencesFilePath = !InDockerContainer 
-				? Path.Combine(SolutionPath, localHostRefPath) 
-				: dockerRefPath;
-
-			return Path.GetFullPath(referencesFilePath);
+			return Path.GetFullPath("ConfigFiles");
 		}
 		internal IConfiguration GetConfiguration()
 		{

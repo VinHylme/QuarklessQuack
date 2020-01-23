@@ -5,6 +5,32 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="ConfigFiles\appsettings.json" />
+    <None Remove="ConfigFiles\appsettings.local.json" />
+    <None Remove="ConfigFiles\appsettings.prod.json" />
+    <None Remove="ConfigFiles\quitic.visionai.json" />
+    <None Remove="ConfigFiles\translatedetect-9663e6daa381.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="ConfigFiles\appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="ConfigFiles\appsettings.local.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="ConfigFiles\appsettings.prod.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="ConfigFiles\quitic.visionai.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="ConfigFiles\translatedetect-9663e6daa381.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.1" />
   </ItemGroup>
 

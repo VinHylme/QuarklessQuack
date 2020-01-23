@@ -3,7 +3,6 @@ WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/core/sdk:3.1-buster AS build
 WORKDIR /src
-
 COPY ["Quarkless.Operations/Quarkless.Services.Heartbeat.Console/Quarkless.Run.Services.Heartbeat/Quarkless.Run.Services.Heartbeat.csproj", "Quarkless.Operations/Quarkless.Services.Heartbeat.Console/Quarkless.Run.Services.Heartbeat/"]
 COPY ["Quarkless.Projects/Quarkless.Base.AccountOptions/Quarkless.Base.AccountOptions.csproj", "Quarkless.Projects/Quarkless.Base.AccountOptions/"]
 COPY ["InstagramApiSharp/InstagramApiSharp.csproj", "InstagramApiSharp/"]

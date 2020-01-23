@@ -215,7 +215,8 @@ namespace Quarkless.Logic.Topic
 			}
 
 			var profile = await _profileLogic.GetProfile(@event.ProfileId);
-			profileTopicsUpdate.AddRange(profile.ProfileTopic.Topics);
+
+			//profileTopicsUpdate.AddRange(profile.ProfileTopic.Topics);
 			var updatedTopic = new Models.Profile.Topic
 			{
 				Category = profile.ProfileTopic.Category,

@@ -34,7 +34,6 @@ export default {
     return Api(true).put(Calling['account_update_profile']+profileId,profileData);
   },
   AddProfileTopics(topicsRequest){
-    console.log("calling at: " + Calling['account_add_profile_topics'])
     return Api(true).post(Calling['account_add_profile_topics'], topicsRequest);
   },
   GetInstagramAccount(params){

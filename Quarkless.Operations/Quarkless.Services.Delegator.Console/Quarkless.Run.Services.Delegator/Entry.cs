@@ -65,13 +65,12 @@ namespace Quarkless.Run.Services.Delegator
 		private static IAgentLogic _agentLogic;
 		private static DockerClient Client;
 
-		#endregion
-		private static bool _inDockerContainer;
-
+		private static bool _useDockerContainer;
 		private static string HeartBeatServiceFilePath => SolutionPath + HEARTBEAT_FILE_LOCATION;
 		private static string DataFetcherServiceFilePath => SolutionPath + DATA_FETCHER_FILE_LOCATION;
 		private static string AutomationServicePath => SolutionPath + AUTOMATOR_FILE_LOCATION;
 		private static string SolutionPath => new SharedConfig().SolutionPath;
+		#endregion
 
 		#region For Docker
 		static void RunCommandFromCmd(string command)
@@ -97,7 +96,7 @@ namespace Quarkless.Run.Services.Delegator
 				};
 				process.OutputDataReceived += (o, e) =>
 				{
-					if (e.Data.Contains("Successfully tagged"))
+					if (e.Data!=null && e.Data.Contains("Successfully tagged"))
 					{
 						Task.Delay(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
 						process.Close();
@@ -181,7 +180,8 @@ namespace Quarkless.Run.Services.Delegator
 					{
 						$"USER_ID={customer.AccountId}",
 						$"USER_INSTAGRAM_ACCOUNT={customer.Id}",
-						$"OPERATION_TYPE={((int)type).ToString()}"
+						$"OPERATION_TYPE={((int)type).ToString()}",
+						$"DOTNET_ENV_RELEASE={new SharedConfig().EnvironmentType.GetDescription()}"
 					},
 					AttachStderr = true,
 					AttachStdout = true
@@ -241,6 +241,7 @@ namespace Quarkless.Run.Services.Delegator
 					{
 						$"USER_ID={customer.AccountId}",
 						$"USER_INSTAGRAM_ACCOUNT={customer.Id}",
+						$"DOTNET_ENV_RELEASE={new SharedConfig().EnvironmentType.GetDescription()}"
 					},
 					AttachStderr = true,
 					AttachStdout = true
@@ -257,19 +258,11 @@ namespace Quarkless.Run.Services.Delegator
 		}
 		#endregion
 
-		/// <summary>
-		/// This application requires the quarkless.security application to run on your local machine
-		/// for that please go to the quarkless.security project and run the .exe in the bin folder
-		/// (create a shortcut for ease)
-		/// Create images for heartbeat and automator services
-		/// Delete and Recreate the containers for each user
-		/// </summary>
-		/// <returns></returns>
 		private static async Task CarryOutDockerOperation()
 		{
 			#region Build Images if they don't Exist
 			var images = await Client.Images.ListImagesAsync(new ImagesListParameters());
-
+			
 			if (!images.Any(image => image.RepoTags.Contains(HEARTBEAT_IMAGE_NAME)))
 			{
 				Console.WriteLine("Creating image for {0}", HEARTBEAT_IMAGE_NAME);
@@ -282,7 +275,7 @@ namespace Quarkless.Run.Services.Delegator
 					Console.WriteLine(err.Message);
 				}
 			}
-
+			/*
 			if (!images.Any(image => image.RepoTags.Contains(AUTOMATOR_IMAGE_NAME)))
 			{
 				Console.WriteLine("Creating image for {0}", AUTOMATOR_IMAGE_NAME);
@@ -295,20 +288,20 @@ namespace Quarkless.Run.Services.Delegator
 					Console.WriteLine(err.Message);
 				}
 			}
-
+			
 			if (!images.Any(image => image.RepoTags.Contains(DATA_FETCHER_IMAGE_NAME)))
 			{
 				Console.WriteLine("Creating image for {0}", DATA_FETCHER_IMAGE_NAME);
 				try
 				{
 					RunCommandFromCmd($"cd {SolutionPath} & docker build -t {DATA_FETCHER_IMAGE_NAME} -f {DataFetcherServiceFilePath + @"\Dockerfile"} .");
-
 				}
 				catch (Exception err)
 				{
 					Console.WriteLine(err.Message);
 				}
 			}
+			*/
 			#endregion
 
 			#region Clear Currently Running Containers
@@ -341,7 +334,7 @@ namespace Quarkless.Run.Services.Delegator
 					});
 			}
 			#endregion
-
+			//await CreateAndRunDataFetchContainer();
 			Console.WriteLine("Recreating new instances of containers");
 			// recreate the heartbeat containers for users
 			var customers = (await _agentLogic.GetAllAccounts(0))?.ToList();
@@ -355,14 +348,13 @@ namespace Quarkless.Run.Services.Delegator
 			}
 			Console.WriteLine("Finished Heartbeat containers, now starting automator");
 
-			await CreateAndRunDataFetchContainer();
-
-			await Task.Delay(TimeSpan.FromMinutes(3)); // wait around 2.5 minutes before starting automation (populate data first)
-			await CreateAndRunAutomatorContainers(customers);
-			Console.WriteLine("Finished creating containers for automator");
+			// await Task.Delay(TimeSpan.FromMinutes(3)); // wait around 2.5 minutes before starting automation (populate data first)
+			// await CreateAndRunAutomatorContainers(customers);
+			// Console.WriteLine("Finished creating containers for automator");
 		}
 
 		#endregion
+
 		#region For Running Locally
 		private static bool IsRunning(string name) => Processes(name).Length > 0;
 		private static Process[] Processes(string name) => Process.GetProcessesByName(name);
@@ -534,17 +526,24 @@ namespace Quarkless.Run.Services.Delegator
 		}
 		#endregion
 
-		static async Task Main()
+		static async Task Main(string[] args)
 		{
+			if (args.Length <= 0)
+				return;
+
 			var services = new ServiceCollection();
 			services.IncludeServices();
-			_agentLogic = services.BuildServiceProvider().GetService<IAgentLogic>();
-			_inDockerContainer = new SharedConfig().InDockerContainer;
 
-			if (_inDockerContainer)
+			using var scope = services.BuildServiceProvider().CreateScope();
+			_agentLogic = scope.ServiceProvider.GetService<IAgentLogic>();
+
+			bool.TryParse(args[0], out var useDocker);
+			_useDockerContainer = useDocker;
+
+			if (_useDockerContainer)
 				Client = new DockerClientConfiguration(new Uri(DOCKER_URL)).CreateClient();
 
-			if (_inDockerContainer)
+			if (_useDockerContainer)
 				await CarryOutDockerOperation();
 			else
 				await CarryOutLocalOperation(true);

@@ -160,7 +160,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 				if (userTargetList != null && userTargetList.Count > 0)
 				{
 					var randomTopic =
-						(await _topicLookup.GetTopicsByParentId(_customer.Profile.ProfileTopic.Topics.Shuffle().First()._id)).FirstOrDefault();
+						(await _topicLookup.GetTopicsByParentId(_customer.Profile.ProfileTopic.Topics.Shuffle().First().ParentTopicId)).FirstOrDefault();
 
 					if (randomTopic == null) return;
 
@@ -283,7 +283,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 			{
 				var user = _customer.InstagramAccount;
 				var randomTopic =
-					(await _topicLookup.GetTopicsByParentId(_customer.Profile.ProfileTopic.Topics.Shuffle().First()._id)).FirstOrDefault();
+					(await _topicLookup.GetTopicsByParentId(_customer.Profile.ProfileTopic.Topics.Shuffle().First().ParentTopicId)).FirstOrDefault();
 
 				if (randomTopic == null) return;
 
@@ -771,8 +771,8 @@ namespace Quarkless.Logic.Services.Heartbeat
 				if (!results.Any())
 					return;
 
-				var randomTopic =
-						(await _topicLookup.GetTopicsByParentId(_customer.Profile.ProfileTopic.Topics.Shuffle().First()._id)).FirstOrDefault();
+				var randomTopic = (await _topicLookup.GetTopicsByParentId
+					(_customer.Profile.ProfileTopic.Topics.Shuffle().First().ParentTopicId)).FirstOrDefault();
 
 				if (randomTopic == null) return;
 
@@ -790,18 +790,18 @@ namespace Quarkless.Logic.Services.Heartbeat
 						var instagramSearch = _searchProvider.InstagramSearch(worker.Client,
 							worker.Client.GetContext.Proxy);
 
-						foreach (var _ in results.TakeAny(takeMediaAmount))
+						foreach (var media in results.TakeAny(takeMediaAmount))
 						{
-							if (_ == null) continue;
-							foreach (var d in _.ObjectItem)
+							if (media == null) continue;
+							foreach (var user in media.ObjectItem)
 							{
-								var suggested = await instagramSearch.SearchUsersMediaDetailInstagram(randomTopic, d.Username, limit);
+								var suggested = await instagramSearch.SearchUsersMediaDetailInstagram(randomTopic, user.Username, limit);
 								if (suggested != null)
 								{
-									var sugVCut = suggested.CutObjects(cutBy).ToList();
-									foreach (var z in sugVCut?.TakeAny(takeUserMediaAmount))
+									var suggestedMediasSplit = suggested.CutObjects(cutBy).ToList();
+									foreach (var mediaObject in suggestedMediasSplit?.TakeAny(takeUserMediaAmount))
 									{
-										z.Medias = z.Medias.Where(t => !t.HasLikedBefore && !t.HasSeen
+										mediaObject.Medias = mediaObject.Medias.Where(t => !t.HasLikedBefore && !t.HasSeen
 											&& t.User.Username != _customer.InstagramAccount.Username).ToList();
 
 										await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<Media>
@@ -809,7 +809,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 											MetaDataType = MetaDataType.FetchMediaByLikers,
 											ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
 											InstagramId = _customer.InstagramAccount.Id, AccountId = _customer.InstagramAccount.AccountId,
-											Data = new Meta<Media>(z)
+											Data = new Meta<Media>(mediaObject)
 										});
 									}
 								}
@@ -953,8 +953,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 								{
 									if (!media.IsCommentsDisabled && int.TryParse(media.CommentCount, out var count) &&
 									    count > 0 && media.MediaFrom == MediaFrom.Instagram 
-									    && media.MediaId != null && !media.HasSeen)
-									{
+									    && media.MediaId != null && !media.HasSeen) {
 
 										var suggested = await instagramSearch
 											.SearchInstagramMediaCommenters(media.Topic, media.MediaId, limit);
@@ -1021,7 +1020,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 				});
 
 				var randomTopic =
-					(await _topicLookup.GetTopicsByParentId(_customer.Profile.ProfileTopic.Topics.Shuffle().First()._id)).FirstOrDefault();
+					(await _topicLookup.GetTopicsByParentId(_customer.Profile.ProfileTopic.Topics.Shuffle().First().ParentTopicId)).FirstOrDefault();
 				
 				if (randomTopic == null) return;
 
