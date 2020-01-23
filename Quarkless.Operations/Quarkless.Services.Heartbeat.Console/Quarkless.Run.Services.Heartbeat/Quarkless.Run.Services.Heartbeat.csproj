@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+	<GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>..\..\..</DockerfileContext>
 	<DockerfileRunArguments>-e USER_ID=lemonkaces -e USER_INSTAGRAM_ACCOUNT=5cf3d6b9871f49057c0169bc --network name=localnet,alias=quarkless.services.heartbeat --name quarkless.heartbeat.base</DockerfileRunArguments>

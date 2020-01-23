@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Quarkless.Models.Shared.Enums;
 using Quarkless.Models.Shared.Models;
@@ -22,8 +23,7 @@ namespace Quarkless.Models.Shared.Extensions
 			// var referencesFilePath = !InDockerContainer 
 			// 	? Path.Combine(SolutionPath, localHostRefPath) 
 			// 	: dockerRefPath;
-
-			return Path.GetFullPath("ConfigFiles");
+			return Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ConfigFiles"));
 		}
 		internal IConfiguration GetConfiguration()
 		{
