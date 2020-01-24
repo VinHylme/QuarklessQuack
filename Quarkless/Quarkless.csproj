@@ -6,7 +6,7 @@
 	<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 	<UserSecretsId>aecd18cc-3bf5-4ceb-86b5-280866e45f4b</UserSecretsId>
     <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
-    <DockerfileRunArguments>--network name=localnet,alias=quarkless.local.api --name api.quark -p 51518:80</DockerfileRunArguments>
+    <DockerfileRunArguments>--network name=localnet,alias=quarkless.local.api --name api.quark -p 51518:51518</DockerfileRunArguments>
   </PropertyGroup>
   <ItemGroup>
 	<PackageReference Include="AspNetCoreRateLimit" Version="3.0.5" />

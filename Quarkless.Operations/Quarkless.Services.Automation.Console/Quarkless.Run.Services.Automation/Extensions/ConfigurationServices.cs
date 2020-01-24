@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
@@ -51,7 +52,9 @@ using Quarkless.Logic.TextGenerator;
 using Quarkless.Logic.Timeline;
 using Quarkless.Logic.Timeline.TaskScheduler;
 using Quarkless.Logic.Topic;
+using Quarkless.Logic.TranslateService;
 using Quarkless.Logic.Utilities;
+using Quarkless.Logic.WorkerManager;
 using Quarkless.Models.Agent.Interfaces;
 using Quarkless.Models.ApiLogger.Interfaces;
 using Quarkless.Models.Auth;
@@ -89,7 +92,9 @@ using Quarkless.Models.Timeline.Interfaces;
 using Quarkless.Models.Timeline.Interfaces.TaskScheduler;
 using Quarkless.Models.Topic.Interfaces;
 using Quarkless.Models.TranslateService;
+using Quarkless.Models.TranslateService.Interfaces;
 using Quarkless.Models.Utilities.Interfaces;
+using Quarkless.Models.WorkerManager.Interfaces;
 using Quarkless.Repository.ApiLogger;
 using Quarkless.Repository.Auth;
 using Quarkless.Repository.Comments;
@@ -250,12 +255,12 @@ namespace Quarkless.Run.Services.Automation.Extensions
 			services.AddTransient<IClientContextProvider, ClientContextProvider>();
 			services.AddTransient<IApiClientContext, ApiClientContext>();
 			services.AddTransient<IApiClientContainer, ApiClientContainer>();
-			//services.AddTransient<ITranslateService, TranslateService>();
+			services.AddTransient<ITranslateService, TranslateService>();
 			services.AddTransient<IUtilProviders, UtilProviders>();
 			services.AddSingleton<ITextGenerator, TextGenerator>();
 			services.AddSingleton<IHashtagGenerator, HashtagGenerator>();
 			services.AddSingleton<IContentInfoBuilder, ContentInfoBuilder>();
-			//services.AddSingleton<IWorkerManager, WorkerManager>();
+			services.AddSingleton<IWorkerManager, WorkerManager>();
 		}
 		public static void IncludeContexts(this IServiceCollection services)
 		{
@@ -297,6 +302,9 @@ namespace Quarkless.Run.Services.Automation.Extensions
 				}));
 
 			services.AddSingleton<IS3BucketLogic, S3BucketLogic>();
+
+			services.AddLogging();
+			//services.AddScoped<ILoggerFactory, LoggerFactory>();
 			var mongoDbContext = new MongoDbContext(accessors.ConnectionString, "Accounts");
 
 			services.AddIdentity<AccountUser, AccountRole>()
@@ -321,6 +329,7 @@ namespace Quarkless.Run.Services.Automation.Extensions
 				auth.AddPolicy("PremiumUsers", p => p.Requirements.Add(new GroupAuthorisationRequirement(AuthTypes.PremiumUsers.ToString())));
 				auth.AddPolicy("EnterpriseUsers", p => p.Requirements.Add(new GroupAuthorisationRequirement(AuthTypes.EnterpriseUsers.ToString())));
 			});
+
 			services.AddAuthentication(
 				options =>
 				{

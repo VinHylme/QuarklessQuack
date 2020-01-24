@@ -35,8 +35,7 @@ namespace Quarkless.Logic.WorkerManager
 
 		#region Init
 		public WorkerManager(IApiClientContext context, IInstagramAccountLogic instagramAccountLogic, 
-			IResponseResolver responseResolver,
-			int batchSize = 1, int workerAccountType = 1)
+			IResponseResolver responseResolver, int batchSize = 1, int workerAccountType = 1)
 		{
 			_context = context;
 			_instagramAccountLogic = instagramAccountLogic;

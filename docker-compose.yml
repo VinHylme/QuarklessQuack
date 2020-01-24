@@ -8,7 +8,7 @@ services:
       context: .
       dockerfile: Quarkless/Dockerfile
     ports:
-      - 51518:80
+      - 51518:51518
     networks:
       localnet:
         aliases: 

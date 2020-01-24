@@ -12,11 +12,9 @@ namespace Quarkless.Logic.Timeline.TaskScheduler
 	public class TaskService : ITaskService
 	{
 		private readonly IJobRunner _jobRunner;
-		private readonly ITimelineJobRepository _timelineJobRepository;
-		public TaskService(IJobRunner jobRunner, ITimelineJobRepository timelineJobRepository)
+		public TaskService(IJobRunner jobRunner)
 		{
 			_jobRunner = jobRunner;
-			_timelineJobRepository = timelineJobRepository;
 		}
 
 		public void ActionTask(Delegate @delegate, DateTimeOffset executeTime, params object[] args)

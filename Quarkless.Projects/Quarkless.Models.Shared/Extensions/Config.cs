@@ -40,8 +40,11 @@ namespace Quarkless.Models.Shared.Extensions
 				case EnvironmentType.Production:
 					configurationBuilder.AddJsonFile(string.Format(fileName, ".prod"));
 					break;
-				case EnvironmentType.Local:
+				case EnvironmentType.Local when !InDockerContainer:
 					configurationBuilder.AddJsonFile(string.Format(fileName, ".local"));
+					break;
+				case EnvironmentType.Local when InDockerContainer:
+					configurationBuilder.AddJsonFile(string.Format(fileName, ".docker.local"));
 					break;
 				case EnvironmentType.None:
 					throw new Exception("Please enter the development type");
@@ -103,7 +106,6 @@ namespace Quarkless.Models.Shared.Extensions
 					"dev" => EnvironmentType.Development,
 					"prod" => EnvironmentType.Production,
 					"local" => EnvironmentType.Local,
-
 					_ => EnvironmentType.None
 				};
 			}

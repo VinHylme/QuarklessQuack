@@ -209,8 +209,8 @@ namespace Quarkless.Extensions
 				}));
 
 			services.AddSingleton<IS3BucketLogic, S3BucketLogic>();
-			var mongoDbContext = new MongoDbContext(accessors.ConnectionString, "Accounts");
 
+			var mongoDbContext = new MongoDbContext(accessors.ConnectionString, "Accounts");
 			services.AddIdentity<AccountUser, AccountRole>()
 				.AddMongoDbStores<AccountUser, AccountRole, string>(mongoDbContext)
 				.AddDefaultTokenProviders();

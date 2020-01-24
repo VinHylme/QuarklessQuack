@@ -581,7 +581,7 @@ namespace Quarkless.Logic.Services.Automation
 						var postScheduleOptions = new PostActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1, 5)), _postAnalyser) { ImageFetchLimit = 20 };
 						var followScheduleOptions = new FollowActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1, 4)), FollowActionType.Any);
 						var commentScheduleOptions = new CommentingActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1, 4)), CommentingActionType.Any);
-						var likecommentScheduleOptions = new LikeCommentActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(4)), LikeCommentActionType.Any);
+						var likeCommentActionOptions = new LikeCommentActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(4)), LikeCommentActionType.Any);
 						//var sendMessageScheduleoptions = new SendDirectMessageActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1, 5)), MessagingReachType.Any, 1, _postAnalyser);
 
 						//actionsContainerManager.AddAction(sendMessageAction, sendMessageScheduleoptions, 0.05);
@@ -589,7 +589,7 @@ namespace Quarkless.Logic.Services.Automation
 						actionsContainerManager.AddAction(likeAction, likeScheduleOptions, 0.25);
 						actionsContainerManager.AddAction(followAction, followScheduleOptions, 0.20);
 						actionsContainerManager.AddAction(commentAction, commentScheduleOptions, 0.15);
-						actionsContainerManager.AddAction(likeCommentAction, likecommentScheduleOptions, 0.25);
+						actionsContainerManager.AddAction(likeCommentAction, likeCommentActionOptions, 0.25);
 
 						#endregion
 

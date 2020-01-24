@@ -11,6 +11,7 @@ using Quarkless.Models.InstagramAccounts;
 using Quarkless.Models.Services.Heartbeat.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Models.Common.Extensions;
+using Quarkless.Models.InstagramAccounts.Enums;
 using Quarkless.Run.Services.Delegator.Extensions;
 using SharedConfig = Quarkless.Models.Shared.Extensions.Config;
 
@@ -151,6 +152,11 @@ namespace Quarkless.Run.Services.Delegator
 						Name = RestartPolicyKind.Always
 					}
 				},
+				Env = new List<string>
+				{
+					$"DOTNET_ENV_RELEASE={new SharedConfig().EnvironmentType.GetDescription()}",
+					$"DOTNET_RUNNING_IN_CONTAINER={true}"
+				},
 				AttachStderr = true,
 				AttachStdout = true
 			});
@@ -158,6 +164,7 @@ namespace Quarkless.Run.Services.Delegator
 			{
 				await Client.Containers.StartContainerAsync(container.ID, new ContainerStartParameters());
 				Console.WriteLine("Successfully started data fetch app with ID {0}", container.ID);
+				await Task.Delay(TimeSpan.FromSeconds(1.5));
 			}
 		}
 		static async Task CreateAndRunHeartbeatContainers(List<ShortInstagramAccountModel> customers, ExtractOperationType type)
@@ -181,7 +188,8 @@ namespace Quarkless.Run.Services.Delegator
 						$"USER_ID={customer.AccountId}",
 						$"USER_INSTAGRAM_ACCOUNT={customer.Id}",
 						$"OPERATION_TYPE={((int)type).ToString()}",
-						$"DOTNET_ENV_RELEASE={new SharedConfig().EnvironmentType.GetDescription()}"
+						$"DOTNET_ENV_RELEASE={new SharedConfig().EnvironmentType.GetDescription()}",
+						$"DOTNET_RUNNING_IN_CONTAINER={true}"
 					},
 					AttachStderr = true,
 					AttachStdout = true
@@ -194,6 +202,7 @@ namespace Quarkless.Run.Services.Delegator
 			{
 				await Client.Containers.StartContainerAsync(container.ID, new ContainerStartParameters());
 				Console.WriteLine("Successfully started heartbeat app with ID {0}", container.ID);
+				await Task.Delay(TimeSpan.FromSeconds(1.5));
 			}
 		}
 		static async Task CreateAndRunAutomatorContainers(List<ShortInstagramAccountModel> customers)
@@ -241,7 +250,8 @@ namespace Quarkless.Run.Services.Delegator
 					{
 						$"USER_ID={customer.AccountId}",
 						$"USER_INSTAGRAM_ACCOUNT={customer.Id}",
-						$"DOTNET_ENV_RELEASE={new SharedConfig().EnvironmentType.GetDescription()}"
+						$"DOTNET_ENV_RELEASE={new SharedConfig().EnvironmentType.GetDescription()}",
+						$"DOTNET_RUNNING_IN_CONTAINER={true}"
 					},
 					AttachStderr = true,
 					AttachStdout = true
@@ -275,7 +285,7 @@ namespace Quarkless.Run.Services.Delegator
 					Console.WriteLine(err.Message);
 				}
 			}
-			/*
+			
 			if (!images.Any(image => image.RepoTags.Contains(AUTOMATOR_IMAGE_NAME)))
 			{
 				Console.WriteLine("Creating image for {0}", AUTOMATOR_IMAGE_NAME);
@@ -288,7 +298,8 @@ namespace Quarkless.Run.Services.Delegator
 					Console.WriteLine(err.Message);
 				}
 			}
-			
+
+			/*
 			if (!images.Any(image => image.RepoTags.Contains(DATA_FETCHER_IMAGE_NAME)))
 			{
 				Console.WriteLine("Creating image for {0}", DATA_FETCHER_IMAGE_NAME);
@@ -334,23 +345,27 @@ namespace Quarkless.Run.Services.Delegator
 					});
 			}
 			#endregion
+
 			//await CreateAndRunDataFetchContainer();
+
 			Console.WriteLine("Recreating new instances of containers");
+
 			// recreate the heartbeat containers for users
-			var customers = (await _agentLogic.GetAllAccounts(0))?.ToList();
+			var customers = (await _agentLogic.GetAllAccounts(0))?
+				.Where(_=>_.AgentState != (int) AgentState.Stopped).ToList();
 
 			if (customers == null || !customers.Any()) return;
 
 			var opsTypes = Enum.GetValues(typeof(ExtractOperationType)).Cast<ExtractOperationType>();
-			foreach (var opsType in opsTypes)
-			{
+
+			foreach (var opsType in opsTypes.Where(_=>_ != ExtractOperationType.None))
 				await CreateAndRunHeartbeatContainers(customers, opsType);
-			}
+
 			Console.WriteLine("Finished Heartbeat containers, now starting automator");
 
-			// await Task.Delay(TimeSpan.FromMinutes(3)); // wait around 2.5 minutes before starting automation (populate data first)
-			// await CreateAndRunAutomatorContainers(customers);
-			// Console.WriteLine("Finished creating containers for automator");
+			await Task.Delay(TimeSpan.FromMinutes(3)); // wait around 2.5 minutes before starting automation (populate data first)
+			await CreateAndRunAutomatorContainers(customers);
+			Console.WriteLine("Finished creating containers for automator");
 		}
 
 		#endregion
@@ -526,9 +541,10 @@ namespace Quarkless.Run.Services.Delegator
 		}
 		#endregion
 
-		static async Task Main(string[] args)
+		static async Task Main()
 		{
-			if (args.Length <= 0)
+			var runInDocker = Environment.GetEnvironmentVariable("APP_RUN_IN_DOCKER");
+			if (string.IsNullOrEmpty(runInDocker))
 				return;
 
 			var services = new ServiceCollection();
@@ -537,7 +553,7 @@ namespace Quarkless.Run.Services.Delegator
 			using var scope = services.BuildServiceProvider().CreateScope();
 			_agentLogic = scope.ServiceProvider.GetService<IAgentLogic>();
 
-			bool.TryParse(args[0], out var useDocker);
+			bool.TryParse(runInDocker, out var useDocker);
 			_useDockerContainer = useDocker;
 
 			if (_useDockerContainer)

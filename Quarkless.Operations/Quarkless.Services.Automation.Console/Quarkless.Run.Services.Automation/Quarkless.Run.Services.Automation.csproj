@@ -31,6 +31,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="3.1.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="3.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.1" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.10" />
     <PackageReference Include="StackExchange.Redis" Version="2.0.601" />
   </ItemGroup>
@@ -64,7 +65,9 @@
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.TextGenerator\Quarkless.Logic.TextGenerator.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.Timeline\Quarkless.Logic.Timeline.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.Topic\Quarkless.Logic.Topic.csproj" />
+    <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.TranslateService\Quarkless.Logic.TranslateService.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.Utilities\Quarkless.Logic.Utilities.csproj" />
+    <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.WorkerManager\Quarkless.Logic.WorkerManager.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.Agent\Quarkless.Models.Agent.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.ContentSearch\Quarkless.Models.ContentSearch.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.HashtagGenerator\Quarkless.Models.HashtagGenerator.csproj" />

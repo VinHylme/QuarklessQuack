@@ -63,29 +63,16 @@ namespace Quarkless
 				options.AddPolicy(CORS_POLICY,
 					builder=>
 					{
-						//builder.WithOrigins(environments.FrontEnd);
+						builder.WithOrigins(environments.FrontEnd);
 						builder.SetIsOriginAllowed(_ => true);
 						builder.AllowAnyOrigin();
 						builder.AllowAnyHeader();
 						builder.AllowAnyMethod();
 					});
 			});
+
 			services.AddHangfire(options =>
 			{
-			//	options.UseFilter(new ProlongExpirationTimeAttribute());
-				#region Mongo Storage
-				//options.UseMongoStorage(_accessors.ConnectionString, _accessors.SchedulerDatabase, new MongoStorageOptions()
-				//{
-				//	Prefix = "Timeline",
-				//	CheckConnection = false,
-				//	MigrationOptions = new MongoMigrationOptions(MongoMigrationStrategy.Migrate) 
-				//	{ 
-				//		Strategy = MongoMigrationStrategy.Migrate,
-				//		BackupStrategy = MongoBackupStrategy.Collections
-				//	},
-				//	QueuePollInterval = TimeSpan.FromSeconds(2),
-				//});
-				#endregion
 				options.UseRedisStorage(redis, new Hangfire.Redis.RedisStorageOptions
 				{
 					Db = 1,
@@ -117,22 +104,22 @@ namespace Quarkless
             {
                 app.UseHsts();
             }
+
             GlobalConfiguration.Configuration.UseActivator(new WorkerActivator(app.ApplicationServices));
 
             var jobServerOptions = new BackgroundJobServerOptions
 			{
 				WorkerCount = Environment.ProcessorCount * 5,
 				ServerName = $"ISE_{Environment.MachineName}.{Guid.NewGuid().ToString()}",
-				//Activator = new WorkerActivator(services.BuildServiceProvider(false)),
 			};
 
 			app.UseHttpsRedirection();
 			app.UseRouting();
-			//app.UseIpRateLimiting();
+			app.UseIpRateLimiting();
 
 			app.UseCors(CORS_POLICY);
 			app.UseHangfireServer(jobServerOptions);
-			app.UseHangfireDashboard("/configs/hangfire", new DashboardOptions
+			app.UseHangfireDashboard("/configs/hang-fire", new DashboardOptions
 			{
 				Authorization = new[] { new HangfireAllowAllConnectionsFilter() }
 			});
@@ -145,11 +132,11 @@ namespace Quarkless
 			{
 				endpoints.MapControllers();
 			});
-			//	app.UseSecurityMiddleware(new SecurityHeadersBuilder()
-			//		.AddDefaultSecurePolicy()
-			//	/*.AddCustomHeader("X-Client-ID", "x-key-1-v")*/);
-			//app.UseMvc();
-		}
+
+			app.UseSecurityMiddleware(new SecurityHeadersBuilder()
+				.AddDefaultSecurePolicy()
+				.AddCustomHeader("X-Client-ID", "x-key-1-v"));
+        }
 	}
 	public class WorkerActivator : JobActivator
 	{

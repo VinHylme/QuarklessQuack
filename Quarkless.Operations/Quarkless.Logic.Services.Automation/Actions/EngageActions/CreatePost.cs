@@ -62,10 +62,8 @@ namespace Quarkless.Logic.Services.Automation.Actions.EngageActions
 		#region Private Methods
 		private async Task<string> UploadToS3(byte[] media, string keyName)
 		{
-			using (var mediaStream = new MemoryStream(media))
-			{
-				return await _s3BucketLogic.UploadStreamFile(mediaStream, keyName);
-			}
+			await using var mediaStream = new MemoryStream(media);
+			return await _s3BucketLogic.UploadStreamFile(mediaStream, keyName);
 		}
 
 		#endregion
@@ -235,7 +233,8 @@ namespace Quarkless.Logic.Services.Automation.Actions.EngageActions
 						}
 					}
 
-					result.SeenBy.Add(@by);
+					result.SeenBy.Add(by);
+
 					if (selectedAction == MetaDataType.FetchMediaByTopic)
 					{
 						_heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
@@ -244,8 +243,7 @@ namespace Quarkless.Logic.Services.Automation.Actions.EngageActions
 								ProfileCategoryTopicId = user.Profile.ProfileTopic.Category._id,
 								InstagramId = user.ShortInstagram.Id,
 								Data = result
-							})
-							.GetAwaiter().GetResult();
+							}).GetAwaiter().GetResult();
 					}
 					else
 					{
