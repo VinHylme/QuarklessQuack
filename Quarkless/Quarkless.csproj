@@ -34,8 +34,6 @@
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Quarkless.Api.Operations\Quarkless.EmailServices.Repository\Quarkless.EmailServices.Repository.csproj" />
-    <ProjectReference Include="..\..\Quarkless.Api.Operations\Quarkless.InstagramCreator.Repository\Quarkless.InstagramCreator.Repository.csproj" />
     <ProjectReference Include="..\InstagramApiSharp\InstagramApiSharp.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Analyser\Quarkless.Analyser.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Base.AccountOptions\Quarkless.Base.AccountOptions.csproj" />

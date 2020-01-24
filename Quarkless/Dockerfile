@@ -1,7 +1,7 @@
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1.0-buster-slim AS base
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-buster-slim AS base
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1.100-buster AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1-buster AS build
 
 WORKDIR /src
 COPY ["Quarkless/Quarkless.csproj", "Quarkless/"]
@@ -68,7 +68,6 @@ COPY ["Quarkless.Projects/Quarkless.Base.InstagramDiscover/Quarkless.Base.Instag
 COPY ["Quarkless.Projects/Quarkless.Models.WebHooks/Quarkless.Models.WebHooks.csproj", "Quarkless.Projects/Quarkless.Models.WebHooks/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.ReportHandler/Quarkless.Logic.ReportHandler.csproj", "Quarkless.Projects/Quarkless.Logic.ReportHandler/"]
 COPY ["Quarkless.Projects/Quarkless.Base.InstagramBusiness/Quarkless.Base.InstagramBusiness.csproj", "Quarkless.Projects/Quarkless.Base.InstagramBusiness/"]
-COPY ["../Quarkless.Api.Operations/Quarkless.EmailServices.Repository/Quarkless.EmailServices.Repository.csproj", "../Quarkless.Api.Operations/Quarkless.EmailServices.Repository/"]
 COPY ["Quarkless.Projects/Quarkless.Models.Account/Quarkless.Models.Account.csproj", "Quarkless.Projects/Quarkless.Models.Account/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.Query/Quarkless.Logic.Query.csproj", "Quarkless.Projects/Quarkless.Logic.Query/"]
 COPY ["Quarkless.Projects/Quarkless.Models.RestSharpClientManager/Quarkless.Models.RestSharpClientManager.csproj", "Quarkless.Projects/Quarkless.Models.RestSharpClientManager/"]
@@ -96,7 +95,6 @@ COPY ["Quarkless.Projects/Quarkless.Logic.TranslateService/Quarkless.Logic.Trans
 COPY ["Quarkless.Projects/Quarkless.Logic.RequestBuilder/Quarkless.Logic.RequestBuilder.csproj", "Quarkless.Projects/Quarkless.Logic.RequestBuilder/"]
 COPY ["Quarkless.Projects/Quarkless.Models.RequestBuilder/Quarkless.Models.RequestBuilder.csproj", "Quarkless.Projects/Quarkless.Models.RequestBuilder/"]
 COPY ["Quarkless.Projects/Quarkless.Repository.ReportHandler/Quarkless.Repository.ReportHandler.csproj", "Quarkless.Projects/Quarkless.Repository.ReportHandler/"]
-COPY ["../Quarkless.Api.Operations/Quarkless.InstagramCreator.Repository/Quarkless.InstagramCreator.Repository.csproj", "../Quarkless.Api.Operations/Quarkless.InstagramCreator.Repository/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.Timeline/Quarkless.Logic.Timeline.csproj", "Quarkless.Projects/Quarkless.Logic.Timeline/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.Lookup/Quarkless.Logic.Lookup.csproj", "Quarkless.Projects/Quarkless.Logic.Lookup/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.Topic/Quarkless.Logic.Topic.csproj", "Quarkless.Projects/Quarkless.Logic.Topic/"]

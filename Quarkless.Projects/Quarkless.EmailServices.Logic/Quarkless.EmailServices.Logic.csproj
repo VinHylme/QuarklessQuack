@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="morelinq" Version="3.3.2" />
+    <PackageReference Include="PuppeteerSharp" Version="2.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quarkless.EmailServices.Models\Quarkless.EmailServices.Models.csproj" />
+    <ProjectReference Include="..\Quarkless.EmailServices.Repository\Quarkless.EmailServices.Repository.csproj" />
+    <ProjectReference Include="..\Quarkless.PuppeteerClient.Logic\Quarkless.PuppeteerClient.Logic.csproj" />
+    <ProjectReference Include="..\Quarkless.SmsHandler.Logic\Quarkless.SmsHandler.Logic.csproj" />
+    <ProjectReference Include="..\Quarkless.SmsHandler\Quarkless.SmsHandler.Models.csproj" />
+    <ProjectReference Include="..\Quarkless.Utilities.Models\Quarkless.Utilities.Models.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="OutlookService\" />
+  </ItemGroup>
+
+</Project>

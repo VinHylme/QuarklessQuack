@@ -1,12 +1,11 @@
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1.0-buster-slim AS base
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-buster-slim AS base
 RUN apt-get update && apt-get install -y libgdiplus
 RUN apt-get update && apt-get install libfontconfig1 nano -y
 
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1.100-buster AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1-buster AS build
 WORKDIR /src
-COPY ["References", "References"]
 COPY ["Quarkless.Operations/Quarkless.Services.Automation.Console/Quarkless.Run.Services.Automation/Quarkless.Run.Services.Automation.csproj", "Quarkless.Operations/Quarkless.Services.Automation.Console/Quarkless.Run.Services.Automation/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.ContentInfo/Quarkless.Logic.ContentInfo.csproj", "Quarkless.Projects/Quarkless.Logic.ContentInfo/"]
 COPY ["Quarkless.Projects/Quarkless.Models.ContentInfo/Quarkless.Models.ContentInfo.csproj", "Quarkless.Projects/Quarkless.Models.ContentInfo/"]
@@ -79,12 +78,14 @@ COPY ["Quarkless.Projects/Quarkless.Models.SeleniumClient/Quarkless.Models.Selen
 COPY ["Quarkless.Projects/Quarkless.Logic.Profile/Quarkless.Logic.Profile.csproj", "Quarkless.Projects/Quarkless.Logic.Profile/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.Messaging/Quarkless.Logic.Messaging.csproj", "Quarkless.Projects/Quarkless.Logic.Messaging/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.Storage/Quarkless.Logic.Storage.csproj", "Quarkless.Projects/Quarkless.Logic.Storage/"]
+COPY ["Quarkless.Projects/Quarkless.Logic.TranslateService/Quarkless.Logic.TranslateService.csproj", "Quarkless.Projects/Quarkless.Logic.TranslateService/"]
+COPY ["Quarkless.Projects/Quarkless.Models.RestSharpClientManager/Quarkless.Models.RestSharpClientManager.csproj", "Quarkless.Projects/Quarkless.Models.RestSharpClientManager/"]
 COPY ["Quarkless.Projects/Quarkless.Models.Shared.Api/Quarkless.Models.Shared.Api.csproj", "Quarkless.Projects/Quarkless.Models.Shared.Api/"]
 COPY ["Quarkless.Projects/Quarkless.Models.Shared/Quarkless.Models.Shared.csproj", "Quarkless.Projects/Quarkless.Models.Shared/"]
 COPY ["Quarkless.Projects/Quarkless.Repository.Media/Quarkless.Repository.Media.csproj", "Quarkless.Projects/Quarkless.Repository.Media/"]
+COPY ["Quarkless.Projects/Quarkless.Logic.WorkerManager/Quarkless.Logic.WorkerManager.csproj", "Quarkless.Projects/Quarkless.Logic.WorkerManager/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.ResponseResolver/Quarkless.Logic.ResponseResolver.csproj", "Quarkless.Projects/Quarkless.Logic.ResponseResolver/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.RequestBuilder/Quarkless.Logic.RequestBuilder.csproj", "Quarkless.Projects/Quarkless.Logic.RequestBuilder/"]
-COPY ["Quarkless.Projects/Quarkless.Models.RestSharpClientManager/Quarkless.Models.RestSharpClientManager.csproj", "Quarkless.Projects/Quarkless.Models.RestSharpClientManager/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.Timeline/Quarkless.Logic.Timeline.csproj", "Quarkless.Projects/Quarkless.Logic.Timeline/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.ReportHandler/Quarkless.Logic.ReportHandler.csproj", "Quarkless.Projects/Quarkless.Logic.ReportHandler/"]
 COPY ["Quarkless.Projects/Quarkless.Repository.Profile/Quarkless.Repository.Profile.csproj", "Quarkless.Projects/Quarkless.Repository.Profile/"]

@@ -11,16 +11,24 @@ namespace Quarkless.Repository.MongoContext
 			if(options == null)
 				throw new Exception("Options Cannot be null");
 
-			if(string.IsNullOrEmpty(options.AccountDatabase) || string.IsNullOrEmpty(options.ConnectionString))
+			if(string.IsNullOrEmpty(options.ConnectionString) || string.IsNullOrEmpty(options.AccountDatabase))
 				throw new Exception("Please provide the database name");
 
 			var client = new MongoClient(options.ConnectionString);
 
-			CreatorDatabase = client.GetDatabase(options.AccountCreatorDatabase);
 			AccountDatabase = client.GetDatabase(options.AccountDatabase);
-			ControlDatabase = client.GetDatabase(options.ControlDatabase);
-			ContentDatabase = client.GetDatabase(options.ContentDatabase);
-			SchedulerDatabase = client.GetDatabase(options.SchedulerDatabase);
+
+			if(!string.IsNullOrEmpty(options.AccountCreatorDatabase))
+				CreatorDatabase = client.GetDatabase(options.AccountCreatorDatabase);
+
+			if(!string.IsNullOrEmpty(options.ControlDatabase))
+				ControlDatabase = client.GetDatabase(options.ControlDatabase);
+
+			if(!string.IsNullOrEmpty(options.ContentDatabase))
+				ContentDatabase = client.GetDatabase(options.ContentDatabase);
+
+			if(!string.IsNullOrEmpty(options.SchedulerDatabase))
+				SchedulerDatabase = client.GetDatabase(options.SchedulerDatabase);
 		}
 
 		public IMongoDatabase CreatorDatabase { get; }

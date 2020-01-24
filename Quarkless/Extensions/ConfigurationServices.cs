@@ -28,10 +28,8 @@ using Quarkless.Base.InstagramCollections;
 using Quarkless.Base.InstagramComments;
 using Quarkless.Base.InstagramDiscover;
 using Quarkless.Base.InstagramUser;
-using Quarkless.EmailServices.Repository;
 using Quarkless.Events;
 using Quarkless.Events.Interfaces;
-using Quarkless.InstagramCreator.Repository;
 using Quarkless.Logic.Account;
 using Quarkless.Logic.Agent;
 using Quarkless.Logic.Auth;
@@ -386,8 +384,6 @@ namespace Quarkless.Extensions
 			services.AddTransient<IRedisClient, RedisClient>();
 			services.AddTransient<IAccountCache, AccountCache>();
 			services.AddTransient<ITopicLookupRepository, TopicLookupRepository>();
-			services.AddTransient<IInstagramAccountCreatorRepository, InstagramAccountCreatorRepository>();
-			services.AddTransient<IEmailAccountCreatorRepository, EmailAccountCreatorRepository>();
 			services.AddTransient<IReportHandlerRepository, ReportHandlerRepository>();
 		}
 		internal static void IncludeHandlers(this IServiceCollection services)
