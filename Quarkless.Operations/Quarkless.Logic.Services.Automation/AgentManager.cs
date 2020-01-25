@@ -585,11 +585,11 @@ namespace Quarkless.Logic.Services.Automation
 						//var sendMessageScheduleoptions = new SendDirectMessageActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1, 5)), MessagingReachType.Any, 1, _postAnalyser);
 
 						//actionsContainerManager.AddAction(sendMessageAction, sendMessageScheduleoptions, 0.05);
-						actionsContainerManager.AddAction(postAction, postScheduleOptions, 0.05);
-						actionsContainerManager.AddAction(likeAction, likeScheduleOptions, 0.25);
-						actionsContainerManager.AddAction(followAction, followScheduleOptions, 0.20);
-						actionsContainerManager.AddAction(commentAction, commentScheduleOptions, 0.15);
-						actionsContainerManager.AddAction(likeCommentAction, likeCommentActionOptions, 0.25);
+						actionsContainerManager.AddAction(postAction, postScheduleOptions, 1);
+						// actionsContainerManager.AddAction(likeAction, likeScheduleOptions, 0.25);
+						// actionsContainerManager.AddAction(followAction, followScheduleOptions, 0.20);
+						// actionsContainerManager.AddAction(commentAction, commentScheduleOptions, 0.15);
+						// actionsContainerManager.AddAction(likeCommentAction, likeCommentActionOptions, 0.25);
 
 						#endregion
 

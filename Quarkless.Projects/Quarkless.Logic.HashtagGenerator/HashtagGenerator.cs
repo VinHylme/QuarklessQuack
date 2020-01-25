@@ -153,8 +153,7 @@ namespace Quarkless.Logic.HashtagGenerator
 
 				if (profileTopic != null && profileTopic.Topics.Any())
 				{
-					var resultProfileTopic = await _topicLookup
-						.GetTopicsByParentId(profileTopic.Topics.TakeAny(1).First()._id);
+					var resultProfileTopic = await _topicLookup.GetTopicsByParentId(profileTopic.Topics.TakeAny(1).First()._id);
 					if (resultProfileTopic.Any())
 					{
 						suggestedHashtags.RemoveRange(suggestedHashtags.Count - 5, 5);

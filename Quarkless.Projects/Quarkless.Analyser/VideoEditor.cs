@@ -105,7 +105,7 @@ namespace Quarkless.Analyser
 		public string IsVideoSimilar(Color profileColor, byte[] video, double threshHold, int frameSkip = 5)
 		{
 			var videoPath = string.Format(_ffmpegWrapper.TempVideoPath + "video_{0}.mp4", Guid.NewGuid());
-			Helper.CreateDirectoryIfDoesNotExist(videoPath);
+			Helper.CreateDirectoryIfDoesNotExist(_ffmpegWrapper.TempVideoPath);
 
 			var domColor = new Color();
 			File.WriteAllBytes(videoPath, video);

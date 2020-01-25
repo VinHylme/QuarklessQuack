@@ -78,7 +78,7 @@ namespace Quarkless.Logic.ContentSearch
 					{
 						Medias = responseValues.MediasObject.Select(s => new MediaResponse
 						{
-							Topic = s.Topic,
+							Topic = null,
 							MediaFrom = MediaFrom.Google,
 							MediaType = InstaMediaType.Image,
 							MediaUrl = new List<string> { s.MediaUrl }
@@ -127,7 +127,7 @@ namespace Quarkless.Logic.ContentSearch
 
 					response.Result.Medias.AddRange(responseValues.MediasObject.Select(s => new MediaResponse
 					{
-						Topic = images.TopicGroup,
+						Topic = null,
 						MediaFrom = MediaFrom.Google,
 						MediaType = InstaMediaType.Image,
 						MediaUrl = new List<string> { s.MediaUrl }

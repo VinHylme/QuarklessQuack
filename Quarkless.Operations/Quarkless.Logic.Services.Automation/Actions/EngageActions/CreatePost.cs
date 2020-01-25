@@ -71,9 +71,8 @@ namespace Quarkless.Logic.Services.Automation.Actions.EngageActions
 		public ResultCarrier<IEnumerable<TimelineEventModel>> Push(IActionOptions actionOptions)
 		{
 			Console.WriteLine($"Create Media Action Started: {user.OAccountId}, {user.OInstagramAccountUsername}, {user.OInstagramAccountUser}");
-			var imageActionOptions = actionOptions as PostActionOptions;
+			if (!(actionOptions is PostActionOptions imageActionOptions)) throw new ArgumentNullException();
 
-			if (imageActionOptions == null) throw new ArgumentNullException();
 			var postAnalyser = imageActionOptions.PostAnalyser;
 			var results = new ResultCarrier<IEnumerable<TimelineEventModel>>();
 			if (user == null)
@@ -144,6 +143,7 @@ namespace Quarkless.Logic.Services.Automation.Actions.EngageActions
 							var pickedRandom = action.ElementAt(SecureRandom.Next(action.Length-1));
 							var userId = user.ShortInstagram.Id;
 							var selected = MetaDataType.FetchMediaByUserTargetList;
+
 							if(pickedRandom == 1)
 							{
 								userId = null;
@@ -160,6 +160,7 @@ namespace Quarkless.Logic.Services.Automation.Actions.EngageActions
 							selectedAction = selected;
 						}
 						else { 
+
 							totalResults = _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 							{
 								MetaDataType = MetaDataType.FetchMediaByTopic,
@@ -215,7 +216,8 @@ namespace Quarkless.Logic.Services.Automation.Actions.EngageActions
 					new Chance<InstaMediaType>{ Object = InstaMediaType.Image, Probability = 0.30 },
 					new Chance<InstaMediaType>{ Object = InstaMediaType.Carousel, Probability = 0.45 }
 				};
-				var typeSelected = SecureRandom.ProbabilityRoll(typeOfPost);
+
+				//var typeSelected = SecureRandom.ProbabilityRoll(typeOfPost);
 
 				var carouselAmount = SecureRandom.Next(2,4);
 				var currentAmount = 0;
@@ -225,6 +227,7 @@ namespace Quarkless.Logic.Services.Automation.Actions.EngageActions
 				{
 					var media = result.ObjectItem.Medias.FirstOrDefault();
 					if (media == null) continue;
+
 					if (enteredType != InstaMediaType.All)
 					{
 						if (media.MediaType != enteredType)
@@ -269,7 +272,9 @@ namespace Quarkless.Logic.Services.Automation.Actions.EngageActions
 								if(!postAnalyser.Manipulation.ImageEditor.IsImageGood(imBytes, 
 									user.Profile.Theme.Colors.Select(s => System.Drawing.Color.FromArgb(s.Red, s.Green, s.Blue)), 
 									user.Profile.Theme.Percentage, size)) continue;
+
 								var s3UrlLink = UploadToS3(postAnalyser.Manipulation.ImageEditor.ResizeToClosestAspectRatio(imBytes), $"Image_{imBytes.GetHashCode()}_{Guid.NewGuid()}").GetAwaiter().GetResult();
+								
 								if (selectedMedia.MediaData.Count > 0)
 								{
 									var oas = postAnalyser.Manipulation.ImageEditor.GetClosestAspectRatio(selectedMedia
@@ -471,9 +476,18 @@ namespace Quarkless.Logic.Services.Automation.Actions.EngageActions
 
 						var selectedImageMedia = imageData.SelectedMedia.ObjectItem.Medias.FirstOrDefault();
 						var credit = selectedImageMedia.User?.Username;
+						MediaInfo mediaInfo;
 
-						var mediaInfo = _builder.GenerateMediaInfo(user.Profile.ProfileTopic, selectedImageMedia.Topic,
-							credit, SecureRandom.Next(20,28)).Result;
+						if (selectedImageMedia.Topic == null)
+						{
+							mediaInfo = _builder.GenerateMediaInfo(user.Profile.ProfileTopic, null,
+								credit, SecureRandom.Next(20, 28), selectedImageMedia.MediaUrl).Result;
+						}
+						else
+						{
+							mediaInfo = _builder.GenerateMediaInfo(user.Profile.ProfileTopic, selectedImageMedia.Topic,
+								credit, SecureRandom.Next(20, 28)).Result;
+						}
 						
 						if (!user.Profile.AdditionalConfigurations.AutoGenerateCaption)
 							mediaInfo.Caption = string.Empty;
@@ -502,9 +516,19 @@ namespace Quarkless.Logic.Services.Automation.Actions.EngageActions
 							.SelectedMedia.ObjectItem.Medias.FirstOrDefault();
 						
 						var credit = selectedCarouselMedia.User?.Username;
-						var mediaInfo = _builder.GenerateMediaInfo(user.Profile.ProfileTopic, selectedCarouselMedia.Topic,
-							credit, SecureRandom.Next(20, 28)).Result;
-						
+						MediaInfo mediaInfo;
+
+						if (selectedCarouselMedia.Topic == null)
+						{
+							mediaInfo = _builder.GenerateMediaInfo(user.Profile.ProfileTopic, null,
+								credit, SecureRandom.Next(20, 28), selectedCarouselMedia.MediaUrl).Result;
+						}
+						else
+						{
+							mediaInfo = _builder.GenerateMediaInfo(user.Profile.ProfileTopic, selectedCarouselMedia.Topic,
+								credit, SecureRandom.Next(20, 28)).Result;
+						}
+
 						if (!user.Profile.AdditionalConfigurations.AutoGenerateCaption)
 							mediaInfo.Caption = string.Empty;
 						
@@ -548,8 +572,18 @@ namespace Quarkless.Logic.Services.Automation.Actions.EngageActions
 					{
 						var selectedVideoMedia = selectedMedia.MediaData.FirstOrDefault().SelectedMedia.ObjectItem.Medias.FirstOrDefault();
 						var credit = selectedVideoMedia.User?.Username;
-						var mediaInfo = _builder.GenerateMediaInfo(user.Profile.ProfileTopic, selectedVideoMedia.Topic,
-							credit, SecureRandom.Next(20, 28)).Result;
+						MediaInfo mediaInfo;
+
+						if (selectedVideoMedia.Topic == null)
+						{
+							mediaInfo = _builder.GenerateMediaInfo(user.Profile.ProfileTopic, null,
+								credit, SecureRandom.Next(20, 28), selectedVideoMedia.MediaUrl).Result;
+						}
+						else
+						{
+							mediaInfo = _builder.GenerateMediaInfo(user.Profile.ProfileTopic, selectedVideoMedia.Topic,
+								credit, SecureRandom.Next(20, 28)).Result;
+						}
 
 						if (!user.Profile.AdditionalConfigurations.AutoGenerateCaption)
 							mediaInfo.Caption = string.Empty;

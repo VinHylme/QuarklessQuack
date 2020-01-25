@@ -7,8 +7,10 @@ services:
     build:
       context: .
       dockerfile: Quarkless/Dockerfile
+    environment:
+        - DOTNET_ENV_RELEASE=local
     ports:
-      - 51518:51518
+      - 51518:80
     networks:
       localnet:
         aliases: 
