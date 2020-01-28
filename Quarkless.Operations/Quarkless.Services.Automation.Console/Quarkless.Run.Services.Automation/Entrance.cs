@@ -44,7 +44,7 @@ namespace Quarkless.Run.Services.Automation
 			var results = WithExceptionLogAsync(async () =>
 			{
 				using var scope = services.BuildServiceProvider().CreateScope();
-				await scope.ServiceProvider.GetService<IAgentManager>().Begin(userId, instagramId);
+				await scope.ServiceProvider.GetService<IAgentManager>().Start(userId, instagramId);
 			});
 
 			Task.WaitAll(results);

@@ -129,7 +129,7 @@ namespace Quarkless.Logic.HashtagGenerator
 				{
 					var resultBuild = await _topicLookup.BuildRelatedTopics(new CTopic
 						{
-							Name = keyword,
+							Name = keyword.RemoveNonWordsFromText(),
 							ParentTopicId = mediaTopic?._id
 						},
 						false, false);
@@ -154,7 +154,7 @@ namespace Quarkless.Logic.HashtagGenerator
 				if (profileTopic != null && profileTopic.Topics.Any())
 				{
 					var resultProfileTopic = await _topicLookup.GetTopicsByParentId(profileTopic.Topics.TakeAny(1).First()._id);
-					if (resultProfileTopic.Any())
+					if (resultProfileTopic.Any() && suggestedHashtags.Count > 5)
 					{
 						suggestedHashtags.RemoveRange(suggestedHashtags.Count - 5, 5);
 						suggestedHashtags.AddRange(resultProfileTopic.Select(_ => _.Name).TakeAny(5));

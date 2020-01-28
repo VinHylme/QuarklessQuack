@@ -68,8 +68,8 @@ namespace Quarkless.Analyser.Extensions
 		{
 			try
 			{
-				using (var ms = new MemoryStream(bytes))
-					Image.FromStream(ms);
+				using var ms = new MemoryStream(bytes);
+				Image.FromStream(ms);
 			}
 			catch (ArgumentException)
 			{

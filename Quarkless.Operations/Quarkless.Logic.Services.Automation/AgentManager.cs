@@ -4,8 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using MoreLinq.Extensions;
 using Quarkless.Analyser;
+using Quarkless.Logic.Agent;
 using Quarkless.Logic.Services.Automation.Actions.ActionManager;
 using Quarkless.Logic.Services.Automation.Factory.FactoryManager;
+using Quarkless.Models.Actions.Interfaces;
+using Quarkless.Models.Agent.Interfaces;
 using Quarkless.Models.Auth.Enums;
 using Quarkless.Models.Auth.Interfaces;
 using Quarkless.Models.Common.Enums;
@@ -29,6 +32,7 @@ using Quarkless.Models.Storage.Interfaces;
 using Quarkless.Models.Timeline;
 using Quarkless.Models.Timeline.Enums;
 using Quarkless.Models.Timeline.Interfaces;
+using Quarkless.Models.Timeline.TaskScheduler;
 
 namespace Quarkless.Logic.Services.Automation
 {
@@ -36,55 +40,53 @@ namespace Quarkless.Logic.Services.Automation
 	{
 		#region Init
 		private const double UNFOLLOW_AMOUNT = 0.25;
-
 		private readonly XRange _unfollowPurgeCycle = new XRange(16,33);
+		
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
 		private readonly IProfileLogic _profileLogic;
-		private readonly IContentInfoBuilder _contentManager;
 		private readonly ITimelineLogic _timelineLogic;
 		private readonly ITimelineEventLogLogic _timelineEventLogs;
 		private readonly IAuthHandler _authHandler;
-		private readonly IHeartbeatLogic _heartbeatLogic;
 		private readonly ILibraryLogic _libraryLogic;
 		private readonly IS3BucketLogic _s3BucketLogic;
 		private readonly IPostAnalyser _postAnalyser;
-		private readonly IUrlReader _urlReader;
+		private readonly IActionFactory _actionFactory;
+		private readonly IAgentLogic _agentLogic;
+		private readonly IActionCommitFactory _actionCommitFactory;
 		public AgentManager(IInstagramAccountLogic instagramAccountLogic, IProfileLogic profileLogic,
-			IContentInfoBuilder contentManager, ITimelineLogic timelineLogic, ITimelineEventLogLogic eventLogLogic, 
-			IHeartbeatLogic heartbeatLogic, IAuthHandler authHandler, ILibraryLogic libraryLogic,
-			IS3BucketLogic s3Bucket, IPostAnalyser postAnalyser, IUrlReader urlReader)
+			ITimelineLogic timelineLogic, ITimelineEventLogLogic eventLogLogic,IAuthHandler authHandler, 
+			ILibraryLogic libraryLogic, IS3BucketLogic s3Bucket, IPostAnalyser postAnalyser, IActionFactory actionFactory)
 		{
-			_heartbeatLogic = heartbeatLogic;
 			_timelineLogic = timelineLogic;
 			_timelineEventLogs = eventLogLogic;
 			_instagramAccountLogic = instagramAccountLogic;
 			_profileLogic = profileLogic;
-			_contentManager = contentManager;
 			_authHandler = authHandler;
 			_libraryLogic = libraryLogic;
 			_s3BucketLogic = s3Bucket;
 			_postAnalyser = postAnalyser;
-			_urlReader = urlReader;
+			_actionFactory = actionFactory;
+			_agentLogic = new AgentLogic(instagramAccountLogic);
 		}
 		#endregion
 
-		private async Task<AddEventResponse> AddToTimeline(TimelineEventModel events, Limits limits)
+		private async Task<AddEventResponse> AddToTimeline(TimelineEventModel @event, Limits limits)
 		{
-			if (events == null || limits == null) return null;
+			if (@event == null || limits == null) return null;
 			try
 			{
-				var actionBase = events.ActionName.Split('_')[0].ToLower().GetValueFromDescription<ActionType>();
-				var completedActionsDaily = await SuccessfulActionCount(actionBase, events.Data.User.OAccountId,
-					events.Data.User.OInstagramAccountUser);
-				var completedActionsHourly = await SuccessfulActionCount(actionBase, events.Data.User.OAccountId,
-					events.Data.User.OInstagramAccountUser, isHourly:true);
+				var actionBase = @event.ActionName.Split('_')[0].ToLower().GetValueFromDescription<ActionType>();
+				var completedActionsDaily = await SuccessfulActionCount(actionBase, @event.Data.User.OAccountId,
+					@event.Data.User.OInstagramAccountUser);
+				var completedActionsHourly = await SuccessfulActionCount(actionBase, @event.Data.User.OAccountId,
+					@event.Data.User.OInstagramAccountUser, isHourly:true);
 
 				switch (actionBase)
 				{
 					case ActionType.CreatePost when completedActionsDaily >= limits.DailyLimits.CreatePostLimit:
 						return new AddEventResponse
 						{
-							Event = events,
+							Event = @event,
 							ContainsErrors = false,
 							HasCompleted = false,
 							DailyLimitReached = true
@@ -92,7 +94,7 @@ namespace Quarkless.Logic.Services.Automation
 					case ActionType.CreatePost when completedActionsHourly >= limits.HourlyLimits.CreatePostLimit:
 						return new AddEventResponse
 						{
-							Event = events,
+							Event = @event,
 							ContainsErrors = false,
 							HasCompleted = false,
 							DailyLimitReached = true
@@ -100,7 +102,7 @@ namespace Quarkless.Logic.Services.Automation
 					case ActionType.SendDirectMessage when completedActionsDaily >= limits.DailyLimits.SendMessageLimit:
 						return new AddEventResponse
 						{
-							Event = events,
+							Event = @event,
 							ContainsErrors = false,
 							HasCompleted = false,
 							DailyLimitReached = true
@@ -108,7 +110,7 @@ namespace Quarkless.Logic.Services.Automation
 					case ActionType.SendDirectMessage when completedActionsHourly >= limits.HourlyLimits.SendMessageLimit:
 						return new AddEventResponse
 						{
-							Event = events,
+							Event = @event,
 							ContainsErrors = false,
 							HasCompleted = false,
 							DailyLimitReached = true
@@ -116,7 +118,7 @@ namespace Quarkless.Logic.Services.Automation
 					case ActionType.CreateCommentMedia when completedActionsDaily >= limits.DailyLimits.CreateCommentLimit:
 						return new AddEventResponse
 						{
-							Event = events,
+							Event = @event,
 							ContainsErrors = false,
 							HasCompleted = false,
 							DailyLimitReached = true
@@ -124,7 +126,7 @@ namespace Quarkless.Logic.Services.Automation
 					case ActionType.CreateCommentMedia when completedActionsHourly >= limits.HourlyLimits.CreateCommentLimit:
 						return new AddEventResponse
 						{
-							Event = events,
+							Event = @event,
 							ContainsErrors = false,
 							HasCompleted = false,
 							HourlyLimitReached = true
@@ -132,7 +134,7 @@ namespace Quarkless.Logic.Services.Automation
 					case ActionType.LikePost when completedActionsDaily >= limits.DailyLimits.LikePostLimit:
 						return new AddEventResponse
 						{
-							Event = events,
+							Event = @event,
 							ContainsErrors = false,
 							HasCompleted = false,
 							DailyLimitReached = true
@@ -140,7 +142,7 @@ namespace Quarkless.Logic.Services.Automation
 					case ActionType.LikePost when completedActionsHourly >= limits.HourlyLimits.LikePostLimit:
 						return new AddEventResponse
 						{
-							Event = events,
+							Event = @event,
 							ContainsErrors = false,
 							HasCompleted = false,
 							HourlyLimitReached = true
@@ -148,7 +150,7 @@ namespace Quarkless.Logic.Services.Automation
 					case ActionType.LikeComment when completedActionsDaily >= limits.DailyLimits.LikeCommentLimit:
 						return new AddEventResponse
 						{
-							Event = events,
+							Event = @event,
 							ContainsErrors = false,
 							HasCompleted = false,
 							DailyLimitReached = true
@@ -156,7 +158,7 @@ namespace Quarkless.Logic.Services.Automation
 					case ActionType.LikeComment when completedActionsHourly >= limits.HourlyLimits.LikeCommentLimit:
 						return new AddEventResponse
 						{
-							Event = events,
+							Event = @event,
 							ContainsErrors = false,
 							HasCompleted = false,
 							HourlyLimitReached = true
@@ -164,7 +166,7 @@ namespace Quarkless.Logic.Services.Automation
 					case ActionType.FollowUser when completedActionsDaily >= limits.DailyLimits.FollowPeopleLimit:
 						return new AddEventResponse
 						{
-							Event = events,
+							Event = @event,
 							ContainsErrors = false,
 							HasCompleted = false,
 							DailyLimitReached = true
@@ -172,18 +174,18 @@ namespace Quarkless.Logic.Services.Automation
 					case ActionType.FollowUser when completedActionsHourly >= limits.HourlyLimits.FollowPeopleLimit:
 						return new AddEventResponse
 						{
-							Event = events,
+							Event = @event,
 							ContainsErrors = false,
 							HasCompleted = false,
 							HourlyLimitReached = true
 						};
 				}
 
-				_timelineLogic.AddEventToTimeline(events.ActionName, events.Data, events.ExecutionTime);
+				_timelineLogic.AddEventToTimeline(@event.ActionName, @event.Data, @event.ExecutionTime);
 				return new AddEventResponse
 				{
 					HasCompleted = true,
-					Event = events
+					Event = @event
 				};
 			}
 			catch (Exception ee)
@@ -191,7 +193,7 @@ namespace Quarkless.Logic.Services.Automation
 				return new AddEventResponse
 				{
 					ContainsErrors = true,
-					Event = events,
+					Event = @event,
 					Errors = new TimelineErrorResponse
 					{
 						Exception = ee,
@@ -422,6 +424,35 @@ namespace Quarkless.Logic.Services.Automation
 			}
 		}
 
+		public async Task Start(string accountId, string instagramAccountId)
+		{
+			//todo: possibly use delegate based schedule instead of rest model, will launch app faster as no auth will need to take place
+			//todo: it will also perform action faster
+			var account = await _agentLogic.GetAccount(accountId, instagramAccountId);
+			if (account == null)
+				return;
+
+			var res = await _actionCommitFactory.Create(Models.Actions.Enums.ActionType.CreatePost,
+				new UserStoreDetails { })
+				.ModifyOptions(new Models.Actions.Factory.Action_Options.PostActionOptions(_postAnalyser, _s3BucketLogic))
+				.PushAsync(DateTimeOffset.Now);
+
+			foreach (var resultsDataObject in res.Results.DataObjects)
+			{
+				_timelineLogic.AddEventToTimeline(new EventActionOptions
+				{
+					ActionType = (int)res.Results.ActionType,
+					DataObject = new EventActionOptions.EventBody
+					{
+						Body = resultsDataObject.Body,
+						BodyType = resultsDataObject.BodyType
+					},
+					ExecutionTime = resultsDataObject.ExecutionTime,
+					User = res.Results.User
+				});
+			}
+		}
+
 		// TODO: Need to create a warm up function which does basic routine and increases over time until 2 weeks
 		// TODO: MAKE SURE ALL USERS ARE BUSINESS ACCOUNTS AND USERS OVER 100 FOLLOWERS
 		// TODO: BASE THEIR POSTING ON WHICH HOUR WAS MOST POPULAR
@@ -506,7 +537,7 @@ namespace Quarkless.Logic.Services.Automation
 							{
 								if (shortInstagram.FollowingCount != null)
 								{
-									var res = ActionsManager.Begin.Commit(ActionType.UnFollowUser, _contentManager, _heartbeatLogic, _urlReader)
+									var res = _actionFactory.Commit(ActionType.UnFollowUser)
 										.IncludeStrategy(new UnFollowStrategySettings
 										{
 											UnFollowStrategy = UnFollowStrategyType.LeastEngagingN,
@@ -540,14 +571,14 @@ namespace Quarkless.Logic.Services.Automation
 						#region Action Initialise
 						var actionsContainerManager = new ActionsContainerManager();
 
-						var likeAction = ActionsManager.Begin.Commit(ActionType.LikePost, _contentManager, _heartbeatLogic, _urlReader)
+						var likeAction = _actionFactory.Commit(ActionType.LikePost)
 							.IncludeStrategy(new LikeStrategySettings()
 							{
 								LikeStrategy = LikeStrategyType.Default,
 							})
 							.IncludeUser(userStoreDetails);
 
-						var postAction = ActionsManager.Begin.Commit(ActionType.CreatePost, _contentManager, _heartbeatLogic, _urlReader)
+						var postAction = _actionFactory.Commit(ActionType.CreatePost)
 							.IncludeStrategy(new ImageStrategySettings
 							{
 								ImageStrategyType = ImageStrategyType.Default
@@ -555,25 +586,25 @@ namespace Quarkless.Logic.Services.Automation
 							.IncludeStorage(_s3BucketLogic)
 							.IncludeUser(userStoreDetails);
 
-						var followAction = ActionsManager.Begin.Commit(ActionType.FollowUser, _contentManager, _heartbeatLogic, _urlReader)
+						var followAction = _actionFactory.Commit(ActionType.FollowUser)
 							.IncludeStrategy(new FollowStrategySettings
 							{
 								FollowStrategy = FollowStrategyType.Default,
 							})
 							.IncludeUser(userStoreDetails);
 
-						var commentAction = ActionsManager.Begin.Commit(ActionType.CreateCommentMedia, _contentManager, _heartbeatLogic, _urlReader)
+						var commentAction = _actionFactory.Commit(ActionType.CreateCommentMedia)
 							.IncludeStrategy(new CommentingStrategySettings
 							{
 								CommentingStrategy = CommentingStrategy.Default,
 							})
 							.IncludeUser(userStoreDetails);
 
-						var likeCommentAction = ActionsManager.Begin.Commit(ActionType.LikeComment, _contentManager, _heartbeatLogic, _urlReader)
+						var likeCommentAction = _actionFactory.Commit(ActionType.LikeComment)
 							.IncludeStrategy(new LikeStrategySettings())
 							.IncludeUser(userStoreDetails);
 
-						var sendMessageAction = ActionsManager.Begin.Commit(ActionType.SendDirectMessage, _contentManager, _heartbeatLogic, _urlReader)
+						var sendMessageAction = _actionFactory.Commit(ActionType.SendDirectMessage)
 							.IncludeUser(userStoreDetails);
 
 						//Initial Execution
@@ -585,11 +616,11 @@ namespace Quarkless.Logic.Services.Automation
 						//var sendMessageScheduleoptions = new SendDirectMessageActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1, 5)), MessagingReachType.Any, 1, _postAnalyser);
 
 						//actionsContainerManager.AddAction(sendMessageAction, sendMessageScheduleoptions, 0.05);
-						actionsContainerManager.AddAction(postAction, postScheduleOptions, 1);
-						// actionsContainerManager.AddAction(likeAction, likeScheduleOptions, 0.25);
-						// actionsContainerManager.AddAction(followAction, followScheduleOptions, 0.20);
-						// actionsContainerManager.AddAction(commentAction, commentScheduleOptions, 0.15);
-						// actionsContainerManager.AddAction(likeCommentAction, likeCommentActionOptions, 0.25);
+						actionsContainerManager.AddAction(postAction, postScheduleOptions, 0.05);
+						actionsContainerManager.AddAction(likeAction, likeScheduleOptions, 0.25);
+						actionsContainerManager.AddAction(followAction, followScheduleOptions, 0.20);
+						actionsContainerManager.AddAction(commentAction, commentScheduleOptions, 0.15);
+						actionsContainerManager.AddAction(likeCommentAction, likeCommentActionOptions, 0.25);
 
 						#endregion
 

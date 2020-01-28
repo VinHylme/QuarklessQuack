@@ -23,6 +23,6 @@ namespace Quarkless.Analyser
 
 		IEnumerable<byte[]> DistinctImages(IEnumerable<byte[]> images, double score = 0.75);
 		bool ImageIsDuplicate(byte[] image, byte[] targetImage, double scoreThreshold);
-		IEnumerable<byte[]> DuplicateImages(IEnumerable<byte[]> images, double score = 0.90);
+		IEnumerable<ImageHolder> DuplicateImages(IEnumerable<byte[]> images, double score = 0.90);
 	}
 }

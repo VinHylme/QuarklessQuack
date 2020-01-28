@@ -31,6 +31,7 @@ using Quarkless.Base.InstagramUser;
 using Quarkless.Events;
 using Quarkless.Events.Interfaces;
 using Quarkless.Logic.Account;
+using Quarkless.Logic.Actions.Factory.ActionExecute.Manager;
 using Quarkless.Logic.Agent;
 using Quarkless.Logic.Auth;
 using Quarkless.Logic.Auth.Manager;
@@ -66,6 +67,8 @@ using Quarkless.Logic.WebHooks;
 using Quarkless.Logic.WorkerManager;
 using Quarkless.Models.Account;
 using Quarkless.Models.Account.Interfaces;
+using Quarkless.Models.Actions.Factory;
+using Quarkless.Models.Actions.Interfaces;
 using Quarkless.Models.Agent.Interfaces;
 using Quarkless.Models.ApiLogger;
 using Quarkless.Models.ApiLogger.Interfaces;
@@ -144,6 +147,7 @@ namespace Quarkless.Extensions
 			serviceCollection.AddTransient<ITaskService, TaskService>();
 			serviceCollection.AddTransient<IBackgroundJobClient, BackgroundJobClient>();
 			serviceCollection.AddTransient<IJobRunner, JobRunner>();
+			serviceCollection.AddTransient<IActionExecuteFactory, ActionExecuteFactoryManager>();
 		}
 		internal static void IncludeLogicServices(this IServiceCollection services)
 		{

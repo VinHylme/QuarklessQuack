@@ -18,6 +18,7 @@ using Quarkless.Models.Media;
 using Quarkless.Models.Profile.Enums;
 using Quarkless.Models.RequestBuilder.Interfaces;
 using Quarkless.Models.SearchResponse;
+using Quarkless.Models.Services.Automation.Enums.Actions.StrategyType;
 using Quarkless.Models.Services.Automation.Interfaces;
 using Quarkless.Models.Services.Automation.Models.ActionOptions;
 using Quarkless.Models.Services.Automation.Models.PostAction;
@@ -209,13 +210,14 @@ namespace Quarkless.Logic.Services.Automation.Actions.EngageActions
 
 				var selectedMedia = new TempSelect();
 				var size = new System.Drawing.Size(850,850);
+				
 
-				var typeOfPost = new List<Chance<InstaMediaType>>()
-				{
-					new Chance<InstaMediaType> {Object = InstaMediaType.Video, Probability = 0.25 },
-					new Chance<InstaMediaType>{ Object = InstaMediaType.Image, Probability = 0.30 },
-					new Chance<InstaMediaType>{ Object = InstaMediaType.Carousel, Probability = 0.45 }
-				};
+				// var typeOfPost = new List<Chance<InstaMediaType>>()
+				// {
+				// 	new Chance<InstaMediaType> {Object = InstaMediaType.Video, Probability = 0.25 },
+				// 	new Chance<InstaMediaType>{ Object = InstaMediaType.Image, Probability = 0.30 },
+				// 	new Chance<InstaMediaType>{ Object = InstaMediaType.Carousel, Probability = 0.45 }
+				// };
 
 				//var typeSelected = SecureRandom.ProbabilityRoll(typeOfPost);
 
@@ -475,13 +477,14 @@ namespace Quarkless.Logic.Services.Automation.Actions.EngageActions
 						};
 
 						var selectedImageMedia = imageData.SelectedMedia.ObjectItem.Medias.FirstOrDefault();
+
 						var credit = selectedImageMedia.User?.Username;
 						MediaInfo mediaInfo;
 
 						if (selectedImageMedia.Topic == null)
 						{
 							mediaInfo = _builder.GenerateMediaInfo(user.Profile.ProfileTopic, null,
-								credit, SecureRandom.Next(20, 28), selectedImageMedia.MediaUrl).Result;
+								credit, SecureRandom.Next(20, 28),new []{imageData.Url}).Result;
 						}
 						else
 						{
@@ -512,8 +515,8 @@ namespace Quarkless.Logic.Services.Automation.Actions.EngageActions
 					}
 					case InstaMediaType.Carousel:
 					{
-						var selectedCarouselMedia = selectedMedia.MediaData.First()
-							.SelectedMedia.ObjectItem.Medias.FirstOrDefault();
+						var selectedMediaData = selectedMedia.MediaData.First();
+						var selectedCarouselMedia = selectedMediaData.SelectedMedia.ObjectItem.Medias.FirstOrDefault();
 						
 						var credit = selectedCarouselMedia.User?.Username;
 						MediaInfo mediaInfo;
@@ -521,7 +524,7 @@ namespace Quarkless.Logic.Services.Automation.Actions.EngageActions
 						if (selectedCarouselMedia.Topic == null)
 						{
 							mediaInfo = _builder.GenerateMediaInfo(user.Profile.ProfileTopic, null,
-								credit, SecureRandom.Next(20, 28), selectedCarouselMedia.MediaUrl).Result;
+								credit, SecureRandom.Next(20, 28), new []{selectedMediaData.Url}).Result;
 						}
 						else
 						{
@@ -570,23 +573,15 @@ namespace Quarkless.Logic.Services.Automation.Actions.EngageActions
 					}
 					case InstaMediaType.Video:
 					{
-						var selectedVideoMedia = selectedMedia.MediaData.FirstOrDefault().SelectedMedia.ObjectItem.Medias.FirstOrDefault();
+						var selectedMediaData = selectedMedia.MediaData.FirstOrDefault();
+						var selectedVideoMedia = selectedMediaData.SelectedMedia.ObjectItem.Medias.FirstOrDefault();
 						var credit = selectedVideoMedia.User?.Username;
-						MediaInfo mediaInfo;
-
-						if (selectedVideoMedia.Topic == null)
-						{
-							mediaInfo = _builder.GenerateMediaInfo(user.Profile.ProfileTopic, null,
-								credit, SecureRandom.Next(20, 28), selectedVideoMedia.MediaUrl).Result;
-						}
-						else
-						{
-							mediaInfo = _builder.GenerateMediaInfo(user.Profile.ProfileTopic, selectedVideoMedia.Topic,
-								credit, SecureRandom.Next(20, 28)).Result;
-						}
-
+						var mediaInfo = _builder.GenerateMediaInfo(user.Profile.ProfileTopic, selectedVideoMedia.Topic,
+							credit, SecureRandom.Next(20, 28)).Result;
+						
 						if (!user.Profile.AdditionalConfigurations.AutoGenerateCaption)
 							mediaInfo.Caption = string.Empty;
+
 						var video = selectedMedia.MediaData.FirstOrDefault();
 
 						var videoThumb = postAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(video.MediaBytes);

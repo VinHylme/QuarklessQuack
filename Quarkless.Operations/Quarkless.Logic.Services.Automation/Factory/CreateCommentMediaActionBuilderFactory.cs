@@ -10,6 +10,6 @@ namespace Quarkless.Logic.Services.Automation.Factory
 	public class CreateCommentMediaActionBuilderFactory : ActionBuilderFactory
 	{
 		public override IActionCommit Commit(IContentInfoBuilder builder, IHeartbeatLogic heartbeatLogic, IUrlReader urlReader)
-			=> new CreateCommentAction(builder,heartbeatLogic, urlReader);
+			=> new CreateCommentAction(builder, heartbeatLogic, urlReader);
 	}
 }

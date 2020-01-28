@@ -38,6 +38,15 @@ namespace Quarkless.Logic.WorkerManager
 			Client = new ApiClientContainer(context, _workerAccount.AccountId, _workerAccount.Id);
 		}
 
+		public Worker(IApiClientContext context, IInstagramAccountLogic instagramAccountLogic, string accountId,
+			string instagramAccountId)
+		{
+			_context = context;
+			_instagramAccountLogic = instagramAccountLogic;
+			Client = new ApiClientContainer(_context, accountId, instagramAccountId);
+			_workerAccount = Client.GetContext.InstagramAccount;
+		}
+
 		#region Event Handlers
 		public event EventHandler<WorkerEventArgs> WorkerFinished;
 		public event EventHandler<WorkerEventArgs> WorkerStarted;

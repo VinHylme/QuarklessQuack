@@ -52,6 +52,11 @@ namespace Quarkless.Logic.Timeline
 			var eventId = _taskService.ScheduleEvent(actionName, restBody, executeTime);
 			return eventId;
 		}
+		public string AddEventToTimeline(EventActionOptions eventAction)
+		{
+			var eventId = _taskService.ScheduleEvent(eventAction);
+			return eventId;
+		}
 		public T ParseJsonObject<T>(string json) where T : class, new()
 		{
 			var jObject = JObject.Parse(json);

@@ -248,7 +248,7 @@ namespace Quarkless.Analyser
 			var targetHash = ImagePhash.ComputeDigest(targetImage.ByteToBitmap().ToLuminanceImage());
 			return ImagePhash.GetCrossCorrelation(ogHash, targetHash) > scoreThreshold;
 		}
-		public IEnumerable<byte[]> DuplicateImages(IEnumerable<byte[]> images, double score = 0.90)
+		public IEnumerable<ImageHolder> DuplicateImages(IEnumerable<byte[]> images, double score = 0.90)
 		{
 			var enumerable = images as byte[][] ?? images.ToArray();
 			if (!enumerable.Any()) return null;
@@ -263,7 +263,7 @@ namespace Quarkless.Analyser
 					new Laplacian3X3EdgeFilter(),
 					true);
 			});
-			var results = new List<byte[]>();
+			var results = new List<ImageHolder>();
 			for (var posX = 0; posX < imageHolder.Length; posX++)
 			{
 				var isDuplicate = false;
@@ -276,7 +276,7 @@ namespace Quarkless.Analyser
 				};
 				if (isDuplicate)
 				{
-					results.Add(imageHolder[posX].OriginalImageData);
+					results.Add(imageHolder[posX]);
 				}
 			};
 			return results;

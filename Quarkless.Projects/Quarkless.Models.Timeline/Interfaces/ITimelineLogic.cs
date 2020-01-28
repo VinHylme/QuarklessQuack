@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Messaging.Interfaces;
 using Quarkless.Models.Timeline.Enums;
+using Quarkless.Models.Timeline.TaskScheduler;
 
 namespace Quarkless.Models.Timeline.Interfaces
 {
@@ -16,6 +17,7 @@ namespace Quarkless.Models.Timeline.Interfaces
 		string UpdateEvent(UpdateTimelineItemRequest updateTimelineItemRequest);
 		bool DeleteEvent(string eventId);
 		void ExecuteNow(string eventId);
+		string AddEventToTimeline(EventActionOptions eventAction);
 		string AddEventToTimeline(string actionName, RestModel restBody, DateTimeOffset executeTime);
 		IEnumerable<TimelineItemShort> GetScheduledPosts(string username, string instagramId, int limit = 1000);
 		IEnumerable<ResultBase<TimelineItemShort>> ShortGetAllEventsForUser(string userName, DateTime startDate, DateTime? endDate = null,

@@ -12,24 +12,21 @@ namespace Quarkless.Logic.Agent
 {
 	public class AgentLogic : IAgentLogic
 	{
-		/// <summary>
-		/// The idea was to make this a basic class that triggers the agent service, 
-		/// agent on -> process in the background runs
-		/// agent off -> process in the background stops
-		/// </summary>
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
 		public AgentLogic(IInstagramAccountLogic instagramAccountLogic)
 		{
 			_instagramAccountLogic = instagramAccountLogic;
 		}
+
 		public async Task<IEnumerable<ShortInstagramAccountModel>> GetActiveAccounts()
-		{
-			return await _instagramAccountLogic.GetActiveAgentInstagramAccounts();
-		}
+			=> await _instagramAccountLogic.GetActiveAgentInstagramAccounts();
+		
 		public async Task<IEnumerable<ShortInstagramAccountModel>> GetAllAccounts(int type = 0)
-		{
-			return await _instagramAccountLogic.GetInstagramAccounts(type);
-		}
+			=> await _instagramAccountLogic.GetInstagramAccounts(type);
+		
+		public async Task<ShortInstagramAccountModel> GetAccount(string accountId, string instagramAccountId)
+			=> await _instagramAccountLogic.GetInstagramAccountShort(accountId, instagramAccountId);
+
 		public async Task<AgentResponse> Start(string accountId, string instagramAccountId)
 		{
 			var instagramAccountShort = await _instagramAccountLogic.GetInstagramAccountShort(accountId, instagramAccountId);
@@ -70,5 +67,61 @@ namespace Quarkless.Logic.Agent
 				};
 			}
 		}
+		public async Task<AgentResponse> ChangeAgentState(string accountId, string instagramAccountId, AgentState state)
+		{
+			try
+			{
+				await _instagramAccountLogic.PartialUpdateInstagramAccount(accountId, instagramAccountId,
+					new InstagramAccountModel
+					{
+						AgentState = (int) state
+					});
+				return new AgentResponse
+				{
+					HttpStatus = HttpStatusCode.OK,
+					Message = $"Changed State to: {state} for {accountId}/{instagramAccountId}"
+				};
+			}
+			catch (Exception ee)
+			{
+				return new AgentResponse
+				{
+					HttpStatus = HttpStatusCode.InternalServerError,
+					Message = ee.Message
+				};
+			}
+		}
+		public async Task<AgentResponse> UpdateInstagramAccount(string accountId, string instagramAccountId,
+			ShortInstagramAccountModel updatedAccount)
+		{
+			try
+			{
+				await _instagramAccountLogic.PartialUpdateInstagramAccount(accountId, instagramAccountId,
+					new InstagramAccountModel
+					{
+						AgentState = updatedAccount.AgentState,
+						LastPurgeCycle = updatedAccount.LastPurgeCycle,
+						ChallengeInfo = updatedAccount.ChallengeInfo,
+						DateAdded = updatedAccount.DateAdded,
+						SleepTimeRemaining = updatedAccount.SleepTimeRemaining,
+						UserLimits = updatedAccount.UserLimits,
+
+					});
+				return new AgentResponse
+				{
+					HttpStatus = HttpStatusCode.OK,
+					Message = $"Updated Account for {accountId}/{instagramAccountId}"
+				};
+			}
+			catch (Exception ee)
+			{
+				return new AgentResponse
+				{
+					HttpStatus = HttpStatusCode.InternalServerError,
+					Message = ee.Message
+				};
+			}
+		}
+
 	}
 }

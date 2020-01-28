@@ -102,7 +102,10 @@ namespace Quarkless.Vision
 			{
 				try
 				{
-					var response = await _client.DetectTextAsync(Image.FromUri(imageUrl));
+					var response = await _client.DetectTextAsync(Image.FromUri(imageUrl), new ImageContext
+					{
+						LanguageHints = { "en-t-i0-handwrit" },
+					});
 					textResults.AddRange(response);
 				}
 				catch(Exception err)

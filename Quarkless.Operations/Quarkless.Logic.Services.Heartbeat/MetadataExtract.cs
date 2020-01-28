@@ -173,21 +173,22 @@ namespace Quarkless.Logic.Services.Heartbeat
 					{
 						foreach (var userLoc in userTargetList)
 						{
-							var results = await workers.PerformQueryTask<Media>(async (worker,query,l) =>
+							var results = await workers.PerformQueryTask<Media>(async (worker, query, l) =>
 							{
 								var instagramSearch = _searchProvider.InstagramSearch(worker.Client,
 									worker.Client.GetContext.Proxy);
 
-								return await instagramSearch.SearchUsersMediaDetailInstagram(randomTopic,query, l);
+								return await instagramSearch.SearchUsersMediaDetailInstagram(randomTopic, query, l);
 							}, userLoc, limit);
 
-							if(results == null) continue;
+							if (results == null) continue;
 
 							await _heartbeatLogic.RefreshMetaData(new MetaDataFetchRequest
 							{
 								MetaDataType = MetaDataType.FetchMediaByUserTargetList,
 								ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-								InstagramId = _customer.InstagramAccount.Id, AccountId = _customer.InstagramAccount.AccountId
+								InstagramId = _customer.InstagramAccount.Id,
+								AccountId = _customer.InstagramAccount.AccountId
 							});
 
 							foreach (var s in results.CutObjects(cutBy))
@@ -210,9 +211,12 @@ namespace Quarkless.Logic.Services.Heartbeat
 			{
 				Console.WriteLine(ee.Message);
 			}
-
-			Console.WriteLine(
-				$"Ended - BuildUsersTargetListMedia : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			finally
+			{
+				watch.Stop();
+				Console.WriteLine(
+					$"Ended - BuildUsersTargetListMedia : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			}
 		}
 
 		public async Task BuildLocationTargetListMedia(int limit = 1, int cutBy = 1)
@@ -229,29 +233,33 @@ namespace Quarkless.Logic.Services.Heartbeat
 					{
 						foreach (var targetLocation in profileLocationTargetList)
 						{
-							var results = await workers.PerformQueryTask(async (worker,location,lim) =>
+							var results = await workers.PerformQueryTask(async (worker, location, lim) =>
 							{
 								var instagramSearch = _searchProvider.InstagramSearch(worker.Client,
 									worker.Client.GetContext.Proxy);
-								var topMediasByLocation = await instagramSearch.SearchTopLocationMediaDetailInstagram((Location)location, lim);
-								
+								var topMediasByLocation =
+									await instagramSearch.SearchTopLocationMediaDetailInstagram((Location) location,
+										lim);
+
 								var recentMediasByLocation =
-									await instagramSearch.SearchRecentLocationMediaDetailInstagram((Location)location, lim);
-								
+									await instagramSearch.SearchRecentLocationMediaDetailInstagram((Location) location,
+										lim);
+
 								await Task.Delay(TimeSpan.FromSeconds(1));
 
-								if(recentMediasByLocation!=null && recentMediasByLocation.Medias.Count > 0)
+								if (recentMediasByLocation != null && recentMediasByLocation.Medias.Count > 0)
 									topMediasByLocation?.Medias.AddRange(recentMediasByLocation.Medias);
 
 								return topMediasByLocation;
-							},targetLocation, limit);
-							if(results == null) continue;
+							}, targetLocation, limit);
+							if (results == null) continue;
 
 							await _heartbeatLogic.RefreshMetaData(new MetaDataFetchRequest
 							{
 								MetaDataType = MetaDataType.FetchMediaByUserLocationTargetList,
 								ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-								InstagramId = _customer.InstagramAccount.Id, AccountId = _customer.InstagramAccount.AccountId
+								InstagramId = _customer.InstagramAccount.Id,
+								AccountId = _customer.InstagramAccount.AccountId
 							});
 
 							foreach (var s in results.CutObjects(cutBy))
@@ -263,7 +271,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 								{
 									MetaDataType = MetaDataType.FetchMediaByUserLocationTargetList,
 									ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-									InstagramId =  user.Id,
+									InstagramId = user.Id,
 									Data = new Meta<Media>(s)
 								});
 							}
@@ -275,9 +283,12 @@ namespace Quarkless.Logic.Services.Heartbeat
 			{
 				Console.WriteLine(ee.Message);
 			}
-
-			Console.WriteLine(
-				$"Ended - BuildLocationTargetListMedia : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			finally
+			{
+				watch.Stop();
+				Console.WriteLine(
+					$"Ended - BuildLocationTargetListMedia : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			}
 		}
 
 		public async Task BuildUsersOwnMedias(int limit = 1, int cutBy = 1)
@@ -300,8 +311,8 @@ namespace Quarkless.Logic.Services.Heartbeat
 					{
 						var instagramSearch = _searchProvider.InstagramSearch(worker.Client,
 							worker.Client.GetContext.Proxy);
-						return await instagramSearch.SearchUsersMediaDetailInstagram(randomTopic,username, lim);
-					},user.Username, limit);
+						return await instagramSearch.SearchUsersMediaDetailInstagram(randomTopic, username, lim);
+					}, user.Username, limit);
 
 					if (results != null)
 					{
@@ -309,7 +320,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 						{
 							MetaDataType = MetaDataType.FetchUserOwnProfile,
 							ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-							InstagramId = _customer.InstagramAccount.Id, 
+							InstagramId = _customer.InstagramAccount.Id,
 							AccountId = _customer.InstagramAccount.AccountId
 						});
 
@@ -375,9 +386,12 @@ namespace Quarkless.Logic.Services.Heartbeat
 			{
 				Console.WriteLine(ee.Message);
 			}
-
-			Console.WriteLine(
-				$"Ended - BuildUsersOwnMedias : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			finally
+			{
+				watch.Stop();
+				Console.WriteLine(
+					$"Ended - BuildUsersOwnMedias : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			}
 		}
 
 		public async Task BuildUsersFeed(int limit = 1, int cutBy = 1)
@@ -429,9 +443,12 @@ namespace Quarkless.Logic.Services.Heartbeat
 			{
 				Console.WriteLine(ee.Message);
 			}
-
-			Console.WriteLine(
-				$"Ended - BuildUsersFeed : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			finally
+			{
+				watch.Stop();
+				Console.WriteLine(
+					$"Ended - BuildUsersFeed : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			}
 		}
 
 		public async Task BuildUserFollowList(int limit = 3, int cutBy = 1)
@@ -456,7 +473,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 							{
 								MetaDataType = MetaDataType.FetchUsersFollowingList,
 								ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-								InstagramId = _customer.InstagramAccount.Id, 
+								InstagramId = _customer.InstagramAccount.Id,
 								AccountId = _customer.InstagramAccount.AccountId
 							});
 
@@ -479,9 +496,12 @@ namespace Quarkless.Logic.Services.Heartbeat
 			{
 				Console.WriteLine(ee.Message);
 			}
-
-			Console.WriteLine(
-				$"Ended - BuildUserUnfollowList : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			finally
+			{
+				watch.Stop();
+				Console.WriteLine(
+					$"Ended - BuildUserUnfollowList : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			}
 		}
 
 		public async Task BuildUserFollowerList(int limit = 3, int cutBy = 1)
@@ -506,7 +526,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 							{
 								MetaDataType = MetaDataType.FetchUsersFollowerList,
 								ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-								InstagramId = _customer.InstagramAccount.Id, 
+								InstagramId = _customer.InstagramAccount.Id,
 								AccountId = _customer.InstagramAccount.AccountId
 							});
 
@@ -528,9 +548,12 @@ namespace Quarkless.Logic.Services.Heartbeat
 			{
 				Console.WriteLine(ee.Message);
 			}
-
-			Console.WriteLine(
-				$"Ended - BuildUserFollowerList : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			finally
+			{
+				watch.Stop();
+				Console.WriteLine(
+					$"Ended - BuildUserFollowerList : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			}
 		}
 
 		public async Task BuildUsersFollowSuggestions(int limit = 1, int cutObjectBy = 1)
@@ -558,18 +581,20 @@ namespace Quarkless.Logic.Services.Heartbeat
 							{
 								MetaDataType = MetaDataType.FetchUsersFollowSuggestions,
 								ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-								InstagramId = _customer.InstagramAccount.Id, AccountId = _customer.InstagramAccount.AccountId
+								InstagramId = _customer.InstagramAccount.Id,
+								AccountId = _customer.InstagramAccount.AccountId
 							});
 
 							foreach (var fetchedUsers in fetchUsersMedia.ToList().CutObject(cutObjectBy))
 							{
-								await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<List<UserResponse<UserSuggestionDetails>>>
-								{
-									MetaDataType = MetaDataType.FetchUsersFollowSuggestions,
-									ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-									InstagramId = user.Id,
-									Data = new Meta<List<UserResponse<UserSuggestionDetails>>>(fetchedUsers)
-								});
+								await _heartbeatLogic.AddMetaData(
+									new MetaDataCommitRequest<List<UserResponse<UserSuggestionDetails>>>
+									{
+										MetaDataType = MetaDataType.FetchUsersFollowSuggestions,
+										ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
+										InstagramId = user.Id,
+										Data = new Meta<List<UserResponse<UserSuggestionDetails>>>(fetchedUsers)
+									});
 							}
 						}
 					});
@@ -579,9 +604,12 @@ namespace Quarkless.Logic.Services.Heartbeat
 			{
 				Console.WriteLine(ee.Message);
 			}
-
-			Console.WriteLine(
-				$"Ended - BuildUsersFollowSuggestions : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			finally
+			{
+				watch.Stop();
+				Console.WriteLine(
+					$"Ended - BuildUsersFollowSuggestions : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			}
 		}
 
 		public async Task BuildUsersInbox(int limit = 1)
@@ -608,7 +636,8 @@ namespace Quarkless.Logic.Services.Heartbeat
 							{
 								MetaDataType = MetaDataType.FetchUserDirectInbox,
 								ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-								InstagramId = _customer.InstagramAccount.Id, AccountId = _customer.InstagramAccount.AccountId
+								InstagramId = _customer.InstagramAccount.Id,
+								AccountId = _customer.InstagramAccount.AccountId
 							});
 
 							await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<InstaDirectInboxContainer>
@@ -626,7 +655,12 @@ namespace Quarkless.Logic.Services.Heartbeat
 			{
 				Console.WriteLine(ee.Message);
 			}
-			Console.WriteLine($"Ended - BuildUsersInbox : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			finally
+			{
+				watch.Stop();
+				Console.WriteLine(
+					$"Ended - BuildUsersInbox : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			}
 		}
 
 		public async Task BuildUsersRecentComments(int howManyMedias = 10, int limit = 1)
@@ -649,7 +683,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 				var mediasForUser = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 					{
 						MetaDataType = MetaDataType.FetchUserOwnProfile,
-						ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id, 
+						ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
 						InstagramId = user.Id
 					}))
 					.Select(x => x.ObjectItem.Medias)
@@ -666,15 +700,17 @@ namespace Quarkless.Logic.Services.Heartbeat
 
 						foreach (var media in mediasForUser)
 						{
-							var comments = await instagramSearch.SearchInstagramMediaCommenters(media.Topic, media.MediaId, limit);
+							var comments =
+								await instagramSearch.SearchInstagramMediaCommenters(media.Topic, media.MediaId, limit);
 
-							await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<List<UserResponse<InstaComment>>>
-							{
-								MetaDataType = MetaDataType.UsersRecentComments,
-								ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-								InstagramId = user.Id,
-								Data = new Meta<List<UserResponse<InstaComment>>>(comments)
-							});
+							await _heartbeatLogic.AddMetaData(
+								new MetaDataCommitRequest<List<UserResponse<InstaComment>>>
+								{
+									MetaDataType = MetaDataType.UsersRecentComments,
+									ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
+									InstagramId = user.Id,
+									Data = new Meta<List<UserResponse<InstaComment>>>(comments)
+								});
 						}
 					});
 				});
@@ -683,7 +719,12 @@ namespace Quarkless.Logic.Services.Heartbeat
 			{
 				Console.WriteLine(ee.Message);
 			}
-			Console.WriteLine($"Ended - BuildUsersRecentComments : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			finally
+			{
+				watch.Stop();
+				Console.WriteLine(
+					$"Ended - BuildUsersRecentComments : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			}
 		}
 
 		public async Task BuildUserFromLikers(int cutBy = 1, double sleepTime = 0.05,
@@ -717,7 +758,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 					ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
 					InstagramId = _customer.InstagramAccount.Id, AccountId = _customer.InstagramAccount.AccountId
 				});
-				
+
 				await _workerManager.PerformTaskOnWorkers(async workers =>
 				{
 					await workers.PerformAction(async worker =>
@@ -729,22 +770,28 @@ namespace Quarkless.Logic.Services.Heartbeat
 						{
 							if (medias == null) continue;
 
-							foreach (var media in medias.ObjectItem.Medias.Where(t => t.MediaFrom == MediaFrom.Instagram))
+							foreach (var media in medias.ObjectItem.Medias.Where(
+								t => t.MediaFrom == MediaFrom.Instagram))
 							{
-								var suggested = await instagramSearch.SearchInstagramMediaLikers(media.Topic, media.MediaId);
+								var suggested =
+									await instagramSearch.SearchInstagramMediaLikers(media.Topic, media.MediaId);
 								if (suggested == null) return;
 								if (suggested.Count < 1) return;
-								var separateSuggested = suggested.TakeAny(takeUserMediaAmount).ToList().CutObject(cutBy);
+								var separateSuggested =
+									suggested.TakeAny(takeUserMediaAmount).ToList().CutObject(cutBy);
 								separateSuggested.ForEach(async s =>
 								{
-									var filtered = s.Where(x => x.Username != _customer.InstagramAccount.Username).ToList();
-									await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<List<UserResponse<string>>>
-									{
-										MetaDataType = MetaDataType.FetchUsersViaPostLiked,
-									 	ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-										InstagramId = _customer.InstagramAccount.Id, AccountId = _customer.InstagramAccount.AccountId,
-										Data = new Meta<List<UserResponse<string>>>(filtered)
-									});
+									var filtered = s.Where(x => x.Username != _customer.InstagramAccount.Username)
+										.ToList();
+									await _heartbeatLogic.AddMetaData(
+										new MetaDataCommitRequest<List<UserResponse<string>>>
+										{
+											MetaDataType = MetaDataType.FetchUsersViaPostLiked,
+											ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
+											InstagramId = _customer.InstagramAccount.Id,
+											AccountId = _customer.InstagramAccount.AccountId,
+											Data = new Meta<List<UserResponse<string>>>(filtered)
+										});
 								});
 								await Task.Delay(TimeSpan.FromSeconds(sleepTime));
 							}
@@ -756,8 +803,12 @@ namespace Quarkless.Logic.Services.Heartbeat
 			{
 				Console.WriteLine(ee.Message);
 			}
-			watch.Stop();
-			Console.WriteLine($"Ended - BuildUserFromLikers : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			finally
+			{
+				watch.Stop();
+				Console.WriteLine(
+					$"Ended - BuildUserFromLikers : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			}
 		}
 
 		public async Task BuildMediaFromUsersLikers(int limit = 1, int cutBy = 1, double sleepTime = 0.05,
@@ -768,9 +819,9 @@ namespace Quarkless.Logic.Services.Heartbeat
 			try
 			{
 				var results = (await _heartbeatLogic.GetMetaData<List<UserResponse<string>>>
-					(new MetaDataFetchRequest
+				(new MetaDataFetchRequest
 				{
-					MetaDataType = MetaDataType.FetchUsersViaPostLiked, 
+					MetaDataType = MetaDataType.FetchUsersViaPostLiked,
 					ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
 					InstagramId = _customer.InstagramAccount.Id, AccountId = _customer.InstagramAccount.AccountId
 				})).ToList();
@@ -779,7 +830,8 @@ namespace Quarkless.Logic.Services.Heartbeat
 					return;
 
 				var profileSubTopic = _customer.Profile.ProfileTopic.Topics.Shuffle().First();
-				var randomTopic = (await _topicLookup.GetTopicsByParentId(profileSubTopic._id)).Shuffle().FirstOrDefault();
+				var randomTopic = (await _topicLookup.GetTopicsByParentId(profileSubTopic._id)).Shuffle()
+					.FirstOrDefault();
 
 				if (randomTopic == null) return;
 
@@ -802,37 +854,49 @@ namespace Quarkless.Logic.Services.Heartbeat
 							if (media == null) continue;
 							foreach (var user in media.ObjectItem)
 							{
-								var suggested = await instagramSearch.SearchUsersMediaDetailInstagram(randomTopic, user.Username, limit);
+								var suggested =
+									await instagramSearch.SearchUsersMediaDetailInstagram(randomTopic, user.Username,
+										limit);
 								if (suggested != null)
 								{
 									var suggestedMediasSplit = suggested.CutObjects(cutBy).ToList();
 									foreach (var mediaObject in suggestedMediasSplit?.TakeAny(takeUserMediaAmount))
 									{
-										mediaObject.Medias = mediaObject.Medias.Where(t => !t.HasLikedBefore && !t.HasSeen
-											&& t.User.Username != _customer.InstagramAccount.Username).ToList();
+										mediaObject.Medias = mediaObject.Medias.Where(t =>
+												!t.HasLikedBefore && !t.HasSeen
+												                  &&
+												                  t.User.Username !=
+												                  _customer.InstagramAccount.Username)
+											.ToList();
 
 										await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<Media>
 										{
 											MetaDataType = MetaDataType.FetchMediaByLikers,
 											ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-											InstagramId = _customer.InstagramAccount.Id, AccountId = _customer.InstagramAccount.AccountId,
+											InstagramId = _customer.InstagramAccount.Id,
+											AccountId = _customer.InstagramAccount.AccountId,
 											Data = new Meta<Media>(mediaObject)
 										});
 									}
 								}
+
 								await Task.Delay(TimeSpan.FromSeconds(sleepTime));
 							}
 						}
 					});
 				});
-				
+
 			}
 			catch (Exception ee)
 			{
 				Console.WriteLine(ee.Message);
 			}
-			watch.Stop();
-			Console.WriteLine($"Ended - BuildMediaFromUsersLikers : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			finally
+			{
+				watch.Stop();
+				Console.WriteLine(
+					$"Ended - BuildMediaFromUsersLikers : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			}
 		}
 
 		public async Task BuildUsersFromCommenters(int limit = 1, int cutBy = 1, double sleepTime = 0.05,
@@ -857,10 +921,10 @@ namespace Quarkless.Logic.Services.Heartbeat
 				});
 
 				var metaS = recentResults as Meta<Media>[] ?? recentResults.ToArray();
-				
+
 				if (metaS.Any())
 					results.AddRange(metaS);
-				
+
 				await _heartbeatLogic.RefreshMetaData(new MetaDataFetchRequest
 				{
 					MetaDataType = MetaDataType.FetchUsersViaPostCommented,
@@ -894,15 +958,17 @@ namespace Quarkless.Logic.Services.Heartbeat
 										.ToList().CutObject(cutBy);
 
 									foreach (var filtered in separatedCommenter.Select(s => s.Where(x =>
-											x.Username != _customer.InstagramAccount.Username).ToList()))
+										x.Username != _customer.InstagramAccount.Username).ToList()))
 									{
-										await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<List<UserResponse<InstaComment>>>
-										{
-											MetaDataType = MetaDataType.FetchUsersViaPostCommented,
-											ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-											InstagramId = _customer.InstagramAccount.Id, AccountId = _customer.InstagramAccount.AccountId,
-											Data = new Meta<List<UserResponse<InstaComment>>>(filtered)
-										});
+										await _heartbeatLogic.AddMetaData(
+											new MetaDataCommitRequest<List<UserResponse<InstaComment>>>
+											{
+												MetaDataType = MetaDataType.FetchUsersViaPostCommented,
+												ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
+												InstagramId = _customer.InstagramAccount.Id,
+												AccountId = _customer.InstagramAccount.AccountId,
+												Data = new Meta<List<UserResponse<InstaComment>>>(filtered)
+											});
 									}
 								}
 
@@ -916,11 +982,15 @@ namespace Quarkless.Logic.Services.Heartbeat
 			{
 				Console.WriteLine(ee.Message);
 			}
-			watch.Stop();
-			Console.WriteLine($"Ended - BuildUsersFromCommenters : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			finally
+			{
+				watch.Stop();
+				Console.WriteLine(
+					$"Ended - BuildUsersFromCommenters : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			}
 		}
 
-		public async Task BuildCommentsFromSpecifiedSource(MetaDataType extractFrom, MetaDataType saveTo, int limit = 1, 
+		public async Task BuildCommentsFromSpecifiedSource(MetaDataType extractFrom, MetaDataType saveTo, int limit = 1,
 			int cutBy = 1, double secondSleep = 0.05,
 			int takeMediaAmount = 10, int takeUserAmount = 100)
 		{
@@ -932,7 +1002,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 				{
 					MetaDataType = extractFrom,
 					ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-					InstagramId = _customer.InstagramAccount.Id, 
+					InstagramId = _customer.InstagramAccount.Id,
 					AccountId = _customer.InstagramAccount.AccountId
 				});
 
@@ -942,7 +1012,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 					{
 						MetaDataType = saveTo,
 						ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-						InstagramId = _customer.InstagramAccount.Id, 
+						InstagramId = _customer.InstagramAccount.Id,
 						AccountId = _customer.InstagramAccount.AccountId
 					});
 
@@ -959,8 +1029,9 @@ namespace Quarkless.Logic.Services.Heartbeat
 								foreach (var media in medias.ObjectItem.Medias)
 								{
 									if (!media.IsCommentsDisabled && int.TryParse(media.CommentCount, out var count) &&
-									    count > 0 && media.MediaFrom == MediaFrom.Instagram 
-									    && media.MediaId != null && !media.HasSeen) {
+									    count > 0 && media.MediaFrom == MediaFrom.Instagram
+									    && media.MediaId != null && !media.HasSeen)
+									{
 
 										var suggested = await instagramSearch
 											.SearchInstagramMediaCommenters(media.Topic, media.MediaId, limit);
@@ -968,22 +1039,25 @@ namespace Quarkless.Logic.Services.Heartbeat
 										if (suggested != null)
 										{
 											var calcutta = suggested.TakeAny(takeUserAmount).ToList().CutObject(cutBy);
-											
+
 											foreach (var filtered in calcutta.Select(s =>
 												s.Where(x => x.Username != _customer.InstagramAccount.Username)
 													.ToList()))
 											{
-												await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<List<UserResponse<InstaComment>>>
-												{
-													MetaDataType = saveTo, 
-													ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-													InstagramId = _customer.InstagramAccount.Id, 
-													AccountId = _customer.InstagramAccount.AccountId,
-													Data = new Meta<List<UserResponse<InstaComment>>>(filtered),
-												});
+												await _heartbeatLogic.AddMetaData(
+													new MetaDataCommitRequest<List<UserResponse<InstaComment>>>
+													{
+														MetaDataType = saveTo,
+														ProfileCategoryTopicId =
+															_customer.Profile.ProfileTopic.Category._id,
+														InstagramId = _customer.InstagramAccount.Id,
+														AccountId = _customer.InstagramAccount.AccountId,
+														Data = new Meta<List<UserResponse<InstaComment>>>(filtered),
+													});
 											}
 										}
 									}
+
 									await Task.Delay(TimeSpan.FromSeconds(secondSleep));
 								}
 							}
@@ -995,8 +1069,12 @@ namespace Quarkless.Logic.Services.Heartbeat
 			{
 				Console.WriteLine(ee.Message);
 			}
-			watch.Stop();
-			Console.WriteLine($"Ended - BuildCommentsFromSpecifiedSource  {saveTo.ToString()} : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			finally
+			{
+				watch.Stop();
+				Console.WriteLine(
+					$"Ended - BuildCommentsFromSpecifiedSource  {saveTo.ToString()} : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			}
 		}
 
 		public async Task BuildMediaFromUsersCommenters(int limit = 1, int cutBy = 1, double secondsSleep = 0.05,
@@ -1007,11 +1085,11 @@ namespace Quarkless.Logic.Services.Heartbeat
 			try
 			{
 				var results = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>
-					(new MetaDataFetchRequest
+				(new MetaDataFetchRequest
 				{
-					MetaDataType = MetaDataType.FetchUsersViaPostCommented, 
+					MetaDataType = MetaDataType.FetchUsersViaPostCommented,
 					ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-					InstagramId = _customer.InstagramAccount.Id, 
+					InstagramId = _customer.InstagramAccount.Id,
 					AccountId = _customer.InstagramAccount.AccountId
 				})).ToList();
 
@@ -1022,12 +1100,13 @@ namespace Quarkless.Logic.Services.Heartbeat
 				{
 					MetaDataType = MetaDataType.FetchMediaByCommenters,
 					ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-					InstagramId = _customer.InstagramAccount.Id, 
+					InstagramId = _customer.InstagramAccount.Id,
 					AccountId = _customer.InstagramAccount.AccountId
 				});
 
 				var profileSubTopic = _customer.Profile.ProfileTopic.Topics.Shuffle().First();
-				var randomTopic = (await _topicLookup.GetTopicsByParentId(profileSubTopic._id)).Shuffle().FirstOrDefault();
+				var randomTopic = (await _topicLookup.GetTopicsByParentId(profileSubTopic._id)).Shuffle()
+					.FirstOrDefault();
 
 				if (randomTopic == null) return;
 
@@ -1043,20 +1122,22 @@ namespace Quarkless.Logic.Services.Heartbeat
 							if (medias == null) continue;
 							foreach (var commenter in medias.ObjectItem)
 							{
-								var suggested = await instagramSearch.
-									SearchUsersMediaDetailInstagram(randomTopic, commenter.Username, limit);
+								var suggested =
+									await instagramSearch.SearchUsersMediaDetailInstagram(randomTopic,
+										commenter.Username, limit);
 
 								if (suggested != null)
 								{
 									var sugVCut = suggested.CutObjects(cutBy).ToList();
 									foreach (var comments in sugVCut.TakeAny(takeUserMediaAmount))
 									{
-										comments.Medias = comments.Medias.Where(t => !t.HasLikedBefore && !t.HasSeen).ToList();
+										comments.Medias = comments.Medias.Where(t => !t.HasLikedBefore && !t.HasSeen)
+											.ToList();
 										await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<Media>
 										{
 											MetaDataType = MetaDataType.FetchMediaByCommenters,
-											ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id, 
-											InstagramId = _customer.InstagramAccount.Id, 
+											ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
+											InstagramId = _customer.InstagramAccount.Id,
 											AccountId = _customer.InstagramAccount.AccountId,
 											Data = new Meta<Media>(comments)
 										});
@@ -1073,9 +1154,12 @@ namespace Quarkless.Logic.Services.Heartbeat
 			{
 				Console.WriteLine(ee.Message);
 			}
-			watch.Stop();
-			Console.WriteLine($"Ended - BuildMediaFromUsersCommenters : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
-
+			finally
+			{
+				watch.Stop();
+				Console.WriteLine(
+					$"Ended - BuildMediaFromUsersCommenters : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			}
 		}
 		#endregion
 
@@ -1109,16 +1193,16 @@ namespace Quarkless.Logic.Services.Heartbeat
 				var res = await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 				{
 					MetaDataType = MetaDataType.FetchMediaForSpecificUserGoogle,
-					ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id, 
+					ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
 					InstagramId = _customer.InstagramAccount.Id, AccountId = _customer.InstagramAccount.AccountId
 				});
 
-				var by = new By { ActionType = 0, User = _customer.InstagramAccount.Id };
+				var by = new By {ActionType = 0, User = _customer.InstagramAccount.Id};
 
 				var metaS = res as Meta<Media>[] ?? res.ToArray();
 
 				if (!metaS.Any() || metaS.Where(x => x != null)
-					.All(s => !s.SeenBy.Any(sb => sb.User == by.User && sb.ActionType == by.ActionType)))
+					    .All(s => !s.SeenBy.Any(sb => sb.User == by.User && sb.ActionType == by.ActionType)))
 				{
 					if (!_customer.Profile.ProfileTopic.Topics.Any())
 						return;
@@ -1130,14 +1214,15 @@ namespace Quarkless.Logic.Services.Heartbeat
 					var prf = _customer.Profile;
 
 					var colorSelect = prf.Theme.Colors.TakeAny(1).FirstOrDefault();
-					var imageType = ((ImageType)prf.AdditionalConfigurations.ImageType).GetDescription();
+					var imageType = ((ImageType) prf.AdditionalConfigurations.ImageType).GetDescription();
 
 					if (colorSelect != null)
 					{
-						var go = _searchProvider.GoogleSearch.WithProxy().SearchViaGoogle(GoogleQueryBuilder(colorSelect.Name, 
-							searchQueryTopics?.Name, prf.AdditionalConfigurations.Sites, 
+						var go = _searchProvider.GoogleSearch.WithProxy().SearchViaGoogle(GoogleQueryBuilder(
+							colorSelect.Name,
+							searchQueryTopics?.Name, prf.AdditionalConfigurations.Sites,
 							limit, exactSize: prf.AdditionalConfigurations.PostSize, imageType: imageType));
-						
+
 						if (go != null)
 						{
 							if (go.StatusCode == ResponseCode.Success)
@@ -1146,7 +1231,8 @@ namespace Quarkless.Logic.Services.Heartbeat
 								{
 									MetaDataType = MetaDataType.FetchMediaForSpecificUserGoogle,
 									ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-									InstagramId = _customer.InstagramAccount.Id, AccountId = _customer.InstagramAccount.AccountId
+									InstagramId = _customer.InstagramAccount.Id,
+									AccountId = _customer.InstagramAccount.AccountId
 								});
 
 								var cut = go.Result.CutObjects(cutBy).ToList();
@@ -1156,7 +1242,8 @@ namespace Quarkless.Logic.Services.Heartbeat
 									{
 										MetaDataType = MetaDataType.FetchMediaForSpecificUserGoogle,
 										ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-										InstagramId = _customer.InstagramAccount.Id, AccountId = _customer.InstagramAccount.AccountId,
+										InstagramId = _customer.InstagramAccount.Id,
+										AccountId = _customer.InstagramAccount.AccountId,
 										Data = new Meta<Media>(mediaItem)
 									});
 								});
@@ -1169,8 +1256,14 @@ namespace Quarkless.Logic.Services.Heartbeat
 			{
 				Console.WriteLine(ee.Message);
 			}
-			Console.WriteLine($"Ended - BuildGoogleImages : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			finally
+			{
+				watch.Stop();
+				Console.WriteLine(
+					$"Ended - BuildGoogleImages : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			}
 		}
+
 		public async Task BuildYandexImagesQuery(int limit = 2, int topicAmount = 1, int cutBy = 1)
 		{
 			Console.WriteLine("Began - BuildYandexImagesQuery");
@@ -1182,14 +1275,15 @@ namespace Quarkless.Logic.Services.Heartbeat
 				var res = await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 				{
 					MetaDataType = MetaDataType.FetchMediaForSpecificUserYandexQuery,
-					ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id, 
+					ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
 					InstagramId = _customer.InstagramAccount.Id, AccountId = _customer.InstagramAccount.AccountId
 				});
 
-				var by = new By { ActionType = 0, User = _customer.InstagramAccount.Id };
+				var by = new By {ActionType = 0, User = _customer.InstagramAccount.Id};
 
 				var metaS = res as Meta<Media>[] ?? res.ToArray();
-				if (!metaS.Any() || metaS.Where(x => x != null).All(s => !s.SeenBy.Any(sb => sb.User == by.User && sb.ActionType == by.ActionType)))
+				if (!metaS.Any() || metaS.Where(x => x != null).All(s =>
+					    !s.SeenBy.Any(sb => sb.User == by.User && sb.ActionType == by.ActionType)))
 				{
 					if (!_customer.Profile.ProfileTopic.Topics.Any())
 						return;
@@ -1201,7 +1295,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 					var prf = _customer.Profile;
 					var colorSelect = prf.Theme.Colors.TakeAny(1).FirstOrDefault();
 
-					if (searchQuery !=null && colorSelect != null)
+					if (searchQuery != null && colorSelect != null)
 					{
 						var yandexSearchQuery = new YandexSearchQuery
 						{
@@ -1211,8 +1305,10 @@ namespace Quarkless.Logic.Services.Heartbeat
 							Format = FormatType.Any,
 							Orientation = Orientation.Any,
 							Size = SizeType.Large,
-							Type = (ImageType)prf.AdditionalConfigurations.ImageType == ImageType.Any ? Enum.GetValues(typeof(ImageType))
-								.Cast<ImageType>().Where(x => x != ImageType.Any).TakeAny(1).FirstOrDefault() : (ImageType)prf.AdditionalConfigurations.ImageType
+							Type = (ImageType) prf.AdditionalConfigurations.ImageType == ImageType.Any
+								? Enum.GetValues(typeof(ImageType))
+									.Cast<ImageType>().Where(x => x != ImageType.Any).TakeAny(1).FirstOrDefault()
+								: (ImageType) prf.AdditionalConfigurations.ImageType
 						};
 
 						var yan = _searchProvider.YandexSearch.WithProxy().SearchQueryRest(yandexSearchQuery, limit);
@@ -1221,27 +1317,29 @@ namespace Quarkless.Logic.Services.Heartbeat
 							switch (yan.StatusCode)
 							{
 								case ResponseCode.Success:
+								{
+									await _heartbeatLogic.RefreshMetaData(new MetaDataFetchRequest
 									{
-										await _heartbeatLogic.RefreshMetaData(new MetaDataFetchRequest
+										MetaDataType = MetaDataType.FetchMediaForSpecificUserYandexQuery,
+										ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
+										InstagramId = _customer.InstagramAccount.Id,
+										AccountId = _customer.InstagramAccount.AccountId
+									});
+
+									var cut = yan.Result.CutObjects(cutBy).ToList();
+									cut.ForEach(async mediaItem =>
+									{
+										await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<Media>
 										{
 											MetaDataType = MetaDataType.FetchMediaForSpecificUserYandexQuery,
 											ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-											InstagramId = _customer.InstagramAccount.Id, AccountId = _customer.InstagramAccount.AccountId
+											InstagramId = _customer.InstagramAccount.Id,
+											AccountId = _customer.InstagramAccount.AccountId,
+											Data = new Meta<Media>(mediaItem)
 										});
-
-										var cut = yan.Result.CutObjects(cutBy).ToList();
-										cut.ForEach(async mediaItem =>
-										{
-											await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<Media>
-											{
-												MetaDataType = MetaDataType.FetchMediaForSpecificUserYandexQuery,
-												ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-												InstagramId = _customer.InstagramAccount.Id, AccountId = _customer.InstagramAccount.AccountId,
-												Data = new Meta<Media>(mediaItem)
-											});
-										});
-										break;
-									}
+									});
+									break;
+								}
 								case ResponseCode.Timeout:
 									break;
 								case ResponseCode.CaptchaRequired:
@@ -1255,8 +1353,14 @@ namespace Quarkless.Logic.Services.Heartbeat
 			{
 				Console.WriteLine(ee.Message);
 			}
-			Console.WriteLine($"Ended - BuildYandexImagesQuery : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			finally
+			{
+				watch.Stop();
+				Console.WriteLine(
+					$"Ended - BuildYandexImagesQuery : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			}
 		}
+
 		public async Task BuildYandexImages(int limit = 3, int takeTopicAmount = 1, int cutBy = 1)
 		{
 			Console.WriteLine("Began - BuildYandexImages");
@@ -1272,33 +1376,68 @@ namespace Quarkless.Logic.Services.Heartbeat
 					InstagramId = _customer.InstagramAccount.Id, AccountId = _customer.InstagramAccount.AccountId
 				});
 
-				var by = new By { ActionType = 0, User = _customer.InstagramAccount.Id };
+				var by = new By {ActionType = 0, User = _customer.InstagramAccount.Id};
 
 				var metaS = res as Meta<Media>[] ?? res.ToArray();
 
-				if (!metaS.Any() || metaS.Where(x => x != null).All(s => !s.SeenBy.Any(sb => sb.User == by.User && sb.ActionType == by.ActionType)))
+				if (!metaS.Any() || metaS.Where(x => x != null).All(s =>
+					    !s.SeenBy.Any(sb => sb.User == by.User && sb.ActionType == by.ActionType)))
 				{
-					var filter = imagesLike.Where(s => s.TopicGroup.Name.Equals(_customer.Profile.ProfileTopic.Category.Name));
-					
+					var filter = imagesLike.Where(s =>
+						s.TopicGroup.Name.Equals(_customer.Profile.ProfileTopic.Category.Name));
+
 					var groupSimilarImages = filter as GroupImagesAlike[] ?? filter.ToArray();
-					var yan = _searchProvider.YandexSearch.WithProxy().SearchRelatedImagesRest(groupSimilarImages.TakeAny(takeTopicAmount).ToList(), limit);
-					
+					var yan = _searchProvider.YandexSearch.WithProxy()
+						.SearchRelatedImagesRest(groupSimilarImages.TakeAny(takeTopicAmount).ToList(), limit);
+
 					if (yan == null || yan.StatusCode == ResponseCode.CaptchaRequired
-					|| yan.StatusCode == ResponseCode.InternalServerError
-					|| yan.StatusCode == ResponseCode.ReachedEndAndNull)
+					                || yan.StatusCode == ResponseCode.InternalServerError
+					                || yan.StatusCode == ResponseCode.ReachedEndAndNull)
 					{
-						yan = _searchProvider.YandexSearch.WithProxy().SearchSafeButSlow(groupSimilarImages.TakeAny(takeTopicAmount).ToList(), limit * 25);
-						
+						yan = _searchProvider.YandexSearch.WithProxy()
+							.SearchSafeButSlow(groupSimilarImages.TakeAny(takeTopicAmount).ToList(), limit * 25);
+
 						if (yan == null || yan.StatusCode == ResponseCode.CaptchaRequired)
 							yan = _searchProvider.GoogleSearch.WithProxy().SearchSimilarImagesViaGoogle
 								(groupSimilarImages.TakeAny(takeTopicAmount).ToList(), limit * 25);
 					}
+
 					if (yan?.Result != null)
 					{
 						yan.Result.Medias = yan.Result.Medias?.Distinct().ToList();
 						switch (yan.StatusCode)
 						{
 							case ResponseCode.Success:
+							{
+								await _heartbeatLogic.RefreshMetaData(new MetaDataFetchRequest
+								{
+									MetaDataType = MetaDataType.FetchMediaForSpecificUserYandex,
+									ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
+									InstagramId = _customer.InstagramAccount.Id,
+									AccountId = _customer.InstagramAccount.AccountId
+								});
+
+								var cut = yan.Result.CutObjects(cutBy).ToList();
+								cut.ForEach(async mediaItem =>
+								{
+									await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<Media>
+									{
+										MetaDataType = MetaDataType.FetchMediaForSpecificUserYandex,
+										ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
+										InstagramId = _customer.InstagramAccount.Id,
+										AccountId = _customer.InstagramAccount.AccountId,
+										Data = new Meta<Media>(mediaItem)
+									});
+								});
+								break;
+							}
+							case ResponseCode.Timeout:
+								//could try with a different proxy
+								//await BuildYandexImages(limit,takeTopicAmount,cutBy);
+								break;
+							case ResponseCode.CaptchaRequired:
+							{
+								if (yan.Result?.Medias?.Count > 0)
 								{
 									await _heartbeatLogic.RefreshMetaData(new MetaDataFetchRequest
 									{
@@ -1309,6 +1448,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 									});
 
 									var cut = yan.Result.CutObjects(cutBy).ToList();
+
 									cut.ForEach(async mediaItem =>
 									{
 										await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<Media>
@@ -1317,43 +1457,13 @@ namespace Quarkless.Logic.Services.Heartbeat
 											ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
 											InstagramId = _customer.InstagramAccount.Id,
 											AccountId = _customer.InstagramAccount.AccountId,
-											Data = new Meta<Media>(mediaItem) 
+											Data = new Meta<Media>(mediaItem)
 										});
 									});
-									break;
 								}
-							case ResponseCode.Timeout:
-								//could try with a different proxy
-								//await BuildYandexImages(limit,takeTopicAmount,cutBy);
+
 								break;
-							case ResponseCode.CaptchaRequired:
-								{
-									if (yan.Result?.Medias?.Count > 0)
-									{
-										await _heartbeatLogic.RefreshMetaData(new MetaDataFetchRequest
-										{
-											MetaDataType = MetaDataType.FetchMediaForSpecificUserYandex,
-											ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-											InstagramId = _customer.InstagramAccount.Id, AccountId = _customer.InstagramAccount.AccountId
-										});
-
-										var cut = yan.Result.CutObjects(cutBy).ToList();
-										
-										cut.ForEach(async mediaItem =>
-										{
-											await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<Media>
-											{
-												MetaDataType = MetaDataType.FetchMediaForSpecificUserYandex,
-												ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-												InstagramId = _customer.InstagramAccount.Id,
-												AccountId = _customer.InstagramAccount.AccountId,
-												Data = new Meta<Media>(mediaItem)
-											});
-										});
-									}
-
-									break;
-								}
+							}
 						}
 					}
 				}
@@ -1362,8 +1472,14 @@ namespace Quarkless.Logic.Services.Heartbeat
 			{
 				Console.WriteLine(ee.Message);
 			}
-			Console.WriteLine($"Ended - BuildYandexImages : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			finally
+			{
+				watch.Stop();
+				Console.WriteLine(
+					$"Ended - BuildYandexImages : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			}
 		}
+
 		#endregion
 	}
 }

@@ -47,6 +47,7 @@ using Quarkless.Logic.ResponseResolver;
 using Quarkless.Logic.RestSharpClientManager;
 using Quarkless.Logic.SeleniumClient;
 using Quarkless.Logic.Services.Automation;
+using Quarkless.Logic.Services.Automation.Factory.FactoryManager;
 using Quarkless.Logic.Storage;
 using Quarkless.Logic.TextGenerator;
 using Quarkless.Logic.Timeline;
@@ -130,14 +131,11 @@ namespace Quarkless.Run.Services.Automation.Extensions
 		}
 		internal static void IncludeLogicServices(this IServiceCollection services)
 		{
-			//services.AddSingleton<IDiscoverLogic, DiscoverLogic>();
+			
 			services.AddTransient<IProxyLogic, ProxyLogic>();
 			services.AddTransient<IInstagramAccountLogic, InstagramAccountLogic>();
 			services.AddTransient<IProfileLogic, ProfileLogic>();
-			//services.AddTransient<IInstaUserLogic, InstaUserLogic>();
 			services.AddTransient<ICommentLogic, CommentLogic>();
-			//services.AddTransient<ICollectionsLogic, CollectionsLogic>();
-			//services.AddTransient<IInstaAccountOptionsLogic, InstaAccountOptionsLogic>();
 			services.AddTransient<IInstaClient, InstaClient>();
 			services.AddTransient<IHashtagLogic, HashtagLogic>();
 			services.AddTransient<IMediaLogic, MediaLogic>();
@@ -146,16 +144,12 @@ namespace Quarkless.Run.Services.Automation.Extensions
 			services.AddTransient<IAgentLogic, AgentLogic>();
 			services.AddTransient<ICommentCorpusLogic, CommentCorpusLogic>();
 			services.AddTransient<IMediaCorpusLogic, MediaCorpusLogic>();
-			//services.AddTransient<IQueryLogic, QueryLogic>();
-			//services.AddSingleton<IInstagramContentSearch, InstagramContentSearch>();
 			services.AddTransient<ILibraryLogic, LibraryLogic>();
 			services.AddTransient<ITimelineEventLogLogic, TimelineEventLogLogic>();
 			services.AddTransient<IResponseResolver, ResponseResolver>();
-			//services.AddTransient<IBusinessLogic, BusinessLogic>();
 			services.AddTransient<IMessagingLogic, MessagingLogic>();
 			services.AddTransient<ILookupLogic, LookupLogic>();
 			services.AddTransient<ILookupCache, LookupCache>();
-			//services.AddSingleton<IWebHookHandler, StripeWebHookHandler>();
 			services.AddSingleton<IGoogleSearchLogic, GoogleSearchLogic>();
 			services.AddSingleton<IYandexImageSearch, YandexImageSearch>();
 			services.AddSingleton<IPostAnalyser, PostAnalyser>();
@@ -164,7 +158,8 @@ namespace Quarkless.Run.Services.Automation.Extensions
 			services.AddSingleton<ISearchProvider, SearchProvider>();
 			services.AddSingleton<IVideoEditor, VideoEditor>();
 			services.AddSingleton<IAudioEditor, AudioEditor>();
-			services.AddSingleton<IAgentManager, AgentManager>();
+			services.AddScoped<IAgentManager, AgentManager>();
+			services.AddScoped<IActionFactory, ActionsManager>();
 		}
 		internal static void IncludeConfigurators(this IServiceCollection services)
 		{

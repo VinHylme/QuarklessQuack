@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using Quarkless.Models.Timeline.TaskScheduler;
 
 namespace Quarkless.Models.Timeline.Interfaces.TaskScheduler
 {
 	public interface ITaskService
 	{
+		string ScheduleEvent(EventActionOptions eventAction);
 		string ScheduleEvent(string actionName, RestModel restModel, DateTimeOffset timeOffset);
 		void ActionTask(Delegate @delegate, DateTimeOffset executeTime, params object[] args);
 		IEnumerable<TimelineItem> GetScheduledItemsForUser(string username, string instagramId = null, int limit = 30);

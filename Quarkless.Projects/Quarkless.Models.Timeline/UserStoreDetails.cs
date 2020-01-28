@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
+using Quarkless.Models.Common.Models;
 using Quarkless.Models.InstagramAccounts;
 using Quarkless.Models.Library;
 using Quarkless.Models.Profile;

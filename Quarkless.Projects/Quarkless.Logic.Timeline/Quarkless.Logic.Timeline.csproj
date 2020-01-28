@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Quarkless.Analyser\Quarkless.Analyser.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Actions\Quarkless.Models.Actions.csproj" />
     <ProjectReference Include="..\Quarkless.Models.Lookup\Quarkless.Models.Lookup.csproj" />
     <ProjectReference Include="..\Quarkless.Models.Media\Quarkless.Models.Media.csproj" />
     <ProjectReference Include="..\Quarkless.Models.RequestBuilder\Quarkless.Models.RequestBuilder.csproj" />

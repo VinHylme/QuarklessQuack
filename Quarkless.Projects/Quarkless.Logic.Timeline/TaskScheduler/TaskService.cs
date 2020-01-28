@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Quarkless.Logic.Timeline.TaskScheduler.Extensions;
 using Quarkless.Models.Timeline;
-using Quarkless.Models.Timeline.Interfaces;
 using Quarkless.Models.Timeline.Interfaces.TaskScheduler;
 using Quarkless.Models.Timeline.TaskScheduler;
 
@@ -33,6 +32,16 @@ namespace Quarkless.Logic.Timeline.TaskScheduler
 				op.ActionName = actionName;
 				op.Rest = restModel;
 				op.ExecutionTime = timeOffset;
+			});
+		}
+		public string ScheduleEvent(EventActionOptions eventAction)
+		{
+			return _jobRunner.AddJob(op =>
+			{
+				op.ActionType = eventAction.ActionType;
+				op.User = eventAction.User;
+				op.ExecutionTime = eventAction.ExecutionTime;
+				op.DataObject = eventAction.DataObject;
 			});
 		}
 		public TimelineItemDetail GetEvent(string itemId)
