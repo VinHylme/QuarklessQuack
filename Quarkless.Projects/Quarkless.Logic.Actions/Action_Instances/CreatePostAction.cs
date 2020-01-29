@@ -21,8 +21,7 @@ using Quarkless.Models.Heartbeat.Interfaces;
 using Quarkless.Models.Media;
 using Quarkless.Models.Profile.Enums;
 using Quarkless.Models.SearchResponse;
-using Quarkless.Models.Timeline;
-using ActionType = Quarkless.Models.Actions.Enums.ActionType;
+
 namespace Quarkless.Logic.Actions.Action_Instances
 {
 	internal class CreatePostAction : IActionCommit
@@ -116,7 +115,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 		{
 			if(_actionOptions == null)
 				throw new Exception("Action Option cannot be null");
-			Console.WriteLine($"Create Media Action Started: {_user.OAccountId}, {_user.OInstagramAccountUsername}, {_user.OInstagramAccountUser}");
+			Console.WriteLine($"Create Media Action Started: {_user.AccountId}, {_user.InstagramAccountUsername}, {_user.InstagramAccountUser}");
 			
 			var results = new ResultCarrier<EventActionModel>();
 			if (!_user.Profile.AdditionalConfigurations.EnableAutoPosting)
@@ -124,7 +123,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				results.IsSuccessful = true;
 				results.Info = new ErrorResponse
 				{
-					Message = $"User {_user.OAccountId} of {_user.OInstagramAccountUsername} has disabled auto posting"
+					Message = $"User {_user.AccountId} of {_user.InstagramAccountUsername} has disabled auto posting"
 				};
 				return results;
 			}
@@ -134,7 +133,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				results.Info = new ErrorResponse
 				{
 					Message =
-						$"Profile Topics is empty, user: {_user.OAccountId}, instaId: {_user.OInstagramAccountUsername}",
+						$"Profile Topics is empty, user: {_user.AccountId}, instaId: {_user.InstagramAccountUsername}",
 					StatusCode = System.Net.HttpStatusCode.NotFound
 				};
 				return results;
@@ -227,7 +226,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 					results.IsSuccessful = false;
 					results.Info = new ErrorResponse
 					{
-						Message = $"no action selected or results were empty, user: {_user.OAccountId}, instaId: {_user.OInstagramAccountUsername}",
+						Message = $"no action selected or results were empty, user: {_user.AccountId}, instaId: {_user.InstagramAccountUsername}",
 						StatusCode = System.Net.HttpStatusCode.NotFound
 					};
 					return results;
@@ -264,8 +263,8 @@ namespace Quarkless.Logic.Actions.Action_Instances
 					mediaData.SeenBy.Add(by);
 					await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
 					{
-						AccountId = _user.OAccountId,
-						InstagramId = _user.OInstagramAccountUser,
+						AccountId = _user.AccountId,
+						InstagramId = _user.InstagramAccountUser,
 						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 						MetaDataType = selectedAction,
 						Data = mediaData
@@ -362,7 +361,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 					results.IsSuccessful = false;
 					results.Info = new ErrorResponse
 					{
-						Message = $"could not find any good image to post, user: {_user.OAccountId}, instaId: {_user.OInstagramAccountUsername}",
+						Message = $"could not find any good image to post, user: {_user.AccountId}, instaId: {_user.InstagramAccountUsername}",
 						StatusCode = System.Net.HttpStatusCode.NotFound
 					};
 					return results;
@@ -373,9 +372,9 @@ namespace Quarkless.Logic.Actions.Action_Instances
 					ActionType = ActionType.CreatePost,
 					User = new UserStore
 					{
-						OInstagramAccountUser = _user.OInstagramAccountUser,
-						OAccountId = _user.OAccountId,
-						OInstagramAccountUsername = _user.OInstagramAccountUsername
+						InstagramAccountUser = _user.InstagramAccountUser,
+						AccountId = _user.AccountId,
+						InstagramAccountUsername = _user.InstagramAccountUsername
 					}
 				};
 
@@ -547,7 +546,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				results.IsSuccessful = false;
 				results.Info = new ErrorResponse
 				{
-					Message = $"{err.Message}, user: {_user.OAccountId}, instaId: {_user.OInstagramAccountUsername}",
+					Message = $"{err.Message}, user: {_user.AccountId}, instaId: {_user.InstagramAccountUsername}",
 					StatusCode = System.Net.HttpStatusCode.InternalServerError,
 					Exception = err
 				};
@@ -555,7 +554,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 			}
 			finally
 			{
-				Console.WriteLine($"Create Media Action Ended: {_user.OAccountId}, {_user.OInstagramAccountUsername}, {_user.OInstagramAccountUser}");
+				Console.WriteLine($"Create Media Action Ended: {_user.AccountId}, {_user.InstagramAccountUsername}, {_user.InstagramAccountUser}");
 			}
 		}
 

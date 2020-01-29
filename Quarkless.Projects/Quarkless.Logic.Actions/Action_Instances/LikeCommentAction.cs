@@ -9,6 +9,7 @@ using Quarkless.Models.Actions.Enums.ActionTypes;
 using Quarkless.Models.Actions.Enums.StrategyType;
 using Quarkless.Models.Actions.Factory.Action_Options;
 using Quarkless.Models.Actions.Interfaces;
+using Quarkless.Models.Actions.Models;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.Common.Models;
@@ -16,8 +17,6 @@ using Quarkless.Models.Common.Models.Carriers;
 using Quarkless.Models.ContentInfo.Interfaces;
 using Quarkless.Models.Heartbeat;
 using Quarkless.Models.SearchResponse;
-using Quarkless.Models.Timeline;
-using ActionType = Quarkless.Models.Actions.Enums.ActionType;
 
 namespace Quarkless.Logic.Actions.Action_Instances
 {
@@ -237,7 +236,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 		public async Task<ResultCarrier<EventActionModel>> PushAsync(DateTimeOffset executionTime)
 		{
-			Console.WriteLine($"Like Comment Action Started: {_user.OAccountId}, {_user.OInstagramAccountUsername}, {_user.OInstagramAccountUser}");
+			Console.WriteLine($"Like Comment Action Started: {_user.AccountId}, {_user.InstagramAccountUsername}, {_user.InstagramAccountUser}");
 			var results = new ResultCarrier<EventActionModel>();
 
 			try
@@ -322,7 +321,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 							results.IsSuccessful = false;
 							results.Info = new ErrorResponse
 							{
-								Message = $"could not find any good comment to like, user: {_user.OAccountId}, instaId: {_user.OInstagramAccountUsername}",
+								Message = $"could not find any good comment to like, user: {_user.AccountId}, instaId: {_user.InstagramAccountUsername}",
 								StatusCode = System.Net.HttpStatusCode.NotFound
 							};
 							return results;
@@ -332,9 +331,9 @@ namespace Quarkless.Logic.Actions.Action_Instances
 							ActionType = ActionType.LikeComment,
 							User = new UserStore
 							{
-								OAccountId = _user.OAccountId,
-								OInstagramAccountUsername = _user.OInstagramAccountUsername,
-								OInstagramAccountUser = _user.OInstagramAccountUser
+								AccountId = _user.AccountId,
+								InstagramAccountUsername = _user.InstagramAccountUsername,
+								InstagramAccountUser = _user.InstagramAccountUser
 							}
 						};
 						@event.DataObjects.Add(new EventBody(nominatedComment.Value, nominatedComment.Value.GetType(), executionTime));
@@ -359,7 +358,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 			}
 			finally
 			{
-				Console.WriteLine($"Like Comment Action Ended: {_user.OAccountId}, {_user.OInstagramAccountUsername}, {_user.OInstagramAccountUser}");
+				Console.WriteLine($"Like Comment Action Ended: {_user.AccountId}, {_user.InstagramAccountUsername}, {_user.InstagramAccountUser}");
 			}
 		}
 

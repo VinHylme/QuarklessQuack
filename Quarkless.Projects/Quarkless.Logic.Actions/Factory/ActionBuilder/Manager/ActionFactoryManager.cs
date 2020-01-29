@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
-using Quarkless.Models.Actions.Enums;
 using Quarkless.Models.Actions.Factory;
 using Quarkless.Models.Actions.Interfaces;
+using Quarkless.Models.Actions.Models;
+using Quarkless.Models.Common.Enums;
 using Quarkless.Models.ContentInfo.Interfaces;
 using Quarkless.Models.Heartbeat.Interfaces;
-using Quarkless.Models.Timeline;
 
 namespace Quarkless.Logic.Actions.Factory.ActionBuilder.Manager
 {

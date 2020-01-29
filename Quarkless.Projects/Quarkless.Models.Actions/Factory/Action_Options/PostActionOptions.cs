@@ -1,6 +1,5 @@
 ﻿using System;
 using Quarkless.Analyser;
-using Quarkless.Analyser.Models;
 using Quarkless.Models.Actions.Factory.Action_Options.StrategySettings;
 using Quarkless.Models.Actions.Interfaces;
 using Quarkless.Models.Common.Objects;

@@ -2,7 +2,7 @@
 
 namespace Quarkless.Models.Actions.Enums
 {
-	public enum ActionType
+	/*public enum ActionType
 	{
 		[Description("none")]
 		None,
@@ -61,4 +61,5 @@ namespace Quarkless.Models.Actions.Enums
 		[Description("sharemessagemedia")]
 		SendDirectMessageMedia
 	}
+	*/
 }

@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Analyser\Quarkless.Analyser.csproj" />
+    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.Actions\Quarkless.Models.Actions.csproj" />
     <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.Common\Quarkless.Models.Common.csproj" />
     <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.ContentInfo\Quarkless.Models.ContentInfo.csproj" />
     <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.Heartbeat\Quarkless.Models.Heartbeat.csproj" />

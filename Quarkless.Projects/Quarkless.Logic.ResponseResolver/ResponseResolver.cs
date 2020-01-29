@@ -1,5 +1,4 @@
 ﻿using InstagramApiSharp.Classes;
-using Quarkless.Models.Common.Enums;
 using Quarkless.Models.InstagramAccounts.Interfaces;
 using Quarkless.Models.InstagramClient.Interfaces;
 using Quarkless.Models.ResponseResolver.Interfaces;
@@ -16,6 +15,7 @@ using Quarkless.Models.Lookup.Interfaces;
 using Quarkless.Models.Lookup;
 using Quarkless.Models.Lookup.Enums;
 using System.Linq;
+using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Messaging;
 
 namespace Quarkless.Logic.ResponseResolver

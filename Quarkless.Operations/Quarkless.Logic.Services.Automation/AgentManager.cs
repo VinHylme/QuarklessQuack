@@ -2,38 +2,33 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using MoreLinq.Extensions;
 using Quarkless.Analyser;
+using Quarkless.Logic.Actions.AccountContainer;
 using Quarkless.Logic.Agent;
-using Quarkless.Logic.Services.Automation.Actions.ActionManager;
-using Quarkless.Logic.Services.Automation.Factory.FactoryManager;
+using Quarkless.Models.Actions.Enums.StrategyType;
+using Quarkless.Models.Actions.Factory.Action_Options;
+using Quarkless.Models.Actions.Factory.Action_Options.StrategySettings;
 using Quarkless.Models.Actions.Interfaces;
 using Quarkless.Models.Agent.Interfaces;
 using Quarkless.Models.Auth.Enums;
 using Quarkless.Models.Auth.Interfaces;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Extensions;
+using Quarkless.Models.Common.Models;
 using Quarkless.Models.Common.Objects;
-using Quarkless.Models.ContentInfo.Interfaces;
-using Quarkless.Models.Heartbeat.Interfaces;
 using Quarkless.Models.InstagramAccounts;
 using Quarkless.Models.InstagramAccounts.Enums;
 using Quarkless.Models.InstagramAccounts.Interfaces;
 using Quarkless.Models.Library.Interfaces;
 using Quarkless.Models.Profile.Interfaces;
-using Quarkless.Models.RequestBuilder.Interfaces;
-using Quarkless.Models.Services.Automation.Enums.Actions.ActionType;
-using Quarkless.Models.Services.Automation.Enums.Actions.StrategyType;
 using Quarkless.Models.Services.Automation.Interfaces;
-using Quarkless.Models.Services.Automation.Models.ActionOptions;
 using Quarkless.Models.Services.Automation.Models.Agent;
-using Quarkless.Models.Services.Automation.Models.StrategySettings;
 using Quarkless.Models.Storage.Interfaces;
 using Quarkless.Models.Timeline;
 using Quarkless.Models.Timeline.Enums;
 using Quarkless.Models.Timeline.Interfaces;
 using Quarkless.Models.Timeline.TaskScheduler;
-
+using UserStoreDetails = Quarkless.Models.Actions.Models.UserStoreDetails;
 namespace Quarkless.Logic.Services.Automation
 {
 	public sealed class AgentManager : IAgentManager
@@ -50,12 +45,13 @@ namespace Quarkless.Logic.Services.Automation
 		private readonly ILibraryLogic _libraryLogic;
 		private readonly IS3BucketLogic _s3BucketLogic;
 		private readonly IPostAnalyser _postAnalyser;
-		private readonly IActionFactory _actionFactory;
 		private readonly IAgentLogic _agentLogic;
 		private readonly IActionCommitFactory _actionCommitFactory;
+
 		public AgentManager(IInstagramAccountLogic instagramAccountLogic, IProfileLogic profileLogic,
 			ITimelineLogic timelineLogic, ITimelineEventLogLogic eventLogLogic,IAuthHandler authHandler, 
-			ILibraryLogic libraryLogic, IS3BucketLogic s3Bucket, IPostAnalyser postAnalyser, IActionFactory actionFactory)
+			ILibraryLogic libraryLogic, IS3BucketLogic s3Bucket, IPostAnalyser postAnalyser, 
+			IActionCommitFactory actionCommitFactory)
 		{
 			_timelineLogic = timelineLogic;
 			_timelineEventLogs = eventLogLogic;
@@ -65,23 +61,25 @@ namespace Quarkless.Logic.Services.Automation
 			_libraryLogic = libraryLogic;
 			_s3BucketLogic = s3Bucket;
 			_postAnalyser = postAnalyser;
-			_actionFactory = actionFactory;
+			_actionCommitFactory = actionCommitFactory;
 			_agentLogic = new AgentLogic(instagramAccountLogic);
 		}
 		#endregion
 
-		private async Task<AddEventResponse> AddToTimeline(TimelineEventModel @event, Limits limits)
+		private async Task<AddEventResponse> AddToTimeline(EventActionOptions @event, Limits limits)
 		{
 			if (@event == null || limits == null) return null;
 			try
 			{
-				var actionBase = @event.ActionName.Split('_')[0].ToLower().GetValueFromDescription<ActionType>();
-				var completedActionsDaily = await SuccessfulActionCount(actionBase, @event.Data.User.OAccountId,
-					@event.Data.User.OInstagramAccountUser);
-				var completedActionsHourly = await SuccessfulActionCount(actionBase, @event.Data.User.OAccountId,
-					@event.Data.User.OInstagramAccountUser, isHourly:true);
+				var completedActionsDaily = await SuccessfulActionCount((ActionType)@event.ActionType,
+					@event.User.AccountId,
+					@event.User.InstagramAccountUser);
 
-				switch (actionBase)
+				var completedActionsHourly = await SuccessfulActionCount((ActionType)@event.ActionType, 
+					@event.User.AccountId,
+					@event.User.InstagramAccountUser, isHourly:true);
+
+				switch ((ActionType)@event.ActionType)
 				{
 					case ActionType.CreatePost when completedActionsDaily >= limits.DailyLimits.CreatePostLimit:
 						return new AddEventResponse
@@ -181,7 +179,7 @@ namespace Quarkless.Logic.Services.Automation
 						};
 				}
 
-				_timelineLogic.AddEventToTimeline(@event.ActionName, @event.Data, @event.ExecutionTime);
+				_timelineLogic.AddEventToTimeline(@event);
 				return new AddEventResponse
 				{
 					HasCompleted = true,
@@ -207,16 +205,13 @@ namespace Quarkless.Logic.Services.Automation
 		int limit = 6000, bool isHourly = false)
 		{
 			
-			//var logs = await _timelineEventLogs.GetLogsForUser(accountId, instagramAccountId, limit);
 			var logs = await _timelineEventLogs.GetLogsForUser(accountId, instagramAccountId, limit);
 			var startDate = DateTime.UtcNow;
 			var endDate = !isHourly ? startDate.AddDays(-1).AddTicks(1) : startDate.AddHours(-1).AddTicks(1);
 
-			return logs.Count(x => 
-				x.Status == TimelineEventStatus.Success
-					&& (x.DateAdded <= startDate && x.DateAdded >= endDate)
-					&&  x.ActionType == actionName
-				);
+			return logs.Count(x => x.Status == TimelineEventStatus.Success
+				&& (x.DateAdded <= startDate && x.DateAdded >= endDate) &&  x.ActionType == actionName
+			);
 		}
 
 		private int ScheduledCount(string accountId, string instagramId)
@@ -424,350 +419,306 @@ namespace Quarkless.Logic.Services.Automation
 			}
 		}
 
-		public async Task Start(string accountId, string instagramAccountId)
-		{
-			//todo: possibly use delegate based schedule instead of rest model, will launch app faster as no auth will need to take place
-			//todo: it will also perform action faster
-			var account = await _agentLogic.GetAccount(accountId, instagramAccountId);
-			if (account == null)
-				return;
-
-			var res = await _actionCommitFactory.Create(Models.Actions.Enums.ActionType.CreatePost,
-				new UserStoreDetails { })
-				.ModifyOptions(new Models.Actions.Factory.Action_Options.PostActionOptions(_postAnalyser, _s3BucketLogic))
-				.PushAsync(DateTimeOffset.Now);
-
-			foreach (var resultsDataObject in res.Results.DataObjects)
-			{
-				_timelineLogic.AddEventToTimeline(new EventActionOptions
-				{
-					ActionType = (int)res.Results.ActionType,
-					DataObject = new EventActionOptions.EventBody
-					{
-						Body = resultsDataObject.Body,
-						BodyType = resultsDataObject.BodyType
-					},
-					ExecutionTime = resultsDataObject.ExecutionTime,
-					User = res.Results.User
-				});
-			}
-		}
-
 		// TODO: Need to create a warm up function which does basic routine and increases over time until 2 weeks
 		// TODO: MAKE SURE ALL USERS ARE BUSINESS ACCOUNTS AND USERS OVER 100 FOLLOWERS
 		// TODO: BASE THEIR POSTING ON WHICH HOUR WAS MOST POPULAR
-		public async Task Begin(string userId, string instagramAccountId)
+		public async Task Start(string accountId, string instagramAccountId)
 		{
-			var shortInstagram = await _instagramAccountLogic.GetInstagramAccountShort(userId, instagramAccountId);
-			while (true) {
-				if (shortInstagram != null)
+			Console.WriteLine($"Started Agent Automation for {accountId}/{instagramAccountId}");
+			try
+			{
+				var account = await _agentLogic.GetAccount(accountId, instagramAccountId);
+				if (account == null)
+					return;
+
+				var profile = await _profileLogic.GetProfile(account.AccountId, account.Id);
+				if (profile == null) return;
+
+				if (account.UserLimits == null)
 				{
-					var userStoreDetails = new UserStoreDetails();
-					try
+					var userAccountDetails = await _authHandler.GetUserByUsername(account.AccountId);
+
+					account.UserLimits = SetLimits(userAccountDetails.Roles.FirstOrDefault()
+						.GetValueFromDescription<AuthTypes>());
+
+					await _instagramAccountLogic.PartialUpdateInstagramAccount(account.AccountId, account.Id,
+						new InstagramAccountModel { UserLimits = account.UserLimits });
+				}
+
+				var userStoreDetails = new UserStoreDetails
+				{
+					AccountId = account.AccountId,
+					InstagramAccountUsername = account.Username,
+					InstagramAccountUser = account.Id,
+					Profile = profile,
+					MessagesTemplates = await _libraryLogic.GetSavedMessagesForUser(account.Id)
+				};
+
+				var nextAvailableDate =
+					_timelineLogic.PickAGoodTime(userStoreDetails.AccountId, userStoreDetails.InstagramAccountUser);
+
+				var availableDate = nextAvailableDate ?? DateTime.UtcNow;
+
+				var scheduledForUser = ScheduledCount(userStoreDetails.AccountId, userStoreDetails.InstagramAccountUser);
+
+				#region Unfollow Purge Cycle
+
+				if (account.LastPurgeCycle == null)
+				{
+					await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.AccountId,
+						userStoreDetails.InstagramAccountUser,
+						new InstagramAccountModel
+						{
+							LastPurgeCycle = DateTime.UtcNow
+								.AddHours(SecureRandom.Next(_unfollowPurgeCycle.Min, _unfollowPurgeCycle.Max))
+						});
+				}
+				else
+				{
+					if (DateTime.UtcNow > account.LastPurgeCycle)
 					{
-						#region Token Stuff
-
-						var acc = (await _authHandler.GetUserByUsername(shortInstagram.AccountId));
-						var expTime = acc.Claims?.Where(s => s.Type == "exp")?.SingleOrDefault();
-						var accessToken = acc.Tokens.SingleOrDefault(_ => _.Name == "access_token")?.Value;
-						var refreshToken = acc.Tokens.SingleOrDefault(_ => _.Name == "refresh_token")?.Value;
-						var idToken = acc.Tokens.SingleOrDefault(_ => _.Name == "id_token")?.Value;
-
-						if (shortInstagram.UserLimits == null)
+						if (account.FollowingCount != null)
 						{
-							shortInstagram.UserLimits = SetLimits(acc.Roles.FirstOrDefault().GetValueFromDescription<AuthTypes>());
-						}
+							var response = await _actionCommitFactory.Create(ActionType.UnFollowUser, userStoreDetails)
+								.ModifyOptions(new UnfollowActionOptions(new UnFollowStrategySettings(
+									UnFollowStrategyType.LeastEngagingN,
+									TimeSpan.FromSeconds(SecureRandom.Next(UnfollowActionOptions.TimeFrameSeconds.Min,
+										UnfollowActionOptions.TimeFrameSeconds.Max)),
+									(int) (account.FollowingCount.Value * UNFOLLOW_AMOUNT))))
+								.PushAsync(availableDate.AddSeconds(UnfollowActionOptions.TimeFrameSeconds.Max));
 
-						userStoreDetails.ORefreshToken = refreshToken;
-
-						if (expTime != null)
-						{
-							var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-							var today = epoch.AddSeconds(long.Parse(expTime.Value));
-							if (DateTime.UtcNow > today.AddMinutes(-20))
+							if (response.IsSuccessful)
 							{
-								var res = await _authHandler.RefreshLogin(refreshToken, acc.UserName);
-								shortInstagram.UserLimits = SetLimits(acc.Roles.FirstOrDefault().GetValueFromDescription<AuthTypes>());
-								await _instagramAccountLogic.PartialUpdateInstagramAccount(shortInstagram.AccountId, shortInstagram.Id, new InstagramAccountModel { UserLimits = shortInstagram.UserLimits });
-								accessToken = res.Results.AccessToken;
-								idToken = res.Results.IdToken;
-
-								userStoreDetails.AddUpdateUser(shortInstagram.AccountId, shortInstagram.Id, idToken);
-								userStoreDetails.OInstagramAccountUsername = shortInstagram.Username;
-								var items = _timelineLogic.GetScheduledEventsForUser(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser, 1000).ToList();
-
-								items.ForEach(_ =>
+								foreach (var resultData in response.Results.DataObjects)
 								{
-									_timelineLogic.DeleteEvent(_.ItemId);
-									_.User = userStoreDetails;
-									_.Rest.User = userStoreDetails;
-									_timelineLogic.AddEventToTimeline(_.ActionName, _.Rest, _.EnqueueTime.Value.AddSeconds(15));
-								});
-							}
-							else
-							{
-								userStoreDetails.AddUpdateUser(shortInstagram.AccountId, shortInstagram.Id, idToken);
-								userStoreDetails.OInstagramAccountUsername = shortInstagram.Username;
+									_timelineLogic.AddEventToTimeline(new EventActionOptions
+									{
+										ActionType = (int) ActionType.UnFollowUser,
+										ActionDescription = response.Results.ActionDescription,
+										DataObject = new EventActionOptions.EventBody
+										{
+											Body = resultData.Body,
+											BodyType = resultData.BodyType
+										},
+										ExecutionTime = resultData.ExecutionTime,
+										User = new UserStore
+										{
+											AccountId = userStoreDetails.AccountId,
+											InstagramAccountUsername = userStoreDetails.InstagramAccountUsername,
+											InstagramAccountUser = userStoreDetails.InstagramAccountUser
+										}
+									});
+								}
+
+								await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.AccountId,
+									userStoreDetails.InstagramAccountUser,
+									new InstagramAccountModel
+									{
+										LastPurgeCycle = DateTime.UtcNow
+											.AddHours(SecureRandom.Next(_unfollowPurgeCycle.Min,
+												_unfollowPurgeCycle.Max))
+									});
 							}
 						}
-
-						#endregion
-
-						var profile = await _profileLogic.GetProfile(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser);
-						if (profile == null) return;
-						
-						userStoreDetails.ShortInstagram = shortInstagram;
-						userStoreDetails.Profile = profile;
-						userStoreDetails.MessagesTemplates = await _libraryLogic.GetSavedMessagesForUser(shortInstagram.Id);
-						
-						var nextAvailableDate = _timelineLogic.PickAGoodTime(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser);
-						
-						#region Unfollow Section
-						if (shortInstagram.LastPurgeCycle == null)
-						{
-							await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser,
-								new InstagramAccountModel
-								{
-									LastPurgeCycle = DateTime.UtcNow.AddHours(SecureRandom.Next(_unfollowPurgeCycle.Min, _unfollowPurgeCycle.Max))
-								});
-						}
-						else
-						{
-							if (DateTime.UtcNow > shortInstagram.LastPurgeCycle)
-							{
-								if (shortInstagram.FollowingCount != null)
-								{
-									var res = _actionFactory.Commit(ActionType.UnFollowUser)
-										.IncludeStrategy(new UnFollowStrategySettings
-										{
-											UnFollowStrategy = UnFollowStrategyType.LeastEngagingN,
-											NumberOfUnfollows = (int)(shortInstagram.FollowingCount.Value * UNFOLLOW_AMOUNT),
-											OffsetPerAction = TimeSpan.FromSeconds(SecureRandom.Next(UnfollowActionOptions.TimeFrameSeconds.Min,
-												UnfollowActionOptions.TimeFrameSeconds.Max))
-										})
-										.IncludeUser(userStoreDetails)
-										.Push(new UnfollowActionOptions(nextAvailableDate.AddSeconds(UnfollowActionOptions.TimeFrameSeconds.Max)));
-
-									if (res.IsSuccessful)
-									{
-										foreach (var r in res.Results)
-											_timelineLogic.AddEventToTimeline(r.ActionName, r.Data, r.ExecutionTime);
-
-										await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser,
-											new InstagramAccountModel
-											{
-												LastPurgeCycle = DateTime.UtcNow.AddHours(SecureRandom.Next(_unfollowPurgeCycle.Min, _unfollowPurgeCycle.Max))
-											});
-									}
-								}
-							}
-						}
-						#endregion
-						//var totalForUser = GetTodaysScheduleWindow(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser)?.All?.ToList();
-						
-						var scheduledForUser = ScheduledCount(userStoreDetails.OAccountId,
-												userStoreDetails.OInstagramAccountUser);
-
-						#region Action Initialise
-						var actionsContainerManager = new ActionsContainerManager();
-
-						var likeAction = _actionFactory.Commit(ActionType.LikePost)
-							.IncludeStrategy(new LikeStrategySettings()
-							{
-								LikeStrategy = LikeStrategyType.Default,
-							})
-							.IncludeUser(userStoreDetails);
-
-						var postAction = _actionFactory.Commit(ActionType.CreatePost)
-							.IncludeStrategy(new ImageStrategySettings
-							{
-								ImageStrategyType = ImageStrategyType.Default
-							})
-							.IncludeStorage(_s3BucketLogic)
-							.IncludeUser(userStoreDetails);
-
-						var followAction = _actionFactory.Commit(ActionType.FollowUser)
-							.IncludeStrategy(new FollowStrategySettings
-							{
-								FollowStrategy = FollowStrategyType.Default,
-							})
-							.IncludeUser(userStoreDetails);
-
-						var commentAction = _actionFactory.Commit(ActionType.CreateCommentMedia)
-							.IncludeStrategy(new CommentingStrategySettings
-							{
-								CommentingStrategy = CommentingStrategy.Default,
-							})
-							.IncludeUser(userStoreDetails);
-
-						var likeCommentAction = _actionFactory.Commit(ActionType.LikeComment)
-							.IncludeStrategy(new LikeStrategySettings())
-							.IncludeUser(userStoreDetails);
-
-						var sendMessageAction = _actionFactory.Commit(ActionType.SendDirectMessage)
-							.IncludeUser(userStoreDetails);
-
-						//Initial Execution
-						var likeScheduleOptions = new LikeActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1, 4)), LikeActionType.Any);
-						var postScheduleOptions = new PostActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1, 5)), _postAnalyser) { ImageFetchLimit = 20 };
-						var followScheduleOptions = new FollowActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1, 4)), FollowActionType.Any);
-						var commentScheduleOptions = new CommentingActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1, 4)), CommentingActionType.Any);
-						var likeCommentActionOptions = new LikeCommentActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(4)), LikeCommentActionType.Any);
-						//var sendMessageScheduleoptions = new SendDirectMessageActionOptions(nextAvailableDate.AddMinutes(SecureRandom.Next(1, 5)), MessagingReachType.Any, 1, _postAnalyser);
-
-						//actionsContainerManager.AddAction(sendMessageAction, sendMessageScheduleoptions, 0.05);
-						actionsContainerManager.AddAction(postAction, postScheduleOptions, 0.05);
-						actionsContainerManager.AddAction(likeAction, likeScheduleOptions, 0.25);
-						actionsContainerManager.AddAction(followAction, followScheduleOptions, 0.20);
-						actionsContainerManager.AddAction(commentAction, commentScheduleOptions, 0.15);
-						actionsContainerManager.AddAction(likeCommentAction, likeCommentActionOptions, 0.25);
-
-						#endregion
-
-						#region Agent State
-						if (shortInstagram == null) return;
-						if (shortInstagram.AgentState == (int)AgentState.NotStarted)
-						{
-							shortInstagram.AgentState = (int)AgentState.Running;
-							await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser, new InstagramAccountModel
-							{
-								AgentState = shortInstagram.AgentState,
-							});
-						}
-						switch (shortInstagram.AgentState)
-						{
-							case (int)AgentState.Running:
-								{
-									if (scheduledForUser != -1)
-									{
-										if (scheduledForUser > 100)
-										{
-											shortInstagram.AgentState = (int)AgentState.Sleeping;
-											await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser, new InstagramAccountModel
-											{
-												AgentState = shortInstagram.AgentState,
-											});
-										}
-									}
-									var nominatedAction = actionsContainerManager.GetRandomAction();
-									actionsContainerManager.AddWork(nominatedAction);
-									actionsContainerManager.RunAction();
-									var finishedAction = actionsContainerManager.GetFinishedActions()?.DistinctBy(d => d.Data);
-									finishedAction?.ForEach(async _ =>
-									{
-										var actionName = _.ActionName.Split('_')[0].ToLower();
-										var actionType = actionName.GetValueFromDescription<ActionType>();
-										var timeSett = actionsContainerManager.FindActionLimit(actionType);
-
-										nextAvailableDate = _timelineLogic.PickAGoodTime(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser, actionName.GetValueFromDescription<ActionType>());
-										actionsContainerManager.HasMetTimeLimit();
-										if (nextAvailableDate == null) return;
-										if (timeSett != null)
-											_.ExecutionTime = nextAvailableDate.AddSeconds(timeSett.Value.Max);
-										var res = await AddToTimeline(_, shortInstagram.UserLimits);
-										if (res.HasCompleted)
-										{
-
-										}
-										if (res.DailyLimitReached)
-										{
-											actionsContainerManager.TriggerAction(actionName.GetValueFromDescription<ActionType>(), DateTime.UtcNow.AddDays(1));
-										}
-										else if (res.HourlyLimitReached)
-										{
-											actionsContainerManager.TriggerAction(actionName.GetValueFromDescription<ActionType>(), DateTime.UtcNow.AddHours(1));
-										}
-									});
-									break;
-								}
-							case (int)AgentState.Sleeping when scheduledForUser == -1:
-								shortInstagram.SleepTimeRemaining = DateTime.UtcNow.AddMinutes(SecureRandom.Next(25, 35) + SecureRandom.NextDouble());
-								shortInstagram.AgentState = (int)AgentState.DeepSleep;
-								await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser, new InstagramAccountModel
-								{
-									SleepTimeRemaining = shortInstagram.SleepTimeRemaining,
-									AgentState = shortInstagram.AgentState
-								});
-								break;
-							case (int)AgentState.Sleeping:
-								{
-									if (scheduledForUser <= 10)
-									{
-										shortInstagram.SleepTimeRemaining = DateTime.UtcNow.AddMinutes(SecureRandom.Next(25, 35) + SecureRandom.NextDouble());
-										shortInstagram.AgentState = (int)AgentState.DeepSleep;
-
-										await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser, new InstagramAccountModel
-										{
-											SleepTimeRemaining = shortInstagram.SleepTimeRemaining,
-											AgentState = shortInstagram.AgentState
-										});
-									}
-									break;
-								}
-							case (int)AgentState.Blocked:
-								{
-									var items = _timelineLogic.GetScheduledEventsForUser(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser, 2000).ToList();
-									items.ForEach(_ =>
-									{
-										_timelineLogic.DeleteEvent(_.ItemId);
-									});
-									shortInstagram.SleepTimeRemaining = DateTime.UtcNow.AddHours(6);
-									shortInstagram.AgentState = (int)AgentState.DeepSleep;
-									await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser, new InstagramAccountModel
-									{
-										SleepTimeRemaining = shortInstagram.SleepTimeRemaining,
-										AgentState = shortInstagram.AgentState
-									});
-									break;
-								}
-							case (int)AgentState.Challenge:
-								{
-									var items = _timelineLogic.GetScheduledEventsForUser(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser, 2000).ToList();
-									items.ForEach(_ =>
-									{
-										_timelineLogic.DeleteEvent(_.ItemId);
-									});
-									shortInstagram.AgentState = (int)AgentState.AwaitingActionFromUser;
-									await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser, new InstagramAccountModel
-									{
-										AgentState = shortInstagram.AgentState,
-									});
-									break;
-								}
-							case (int)AgentState.DeepSleep when shortInstagram.SleepTimeRemaining.HasValue:
-								{
-									if (DateTime.UtcNow > shortInstagram.SleepTimeRemaining.Value)
-									{
-										shortInstagram.AgentState = (int)AgentState.Running;
-										await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser, new InstagramAccountModel
-										{
-											AgentState = shortInstagram.AgentState,
-										});
-									}
-									break;
-								}
-							case (int)AgentState.DeepSleep:
-								shortInstagram.AgentState = (int)AgentState.Running;
-								await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser, new InstagramAccountModel
-								{
-									AgentState = shortInstagram.AgentState,
-								});
-								break;
-							case (int)AgentState.Stopped:
-								break;
-						}
-						#endregion
-					}
-					catch (Exception ee)
-					{
-						Console.WriteLine(ee.Message);
 					}
 				}
 
-				await Task.Delay(TimeSpan.FromSeconds(1));
+				#endregion
+
+				#region Initialise Actions
+
+				var actionsContainerManager = new ActionsContainerManager();
+
+				var likePostAct = _actionCommitFactory.Create(ActionType.LikePost, userStoreDetails);
+				var likeCommentAct = _actionCommitFactory.Create(ActionType.LikeComment, userStoreDetails);
+				var followAct = _actionCommitFactory.Create(ActionType.FollowUser, userStoreDetails);
+				var createCommentAct = _actionCommitFactory.Create(ActionType.CreateCommentMedia, userStoreDetails);
+				var postMediaAct = _actionCommitFactory.Create(ActionType.CreatePost, userStoreDetails)
+					.ModifyOptions(new PostActionOptions(_postAnalyser, _s3BucketLogic));
+
+				actionsContainerManager.AddAction(likePostAct, availableDate.AddMinutes(SecureRandom.Next(1, 4)),
+					0.25);
+				actionsContainerManager.AddAction(likeCommentAct, availableDate.AddMinutes(SecureRandom.Next(4)),
+					0.25);
+				actionsContainerManager.AddAction(followAct, availableDate.AddMinutes(SecureRandom.Next(1, 4)),
+					0.20);
+				actionsContainerManager.AddAction(createCommentAct,
+					availableDate.AddMinutes(SecureRandom.Next(1, 4)), 0.15);
+				actionsContainerManager.AddAction(postMediaAct, availableDate.AddMinutes(SecureRandom.Next(1, 5)),
+					0.05);
+
+				#endregion
+
+				#region Agent State Handler
+				if (account.AgentState == (int)AgentState.NotStarted)
+				{
+					account.AgentState = (int)AgentState.Running;
+					await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.AccountId,
+						userStoreDetails.InstagramAccountUser, new InstagramAccountModel
+					{
+						AgentState = account.AgentState,
+					});
+				}
+				switch (account.AgentState)
+				{
+					case (int)AgentState.Running:
+						{
+							if (scheduledForUser != -1)
+							{
+								if (scheduledForUser > 100)
+								{
+									account.AgentState = (int)AgentState.Sleeping;
+									await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.AccountId,
+										userStoreDetails.InstagramAccountUser, new InstagramAccountModel
+									{
+										AgentState = account.AgentState,
+									});
+								}
+							}
+
+							var nominatedAction = actionsContainerManager.GetRandomAction();
+							actionsContainerManager.AddWork(nominatedAction);
+							await actionsContainerManager.RunAction();
+
+							var actionFinished = actionsContainerManager.GetFinishedAction();
+							if (actionFinished == null)
+							{
+								break;
+							}
+
+							foreach (var eventBody in actionFinished.DataObjects)
+							{
+								var timeSett = actionsContainerManager.FindActionLimit(actionFinished.ActionType);
+								
+								nextAvailableDate = _timelineLogic.PickAGoodTime(userStoreDetails.AccountId,
+									userStoreDetails.InstagramAccountUser, actionFinished.ActionType);
+
+								actionsContainerManager.HasMetTimeLimit();
+
+								if (nextAvailableDate == null) break;
+
+								eventBody.ExecutionTime = nextAvailableDate.Value.AddSeconds(timeSett.Max);
+
+								var res = await AddToTimeline(new EventActionOptions
+								{
+									ActionType = (int) actionFinished.ActionType,
+									ActionDescription = actionFinished.ActionDescription,
+									DataObject = new EventActionOptions.EventBody
+									{
+										Body = eventBody.Body,
+										BodyType = eventBody.BodyType
+									},
+									ExecutionTime = eventBody.ExecutionTime,
+									User = new UserStore
+									{
+										InstagramAccountUsername = actionFinished.User.InstagramAccountUsername,
+										AccountId = actionFinished.User.AccountId,
+										InstagramAccountUser = actionFinished.User.InstagramAccountUser
+									}
+								}, account.UserLimits);
+
+								if (res.HasCompleted)
+								{
+
+								}
+								if (res.DailyLimitReached)
+								{
+									actionsContainerManager.TriggerAction(actionFinished.ActionType, DateTime.UtcNow.AddDays(1));
+								}
+								else if (res.HourlyLimitReached)
+								{
+									actionsContainerManager.TriggerAction(actionFinished.ActionType, DateTime.UtcNow.AddHours(1));
+								}
+							}
+							break;
+						}
+					case (int)AgentState.Sleeping when scheduledForUser == -1:
+						account.SleepTimeRemaining = DateTime.UtcNow.AddMinutes(SecureRandom.Next(25, 35) + SecureRandom.NextDouble());
+						account.AgentState = (int)AgentState.DeepSleep;
+						await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.AccountId, userStoreDetails.InstagramAccountUser, new InstagramAccountModel
+						{
+							SleepTimeRemaining = account.SleepTimeRemaining,
+							AgentState = account.AgentState
+						});
+						break;
+					case (int)AgentState.Sleeping:
+						{
+							if (scheduledForUser <= 10)
+							{
+								account.SleepTimeRemaining = DateTime.UtcNow.AddMinutes(SecureRandom.Next(25, 35) + SecureRandom.NextDouble());
+								account.AgentState = (int)AgentState.DeepSleep;
+
+								await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.AccountId, userStoreDetails.InstagramAccountUser, new InstagramAccountModel
+								{
+									SleepTimeRemaining = account.SleepTimeRemaining,
+									AgentState = account.AgentState
+								});
+							}
+							break;
+						}
+					case (int)AgentState.Blocked:
+						{
+							var items = _timelineLogic.GetScheduledEventsForUser(userStoreDetails.AccountId, userStoreDetails.InstagramAccountUser, 2000).ToList();
+							items.ForEach(_ =>
+							{
+								_timelineLogic.DeleteEvent(_.ItemId);
+							});
+							account.SleepTimeRemaining = DateTime.UtcNow.AddHours(6);
+							account.AgentState = (int)AgentState.DeepSleep;
+							await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.AccountId, userStoreDetails.InstagramAccountUser, new InstagramAccountModel
+							{
+								SleepTimeRemaining = account.SleepTimeRemaining,
+								AgentState = account.AgentState
+							});
+							break;
+						}
+					case (int)AgentState.Challenge:
+						{
+							var items = _timelineLogic.GetScheduledEventsForUser(userStoreDetails.AccountId, userStoreDetails.InstagramAccountUser, 2000).ToList();
+							items.ForEach(_ =>
+							{
+								_timelineLogic.DeleteEvent(_.ItemId);
+							});
+							account.AgentState = (int)AgentState.AwaitingActionFromUser;
+							await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.AccountId, userStoreDetails.InstagramAccountUser, new InstagramAccountModel
+							{
+								AgentState = account.AgentState,
+							});
+							break;
+						}
+					case (int)AgentState.DeepSleep when account.SleepTimeRemaining.HasValue:
+						{
+							if (DateTime.UtcNow > account.SleepTimeRemaining.Value)
+							{
+								account.AgentState = (int)AgentState.Running;
+								await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.AccountId, userStoreDetails.InstagramAccountUser, new InstagramAccountModel
+								{
+									AgentState = account.AgentState,
+								});
+							}
+							break;
+						}
+					case (int)AgentState.DeepSleep:
+						account.AgentState = (int)AgentState.Running;
+						await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.AccountId, userStoreDetails.InstagramAccountUser, new InstagramAccountModel
+						{
+							AgentState = account.AgentState,
+						});
+						break;
+					case (int)AgentState.Stopped:
+						break;
+				}
+				#endregion
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err);
+			}
+			finally
+			{
+				Console.WriteLine($"Ended Agent Automation for {accountId}/{instagramAccountId}");
 			}
 		}
-
 
 		#region GET TIMELINE DETAILS
 		//		private ScheduleWindow GetDayCompletedActions(string accountId, string instagramId = null, int limit = 1000)
@@ -879,36 +830,36 @@ namespace Quarkless.Logic.Services.Automation
 		//			}
 		//		}
 
-		private ScheduleWindow GetTodaysScheduleWindow(string accountId, string instagramId = null, int limit = 1000)
-		{
-			var _locker = new object();
-			lock (_locker)
-			{
-				var todays = new List<ResultBase<TimelineItem>>();
-				var backwards = _timelineLogic.GetAllEventsForUser(accountId, DateTime.UtcNow, instaId: instagramId,
-					limit: limit, timelineDateType: TimelineDateType.Backwards);
-				var forward = _timelineLogic.GetAllEventsForUser(accountId, DateTime.UtcNow, instaId: instagramId,
-					limit: limit, timelineDateType: TimelineDateType.Forward);
-
-				if (backwards != null)
-					todays.AddRange(backwards);
-				if (forward != null)
-					todays.AddRange(forward);
-
-				if (todays.Count <= 0) return null;
-				var schedulerHistory = todays.OrderBy(_ => _.Response.EnqueueTime).GroupBy(_ => new { _.TimelineType, _.Response.ActionName });
-
-				return new ScheduleWindow
-				{
-					All = schedulerHistory.Where(_ => !string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.CreatePost.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList(),
-					CreatePostActions = schedulerHistory.Where(_ => string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.CreatePost.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList(),
-					CommentingActions = schedulerHistory.Where(_ => string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.CreateCommentMedia.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList(),
-					FollowUserActions = schedulerHistory.Where(_ => string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.FollowUser.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList(),
-					LikeMediaActions = schedulerHistory.Where(_ => string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.LikePost.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList(),
-					LikeCommentActions = schedulerHistory.Where(_ => string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.LikeComment.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList()
-				};
-			}
-		}
+		// private ScheduleWindow GetTodaysScheduleWindow(string accountId, string instagramId = null, int limit = 1000)
+		// {
+		// 	var _locker = new object();
+		// 	lock (_locker)
+		// 	{
+		// 		var todays = new List<ResultBase<TimelineItem>>();
+		// 		var backwards = _timelineLogic.GetAllEventsForUser(accountId, DateTime.UtcNow, instaId: instagramId,
+		// 			limit: limit, timelineDateType: TimelineDateType.Backwards);
+		// 		var forward = _timelineLogic.GetAllEventsForUser(accountId, DateTime.UtcNow, instaId: instagramId,
+		// 			limit: limit, timelineDateType: TimelineDateType.Forward);
+		//
+		// 		if (backwards != null)
+		// 			todays.AddRange(backwards);
+		// 		if (forward != null)
+		// 			todays.AddRange(forward);
+		//
+		// 		if (todays.Count <= 0) return null;
+		// 		var schedulerHistory = todays.OrderBy(_ => _.Response.EnqueueTime).GroupBy(_ => new { _.TimelineType, _.Response.ActionName });
+		//
+		// 		return new ScheduleWindow
+		// 		{
+		// 			All = schedulerHistory.Where(_ => !string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.CreatePost.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList(),
+		// 			CreatePostActions = schedulerHistory.Where(_ => string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.CreatePost.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList(),
+		// 			CommentingActions = schedulerHistory.Where(_ => string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.CreateCommentMedia.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList(),
+		// 			FollowUserActions = schedulerHistory.Where(_ => string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.FollowUser.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList(),
+		// 			LikeMediaActions = schedulerHistory.Where(_ => string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.LikePost.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList(),
+		// 			LikeCommentActions = schedulerHistory.Where(_ => string.Equals(_.Key?.ActionName?.Split('_')?[0], ActionType.LikeComment.GetDescription(), StringComparison.CurrentCultureIgnoreCase)).SquashMe().ToList()
+		// 		};
+		// 	}
+		// }
 
 		//		private ScheduleWindow GetLastHoursScheduleWindow(string accountId, string instagramId = null, int limit = 1000)
 		//		{

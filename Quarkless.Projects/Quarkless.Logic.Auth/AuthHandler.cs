@@ -96,22 +96,17 @@ namespace Quarkless.Logic.Auth
 			try
 			{
 				var userResp = await _cognito.GetUserAsync(req);
-				if(userResp.HttpStatusCode == System.Net.HttpStatusCode.OK)
-				{
-					responseResult.Results = userResp;
-					responseResult.IsSuccessful = true;
-					return responseResult;
-				}
-				else
-				{
-					return responseResult;
-				}
+				if (userResp.HttpStatusCode != HttpStatusCode.OK) return responseResult;
+				responseResult.Results = userResp;
+				responseResult.IsSuccessful = true;
+				return responseResult;
+
 			}
 			catch(Exception ee)
 			{
 				responseResult.Info = new ErrorResponse
 				{
-					StatusCode = System.Net.HttpStatusCode.ExpectationFailed,
+					StatusCode = HttpStatusCode.ExpectationFailed,
 					Message = ee.Message
 				};
 				return responseResult;

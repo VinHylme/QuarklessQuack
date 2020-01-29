@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using Quarkless.Models.Actions;
-using Quarkless.Models.Actions.Enums;
 using Quarkless.Models.Actions.Interfaces;
+using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Models;
 using Quarkless.Models.Timeline.Interfaces.TaskScheduler;
 using Quarkless.Models.Timeline.TaskScheduler;
@@ -24,9 +22,9 @@ namespace Quarkless.Logic.Timeline.TaskScheduler
 
 			var result = _actionExecuteFactory.Create((ActionType) jobOptions.ActionType, new UserStore
 			{
-				OAccountId = jobOptions.User.OAccountId,
-				OInstagramAccountUsername = jobOptions.User.OInstagramAccountUsername,
-				OInstagramAccountUser = jobOptions.User.OInstagramAccountUser
+				AccountId = jobOptions.User.AccountId,
+				InstagramAccountUsername = jobOptions.User.InstagramAccountUsername,
+				InstagramAccountUser = jobOptions.User.InstagramAccountUser
 			}).ExecuteAsync(new EventExecuteBody(jobOptions.DataObject.Body, jobOptions.DataObject.BodyType)).Result;
 
 			if (!result.IsSuccessful)

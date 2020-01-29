@@ -2,8 +2,8 @@
 {
 	public class UserStore
 	{
-		public string OAccountId { get; set; }
-		public string OInstagramAccountUser { get; set; }
-		public string OInstagramAccountUsername { get; set; }
+		public string AccountId { get; set; }
+		public string InstagramAccountUser { get; set; }
+		public string InstagramAccountUsername { get; set; }
 	}
 }

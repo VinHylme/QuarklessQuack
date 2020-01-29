@@ -24,6 +24,7 @@ using Quarkless.Base.ContentSearch;
 using Quarkless.Base.InstagramComments;
 using Quarkless.Events;
 using Quarkless.Events.Interfaces;
+using Quarkless.Logic.Actions.Factory.ActionBuilder.Manager;
 using Quarkless.Logic.Agent;
 using Quarkless.Logic.Auth;
 using Quarkless.Logic.Auth.Manager;
@@ -47,7 +48,6 @@ using Quarkless.Logic.ResponseResolver;
 using Quarkless.Logic.RestSharpClientManager;
 using Quarkless.Logic.SeleniumClient;
 using Quarkless.Logic.Services.Automation;
-using Quarkless.Logic.Services.Automation.Factory.FactoryManager;
 using Quarkless.Logic.Storage;
 using Quarkless.Logic.TextGenerator;
 using Quarkless.Logic.Timeline;
@@ -56,6 +56,7 @@ using Quarkless.Logic.Topic;
 using Quarkless.Logic.TranslateService;
 using Quarkless.Logic.Utilities;
 using Quarkless.Logic.WorkerManager;
+using Quarkless.Models.Actions.Interfaces;
 using Quarkless.Models.Agent.Interfaces;
 using Quarkless.Models.ApiLogger.Interfaces;
 using Quarkless.Models.Auth;
@@ -159,7 +160,7 @@ namespace Quarkless.Run.Services.Automation.Extensions
 			services.AddSingleton<IVideoEditor, VideoEditor>();
 			services.AddSingleton<IAudioEditor, AudioEditor>();
 			services.AddScoped<IAgentManager, AgentManager>();
-			services.AddScoped<IActionFactory, ActionsManager>();
+			services.AddScoped<IActionCommitFactory, ActionFactoryManager>();
 		}
 		internal static void IncludeConfigurators(this IServiceCollection services)
 		{

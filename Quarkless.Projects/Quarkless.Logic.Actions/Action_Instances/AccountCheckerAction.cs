@@ -15,8 +15,6 @@ using Quarkless.Models.Heartbeat;
 using Quarkless.Models.Heartbeat.Interfaces;
 using Quarkless.Models.Media;
 using Quarkless.Models.SearchResponse;
-using Quarkless.Models.Timeline;
-using ActionType = Quarkless.Models.Actions.Enums.ActionType;
 
 namespace Quarkless.Logic.Actions.Action_Instances
 {
@@ -43,7 +41,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				results.IsSuccessful = false;
 				results.Info = new ErrorResponse
 				{
-					Message = $"Account Check option is empty, user: {_user.OAccountId}, instaId: {_user.OInstagramAccountUsername}"
+					Message = $"Account Check option is empty, user: {_user.AccountId}, instaId: {_user.InstagramAccountUsername}"
 				};
 				return results;
 			}
@@ -106,9 +104,9 @@ namespace Quarkless.Logic.Actions.Action_Instances
 						ActionType = ActionType.MaintainAccount,
 						User = new UserStore
 						{
-							OAccountId = _user.OAccountId,
-							OInstagramAccountUsername = _user.OInstagramAccountUsername,
-							OInstagramAccountUser = _user.OInstagramAccountUser
+							AccountId = _user.AccountId,
+							InstagramAccountUsername = _user.InstagramAccountUsername,
+							InstagramAccountUser = _user.InstagramAccountUser
 						}
 					};
 
@@ -140,7 +138,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 			}
 			finally
 			{
-				Console.WriteLine($"Account Check Action Ended: { _user.OAccountId}, { _user.OInstagramAccountUsername}, { _user.OInstagramAccountUser}");
+				Console.WriteLine($"Account Check Action Ended: { _user.AccountId}, { _user.InstagramAccountUsername}, { _user.InstagramAccountUser}");
 			}
 		}
 

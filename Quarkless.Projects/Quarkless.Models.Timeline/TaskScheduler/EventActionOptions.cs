@@ -12,6 +12,7 @@ namespace Quarkless.Models.Timeline.TaskScheduler
 			public object Body { get; set; }
 		}
 		public int ActionType { get; set; }
+		public string ActionDescription { get; set; }
 		public EventBody DataObject { get; set; }
 		public UserStore User { get; set; }
 		public DateTimeOffset ExecutionTime { get; set; }

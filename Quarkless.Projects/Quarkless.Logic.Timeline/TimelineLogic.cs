@@ -10,6 +10,7 @@ using Newtonsoft.Json.Linq;
 using Quarkless.Analyser;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Extensions;
+using Quarkless.Models.Common.Models;
 using Quarkless.Models.Lookup;
 using Quarkless.Models.Lookup.Enums;
 using Quarkless.Models.Lookup.Interfaces;
@@ -45,13 +46,6 @@ namespace Quarkless.Logic.Timeline
 			_urlReader = urlReader;
 		}
 		#region Add Event To Queue
-		public string AddEventToTimeline(string actionName, RestModel restBody, DateTimeOffset executeTime)
-		{
-			restBody.RequestHeaders = _requestBuilder.DefaultHeaders(restBody.User.OInstagramAccountUser).ToList();
-
-			var eventId = _taskService.ScheduleEvent(actionName, restBody, executeTime);
-			return eventId;
-		}
 		public string AddEventToTimeline(EventActionOptions eventAction)
 		{
 			var eventId = _taskService.ScheduleEvent(eventAction);
@@ -64,10 +58,8 @@ namespace Quarkless.Logic.Timeline
 		}
 		private async Task<string> UploadToS3(byte[] media, string keyName)
 		{
-			using (var mediaStream = new MemoryStream(media))
-			{
-				return await _s3BucketLogic.UploadStreamFile(mediaStream, keyName);
-			}
+			await using var mediaStream = new MemoryStream(media);
+			return await _s3BucketLogic.UploadStreamFile(mediaStream, keyName);
 		}
 
 		public async Task<TimelineScheduleResponse<RawMediaSubmit>> SchedulePostsByUser(UserStoreDetails userStoreDetails,
@@ -78,19 +70,24 @@ namespace Quarkless.Logic.Timeline
 				RequestData = dataMediaSubmit,
 				IsSuccessful = false
 			};
-			if (string.IsNullOrEmpty(userStoreDetails.OAccountId) ||
-				string.IsNullOrEmpty(userStoreDetails.OAccessToken) ||
-				string.IsNullOrEmpty(userStoreDetails.OInstagramAccountUser))
-				return response;
 
+			if (string.IsNullOrEmpty(userStoreDetails.AccountId) ||
+				string.IsNullOrEmpty(userStoreDetails.InstagramAccountUser))
+				return response;
 			try
 			{
-				var options = new LongRunningJobOptions
+				var options = new EventActionOptions
 				{
-					ActionName = "createPost",
+					ActionType = (int) ActionType.CreatePost,
 					ExecutionTime = dataMediaSubmit.ExecuteTime,
-					Rest = new RestModel {User = userStoreDetails, RequestType = RequestType.Post}
+					User = new UserStore
+					{
+						AccountId = userStoreDetails.AccountId,
+						InstagramAccountUser = userStoreDetails.InstagramAccountUser,
+						InstagramAccountUsername = userStoreDetails.InstagramAccountUsername
+					}
 				};
+					
 				var mediaInfo = new MediaInfo
 				{
 					Caption = dataMediaSubmit.Caption,
@@ -106,54 +103,21 @@ namespace Quarkless.Logic.Timeline
 						? media.Media64BaseData
 						: await UploadToS3(Convert.FromBase64String(media.Media64BaseData.Split(',')[1]),
 							$"media_self_user{Guid.NewGuid()}");
-
-//					media.MediaByteArray = !media.Media64BaseData.IsBase64String() 
-//						? media.Media64BaseData.DownloadMedia() 
-//						: Convert.FromBase64String(media.Media64BaseData.Split(',')[1]);
 				}
 
 				switch (dataMediaSubmit.OptionSelected)
 				{
 					case MediaSelectionType.Image:
-						options.ActionName += $"_{MediaSelectionType.Image.ToString()}_userPosted";
-						options.Rest.BaseUrl = _urlReader.UploadPhoto;
-						options.Rest.JsonBody = JsonConvert.SerializeObject(new UploadPhotoModel
+						options.ActionDescription += $"_{MediaSelectionType.Image.ToString()}_userPosted";
+						options.DataObject = new EventActionOptions.EventBody
 						{
-							MediaTopic = null,
-							MediaInfo = mediaInfo,
-							Image = new InstaImageUpload()
-							{
-								Uri = dataMediaSubmit.RawMediaDatas.FirstOrDefault()?.UrlToSend
-							},
-							Location = dataMediaSubmit.Location != null
-								? new InstaLocationShort
-								{
-									Address = dataMediaSubmit.Location.Address,
-									Name = dataMediaSubmit.Location.City
-								}
-								: null
-						});
-						break;
-					case MediaSelectionType.Video:
-						options.ActionName += $"_{MediaSelectionType.Video.ToString()}_userPosted";
-						options.Rest.BaseUrl = _urlReader.UploadVideo;
-						var urlToSend = dataMediaSubmit.RawMediaDatas
-							.FirstOrDefault()?.UrlToSend;
-						if (urlToSend != null)
-							options.Rest.JsonBody = JsonConvert.SerializeObject(new UploadVideoModel
+							Body = new UploadPhotoModel
 							{
 								MediaTopic = null,
 								MediaInfo = mediaInfo,
-								Video = new InstaVideoUpload
+								Image = new InstaImageUpload()
 								{
-									Video = new InstaVideo
-									{
-										Uri = urlToSend
-									},
-									VideoThumbnail = new InstaImage
-									{
-										Uri = await UploadToS3(_postAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(_postAnalyser.Manager.DownloadMedia(urlToSend)), $"user_self_videoThumb_{Guid.NewGuid()}")
-									}
+									Uri = dataMediaSubmit.RawMediaDatas.FirstOrDefault()?.UrlToSend
 								},
 								Location = dataMediaSubmit.Location != null
 									? new InstaLocationShort
@@ -162,55 +126,99 @@ namespace Quarkless.Logic.Timeline
 										Name = dataMediaSubmit.Location.City
 									}
 									: null
-							});
+							},
+							BodyType = typeof(UploadPhotoModel)
+						};
 						break;
-					case MediaSelectionType.Carousel:
-						options.ActionName += $"_{MediaSelectionType.Carousel.ToString()}_userPosted";
-						options.Rest.BaseUrl = _urlReader.UploadCarousel;
-						options.Rest.JsonBody = JsonConvert.SerializeObject(new UploadAlbumModel
-						{
-							MediaTopic = null,
-							Album = dataMediaSubmit.RawMediaDatas.Select(x => new InstaAlbumUpload
+					case MediaSelectionType.Video:
+						options.ActionDescription += $"_{MediaSelectionType.Video.ToString()}_userPosted";
+
+						var urlToSend = dataMediaSubmit.RawMediaDatas
+							.FirstOrDefault()?.UrlToSend;
+						if (urlToSend != null)
+							options.DataObject = new EventActionOptions.EventBody
 							{
-								ImageToUpload = x.MediaType == MediaSelectionType.Image
-									? new InstaImageUpload
-									{
-										Uri = x.UrlToSend
-									}
-									: null,
-								VideoToUpload = x.MediaType == MediaSelectionType.Video
-									? new InstaVideoUpload
+								Body = new UploadVideoModel
+								{
+									MediaTopic = null,
+									MediaInfo = mediaInfo,
+									Video = new InstaVideoUpload
 									{
 										Video = new InstaVideo
 										{
-											Uri = x.UrlToSend
+											Uri = urlToSend
 										},
 										VideoThumbnail = new InstaImage
 										{
-											Uri = UploadToS3(_postAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(_postAnalyser.Manager.DownloadMedia(x.UrlToSend)),
-												$"user_self_videoThumb_{Guid.NewGuid()}").GetAwaiter().GetResult()
+											Uri = await UploadToS3(
+												_postAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(
+													_postAnalyser.Manager.DownloadMedia(urlToSend)),
+												$"user_self_videoThumb_{Guid.NewGuid()}")
 										}
-									}
-									: null
-							}).ToArray(),
-							Location = dataMediaSubmit.Location != null
-								? new InstaLocationShort
+									},
+									Location = dataMediaSubmit.Location != null
+										? new InstaLocationShort
+										{
+											Address = dataMediaSubmit.Location.Address,
+											Name = dataMediaSubmit.Location.City
+										}
+										: null
+								},
+								BodyType = typeof(UploadVideoModel)
+							};
+						break;
+					case MediaSelectionType.Carousel:
+						options.ActionDescription += $"_{MediaSelectionType.Carousel.ToString()}_userPosted";
+						options.DataObject = new EventActionOptions.EventBody
+						{
+							Body = new UploadAlbumModel
+							{
+								MediaTopic = null,
+								Album = dataMediaSubmit.RawMediaDatas.Select(x => new InstaAlbumUpload
 								{
-									Address = dataMediaSubmit.Location.Address,
-									Name = dataMediaSubmit.Location.City
-								}
-								: null,
-							MediaInfo = mediaInfo
-						});
+									ImageToUpload = x.MediaType == MediaSelectionType.Image
+										? new InstaImageUpload
+										{
+											Uri = x.UrlToSend
+										}
+										: null,
+									VideoToUpload = x.MediaType == MediaSelectionType.Video
+										? new InstaVideoUpload
+										{
+											Video = new InstaVideo
+											{
+												Uri = x.UrlToSend
+											},
+											VideoThumbnail = new InstaImage
+											{
+												Uri = UploadToS3(
+													_postAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(
+														_postAnalyser.Manager.DownloadMedia(x.UrlToSend)),
+													$"user_self_videoThumb_{Guid.NewGuid()}").GetAwaiter().GetResult()
+											}
+										}
+										: null
+								}).ToArray(),
+								Location = dataMediaSubmit.Location != null
+									? new InstaLocationShort
+									{
+										Address = dataMediaSubmit.Location.Address,
+										Name = dataMediaSubmit.Location.City
+									}
+									: null,
+								MediaInfo = mediaInfo
+							},
+							BodyType = typeof(UploadAlbumModel)
+						};
 						break;
 					default:
 						return response;
 				}
 
-				if (string.IsNullOrEmpty(options.Rest.JsonBody))
+				if (options.DataObject?.Body == null)
 					return response;
 
-				AddEventToTimeline(options.ActionName, options.Rest, options.ExecutionTime);
+				AddEventToTimeline(options);
 				response.IsSuccessful = true;
 				return response;
 			}
@@ -233,9 +241,8 @@ namespace Quarkless.Logic.Timeline
 			if (userStoreDetails == null)
 				return response;
 			
-			if (string.IsNullOrEmpty(userStoreDetails.OAccountId) ||
-			string.IsNullOrEmpty(userStoreDetails.OAccessToken) ||
-			string.IsNullOrEmpty(userStoreDetails.OInstagramAccountUser))
+			if (string.IsNullOrEmpty(userStoreDetails.AccountId) ||
+			string.IsNullOrEmpty(userStoreDetails.InstagramAccountUser))
 				return response;
 
 			foreach (var message in directMessages)
@@ -244,13 +251,18 @@ namespace Quarkless.Logic.Timeline
 				{
 					var localCopy = message.CloneObject();
 					localCopy.Recipients = new[] { messageRecipient };
-					var options = new LongRunningJobOptions
+
+					var availableTime = PickAGoodTime(userStoreDetails.AccountId, userStoreDetails.InstagramAccountUser, 
+						ActionType.SendDirectMessage) ?? DateTime.UtcNow;
+
+					var options = new EventActionOptions
 					{
-						ExecutionTime = PickAGoodTime(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser, ActionType.SendDirectMessage).AddMinutes(.9),
-						Rest = new RestModel
+						ExecutionTime = availableTime.AddMinutes(.9),
+						User = new UserStore
 						{
-							User = userStoreDetails,
-							RequestType = RequestType.Post
+							AccountId = userStoreDetails.AccountId,
+							InstagramAccountUser = userStoreDetails.InstagramAccountUser,
+							InstagramAccountUsername = userStoreDetails.InstagramAccountUsername
 						}
 					};
 
@@ -263,11 +275,13 @@ namespace Quarkless.Logic.Timeline
 								continue;;
 							}
 
-							options.Rest.JsonBody = model.ToJsonString();
-							options.Rest.BaseUrl = model.ThreadIds.Any() ? _urlReader.SendDirectMessageMediaWithThreads 
-								: _urlReader.SendDirectMessageMedia;
-
-							options.ActionName = ActionType.SendDirectMessageMedia.GetDescription();
+							options.DataObject = new EventActionOptions.EventBody
+							{
+								Body = model,
+								BodyType = model.GetType()
+							};
+							options.ActionType = (int) ActionType.SendDirectMessageMedia;
+							options.ActionDescription = ActionType.SendDirectMessageMedia.GetDescription();
 							break;
 						case SendDirectTextModel model:
 							if (string.IsNullOrEmpty(model.TextMessage))
@@ -276,9 +290,13 @@ namespace Quarkless.Logic.Timeline
 								continue;
 							}
 
-							options.Rest.JsonBody = model.ToJsonString();
-							options.Rest.BaseUrl = _urlReader.SendDirectMessageText;
-							options.ActionName = ActionType.SendDirectMessageText.GetDescription();
+							options.DataObject = new EventActionOptions.EventBody
+							{
+								Body = model,
+								BodyType = model.GetType()
+							};
+							options.ActionType = (int)ActionType.SendDirectMessageText;
+							options.ActionDescription = ActionType.SendDirectMessageText.GetDescription();
 							break;
 						case SendDirectLinkModel model:
 							if (string.IsNullOrEmpty(model.TextMessage) || string.IsNullOrEmpty(model.Link))
@@ -293,9 +311,13 @@ namespace Quarkless.Logic.Timeline
 								continue;
 							}
 
-							options.Rest.JsonBody = model.ToJsonString();
-							options.Rest.BaseUrl = _urlReader.SendDirectMessageLink;
-							options.ActionName = ActionType.SendDirectMessageLink.GetDescription();
+							options.DataObject = new EventActionOptions.EventBody
+							{
+								Body = model,
+								BodyType = model.GetType()
+							};
+							options.ActionType = (int)ActionType.SendDirectMessageLink;
+							options.ActionDescription = ActionType.SendDirectMessageLink.GetDescription();
 							break;
 						case SendDirectPhotoModel model:
 							if (string.IsNullOrEmpty(model.Image.Uri))
@@ -314,9 +336,13 @@ namespace Quarkless.Logic.Timeline
 								model.Image.Uri = null;
 							}
 
-							options.Rest.JsonBody = model.ToJsonString();
-							options.Rest.BaseUrl = _urlReader.SendDirectMessagePhoto;
-							options.ActionName = ActionType.SendDirectMessagePhoto.GetDescription();
+							options.DataObject = new EventActionOptions.EventBody
+							{
+								Body = model,
+								BodyType = model.GetType()
+							};
+							options.ActionType = (int)ActionType.SendDirectMessagePhoto;
+							options.ActionDescription = ActionType.SendDirectMessagePhoto.GetDescription();
 							break;
 						case SendDirectVideoModel model:
 							if (string.IsNullOrEmpty(model.Video.Video.Uri))
@@ -334,36 +360,44 @@ namespace Quarkless.Logic.Timeline
 								model.Video.Video.VideoBytes = _postAnalyser.Manager.DownloadMedia(model.Video.Video.Uri);
 								model.Video.Video.Uri = null;
 							}
-
 							model.Video.VideoThumbnail = new InstaImage
 							{
 								ImageBytes = _postAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(model.Video.Video.VideoBytes)
 							};
-							options.ActionName = ActionType.SendDirectMessageVideo.GetDescription();
-							options.Rest.JsonBody = model.ToJsonString();
-							options.Rest.BaseUrl = _urlReader.SendDirectMessageVideo;
+							options.DataObject = new EventActionOptions.EventBody
+							{
+								Body = model,
+								BodyType = model.GetType()
+							};
+							options.ActionType = (int)ActionType.SendDirectMessageVideo;
+							options.ActionDescription = ActionType.SendDirectMessageVideo.GetDescription();
 							break;
 						case SendDirectProfileModel model:
-
-							options.Rest.JsonBody = model.ToJsonString();
-							options.ActionName = ActionType.SendDirectMessageProfile.GetDescription();
-							options.Rest.BaseUrl = _urlReader.SendDirectMessageProfile;
+							options.DataObject = new EventActionOptions.EventBody
+							{
+								Body = model,
+								BodyType = model.GetType()
+							};
+							options.ActionType = (int)ActionType.SendDirectMessageProfile;
+							options.ActionDescription = ActionType.SendDirectMessageProfile.GetDescription();
 							break;
 						default:
 							response.NumberOfFails++;
 							continue;
 					}
 
-					if(string.IsNullOrEmpty(options.Rest.BaseUrl))
+					if (options.DataObject?.Body == null)
 						continue;
 					
-					AddEventToTimeline(ActionType.SendDirectMessage.GetDescription()+"_"+"none", options.Rest, options.ExecutionTime);
-					await _lookupCache.AddObjectToLookup(userStoreDetails.OAccountId, userStoreDetails.OInstagramAccountUser, localCopy.Recipients.FirstOrDefault(),
+					AddEventToTimeline(options);
+					
+					await _lookupCache.AddObjectToLookup(userStoreDetails.AccountId,
+						userStoreDetails.InstagramAccountUser, localCopy.Recipients.FirstOrDefault(),
 						new LookupModel {
 							Id = Guid.NewGuid().ToString(),
 							LastModified = DateTime.UtcNow,
 							LookupStatus = LookupStatus.Pending,
-							ActionType = options.ActionName.GetValueFromDescription<ActionType>()
+							ActionType = (ActionType) options.ActionType
 						});
 				}
 			}
@@ -378,62 +412,105 @@ namespace Quarkless.Logic.Timeline
 			return response;
 		}
 
-		public DateTime PickAGoodTime(string accountId, string instagramAccountId, ActionType? actionName = null)
+		public DateTime? PickAGoodTime(string accountId, string instagramAccountId, ActionType? actionName = null)
 		{
-			List<TimelineItem> sft;
-				switch (actionName)
-				{
-					case null:
-						sft = GetScheduledEventsForUserByDate(accountId, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
-						break;
-					case ActionType.SendDirectMessage:
-						sft = GetScheduledEventsForUserForActionByDate(accountId, actionName.Value.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
-						break;
-					case ActionType.CreatePost:
-						sft = GetScheduledEventsForUserForActionByDate(accountId, actionName.Value.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
-						break;
-					default:
-						sft = GetScheduledEventsForUserForActionByDate(accountId, ActionType.CreateCommentMedia.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
-						sft.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.FollowUser.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList());
-						sft.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.LikePost.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList());
-						sft.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.LikeComment.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList());
-						sft.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.UnFollowUser.GetDescription(), DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList());
-						break;
-				}
-				var datesPlanned = sft.Select(_ => _.EnqueueTime);
-				var dateTimes = datesPlanned as DateTime?[] ?? datesPlanned.ToArray();
-				if (!dateTimes.Any()) return DateTime.UtcNow;
-				{
-					var current = DateTime.UtcNow;
-					var difference = dateTimes.Where(_ => _ != null).Max(_ => _ - current);
-					var position = dateTimes.ToList().FindIndex(n => n - current == difference);
-					return dateTimes.ElementAt(position).Value;
-				}
+			List<TimelineItem> timelineItems;
+			switch (actionName)
+			{
+				case null:
+					timelineItems = GetScheduledEventsForUserByDate(accountId, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
+					break;
+				case ActionType.SendDirectMessage:
+					timelineItems = GetScheduledEventsForUserForActionByDate(accountId, actionName.Value, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
+					break;
+				case ActionType.CreatePost:
+					timelineItems = GetScheduledEventsForUserForActionByDate(accountId, actionName.Value, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
+					break;
+				default:
+					timelineItems = GetScheduledEventsForUserForActionByDate(accountId, ActionType.CreateCommentMedia, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
+					timelineItems.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.FollowUser, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList());
+					timelineItems.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.LikePost, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList());
+					timelineItems.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.LikeComment, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList());
+					timelineItems.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.UnFollowUser, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList());
+					break;
+			}
+
+			if (!timelineItems.Any())
+				return null;
+
+			var datesPlanned = timelineItems.Select(_ => _.EnqueueTime);
+			var dateTimes = datesPlanned as DateTime?[] ?? datesPlanned.ToArray();
+
+			if (!dateTimes.Any()) return DateTime.UtcNow;
+			{
+				var current = DateTime.UtcNow;
+				var difference = dateTimes.Where(_ => _ != null).Max(_ => _ - current);
+
+				var position = dateTimes.ToList().FindIndex(n => n - current == difference);
+				var datePick = dateTimes.ElementAt(position);
+
+				return datePick;
+			}
 		}
-		public string UpdateEvent(UpdateTimelineItemRequest updateTimelineItemRequest)
+	
+		public string UpdateEvent(UpdateTimelineMediaItemRequest updateTimelineMediaItemRequest)
 		{
-			try { 
-				var job = _taskService.GetEvent(updateTimelineItemRequest.Id);
-				job.ExecuteTime = updateTimelineItemRequest.Time;
-			
-				var object_ = JsonConvert.DeserializeObject(job.Rest.JsonBody, 
-					updateTimelineItemRequest.Type == 1 ? typeof(UploadPhotoModel) 
-					: updateTimelineItemRequest.Type == 2 ? typeof(UploadVideoModel) 
-					: updateTimelineItemRequest.Type == 3 ? typeof(UploadAlbumModel) : typeof(object)
-					);
-
-				object_.GetProp("MediaInfo").SetValue(object_, new MediaInfo
+			try 
+			{ 
+				var job = _taskService.GetEvent(updateTimelineMediaItemRequest.Id);
+				switch (job.EventBody.Body)
 				{
-					Caption = updateTimelineItemRequest.Caption,
-					Credit = updateTimelineItemRequest.Credit,
-					Hashtags = updateTimelineItemRequest.Hashtags
+					case UploadPhotoModel model:
+					{
+						model.MediaInfo = new MediaInfo
+						{
+							Caption = updateTimelineMediaItemRequest.Caption,
+							Credit = updateTimelineMediaItemRequest.Credit,
+							Hashtags = updateTimelineMediaItemRequest.Hashtags
+						};
+						model.Location = updateTimelineMediaItemRequest.Location;
+						job.EventBody.Body = model;
+						break;
+					}
+					case UploadVideoModel model:
+					{
+						model.MediaInfo = new MediaInfo
+						{
+							Caption = updateTimelineMediaItemRequest.Caption,
+							Credit = updateTimelineMediaItemRequest.Credit,
+							Hashtags = updateTimelineMediaItemRequest.Hashtags
+						};
+						model.Location = updateTimelineMediaItemRequest.Location;
+						job.EventBody.Body = model;
+						break;
+					}
+					case UploadAlbumModel model:
+					{
+						model.MediaInfo = new MediaInfo
+						{
+							Caption = updateTimelineMediaItemRequest.Caption,
+							Credit = updateTimelineMediaItemRequest.Credit,
+							Hashtags = updateTimelineMediaItemRequest.Hashtags
+						};
+						model.Location = updateTimelineMediaItemRequest.Location;
+						job.EventBody.Body = model;
+						break;
+					}
+					default:throw new NotImplementedException();
+				}
+				
+				if (!DeleteEvent(updateTimelineMediaItemRequest.Id)) return null;
+
+				job.ExecuteTime = updateTimelineMediaItemRequest.Time;
+				var res = AddEventToTimeline(new EventActionOptions
+				{
+					ActionType = (int) job.ActionType,
+					ActionDescription = job.ActionDescription,
+					DataObject = job.EventBody,
+					ExecutionTime = job.ExecuteTime,
+					User = job.User
 				});
-				object_.GetProp("Location").SetValue(object_, updateTimelineItemRequest.Location);
 
-				job.Rest.JsonBody = JsonConvert.SerializeObject(object_);
-
-				if (!DeleteEvent(updateTimelineItemRequest.Id)) return null;
-				var res = AddEventToTimeline(job.ActionName, job.Rest, job.ExecuteTime);
 				return !string.IsNullOrEmpty(res) ? res : null;
 			}
 			catch(Exception ee)
@@ -446,19 +523,22 @@ namespace Quarkless.Logic.Timeline
 		{
 			_taskService.ExecuteNow(eventId);
 		}
+
 		#endregion
 
 		#region Get Specified UserAction
-		public IEnumerable<TimelineItem> GetScheduledEventsForUserForAction(string actionName, string username, string instaId = null, int limit = 100)
+		public IEnumerable<TimelineItem> GetScheduledEventsForUserForAction(ActionType actionType, string username, string instaId = null, int limit = 100)
 		{
-			return GetScheduledEventsForUser(username, instaId, limit: limit).Where(_ => _.ActionName.Split('_')[0].ToLower().Equals(actionName.ToLower()));
+			return GetScheduledEventsForUser(username, instaId, limit: limit).Where(_ => _.ActionType == actionType);
 		}
 		#endregion
+
 		#region GET BY USING DATES
-		public IEnumerable<ResultBase<TimelineItem>> GetAllEventsForUserByAction(string actionName, string userName,
+
+		public IEnumerable<ResultBase<TimelineItem>> GetAllEventsForUserByAction(ActionType actionType, string userName,
 			DateTime startDate, DateTime? endDate = null, string instaId = null, int limit = 1000, TimelineDateType timelineDateType = TimelineDateType.Backwards)
 		{
-			return GetAllEventsForUser(userName, startDate, endDate, instaId, limit, timelineDateType).Where(_ => _?.Response?.ActionName?.Split('_')?[0]?.ToLower() == (actionName.ToLower()));
+			return GetAllEventsForUser(userName, startDate, endDate, instaId, limit, timelineDateType).Where(_ => _.Response.ActionType==actionType);
 		}
 
 		public IEnumerable<TimelineItem> GetScheduledEventsForUserByDate(string username, DateTime date, DateTime? endDate = null,
@@ -482,9 +562,10 @@ namespace Quarkless.Logic.Timeline
 					var eventsF = GetScheduledEventsForUser(username, instaId, limit: limit)
 						.Where(_ => _.EnqueueTime >= date && _.EnqueueTime <= endDate);
 					return eventsF;
+				default: throw new NotImplementedException();
 			}
-			return null;
 		}
+
 		public IEnumerable<TimelineFinishedItem> GetFinishedEventsForUserByDate(string username, DateTime date, DateTime? endDate = null,
 			string instaId = null, int limit = 100, TimelineDateType timelineDateType = TimelineDateType.Backwards)
 		{
@@ -495,20 +576,21 @@ namespace Quarkless.Logic.Timeline
 					{
 						endDate = date.AddDays(-1).AddTicks(1);
 					}
-					var eventsB = GetFinishedEventsForUser(username, instaId, limit: limit)
-						.Where(_ => _?.SuccededAt <= date && _?.SuccededAt >= endDate);
+					var eventsB = GetFinishedEventsForUser(username, instaId, limit)
+						.Where(_ => _?.SuccessAt <= date && _?.SuccessAt >= endDate);
 					return eventsB;
 				case TimelineDateType.Forward:
 					if (endDate == null)
 					{
 						endDate = date.AddDays(1).AddTicks(-1);
 					}
-					var eventsF = GetFinishedEventsForUser(username, instaId, limit: limit);
+					var eventsF = GetFinishedEventsForUser(username, instaId, limit);
 						
-					return eventsF.Where(_ => _?.SuccededAt >= date && _?.SuccededAt <= endDate);
+					return eventsF.Where(_ => _?.SuccessAt >= date && _?.SuccessAt <= endDate);
+				default: throw new NotImplementedException();
 			}
-			return null;
 		}
+
 		public IEnumerable<TimelineInProgressItem> GetCurrentlyRunningEventsForUserByDate(string username, DateTime date, DateTime? endDate = null,
 			int limit = 100, string instaid = null, TimelineDateType timelineDateType = TimelineDateType.Backwards)
 		{
@@ -530,9 +612,10 @@ namespace Quarkless.Logic.Timeline
 					var eventsF = GetCurrentlyRunningEventsForUser(username, instaid, limit: limit)
 						.Where(_ => _.StartedAt >= date && _.StartedAt <= endDate);
 					return eventsF;
+				default:throw new NotImplementedException();
 			}
-			return null;
 		}
+
 		public IEnumerable<TimelineDeletedItem> GetDeletedEventsForUserByDate(string username, DateTime date, DateTime? endDate = null,
 			string instaId = null, int limit = 100, TimelineDateType timelineDateType = TimelineDateType.Backwards)
 		{
@@ -554,9 +637,10 @@ namespace Quarkless.Logic.Timeline
 					var eventsF = GetDeletedEventsForUser(username, instaId, limit: limit)
 						.Where(_ => _.DeletedAt >= date && _.DeletedAt <= endDate);
 					return eventsF;
+				default: throw new NotImplementedException();
 			}
-			return null;
 		}
+
 		public IEnumerable<TimelineFailedItem> GetFailedEventsForUserByDate(string username, DateTime date, DateTime? endDate = null,
 			string instaId = null, int limit = 100, TimelineDateType timelineDateType = TimelineDateType.Backwards)
 		{
@@ -581,8 +665,10 @@ namespace Quarkless.Logic.Timeline
 			}
 			return null;
 		}
-		public IEnumerable<TimelineItem> GetScheduledEventsForUserForActionByDate(string username, string actionName, DateTime date,
-			string instaId = null, DateTime? endDate = null, int limit = 30, TimelineDateType timelineDateType = TimelineDateType.Backwards)
+
+		public IEnumerable<TimelineItem> GetScheduledEventsForUserForActionByDate(string username, 
+			ActionType actionType, DateTime date, string instaId = null, DateTime? endDate = null, int limit = 30, 
+			TimelineDateType timelineDateType = TimelineDateType.Backwards)
 		{
 			switch (timelineDateType)
 			{
@@ -592,7 +678,7 @@ namespace Quarkless.Logic.Timeline
 						endDate = date.AddDays(-1).AddTicks(1);
 					}
 					var eventsB = GetScheduledEventsForUser(username, instaId, limit: limit)
-						.Where(_ => (_.EnqueueTime <= date && _.EnqueueTime >= endDate) && _?.ActionName?.Split('_')?[0]?.ToLower() == (actionName.ToLower()));
+						.Where(_ => (_.EnqueueTime <= date && _.EnqueueTime >= endDate) && _.ActionType == actionType);
 					return eventsB;
 				case TimelineDateType.Forward:
 					if (endDate == null)
@@ -600,47 +686,54 @@ namespace Quarkless.Logic.Timeline
 						endDate = date.AddDays(1).AddTicks(-1);
 					}
 					var eventsF = GetScheduledEventsForUser(username, instaId, limit: limit)
-						.Where(_ => (_.EnqueueTime >= date && _.EnqueueTime <= endDate) && _?.ActionName?.Split('_')?[0]?.ToLower() == (actionName.ToLower()));
+						.Where(_ => (_.EnqueueTime >= date && _.EnqueueTime <= endDate) && _.ActionType == actionType);
 					return eventsF;
 			}
 			return null;
 		}
-		public IEnumerable<ResultBase<TimelineItemShort>> ShortGetAllEventsForUser(string userName, DateTime startDate, DateTime? endDate = null,
-		
-		string instaId = null, int limit = 1000, TimelineDateType timelineDateType = TimelineDateType.Backwards)
+
+		public IEnumerable<ResultBase<TimelineItemShort>> ShortGetAllEventsForUser(string userName, DateTime startDate, 
+			DateTime? endDate = null, string instaId = null, int limit = 1000, 
+			TimelineDateType timelineDateType = TimelineDateType.Backwards)
 		{
-			List<ResultBase<TimelineItemShort>> totalEvents = new List<ResultBase<TimelineItemShort>>();
-			totalEvents.AddRange(GetScheduledEventsForUserByDate(userName, startDate, endDate, instaId, limit, timelineDateType).Select(_ => new ResultBase<TimelineItemShort>
+			var totalEvents = new List<ResultBase<TimelineItemShort>>();
+
+			totalEvents.AddRange(GetScheduledEventsForUserByDate(userName, startDate, endDate, instaId, limit, 
+				timelineDateType).Select(_ => new ResultBase<TimelineItemShort>
 			{
 				Response = new TimelineItemShort
 				{
-					ActionName = _.ActionName,
+					ActionType = _.ActionType,
+					ActionDescription = _.ActionDescription,
 					EnqueueTime = _.EnqueueTime,
 					ItemId = _.ItemId,
 					StartTime = _.StartTime,
 					State = _.State,
-					Body = _.Rest.JsonBody,
-					TargetId = Regex.Match(_.Url.Split('/').Last(),@"\d+").Value
+					Body = _.EventBody,
 				},
 				TimelineType = typeof(TimelineItemShort)
 			}));
+
 			return totalEvents;
 		}
+
 		public IEnumerable<TimelineItemShort> GetScheduledPosts(string username, string instagramId, int limit = 1000)
 		{
-			var res = GetScheduledEventsForUserForAction(ActionType.CreatePost.GetDescription(), username, instagramId, limit).ToList();
+			var res = GetScheduledEventsForUserForAction(ActionType.CreatePost, username, instagramId,
+				limit).ToList();
 
-			return res.Select(s => new TimelineItemShort
+			return res.Select(_ => new TimelineItemShort
 			{
-				ActionName = s.ActionName,
-				StartTime = s.StartTime,
-				State = s.State,
-				Body = s.Rest.JsonBody,
-				EnqueueTime = s.EnqueueTime,
-				ItemId = s.ItemId,
-				TargetId = Regex.Match(s.Url.Split('/').Last(), @"\d+").Value
+				ActionType = _.ActionType,
+				ActionDescription = _.ActionDescription,
+				EnqueueTime = _.EnqueueTime,
+				ItemId = _.ItemId,
+				StartTime = _.StartTime,
+				State = _.State,
+				Body = _.EventBody,
 			}).Distinct();
 		}
+		
 		public IEnumerable<ResultBase<TimelineItem>> GetAllEventsForUser(string userName, DateTime startDate, DateTime? endDate = null,
 		string instaId = null, int limit = 1000, TimelineDateType timelineDateType = TimelineDateType.Backwards)
 		{
@@ -649,14 +742,14 @@ namespace Quarkless.Logic.Timeline
 			{
 				Response = new TimelineItem
 				{
-					ActionName = _.ActionName,
+					ActionType = _.ActionType,
+					ActionDescription = _.ActionDescription,
+					User = _.User,
+					EventBody = _.EventBody,
 					EnqueueTime = _.EnqueueTime,
 					ItemId = _.ItemId,
 					StartTime = _.StartTime,
-					State = _.State,
-					Url = _.Url,
-					User = _.User,
-					Rest = _.Rest
+					State = _.State
 				},
 				TimelineType = typeof(TimelineItem)
 			}));
@@ -723,6 +816,7 @@ namespace Quarkless.Logic.Timeline
 		}
 
 		#endregion
+
 		#region GETTING EVENT DETAILS FOR THE USER
 		public IEnumerable<TimelineItem> GetScheduledEventsForUser(string username, string instagramId = null, int limit = 30)
 		{
@@ -746,12 +840,14 @@ namespace Quarkless.Logic.Timeline
 		}
 
 		#endregion
+
 		#region GET BY SPECIFIED JOB ID FOR ANY USER (ADMIN) BUT CAN BE USED FOR USER LEVEL TOO (BECAREFUL)
 		public TimelineItemDetail GetEventDetail(string eventId)
 		{
 			return _taskService.GetEvent(eventId);
 		}
 		#endregion
+
 		#region ADMIN TIMELINE OPTIONS
 		public TimelineStatistics GetTimelineStatistics()
 		{

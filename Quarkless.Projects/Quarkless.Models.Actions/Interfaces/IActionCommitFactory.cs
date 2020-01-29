@@ -1,5 +1,5 @@
-﻿using Quarkless.Models.Actions.Enums;
-using Quarkless.Models.Timeline;
+﻿using Quarkless.Models.Actions.Models;
+using Quarkless.Models.Common.Enums;
 
 namespace Quarkless.Models.Actions.Interfaces
 {

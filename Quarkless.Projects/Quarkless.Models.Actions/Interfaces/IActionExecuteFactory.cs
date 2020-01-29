@@ -1,4 +1,4 @@
-﻿using Quarkless.Models.Actions.Enums;
+﻿using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Models;
 
 namespace Quarkless.Models.Actions.Interfaces

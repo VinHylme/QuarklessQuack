@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using Quarkless.Logic.WorkerManager;
-using Quarkless.Models.Actions.Enums;
 using Quarkless.Models.Actions.Factory;
 using Quarkless.Models.Actions.Interfaces;
+using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Models;
 using Quarkless.Models.InstagramAccounts.Interfaces;
 using Quarkless.Models.InstagramClient.Interfaces;
@@ -44,6 +42,6 @@ namespace Quarkless.Logic.Actions.Factory.ActionExecute.Manager
 
 		public IActionExecute Create(ActionType action, in UserStore user)
 			=> _factories[action].Create(new Worker(_apiClientContext, _instagramAccountLogic,
-				user.OAccountId, user.OInstagramAccountUser), _responseResolver);
+				user.AccountId, user.InstagramAccountUser), _responseResolver);
 	}
 }

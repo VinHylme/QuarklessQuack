@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Quarkless.Models.Auth.Enums;
 using Quarkless.Models.Auth.Interfaces;
-using Quarkless.Models.Lookup.Interfaces;
 using Quarkless.Models.Messaging;
 using Quarkless.Models.RequestBuilder.Interfaces;
 using Quarkless.Models.Timeline;
@@ -23,16 +22,14 @@ namespace Quarkless.Controllers
 	public class TimelineController : ControllerBase
 	{
 		private readonly IUserContext _userContext;
-		private readonly IRequestBuilder _requestBuilder;
 		private readonly ITimelineLogic _timelineLogic;
 		private readonly ITimelineEventLogLogic _timelineEventLogLogic;
-		public TimelineController(IUserContext userContext, ITimelineLogic timelineLogic, 
-			ITimelineEventLogLogic timelineEventLogLogic, IRequestBuilder requestBuilder)
+		public TimelineController(IUserContext userContext, ITimelineLogic timelineLogic,
+			ITimelineEventLogLogic timelineEventLogLogic)
 		{
 			_userContext = userContext;
 			_timelineLogic = timelineLogic;
 			_timelineEventLogLogic = timelineEventLogLogic;
-			_requestBuilder = requestBuilder;
 		}
 
 		[HttpGet]
@@ -107,12 +104,12 @@ namespace Quarkless.Controllers
 
 		[HttpPut]
 		[Route("api/timeline/update")]
-		public IActionResult UpdateEvent(UpdateTimelineItemRequest updateTimelineItemRequest)
+		public IActionResult UpdateEvent(UpdateTimelineMediaItemRequest updateTimelineMediaItemRequest)
 		{
 			if (string.IsNullOrEmpty(_userContext.CurrentUser)) return BadRequest("Cannot access this");
 			try
 			{
-				var newId = _timelineLogic.UpdateEvent(updateTimelineItemRequest);
+				var newId = _timelineLogic.UpdateEvent(updateTimelineMediaItemRequest);
 				if(!string.IsNullOrEmpty(newId))
 					return Ok(newId);
 
@@ -152,12 +149,10 @@ namespace Quarkless.Controllers
 			if (dataMediaSubmit.RawMediaDatas == null || dataMediaSubmit.RawMediaDatas?.Count()<=0)
 				return BadRequest("Invalid Media");
 
-			var accessToken = HttpContext.Request.Headers["Authorization"];
 			var user = new UserStoreDetails
 			{
-				OAccessToken = accessToken,
-				OAccountId = _userContext.CurrentUser,
-				OInstagramAccountUser = instagramId
+				AccountId = _userContext.CurrentUser,
+				InstagramAccountUser = instagramId
 			};
 
 			var results = await _timelineLogic.SchedulePostsByUser(user, dataMediaSubmit);
@@ -175,12 +170,10 @@ namespace Quarkless.Controllers
 		{
 			if (string.IsNullOrEmpty(_userContext.CurrentUser)) return BadRequest("something went wrong");
 			if (messages == null) return BadRequest("Invalid Params");
-			var accessToken = HttpContext.Request.Headers["Authorization"];
 			var user = new UserStoreDetails
 			{
-				OAccessToken = accessToken,
-				OAccountId = _userContext.CurrentUser,
-				OInstagramAccountUser = instagramId
+				AccountId = _userContext.CurrentUser,
+				InstagramAccountUser = instagramId
 			};
 
 			var schedule = await _timelineLogic.ScheduleMessage(user, messages);
@@ -196,12 +189,10 @@ namespace Quarkless.Controllers
 		{
 			if (string.IsNullOrEmpty(_userContext.CurrentUser)) return BadRequest("something went wrong");
 			if (messages == null) return BadRequest("Invalid Params");
-			var accessToken = HttpContext.Request.Headers["Authorization"];
 			var user = new UserStoreDetails
 			{
-				OAccessToken = accessToken,
-				OAccountId = _userContext.CurrentUser,
-				OInstagramAccountUser = instagramId
+				AccountId = _userContext.CurrentUser,
+				InstagramAccountUser = instagramId
 			};
 
 			var schedule = await _timelineLogic.ScheduleMessage(user, messages);
@@ -217,12 +208,10 @@ namespace Quarkless.Controllers
 		{
 			if (string.IsNullOrEmpty(_userContext.CurrentUser)) return BadRequest("something went wrong");
 			if (messages == null) return BadRequest("Invalid Params");
-			var accessToken = HttpContext.Request.Headers["Authorization"];
 			var user = new UserStoreDetails
 			{
-				OAccessToken = accessToken,
-				OAccountId = _userContext.CurrentUser,
-				OInstagramAccountUser = instagramId
+				AccountId = _userContext.CurrentUser,
+				InstagramAccountUser = instagramId
 			};
 
 			var schedule = await _timelineLogic.ScheduleMessage(user, messages);
@@ -238,12 +227,10 @@ namespace Quarkless.Controllers
 		{
 			if (string.IsNullOrEmpty(_userContext.CurrentUser)) return BadRequest("something went wrong");
 			if (messages == null) return BadRequest("Invalid Params");
-			var accessToken = HttpContext.Request.Headers["Authorization"];
 			var user = new UserStoreDetails
 			{
-				OAccessToken = accessToken,
-				OAccountId = _userContext.CurrentUser,
-				OInstagramAccountUser = instagramId
+				AccountId = _userContext.CurrentUser,
+				InstagramAccountUser = instagramId
 			};
 
 			var schedule = await _timelineLogic.ScheduleMessage(user, messages);
@@ -259,12 +246,10 @@ namespace Quarkless.Controllers
 		{
 			if (string.IsNullOrEmpty(_userContext.CurrentUser)) return BadRequest("something went wrong");
 			if (messages == null) return BadRequest("Invalid Params");
-			var accessToken = HttpContext.Request.Headers["Authorization"];
 			var user = new UserStoreDetails
 			{
-				OAccessToken = accessToken,
-				OAccountId = _userContext.CurrentUser,
-				OInstagramAccountUser = instagramId
+				AccountId = _userContext.CurrentUser,
+				InstagramAccountUser = instagramId
 			};
 
 			var schedule = await _timelineLogic.ScheduleMessage(user, messages);
@@ -276,16 +261,12 @@ namespace Quarkless.Controllers
 		
 		[HttpPost]
 		[Route("api/timeline/{instagramId}")]
-		public IActionResult AddEvent([FromRoute] string instagramId, [FromBody] LongRunningJobOptions eventItem)
+		public IActionResult AddEvent([FromRoute] string instagramId, [FromBody] EventActionOptions eventItem)
 		{
 			if (string.IsNullOrEmpty(_userContext.CurrentUser)) return BadRequest("something went wrong");
-			var accessToken = HttpContext.Request.Headers["Authorization"];
 			_userContext.FocusInstaAccount = instagramId;
-			var headers = _requestBuilder.DefaultHeaders(instagramId);
 			try {
-				eventItem.Rest.RequestHeaders.ToList().AddRange(headers);
-				eventItem.Rest.User.OAccessToken = accessToken;
-				_timelineLogic.AddEventToTimeline(eventItem.ActionName,eventItem.Rest, eventItem.ExecutionTime);
+				_timelineLogic.AddEventToTimeline(eventItem);
 				return Ok("Added to queue");
 			}
 			catch(Exception ee) {

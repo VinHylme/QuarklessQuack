@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Newtonsoft.Json;
-using Quarkless.Models.Common.Models;
 using Quarkless.Models.InstagramAccounts;
 using Quarkless.Models.Library;
 using Quarkless.Models.Profile;
@@ -17,19 +15,17 @@ namespace Quarkless.Models.Timeline
 		public ShortInstagramAccountModel ShortInstagram { get; set; }
 
 		[JsonIgnore]
-		public IEnumerable<MessagesLib> MessagesTemplates { get; set;  }
+		public IEnumerable<MessagesLib> MessagesTemplates { get; set; }
 
-		public string OAccountId { get; set; }
-		public string OAccessToken { get; set; }
-		public string ORefreshToken { get; set; }
-		public string OInstagramAccountUser { get; set; }
-		public string OInstagramAccountUsername { get; set; }
+		public string AccountId { get; set; }
+		public string InstagramAccountUser { get; set; }
+		public string InstagramAccountUsername { get; set; }
 
-		public void AddUpdateUser(string accountId, string instagramAccountId, string accessToken)
+		public void AddUpdateUser(string accountId, string instagramAccountId, string instagramAccountUsername)
 		{
-			this.OAccountId = accountId;
-			this.OInstagramAccountUser = instagramAccountId;
-			this.OAccessToken = accessToken;
+			AccountId = accountId;
+			InstagramAccountUser = instagramAccountId;
+			InstagramAccountUsername = instagramAccountUsername;
 		}
 	}
 }
