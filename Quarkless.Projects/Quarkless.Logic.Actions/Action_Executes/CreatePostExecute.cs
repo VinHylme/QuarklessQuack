@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Models;
 using Newtonsoft.Json;
+using Quarkless.Analyser;
 using Quarkless.Models.Actions;
 using Quarkless.Models.Actions.Interfaces;
 using Quarkless.Models.Common.Enums;
@@ -19,10 +20,12 @@ namespace Quarkless.Logic.Actions.Action_Executes
 	{
 		private readonly IWorker _worker;
 		private readonly IResponseResolver _responseResolver;
-		internal CreatePostExecute(IWorker worker, IResponseResolver responseResolver)
+		private readonly IPostAnalyser _postAnalyser;
+		internal CreatePostExecute(IWorker worker, IResponseResolver responseResolver, IPostAnalyser postAnalyser)
 		{
 			_worker = worker;
 			_responseResolver = responseResolver;
+			_postAnalyser = postAnalyser;
 		}
 		private string MakeCaption(MediaInfo mediaInfo)
 		{
@@ -46,6 +49,11 @@ namespace Quarkless.Logic.Actions.Action_Executes
 				if (eventAction.BodyType == typeof(UploadPhotoModel))
 				{
 					var model = JsonConvert.DeserializeObject<UploadPhotoModel>(eventAction.Body.ToJsonString());
+					
+					model.Image.ImageBytes = _postAnalyser.Manipulation.ImageEditor
+						.ResizeToClosestAspectRatio(_postAnalyser.Manager
+							.DownloadMedia(model.Image.Uri));
+
 					model.Image.Uri = string.Empty;
 
 					response = await _responseResolver.WithClient(_worker.Client)
@@ -56,6 +64,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 				else if(eventAction.BodyType == typeof(UploadVideoModel))
 				{
 					var model = JsonConvert.DeserializeObject<UploadVideoModel>(eventAction.Body.ToJsonString());
+					model.Video.Video.VideoBytes = _postAnalyser.Manager.DownloadMedia(model.Video.Video.Uri);
 					model.Video.Video.Uri = string.Empty;
 
 					response = await _responseResolver.WithClient(_worker.Client)
@@ -69,10 +78,18 @@ namespace Quarkless.Logic.Actions.Action_Executes
 					foreach (var instaAlbumUpload in model.Album)
 					{
 						if (instaAlbumUpload.VideoToUpload != null)
+						{
+							instaAlbumUpload.VideoToUpload.Video.VideoBytes =
+								_postAnalyser.Manager.DownloadMedia(instaAlbumUpload.VideoToUpload.Video.Uri);
 							instaAlbumUpload.VideoToUpload.Video.Uri = string.Empty;
+						}
 
 						else
+						{
+							instaAlbumUpload.ImageToUpload.ImageBytes =
+								_postAnalyser.Manager.DownloadMedia(instaAlbumUpload.ImageToUpload.Uri);
 							instaAlbumUpload.ImageToUpload.Uri = string.Empty;
+						}
 					}
 
 					response = await _responseResolver.WithClient(_worker.Client)

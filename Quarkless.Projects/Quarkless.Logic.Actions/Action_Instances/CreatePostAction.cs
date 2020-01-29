@@ -386,9 +386,9 @@ namespace Quarkless.Logic.Actions.Action_Instances
 						var imageUpload = new InstaImageUpload
 						{
 							Uri = imageData.Url,
-							ImageBytes = _actionOptions.PostAnalyser.Manipulation.ImageEditor
-								.ResizeToClosestAspectRatio(_actionOptions.PostAnalyser.Manager
-									.DownloadMedia(imageData.Url))
+							// ImageBytes = _actionOptions.PostAnalyser.Manipulation.ImageEditor
+							// 	.ResizeToClosestAspectRatio(_actionOptions.PostAnalyser.Manager
+							// 		.DownloadMedia(imageData.Url))
 						};
 						var selectedImageMedia = imageData.SelectedMedia.ObjectItem.Medias.FirstOrDefault();
 
@@ -464,7 +464,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 								Video = new InstaVideo
 								{
 									Uri = video.Url,
-									VideoBytes = _actionOptions.PostAnalyser.Manager.DownloadMedia(video.Url)
+									//VideoBytes = _actionOptions.PostAnalyser.Manager.DownloadMedia(video.Url)
 								},
 								VideoThumbnail = new InstaImage
 								{
@@ -512,14 +512,14 @@ namespace Quarkless.Logic.Actions.Action_Instances
 									ImageToUpload = f.MediaType == InstaMediaType.Image ? new InstaImageUpload
 									{
 										Uri = f.Url,
-										ImageBytes = _actionOptions.PostAnalyser.Manager.DownloadMedia(f.Url)
+										//ImageBytes = _actionOptions.PostAnalyser.Manager.DownloadMedia(f.Url)
 									} : null,
 									VideoToUpload = f.MediaType == InstaMediaType.Video ? new InstaVideoUpload
 									{
 										Video = new InstaVideo
 										{
 											Uri = f.Url,
-											VideoBytes = _actionOptions.PostAnalyser.Manager.DownloadMedia(f.Url)
+											//VideoBytes = _actionOptions.PostAnalyser.Manager.DownloadMedia(f.Url)
 										},
 										VideoThumbnail = new InstaImage
 										{

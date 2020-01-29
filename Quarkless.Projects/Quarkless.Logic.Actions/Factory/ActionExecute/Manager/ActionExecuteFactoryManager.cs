@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Quarkless.Analyser;
 using Quarkless.Logic.WorkerManager;
 using Quarkless.Models.Actions.Factory;
 using Quarkless.Models.Actions.Interfaces;
@@ -21,7 +22,7 @@ namespace Quarkless.Logic.Actions.Factory.ActionExecute.Manager
 		private readonly IApiClientContext _apiClientContext;
 		private readonly IResponseResolver _responseResolver;
 		public ActionExecuteFactoryManager(IInstagramAccountLogic instagramAccountLogic,
-			IApiClientContext clientContext, IResponseResolver responseResolver)
+			IApiClientContext clientContext, IResponseResolver responseResolver, IPostAnalyser postAnalyser)
 		{
 			_instagramAccountLogic = instagramAccountLogic;
 			_apiClientContext = clientContext;
@@ -30,7 +31,7 @@ namespace Quarkless.Logic.Actions.Factory.ActionExecute.Manager
 			_factories = new Dictionary<ActionType, ActionExecuteFactory>
 			{
 				{ ActionType.FollowUser, new ExecuteFollowUserActionFactory()},
-				{ ActionType.CreatePost, new ExecutePostActionFactory()},
+				{ ActionType.CreatePost, new ExecutePostActionFactory(postAnalyser)},
 				{ ActionType.LikePost, new ExecuteLikeMediaActionFactory()},
 				{ ActionType.CreateCommentMedia, new ExecuteCommentMediaActionFactory()},
 				{ ActionType.MaintainAccount, new ExecuteAccountCheckerActionFactory() },

@@ -7,7 +7,7 @@
          :style="eventStyles">
         <span class="v-cal-event-time">{{ fromNowFormat(event.startTime) }}</span>
         <!-- <span class="v-cal-event-name">{{ event.displayText }}</span> -->
-		<img class="v-cal-event-image" :src="(event.displayText)" alt="image" title="image">
+		<img class="v-cal-event-image" :src="(displayUrl)" alt="image" title="image">
     </div>
 </template>
 
@@ -68,6 +68,28 @@
             }
         },
         computed: {
+            displayUrl(){
+                const item = this.event.actionObject;
+                console.log(item)
+                if(item === undefined || item == null)
+                    return ''
+                else
+                {
+                    let url = '';
+                    switch(item.actionType){
+                        case 1:
+                            url = item.body.Image.Uri
+                            break;
+                        case 2:
+                            url = item.body.Video.VideoThumbnail.Uri
+                            break;
+                        case 3:
+                            url = item.body.Album[0].ImageToUpload.Uri;
+                            break;
+                    }
+                    return url
+                }
+            },
             displayHeight() {
 
                 const end = this.event.endTime.hours() > 0 ? moment(this.event.endTime) : moment(this.event.endTime).add(1, 'days');

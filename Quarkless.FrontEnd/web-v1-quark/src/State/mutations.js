@@ -64,9 +64,9 @@ export default {
           startTime: enqueueTime,
           endTime: enqueueTime.add(30,'minutes'),
           actionObject:{
-            actionName:item.actionName.split('_')[0],
-            actionType:item.actionName.split('_')[1],
-            body:item.body,
+            actionName:item.actionDescription.split('_')[0],
+            actionType:item.actionType,
+            body: JSON.parse(item.body).Body,
             targetId:item.targetId
           }
         })
@@ -98,7 +98,7 @@ export default {
 
       */
       const index = state.AccountData.TimelineData.findIndex((obj=>obj.id == event.id));
-      var tojsonObject = JSON.parse(state.AccountData.TimelineData[index].actionObject.body);
+      var tojsonObject = state.AccountData.TimelineData[index].actionObject.body;
       state.AccountData.TimelineData[index].id = newid;
       tojsonObject.MediaInfo.Caption = event.caption;
       tojsonObject.MediaInfo.Hashtags = event.hashtags;

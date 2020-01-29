@@ -25,19 +25,14 @@ function miniViewDialog(propsData){
 }
 export default {
     hoverView(params){
-        const bodyResp = JSON.parse(params.actionObject.body);
-
+        const bodyResp = params.actionObject.body;
         const caption = bodyResp.MediaInfo.Caption;
         const hashtags = bodyResp.MediaInfo.Hashtags;
         const credit = bodyResp.MediaInfo.Credit;
         const location = bodyResp.Location;
 
-        const type = params.actionObject.actionType.toLowerCase().includes('image') ? 0 
-        : params.actionObject.actionType.toLowerCase().includes('video') ? 1 
-        : params.actionObject.actionType.toLowerCase().includes('carousel') ? 2 : 404;
-
         var medias = [];
-        switch(type){
+        switch(params.actionObject.actionType){
             case 0: 
                 medias.push(bodyResp.Image.ImageBytes);
                 break;
@@ -61,22 +56,19 @@ export default {
             location:location,
             medias:medias,
             startTime: params.startTime,
-            type: type
+            type: params.actionObject.actionType
         }
         return miniViewDialog(propData);
     },
     view(params){
-        const bodyResp = JSON.parse(params.actionObject.body);
-
+        const bodyResp = params.actionObject.body;
         const caption = bodyResp.MediaInfo.Caption;
         const hashtags = bodyResp.MediaInfo.Hashtags;
         const credit = bodyResp.MediaInfo.Credit;
         const location = bodyResp.Location;
-        const type = params.actionObject.actionType.toLowerCase().includes('image') ? 1 
-        : params.actionObject.actionType.toLowerCase().includes('video') ? 2 
-        : params.actionObject.actionType.toLowerCase().includes('carousel') ? 3 : 404;
+
         var medias = [];
-        switch(type){
+        switch(params.actionObject.actionType){
             case 1: 
                 medias.push({type:1,url:bodyResp.Image.Uri});
                 break;
@@ -104,11 +96,12 @@ export default {
             medias:medias,
             mediaTopic:bodyResp.mediaTopic,
             startTime: params.startTime,
-            type: type
+            type: params.actionObject.actionType
         }
         return viewDialog(propData);
     },
     show(params, extraFields) {
+        console.log(params)
         const defaultParam = {
             title: 'Create Post',
             inputClass: null,

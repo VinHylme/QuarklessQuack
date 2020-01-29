@@ -458,47 +458,46 @@ namespace Quarkless.Logic.Timeline
 			try 
 			{ 
 				var job = _taskService.GetEvent(updateTimelineMediaItemRequest.Id);
-				switch (job.EventBody.Body)
+				if (job == null)
+					return null;
+
+				if (job.EventBody.BodyType == typeof(UploadPhotoModel))
 				{
-					case UploadPhotoModel model:
+					var model = JsonConvert.DeserializeObject<UploadPhotoModel>(job.EventBody.Body.ToJsonString());
+					model.MediaInfo = new MediaInfo
 					{
-						model.MediaInfo = new MediaInfo
-						{
-							Caption = updateTimelineMediaItemRequest.Caption,
-							Credit = updateTimelineMediaItemRequest.Credit,
-							Hashtags = updateTimelineMediaItemRequest.Hashtags
-						};
-						model.Location = updateTimelineMediaItemRequest.Location;
-						job.EventBody.Body = model;
-						break;
-					}
-					case UploadVideoModel model:
-					{
-						model.MediaInfo = new MediaInfo
-						{
-							Caption = updateTimelineMediaItemRequest.Caption,
-							Credit = updateTimelineMediaItemRequest.Credit,
-							Hashtags = updateTimelineMediaItemRequest.Hashtags
-						};
-						model.Location = updateTimelineMediaItemRequest.Location;
-						job.EventBody.Body = model;
-						break;
-					}
-					case UploadAlbumModel model:
-					{
-						model.MediaInfo = new MediaInfo
-						{
-							Caption = updateTimelineMediaItemRequest.Caption,
-							Credit = updateTimelineMediaItemRequest.Credit,
-							Hashtags = updateTimelineMediaItemRequest.Hashtags
-						};
-						model.Location = updateTimelineMediaItemRequest.Location;
-						job.EventBody.Body = model;
-						break;
-					}
-					default:throw new NotImplementedException();
+						Caption = updateTimelineMediaItemRequest.Caption,
+						Credit = updateTimelineMediaItemRequest.Credit,
+						Hashtags = updateTimelineMediaItemRequest.Hashtags
+					};
+					model.Location = updateTimelineMediaItemRequest.Location;
+					job.EventBody.Body = model;
 				}
-				
+				else if (job.EventBody.BodyType == typeof(UploadVideoModel))
+				{
+					var model = JsonConvert.DeserializeObject<UploadVideoModel>(job.EventBody.Body.ToJsonString());
+					model.MediaInfo = new MediaInfo
+					{
+						Caption = updateTimelineMediaItemRequest.Caption,
+						Credit = updateTimelineMediaItemRequest.Credit,
+						Hashtags = updateTimelineMediaItemRequest.Hashtags
+					};
+					model.Location = updateTimelineMediaItemRequest.Location;
+					job.EventBody.Body = model;
+				}
+				else if (job.EventBody.BodyType == typeof(UploadAlbumModel))
+				{
+					var model = JsonConvert.DeserializeObject<UploadAlbumModel>(job.EventBody.Body.ToJsonString());
+					model.MediaInfo = new MediaInfo
+					{
+						Caption = updateTimelineMediaItemRequest.Caption,
+						Credit = updateTimelineMediaItemRequest.Credit,
+						Hashtags = updateTimelineMediaItemRequest.Hashtags
+					};
+					model.Location = updateTimelineMediaItemRequest.Location;
+					job.EventBody.Body = model;
+				}
+
 				if (!DeleteEvent(updateTimelineMediaItemRequest.Id)) return null;
 
 				job.ExecuteTime = updateTimelineMediaItemRequest.Time;
@@ -709,7 +708,7 @@ namespace Quarkless.Logic.Timeline
 					ItemId = _.ItemId,
 					StartTime = _.StartTime,
 					State = _.State,
-					Body = _.EventBody,
+					Body = _.EventBody.ToJsonString(),
 				},
 				TimelineType = typeof(TimelineItemShort)
 			}));
@@ -730,7 +729,7 @@ namespace Quarkless.Logic.Timeline
 				ItemId = _.ItemId,
 				StartTime = _.StartTime,
 				State = _.State,
-				Body = _.EventBody,
+				Body = _.EventBody.ToJsonString(),
 			}).Distinct();
 		}
 		

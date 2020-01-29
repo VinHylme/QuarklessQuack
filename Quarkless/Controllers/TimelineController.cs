@@ -85,7 +85,8 @@ namespace Quarkless.Controllers
 			if (!string.IsNullOrEmpty(_userContext.CurrentUser))
 			{
 				//List<ResultBase<TimelineItemShort>> res = _timelineLogic.ShortGetAllEventsForUser(_userContext.CurrentUser,DateTime.UtcNow,instaId:instagramId,timelineDateType:TimelineDateType.Forward).ToList();			
-				return Ok(_timelineLogic.GetScheduledPosts(_userContext.CurrentUser,instagramId));
+				var res = _timelineLogic.GetScheduledPosts(_userContext.CurrentUser, instagramId);
+				return Ok(res);
 			}
 			return BadRequest();
 		}

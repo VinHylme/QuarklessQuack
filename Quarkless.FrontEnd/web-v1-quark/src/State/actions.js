@@ -509,6 +509,7 @@ export default {
           commit('updated_event', {event, newid: resp.data });
           resolve(resp);
         }).catch(err=>{
+          console.log(err)
           commit('failed_to_update_event')
           reject(err);
         })

@@ -315,23 +315,23 @@
                 return props;
             },
             calendarTitle() {
-
-                if ( this.activeDate === null )
+                if (this.activeDate === null)
                     return '';
 
-                if ( this.activeView === 'month') {
+                if(this.activeView === 'month') {
                     return this.activeDate.format('MMMM YYYY');
                 }
 
-                if ( this.activeView === 'week' ) {
+                if( this.activeView === 'week' ) {
                     const weekStart = moment(this.activeDate).day(0);
                     const weekEnd = moment(this.activeDate).day(6);
                     return weekStart.format('MMM D') + ' - ' + weekEnd.format('MMM D');
                 }
 
-                if ( this.activeView === 'day' ) {
+                if( this.activeView === 'day'){
                     return this.activeDate.format('dddd MMM D')
                 }
+                return '';
             }
         }
     }

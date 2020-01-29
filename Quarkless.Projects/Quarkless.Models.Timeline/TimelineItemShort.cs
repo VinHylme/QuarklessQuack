@@ -1,7 +1,6 @@
 ﻿using System;
 using Quarkless.Models.Common.Enums;
-using Quarkless.Models.Common.Models;
-using Quarkless.Models.Timeline.TaskScheduler;
+
 
 namespace Quarkless.Models.Timeline
 {
@@ -13,6 +12,6 @@ namespace Quarkless.Models.Timeline
 		public DateTime? StartTime { get; set; }
 		public DateTime? EnqueueTime { get; set; }
 		public bool State { get; set; }
-		public EventActionOptions.EventBody Body { get; set; }
+		public string Body { get; set; }
 	}
 }
