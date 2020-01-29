@@ -10,6 +10,7 @@ using Quarkless.Models.Actions.Enums.StrategyType;
 using Quarkless.Models.Actions.Factory.Action_Options;
 using Quarkless.Models.Actions.Interfaces;
 using Quarkless.Models.Actions.Models;
+using Quarkless.Models.Comments;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.Common.Models;
@@ -336,7 +337,11 @@ namespace Quarkless.Logic.Actions.Action_Instances
 								InstagramAccountUser = _user.InstagramAccountUser
 							}
 						};
-						@event.DataObjects.Add(new EventBody(nominatedComment.Value, nominatedComment.Value.GetType(), executionTime));
+						var request = new LikeCommentRequest
+						{
+							CommentId = nominatedComment.Value
+						};
+						@event.DataObjects.Add(new EventBody(request, request.GetType(), executionTime));
 						results.IsSuccessful = true;
 						results.Results = @event;
 						return results;

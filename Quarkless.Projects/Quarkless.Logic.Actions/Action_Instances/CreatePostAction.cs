@@ -386,7 +386,9 @@ namespace Quarkless.Logic.Actions.Action_Instances
 						var imageUpload = new InstaImageUpload
 						{
 							Uri = imageData.Url,
-							ImageBytes = _actionOptions.PostAnalyser.Manager.DownloadMedia(imageData.Url)
+							ImageBytes = _actionOptions.PostAnalyser.Manipulation.ImageEditor
+								.ResizeToClosestAspectRatio(_actionOptions.PostAnalyser.Manager
+									.DownloadMedia(imageData.Url))
 						};
 						var selectedImageMedia = imageData.SelectedMedia.ObjectItem.Medias.FirstOrDefault();
 
@@ -394,8 +396,12 @@ namespace Quarkless.Logic.Actions.Action_Instances
 						MediaInfo mediaInfo;
 
 						if (selectedImageMedia.Topic == null)
-							mediaInfo = await _contentInfoBuilder.GenerateMediaInfo(_user.Profile.ProfileTopic, null,
-								credit, SecureRandom.Next(20, 28), new[] {imageData.Url});
+							mediaInfo = await _contentInfoBuilder.GenerateMediaInfoBytes(_user.Profile.ProfileTopic, null,
+								credit, SecureRandom.Next(20, 28), new[]
+								{
+									_actionOptions.PostAnalyser.Manager
+										.DownloadMedia(imageData.Url)
+								});
 						else
 							mediaInfo = await _contentInfoBuilder.GenerateMediaInfo(_user.Profile.ProfileTopic,
 								selectedImageMedia.Topic, credit, SecureRandom.Next(20, 28));
@@ -477,14 +483,16 @@ namespace Quarkless.Logic.Actions.Action_Instances
 							var credit = selectedCarouselMedia.User?.Username;
 							MediaInfo mediaInfo;
 
-							if (selectedCarouselMedia.Topic == null)
+							var isImage = _actionOptions.PostAnalyser.Manager.DownloadMedia(selectedMediaData.Url)
+								.IsValidImage();
+
+							if (selectedCarouselMedia.Topic == null && isImage)
 								mediaInfo = _contentInfoBuilder.GenerateMediaInfo(_user.Profile.ProfileTopic, null,
 									credit, SecureRandom.Next(20, 28), new[] { selectedMediaData.Url }).Result;
 							else
 								mediaInfo = _contentInfoBuilder.GenerateMediaInfo(_user.Profile.ProfileTopic, 
 									selectedCarouselMedia.Topic, credit, SecureRandom.Next(20, 28)).Result;
 							
-
 							if (!_user.Profile.AdditionalConfigurations.AutoGenerateCaption)
 								mediaInfo.Caption = string.Empty;
 

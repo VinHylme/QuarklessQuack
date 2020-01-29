@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Quarkless.Base.InstagramUser.Models;
 using Quarkless.Models.Actions;
 using Quarkless.Models.Actions.Interfaces;
 using Quarkless.Models.Common.Enums;
+using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.Common.Models.Carriers;
 using Quarkless.Models.ResponseResolver.Interfaces;
 using Quarkless.Models.WorkerManager.Interfaces;
@@ -25,17 +28,13 @@ namespace Quarkless.Logic.Actions.Action_Executes
 			try
 			{
 				Console.WriteLine($"Started to execute {GetType().Name} for {_worker.WorkerAccountId}/{_worker.WorkerUsername}");
-				
-				if (!(eventAction.Body is long userId))
-				{
-					result.IsSuccessful = false;
-					result.Info = new ErrorResponse { Message = "Media Request is empty" };
-					return result;
-				}
+
+				var unFollowUserRequest =
+					JsonConvert.DeserializeObject<FollowAndUnFollowUserRequest>(eventAction.Body.ToJsonString());
 
 				var response = await _responseResolver.WithClient(_worker.Client)
-					.WithResolverAsync(await _worker.Client.User.UnFollowUserAsync(userId),
-						ActionType.UnFollowUser, userId.ToString());
+					.WithResolverAsync(await _worker.Client.User.UnFollowUserAsync(unFollowUserRequest.UserId),
+						ActionType.UnFollowUser, unFollowUserRequest.ToJsonString());
 
 				if (!response.Succeeded)
 				{

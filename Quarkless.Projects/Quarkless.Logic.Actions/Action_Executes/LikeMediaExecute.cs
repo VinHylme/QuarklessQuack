@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Quarkless.Models.Actions;
 using Quarkless.Models.Actions.Interfaces;
 using Quarkless.Models.Common.Enums;
+using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.Common.Models.Carriers;
+using Quarkless.Models.Media;
 using Quarkless.Models.ResponseResolver.Interfaces;
 using Quarkless.Models.WorkerManager.Interfaces;
 
@@ -25,17 +28,12 @@ namespace Quarkless.Logic.Actions.Action_Executes
 			try
 			{
 				Console.WriteLine($"Started to execute {GetType().Name} for {_worker.WorkerAccountId}/{_worker.WorkerUsername}");
-				
-				if (!(eventAction.Body is string mediaId))
-				{
-					result.IsSuccessful = false;
-					result.Info = new ErrorResponse { Message = "Media Request is empty" };
-					return result;
-				}
+
+				var requestLikeMedia = JsonConvert.DeserializeObject<LikeMediaModel>(eventAction.Body.ToJsonString());
 
 				var response = await _responseResolver.WithClient(_worker.Client)
-					.WithResolverAsync(await _worker.Client.Media.LikeMediaAsync(mediaId),
-						ActionType.LikePost, mediaId);
+					.WithResolverAsync(await _worker.Client.Media.LikeMediaAsync(requestLikeMedia.MediaId),
+						ActionType.LikePost, requestLikeMedia.ToJsonString());
 
 				if (!response.Succeeded)
 				{

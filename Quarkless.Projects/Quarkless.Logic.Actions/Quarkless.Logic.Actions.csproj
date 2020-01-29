@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Quarkless.Analyser\Quarkless.Analyser.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.InstagramUser\Quarkless.Base.InstagramUser.csproj" />
     <ProjectReference Include="..\Quarkless.Logic.WorkerManager\Quarkless.Logic.WorkerManager.csproj" />
     <ProjectReference Include="..\Quarkless.Models.Actions\Quarkless.Models.Actions.csproj" />
     <ProjectReference Include="..\Quarkless.Models.Comments\Quarkless.Models.Comments.csproj" />

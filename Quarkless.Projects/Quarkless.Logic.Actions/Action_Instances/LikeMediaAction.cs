@@ -15,6 +15,7 @@ using Quarkless.Models.Common.Models.Carriers;
 using Quarkless.Models.ContentInfo.Interfaces;
 using Quarkless.Models.Heartbeat;
 using Quarkless.Models.Heartbeat.Interfaces;
+using Quarkless.Models.Media;
 using Quarkless.Models.SearchResponse;
 
 namespace Quarkless.Logic.Actions.Action_Instances
@@ -316,7 +317,11 @@ namespace Quarkless.Logic.Actions.Action_Instances
 							}
 						};
 
-						@event.DataObjects.Add(new EventBody(nominatedMedia, nominatedMedia.GetType(), executionTime));
+						var request = new LikeMediaModel
+						{
+							MediaId = nominatedMedia
+						};
+						@event.DataObjects.Add(new EventBody(request, request.GetType(), executionTime));
 
 						results.IsSuccessful = true;
 						results.Results = @event;
@@ -382,7 +387,11 @@ namespace Quarkless.Logic.Actions.Action_Instances
 								var nominatedMedia = media.ObjectItem?.Medias?.FirstOrDefault()?.MediaId;
 								if (nominatedMedia == null) continue;
 
-								@event.DataObjects.Add(new EventBody(nominatedMedia, nominatedMedia.GetType(), 
+								var request = new LikeMediaModel
+								{
+									MediaId = nominatedMedia
+								};
+									@event.DataObjects.Add(new EventBody(request, request.GetType(), 
 									executionTime.AddMinutes(
 										_actionOptions.StrategySettings.OffsetPerAction.TotalMinutes * timerCounter++)));
 							}

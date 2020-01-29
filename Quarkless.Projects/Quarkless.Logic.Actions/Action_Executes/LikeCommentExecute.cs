@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Quarkless.Models.Actions;
 using Quarkless.Models.Actions.Interfaces;
+using Quarkless.Models.Comments;
 using Quarkless.Models.Common.Enums;
+using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.Common.Models.Carriers;
 using Quarkless.Models.ResponseResolver.Interfaces;
 using Quarkless.Models.WorkerManager.Interfaces;
@@ -25,17 +28,13 @@ namespace Quarkless.Logic.Actions.Action_Executes
 			try
 			{
 				Console.WriteLine($"Started to execute {GetType().Name} for {_worker.WorkerAccountId}/{_worker.WorkerUsername}");
-				
-				if (!(eventAction.Body is long commendId))
-				{
-					result.IsSuccessful = false;
-					result.Info = new ErrorResponse { Message = "Media Request is empty" };
-					return result;
-				}
+
+				var requestLikeCommentRequest =
+					JsonConvert.DeserializeObject<LikeCommentRequest>(eventAction.Body.ToJsonString());
 
 				var response = await _responseResolver.WithClient(_worker.Client)
-					.WithResolverAsync(await _worker.Client.Comment.LikeCommentAsync(commendId.ToString()),
-						ActionType.LikeComment, commendId.ToString());
+					.WithResolverAsync(await _worker.Client.Comment.LikeCommentAsync(requestLikeCommentRequest.CommentId.ToString()),
+						ActionType.LikeComment, requestLikeCommentRequest.ToJsonString());
 				
 				if (!response.Succeeded)
 				{

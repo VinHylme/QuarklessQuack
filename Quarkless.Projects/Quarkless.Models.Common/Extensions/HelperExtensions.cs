@@ -250,7 +250,8 @@ namespace Quarkless.Models.Common.Extensions
 		public static object TryGetType(this string json, params Type[] tests)
 		{
 			object resp = null;
-			foreach(var test in tests) { 
+			foreach(var test in tests)
+			{
 				try
 				{
 					resp = JsonConvert.DeserializeObject(json,test);

@@ -11,5 +11,8 @@ namespace Quarkless.Models.ContentInfo.Interfaces
 
 		Task<MediaInfo> GenerateMediaInfo(Profile.Topic profileTopic, CTopic mediaTopic,
 			string credit = null, int hashtagPickAmount = 20, IEnumerable<string> medias = null);
+
+		Task<MediaInfo> GenerateMediaInfoBytes(Profile.Topic profileTopic, CTopic mediaTopic,
+			string credit = null, int hashtagPickAmount = 20, IEnumerable<byte[]> medias = null);
 	}
 }

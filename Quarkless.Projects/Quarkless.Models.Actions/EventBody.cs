@@ -1,4 +1,5 @@
 ﻿using System;
+using Quarkless.Models.Common.Interfaces;
 
 namespace Quarkless.Models.Actions
 {

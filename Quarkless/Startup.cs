@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using Quarkless.Extensions;
 using Quarkless.Filters;
 using Quarkless.Models.Timeline.TaskScheduler;
@@ -87,10 +88,12 @@ namespace Quarkless
 			});
 			#endregion
 
-			GlobalConfiguration.Configuration.UseSerializerSettings(new Newtonsoft.Json.JsonSerializerSettings()
+			var serializerSettings = new JsonSerializerSettings()
 			{
-				ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
-			});
+				ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+			};
+
+			GlobalConfiguration.Configuration.UseSerializerSettings(serializerSettings);
 			GlobalJobFilters.Filters.Add(new ProlongExpirationTimeAttribute());
         }
 

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Models;
+using Newtonsoft.Json;
 using Quarkless.Models.Actions;
 using Quarkless.Models.Actions.Interfaces;
 using Quarkless.Models.Common.Enums;
@@ -40,49 +41,50 @@ namespace Quarkless.Logic.Actions.Action_Executes
 			try
 			{
 				Console.WriteLine($"Started to execute {GetType().Name} for {_worker.WorkerAccountId}/{_worker.WorkerUsername}");
+				
 				IResult<InstaMedia> response;
-				switch (eventAction.Body)
+				if (eventAction.BodyType == typeof(UploadPhotoModel))
 				{
-					case UploadPhotoModel model:
-					{
-						model.Image.Uri = string.Empty;
+					var model = JsonConvert.DeserializeObject<UploadPhotoModel>(eventAction.Body.ToJsonString());
+					model.Image.Uri = string.Empty;
 
-						response = await _responseResolver.WithClient(_worker.Client)
-							.WithResolverAsync(await _worker.Client.Media
-								.UploadPhotoAsync(model.Image, MakeCaption(model.MediaInfo), model.Location),
-								ActionType.CreatePost, model.ToJsonString());
-						break;
-					}
-					case UploadVideoModel model:
-					{
-						model.Video.Video.Uri = string.Empty;
-
-						response = await _responseResolver.WithClient(_worker.Client)
-							.WithResolverAsync(await _worker.Client.Media
-								.UploadVideoAsync(model.Video, MakeCaption(model.MediaInfo), model.Location), 
-								ActionType.CreatePost, model.ToJsonString());
-						break;
-					}
-					case UploadAlbumModel model:
-					{
-						foreach (var instaAlbumUpload in model.Album)
-						{
-							if (instaAlbumUpload.VideoToUpload != null)
-								instaAlbumUpload.VideoToUpload.Video.Uri = string.Empty;
-							
-							else
-								instaAlbumUpload.ImageToUpload.Uri = string.Empty;
-						}
-
-						response = await _responseResolver.WithClient(_worker.Client)
+					response = await _responseResolver.WithClient(_worker.Client)
 						.WithResolverAsync(await _worker.Client.Media
-							.UploadAlbumAsync(model.Album, MakeCaption(model.MediaInfo), model.Location), 
+								.UploadPhotoAsync(model.Image, MakeCaption(model.MediaInfo), model.Location),
 							ActionType.CreatePost, model.ToJsonString());
-						break;
-					}
-					default: throw new Exception("Invalid Model");
 				}
+				else if(eventAction.BodyType == typeof(UploadVideoModel))
+				{
+					var model = JsonConvert.DeserializeObject<UploadVideoModel>(eventAction.Body.ToJsonString());
+					model.Video.Video.Uri = string.Empty;
 
+					response = await _responseResolver.WithClient(_worker.Client)
+						.WithResolverAsync(await _worker.Client.Media
+								.UploadVideoAsync(model.Video, MakeCaption(model.MediaInfo), model.Location),
+							ActionType.CreatePost, model.ToJsonString());
+				}
+				else if (eventAction.BodyType == typeof(UploadAlbumModel))
+				{
+					var model = JsonConvert.DeserializeObject<UploadAlbumModel>(eventAction.Body.ToJsonString());
+					foreach (var instaAlbumUpload in model.Album)
+					{
+						if (instaAlbumUpload.VideoToUpload != null)
+							instaAlbumUpload.VideoToUpload.Video.Uri = string.Empty;
+
+						else
+							instaAlbumUpload.ImageToUpload.Uri = string.Empty;
+					}
+
+					response = await _responseResolver.WithClient(_worker.Client)
+						.WithResolverAsync(await _worker.Client.Media
+								.UploadAlbumAsync(model.Album, MakeCaption(model.MediaInfo), model.Location),
+							ActionType.CreatePost, model.ToJsonString());
+				}
+				else
+				{
+					throw new Exception("Invalid Model");
+				}
+				
 				if (response == null)
 				{
 					throw new Exception("Response returned null");

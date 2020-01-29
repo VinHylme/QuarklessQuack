@@ -81,6 +81,7 @@
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.Account\Quarkless.Models.Account.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.Agent\Quarkless.Models.Agent.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.Comments\Quarkless.Models.Comments.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.Common\Quarkless.Models.Common.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.ContentInfo\Quarkless.Models.ContentInfo.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.ContentSearch\Quarkless.Models.ContentSearch.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Models.HashtagGenerator\Quarkless.Models.HashtagGenerator.csproj" />

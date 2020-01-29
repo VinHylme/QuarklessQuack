@@ -31,6 +31,7 @@ namespace Quarkless.Logic.Timeline.TaskScheduler
 			return _jobRunner.AddJob(op =>
 			{
 				op.ActionType = eventAction.ActionType;
+				op.ActionDescription = eventAction.ActionDescription;
 				op.User = eventAction.User;
 				op.ExecutionTime = eventAction.ExecutionTime;
 				op.DataObject = eventAction.DataObject;

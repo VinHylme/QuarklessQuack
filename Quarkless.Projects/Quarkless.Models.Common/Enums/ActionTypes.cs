@@ -5,60 +5,60 @@ namespace Quarkless.Models.Common.Enums
 	public enum ActionType
 	{
 		[Description("none")]
-		None,
+		None = -1,
 		[Description("createpost")]
-		CreatePost,
+		CreatePost = 1,
 		[Description("createstory")]
-		CreateStory,
+		CreateStory = 2,
 		[Description("comment")]
-		CreateCommentMedia,
+		CreateCommentMedia = 3,
 		[Description("commentreply")]
-		CreateCommentReply,
+		CreateCommentReply = 4,
 		[Description("createbio")]
-		CreateBiography,
+		CreateBiography = 5,
 		[Description("followhashtag")]
-		FollowHashtag,
+		FollowHashtag = 6,
 		[Description("unfollowhashtag")]
-		UnFollowHashtag,
+		UnFollowHashtag = 7,
 		[Description("followuser")]
-		FollowUser,
+		FollowUser = 8,
 		[Description("unfollowuser")]
-		UnFollowUser,
+		UnFollowUser = 9,
 		[Description("likemedia")]
-		LikePost,
+		LikePost = 10,
 		[Description("unlikemedia")]
-		UnlikePost,
+		UnlikePost = 11,
 		[Description("likecomment")]
-		LikeComment,
+		LikeComment = 12,
 		[Description("unlikecomment")]
-		UnlikeComment,
+		UnlikeComment = 13,
 		[Description("actionchecker")]
-		MaintainAccount,
+		MaintainAccount = 14,
 		[Description("GetRecentActivityFeed")]
-		RecentActivityFeed,
+		RecentActivityFeed = 15,
 		[Description("refreshlogin")]
-		RefreshLogin,
+		RefreshLogin = 16,
 		[Description("changedProfilePicture")]
-		ChangeProfilePicture,
+		ChangeProfilePicture = 17,
 		[Description("getinbox")]
-		GetInbox,
+		GetInbox = 18,
 		[Description("getthread")]
-		GetThread,
+		GetThread = 19,
 		[Description("senddirectmessage")]
-		SendDirectMessage,
+		SendDirectMessage = 20,
 		[Description("sendmessagetext")]
-		SendDirectMessageText,
+		SendDirectMessageText = 21,
 		[Description("sendmessagelink")]
-		SendDirectMessageLink,
+		SendDirectMessageLink = 22,
 		[Description("sendmessagephoto")]
-		SendDirectMessagePhoto,
+		SendDirectMessagePhoto = 23,
 		[Description("sendmessagevideo")]
-		SendDirectMessageVideo,
+		SendDirectMessageVideo = 24,
 		[Description("sendmessageaudio")]
-		SendDirectMessageAudio,
+		SendDirectMessageAudio = 25,
 		[Description("sendmessageprofile")]
-		SendDirectMessageProfile,
+		SendDirectMessageProfile = 26,
 		[Description("sharemessagemedia")]
-		SendDirectMessageMedia
+		SendDirectMessageMedia = 27
 	}
 }

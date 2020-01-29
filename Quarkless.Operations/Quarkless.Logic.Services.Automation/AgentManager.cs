@@ -543,13 +543,13 @@ namespace Quarkless.Logic.Services.Automation
 						.ModifyOptions(new PostActionOptions(_postAnalyser, _s3BucketLogic));
 
 					actionsContainerManager.AddAction(likePostAct, availableDate.AddMinutes(SecureRandom.Next(1, 4)),
-						0.25);
+						0.30);
 					actionsContainerManager.AddAction(likeCommentAct, availableDate.AddMinutes(SecureRandom.Next(4)),
 						0.25);
 					actionsContainerManager.AddAction(followAct, availableDate.AddMinutes(SecureRandom.Next(1, 4)),
 						0.20);
 					actionsContainerManager.AddAction(createCommentAct,
-						availableDate.AddMinutes(SecureRandom.Next(1, 4)), 0.15);
+						availableDate.AddMinutes(SecureRandom.Next(1, 4)), 0.10);
 					actionsContainerManager.AddAction(postMediaAct, availableDate.AddMinutes(SecureRandom.Next(1, 5)),
 						0.05);
 
@@ -604,9 +604,9 @@ namespace Quarkless.Logic.Services.Automation
 
 								actionsContainerManager.HasMetTimeLimit();
 
-								if (nextAvailableDate == null) break;
+								var availaDate = nextAvailableDate ?? DateTime.UtcNow;
 
-								eventBody.ExecutionTime = nextAvailableDate.Value.AddSeconds(timeSett.Max);
+								eventBody.ExecutionTime = availaDate.AddSeconds(timeSett.Max);
 
 								var res = await AddToTimeline(new EventActionOptions
 								{

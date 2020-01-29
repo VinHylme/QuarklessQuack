@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Quarkless.Base.InstagramUser.Models;
 using Quarkless.Models.Actions;
 using Quarkless.Models.Actions.Enums.ActionTypes;
 using Quarkless.Models.Actions.Factory.Action_Options;
@@ -304,7 +305,11 @@ namespace Quarkless.Logic.Actions.Action_Instances
 						InstagramAccountUser = _user.InstagramAccountUser
 					}
 				};
-				@event.DataObjects.Add(new EventBody(nominatedFollower, nominatedFollower.GetType(), executionTime));
+				var request = new FollowAndUnFollowUserRequest
+				{
+					UserId = nominatedFollower
+				};
+				@event.DataObjects.Add(new EventBody(request, request.GetType(), executionTime));
 				results.Results = @event;
 				results.IsSuccessful = true;
 				return results;

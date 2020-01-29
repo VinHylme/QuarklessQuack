@@ -11,5 +11,9 @@ namespace Quarkless.Models.HashtagGenerator.Interfaces
 		Task<List<string>> SuggestHashtags(Profile.Topic profileTopic = null, CTopic mediaTopic = null, IEnumerable<string> images = null,
 			int pickAmount = 20, int keywordsFetchAmount = 4,
 			IEnumerable<string> preDefinedHashtagsToUse = null, int retries = 3);
+
+		Task<List<string>> SuggestHashtags(Profile.Topic profileTopic = null, CTopic mediaTopic = null,
+			IEnumerable<byte[]> images = null, int pickAmount = 20, int keywordsFetchAmount = 4,
+			IEnumerable<string> preDefinedHashtagsToUse = null, int retries = 3);
 	}
 }

@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using InstagramApiSharp.Classes.Models;
 using Quarkless.Models.Actions;
-using Quarkless.Models.Actions.Enums;
 using Quarkless.Models.Actions.Interfaces;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Extensions;

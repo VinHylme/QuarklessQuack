@@ -49,5 +49,26 @@ namespace Quarkless.Logic.ContentInfo
 				Hashtags = hashtagsToUse
 			};
 		}
+		public async Task<MediaInfo> GenerateMediaInfoBytes(Topic profileTopic, CTopic mediaTopic,
+			string credit = null, int hashtagPickAmount = 20, IEnumerable<byte[]> medias = null)
+		{
+			var hashtagsToUse = await _utilProviders.HashtagGenerator.SuggestHashtags(profileTopic, mediaTopic,
+				pickAmount: hashtagPickAmount, images: medias);
+			if (!hashtagsToUse.Any())
+			{
+				throw new Exception("Failed to find hashtags for image");
+			}
+
+			var caption = _utilProviders.TextGenerator.GenerateNRandomEmojies(_selectFrom.TakeAny(1).First(),
+				SecureRandom.Next(2, 5));
+			//.GenerateCaptionByMarkovChain(mediaTopic,SecureRandom.Next(1, 2));
+
+			return new MediaInfo
+			{
+				Caption = caption,
+				Credit = credit,
+				Hashtags = hashtagsToUse
+			};
+		}
 	}
 }

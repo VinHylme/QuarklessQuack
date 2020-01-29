@@ -1,9 +1,10 @@
 ﻿using InstagramApiSharp.Classes.Models;
+using Quarkless.Models.Common.Interfaces;
 using Quarkless.Models.Topic;
 
 namespace Quarkless.Models.Media
 {
-	public class UploadPhotoModel
+	public class UploadPhotoModel : IExec
 	{
 		public CTopic MediaTopic { get; set; }
 		public InstaImageUpload Image { get; set; }
