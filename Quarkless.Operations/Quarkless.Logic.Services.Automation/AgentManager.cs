@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Quarkless.Analyser;
@@ -22,7 +21,6 @@ using Quarkless.Models.InstagramAccounts.Interfaces;
 using Quarkless.Models.Library.Interfaces;
 using Quarkless.Models.Profile.Interfaces;
 using Quarkless.Models.Services.Automation.Interfaces;
-using Quarkless.Models.Services.Automation.Models.Agent;
 using Quarkless.Models.Storage.Interfaces;
 using Quarkless.Models.Timeline;
 using Quarkless.Models.Timeline.Enums;
@@ -451,6 +449,7 @@ namespace Quarkless.Logic.Services.Automation
 					InstagramAccountUsername = account.Username,
 					InstagramAccountUser = account.Id,
 					Profile = profile,
+					ShortInstagram = account,
 					MessagesTemplates = await _libraryLogic.GetSavedMessagesForUser(account.Id)
 				};
 

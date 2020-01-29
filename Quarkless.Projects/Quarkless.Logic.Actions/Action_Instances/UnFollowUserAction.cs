@@ -53,6 +53,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 					InstagramId = _user.ShortInstagram.Id
 				}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
 					.ToList();
+
 				if (fetchedUsers == null || !fetchedUsers.Any())
 				{
 					results.IsSuccessful = false;
