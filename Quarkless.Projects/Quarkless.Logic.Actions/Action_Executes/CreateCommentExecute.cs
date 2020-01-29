@@ -26,7 +26,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 			var result = new ResultCarrier<bool>();
 			try
 			{
-				Console.WriteLine($"Started to execute {nameof(GetType)} for {_worker.WorkerAccountId}/{_worker.WorkerUsername}");
+				Console.WriteLine($"Started to execute {GetType().Name} for {_worker.WorkerAccountId}/{_worker.WorkerUsername}");
 
 				if (!(eventAction.Body is CreateCommentRequest createCommentRequest))
 				{
@@ -67,7 +67,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 			}
 			finally
 			{
-				Console.WriteLine($"Ended execute {nameof(GetType)} for {_worker.WorkerAccountId}/{_worker.WorkerUsername}");
+				Console.WriteLine($"Ended execute {GetType().Name} for {_worker.WorkerAccountId}/{_worker.WorkerUsername} Was Successful: {result.IsSuccessful}");
 			}
 		}
 	}

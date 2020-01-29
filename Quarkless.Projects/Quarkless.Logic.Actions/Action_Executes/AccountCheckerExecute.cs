@@ -28,6 +28,8 @@ namespace Quarkless.Logic.Actions.Action_Executes
 			var result = new ResultCarrier<bool>();
 			try
 			{
+				Console.WriteLine($"Started to execute {GetType().Name} for {_worker.WorkerAccountId}/{_worker.WorkerUsername}");
+
 				if (!(eventAction.Body is DeleteMediaModel deleteMediaRequest))
 				{
 					result.IsSuccessful = false;
@@ -36,7 +38,8 @@ namespace Quarkless.Logic.Actions.Action_Executes
 				}
 
 				var response = await _responseResolver.WithClient(_worker.Client).WithResolverAsync(await _worker.Client
-					.Media.DeleteMediaAsync(deleteMediaRequest.MediaId, (InstaMediaType) deleteMediaRequest.MediaType),
+						.Media.DeleteMediaAsync(deleteMediaRequest.MediaId,
+							(InstaMediaType) deleteMediaRequest.MediaType),
 					ActionType.MaintainAccount, deleteMediaRequest.ToJsonString());
 
 				if (!response.Succeeded)
@@ -64,6 +67,10 @@ namespace Quarkless.Logic.Actions.Action_Executes
 					Exception = err
 				};
 				return result;
+			}
+			finally
+			{
+				Console.WriteLine($"Ended execute {GetType().Name} for {_worker.WorkerAccountId}/{_worker.WorkerUsername} Was Successful: {result.IsSuccessful}");
 			}
 		}
 	}

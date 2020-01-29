@@ -94,6 +94,8 @@ COPY ["Quarkless.Projects/Quarkless.Repository.Comments/Quarkless.Repository.Com
 COPY ["Quarkless.Projects/Quarkless.Logic.TranslateService/Quarkless.Logic.TranslateService.csproj", "Quarkless.Projects/Quarkless.Logic.TranslateService/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.RequestBuilder/Quarkless.Logic.RequestBuilder.csproj", "Quarkless.Projects/Quarkless.Logic.RequestBuilder/"]
 COPY ["Quarkless.Projects/Quarkless.Models.RequestBuilder/Quarkless.Models.RequestBuilder.csproj", "Quarkless.Projects/Quarkless.Models.RequestBuilder/"]
+COPY ["Quarkless.Projects/Quarkless.Logic.Actions/Quarkless.Logic.Actions.csproj", "Quarkless.Projects/Quarkless.Logic.Actions/"]
+COPY ["Quarkless.Projects/Quarkless.Models.Actions/Quarkless.Models.Actions.csproj", "Quarkless.Projects/Quarkless.Models.Actions/"]
 COPY ["Quarkless.Projects/Quarkless.Repository.ReportHandler/Quarkless.Repository.ReportHandler.csproj", "Quarkless.Projects/Quarkless.Repository.ReportHandler/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.Timeline/Quarkless.Logic.Timeline.csproj", "Quarkless.Projects/Quarkless.Logic.Timeline/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.Lookup/Quarkless.Logic.Lookup.csproj", "Quarkless.Projects/Quarkless.Logic.Lookup/"]
