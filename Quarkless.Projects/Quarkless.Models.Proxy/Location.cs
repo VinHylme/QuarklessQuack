@@ -6,6 +6,7 @@ namespace Quarkless.Models.Proxy
 {
 	public class Location
 	{
+		public string LocationQuery { get; set; }
 		public double Latitude { get; set; }
 		public double Longitude { get; set; }
 		[BsonRepresentation(BsonType.Int32)]

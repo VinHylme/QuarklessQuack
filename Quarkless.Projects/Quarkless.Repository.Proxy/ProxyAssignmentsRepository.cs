@@ -38,8 +38,9 @@ namespace Quarkless.Repository.Proxy
 				var updated = await _ctx.FindOneAndReplaceAsync(filter, newModel);
 				return updated;
 			}
-			catch
+			catch(Exception err)
 			{
+				Console.WriteLine(err);
 				return null;
 			}
 		}
@@ -50,8 +51,9 @@ namespace Quarkless.Repository.Proxy
 				await _ctx.FindOneAndDeleteAsync(Builders<ProxyModel>.Filter.Eq("_id", proxyId));
 				return true;
 			}
-			catch
+			catch(Exception err)
 			{
+				Console.WriteLine(err);
 				return false;
 			}
 		}
@@ -65,8 +67,9 @@ namespace Quarkless.Repository.Proxy
 				var results = await _ctx.FindAsync(filter);
 				return results.FirstOrDefault();
 			}
-			catch
+			catch(Exception err)
 			{
+				Console.WriteLine(err);
 				return null;
 			}
 		}
@@ -79,8 +82,9 @@ namespace Quarkless.Repository.Proxy
 				var results = await _ctx.FindAsync(filter);
 				return results.FirstOrDefault();
 			}
-			catch
+			catch(Exception err)
 			{
+				Console.WriteLine(err);
 				return null;
 			}
 		}
@@ -93,8 +97,9 @@ namespace Quarkless.Repository.Proxy
 				var results = await _ctx.FindAsync(filter);
 				return results.ToList();
 			}
-			catch
+			catch(Exception err)
 			{
+				Console.WriteLine(err);
 				return new List<ProxyModel>();
 			}
 		}
@@ -105,8 +110,9 @@ namespace Quarkless.Repository.Proxy
 				var results = await _ctx.FindAsync(_ => true);
 				return results.ToList();
 			}
-			catch
+			catch(Exception err)
 			{
+				Console.WriteLine(err);
 				return new List<ProxyModel>();
 			}
 		}
@@ -117,8 +123,9 @@ namespace Quarkless.Repository.Proxy
 				var results = await _ctx.FindAsync(_ => _.ProxyType.Equals(type));
 				return results.ToList();
 			}
-			catch
+			catch(Exception err)
 			{
+				Console.WriteLine(err);
 				return new List<ProxyModel>();
 			}
 		}

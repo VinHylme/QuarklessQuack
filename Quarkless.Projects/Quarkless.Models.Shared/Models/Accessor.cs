@@ -33,6 +33,7 @@ namespace Quarkless.Models.Shared.Models
 		public string FfmpegPath => _configuration["Ffmpeg"];
 		public string ApiBasePath => _configuration["Endpoints:ApiBasePath"];
 		public string AutomatorEndPoint => _configuration["Endpoints:AutomatorPath"];
+		public string ProxyHandlerApiEndPoint => _configuration["Endpoints:ProxyHandlerApi"];
 		public string JsonStripeCredentials =>"{" + string.Join(", ", _configuration.GetSection("Stripe")
 			.GetChildren()
 			.AsEnumerable()

@@ -11,7 +11,9 @@ namespace Quarkless.Models.Topic.Interfaces
 		Task<List<CTopic>> GetTopicsByParentId(string parentId);
 		Task<List<CTopic>> GetTopicsNameLike(string name);
 		Task<List<CTopic>> GetTopicsName(string name);
+		Task<List<CTopic>> GetAllTopics();
 		Task<List<CTopic>> GetCategories();
+		Task<long> DeleteAll(params string[] topicsId);
 		Task<long> DeleteAll();
 	}
 }

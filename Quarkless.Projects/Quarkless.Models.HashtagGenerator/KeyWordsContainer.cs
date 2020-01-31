@@ -6,10 +6,12 @@ namespace Quarkless.Models.HashtagGenerator
 	{
 		public SString Keyword { get; set; }
 		public bool IsLikely { get; set; }
-		public KeyWordsContainer(SString keyword, bool isLikely)
+		public int TypeId { get; set; }
+		public KeyWordsContainer(SString keyword, bool isLikely, int typeId)
 		{
 			Keyword = keyword;
 			IsLikely = isLikely;
+			TypeId = typeId;
 		}
 	}
 }

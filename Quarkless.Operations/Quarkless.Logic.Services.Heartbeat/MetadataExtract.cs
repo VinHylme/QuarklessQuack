@@ -58,7 +58,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 					return;
 
 				var profileSubTopic = _customer.Profile.ProfileTopic.Topics.Shuffle().First();
-				topicTotal.AddRange(_topicLookup.GetTopicsByParentId(profileSubTopic._id).Result);
+				topicTotal.AddRange(_topicLookup.GetTopicsByParentId(profileSubTopic._id, true).Result);
 
 				if (!topicTotal.Any())
 					return;
@@ -164,7 +164,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 				if (userTargetList != null && userTargetList.Count > 0)
 				{
 					var profileSubTopic = _customer.Profile.ProfileTopic.Topics.Shuffle().First();
-					var randomTopic = (await _topicLookup.GetTopicsByParentId(profileSubTopic._id)).Shuffle()
+					var randomTopic = (await _topicLookup.GetTopicsByParentId(profileSubTopic._id,true)).Shuffle()
 						.FirstOrDefault();
 
 					if (randomTopic == null) return;
@@ -300,7 +300,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 				var user = _customer.InstagramAccount;
 
 				var profileSubTopic = _customer.Profile.ProfileTopic.Topics.Shuffle().First();
-				var randomTopic = (await _topicLookup.GetTopicsByParentId(profileSubTopic._id)).Shuffle()
+				var randomTopic = (await _topicLookup.GetTopicsByParentId(profileSubTopic._id, true)).Shuffle()
 					.FirstOrDefault();
 
 				if (randomTopic == null) return;
@@ -830,7 +830,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 					return;
 
 				var profileSubTopic = _customer.Profile.ProfileTopic.Topics.Shuffle().First();
-				var randomTopic = (await _topicLookup.GetTopicsByParentId(profileSubTopic._id)).Shuffle()
+				var randomTopic = (await _topicLookup.GetTopicsByParentId(profileSubTopic._id, true)).Shuffle()
 					.FirstOrDefault();
 
 				if (randomTopic == null) return;
@@ -1105,7 +1105,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 				});
 
 				var profileSubTopic = _customer.Profile.ProfileTopic.Topics.Shuffle().First();
-				var randomTopic = (await _topicLookup.GetTopicsByParentId(profileSubTopic._id)).Shuffle()
+				var randomTopic = (await _topicLookup.GetTopicsByParentId(profileSubTopic._id, true)).Shuffle()
 					.FirstOrDefault();
 
 				if (randomTopic == null) return;
@@ -1201,27 +1201,25 @@ namespace Quarkless.Logic.Services.Heartbeat
 
 				var metaS = res as Meta<Media>[] ?? res.ToArray();
 
-				if (!metaS.Any() || metaS.Where(x => x != null)
-					    .All(s => !s.SeenBy.Any(sb => sb.User == by.User && sb.ActionType == by.ActionType)))
+				if (!metaS.Any() || metaS.Where(x => x != null).All(s => !s.SeenBy.Any(sb => sb.User == by.User && sb.ActionType == by.ActionType)))
 				{
 					if (!_customer.Profile.ProfileTopic.Topics.Any())
 						return;
 
 					var selectProfileSubTopic = _customer.Profile.ProfileTopic.Topics.Shuffle().First();
-					var relatedTopic = (await _topicLookup.GetTopicsByParentId(selectProfileSubTopic._id));
-					var searchQueryTopics = relatedTopic.Shuffle().FirstOrDefault();
+					var relatedTopic = await _topicLookup.GetTopicsByParentId(selectProfileSubTopic._id, true);
+					var pickedTopic = relatedTopic.Shuffle().FirstOrDefault();
+					var searchQueryTopics = pickedTopic;
 
-					var prf = _customer.Profile;
-
-					var colorSelect = prf.Theme.Colors.TakeAny(1).FirstOrDefault();
-					var imageType = ((ImageType) prf.AdditionalConfigurations.ImageType).GetDescription();
+					var colorSelect = _customer.Profile.Theme.Colors.TakeAny(1).FirstOrDefault();
+					var imageType = ((ImageType)_customer.Profile.AdditionalConfigurations.ImageType).GetDescription();
 
 					if (colorSelect != null)
 					{
-						var go = _searchProvider.GoogleSearch.WithProxy().SearchViaGoogle(GoogleQueryBuilder(
+						var go = _searchProvider.GoogleSearch.WithProxy().SearchViaGoogle(pickedTopic, GoogleQueryBuilder(
 							colorSelect.Name,
-							searchQueryTopics?.Name, prf.AdditionalConfigurations.Sites,
-							limit, exactSize: prf.AdditionalConfigurations.PostSize, imageType: imageType));
+							searchQueryTopics?.Name, _customer.Profile.AdditionalConfigurations.Sites,
+							limit, exactSize: _customer.Profile.AdditionalConfigurations.PostSize, imageType: imageType));
 
 						if (go != null)
 						{
@@ -1289,7 +1287,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 						return;
 
 					var selectProfileSubTopic = _customer.Profile.ProfileTopic.Topics.Shuffle().First();
-					var relatedTopic = (await _topicLookup.GetTopicsByParentId(selectProfileSubTopic._id));
+					var relatedTopic = (await _topicLookup.GetTopicsByParentId(selectProfileSubTopic._id, true));
 					var searchQuery = relatedTopic.Shuffle().FirstOrDefault();
 
 					var prf = _customer.Profile;
@@ -1360,7 +1358,6 @@ namespace Quarkless.Logic.Services.Heartbeat
 					$"Ended - BuildYandexImagesQuery : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
 			}
 		}
-
 		public async Task BuildYandexImages(int limit = 3, int takeTopicAmount = 1, int cutBy = 1)
 		{
 			Console.WriteLine("Began - BuildYandexImages");

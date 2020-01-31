@@ -4,6 +4,7 @@ using Quarkless.Models.SearchResponse;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Quarkless.Models.ContentSearch.Models;
+using Quarkless.Models.Topic;
 
 namespace Quarkless.Models.ContentSearch.Interfaces
 {
@@ -11,7 +12,7 @@ namespace Quarkless.Models.ContentSearch.Interfaces
 	{
 		IGoogleSearchLogic WithProxy(ProxyModel proxy = null);
 		Task<List<string>> GetSuggestions(string query);
-		SearchResponse<Media> SearchViaGoogle(SearchImageModel searchImageQuery);
+		SearchResponse<Media> SearchViaGoogle(CTopic topic, SearchImageModel searchImageQuery);
 		SearchResponse<Media> SearchSimilarImagesViaGoogle(IEnumerable<GroupImagesAlike> groupImages, int limit, int offset = 0);
 	}
 }

@@ -25,6 +25,7 @@ namespace Quarkless.Models.Shared.Models
 		public string TempAudioPath { get; set; }
 		public string FfmpegPath { get; set; }
 		public string ApiBasePath { get; set; }
+		public string ProxyHandlerApiEndPoint { get; set; }
 		public string VisionCredentials { get; set; }
 		public string JsonStripeCredentials { get; set; }
 	}

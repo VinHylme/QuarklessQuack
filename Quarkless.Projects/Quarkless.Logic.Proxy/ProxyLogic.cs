@@ -8,8 +8,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Quarkless.Models.Proxy.Enums;
 using Quarkless.Models.Proxy.Interfaces;
-using SocksSharp;
-using SocksSharp.Proxy;
+using MihaZupan;
 
 namespace Quarkless.Logic.Proxy
 {
@@ -31,6 +30,7 @@ namespace Quarkless.Logic.Proxy
 			switch (proxy.ProxyType)
 			{
 				case ProxyType.Http:
+				{
 					var handler = new HttpClientHandler
 					{
 						Proxy = new WebProxy($"{proxy.HostAddress}:{proxy.Port}", false),
@@ -39,19 +39,21 @@ namespace Quarkless.Logic.Proxy
 						handler.Credentials = new NetworkCredential(proxy.Username, proxy.Password);
 					client = new HttpClient(handler);
 					break;
+				}
 				case ProxyType.Socks5:
-					var settings = new ProxySettings
-					{
-						ConnectTimeout = 4500,
-						Host = proxy.HostAddress,
-						Port = proxy.Port
-					};
+				{
+					var proxySettings = new HttpToSocks5Proxy(proxy.HostAddress, proxy.Port);
 
 					if (!string.IsNullOrEmpty(proxy.Username) && !string.IsNullOrEmpty(proxy.Password))
-						settings.Credentials = new NetworkCredential(proxy.Username, proxy.Password);
+						proxySettings.Credentials = new NetworkCredential(proxy.Username, proxy.Password);
 
-					client = new HttpClient(new ProxyClientHandler<Socks5>(settings));
+					var handler = new HttpClientHandler
+					{
+						Proxy = proxySettings
+					};
+					client = new HttpClient(handler);
 					break;
+				}
 			}
 
 			return client;

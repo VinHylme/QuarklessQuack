@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Quarkless.Models.Shared.Enums;
 using Quarkless.Models.Shared.Models;
@@ -71,6 +70,7 @@ namespace Quarkless.Models.Shared.Extensions
 				ControlDatabase = access.ControlDatabase,
 				AccountCreationDatabase = access.AccountCreationDatabase,
 				FrontEnd = access.FrontEnd,
+				ProxyHandlerApiEndPoint = access.ProxyHandlerApiEndPoint,
 				SeleniumChromeAddress = access.SeleniumChromeAddress,
 				TempImagePath = access.TempImagePath,
 				TempVideoPath = access.TempVideoPath,

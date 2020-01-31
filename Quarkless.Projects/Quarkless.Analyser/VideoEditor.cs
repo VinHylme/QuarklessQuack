@@ -107,7 +107,8 @@ namespace Quarkless.Analyser
 			var videoPath = string.Format(_ffmpegWrapper.TempVideoPath + "video_{0}.mp4", Guid.NewGuid());
 			Helper.CreateDirectoryIfDoesNotExist(_ffmpegWrapper.TempVideoPath);
 
-			var domColor = new Color();
+			var colors = new Color();
+
 			File.WriteAllBytes(videoPath, video);
 			try
 			{
@@ -117,14 +118,16 @@ namespace Quarkless.Analyser
 				var videoColorsAvg = new List<Color>();
 
 				videoFrames.ForEach(im => videoColorsAvg.Add(im.GetDominantColor()));
+
 				int r = 0, b = 0, g = 0;
 				videoColorsAvg.ForEach(c => {
 					r += c.R;
 					b += c.B;
 					g += c.G;
 				});
+
 				var total = videoColorsAvg.Count;
-				domColor = Color.FromArgb(r / total, b / total, g / total);
+				colors = Color.FromArgb(r / total, b / total, g / total);
 			}
 			catch (Exception ee)
 			{
@@ -132,14 +135,16 @@ namespace Quarkless.Analyser
 				return null;
 			}
 
-			var colorDiffs = domColor.ColorDiff(profileColor);
-			var maximus = profileColor.R + profileColor.G + profileColor.B;
-			var targetPerc = Math.Abs((maximus * threshHold) - maximus);
+			var colorDiffs = colors.ColorDiff(profileColor);
+			var profileColorAvg = profileColor.R + profileColor.G + profileColor.B;
+			var targetPercentage = Math.Abs((profileColorAvg * threshHold) - profileColorAvg);
 
-			if (colorDiffs < targetPerc)
+			if (colorDiffs < targetPercentage)
 			{
+				DisposeVideos(videoPath);
 				return videoPath;
 			}
+
 			DisposeVideos(videoPath);
 			return null;
 		}

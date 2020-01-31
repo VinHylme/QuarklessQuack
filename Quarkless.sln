@@ -367,7 +367,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Quarkless.Actions", "Quarkl
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Models.Actions", "Quarkless.Projects\Quarkless.Models.Actions\Quarkless.Models.Actions.csproj", "{792AF004-34F6-4C77-8620-5D9F1F043F22}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quarkless.Logic.Actions", "Quarkless.Projects\Quarkless.Logic.Actions\Quarkless.Logic.Actions.csproj", "{DD1B70CE-9FD4-47D5-9D1B-6A474A99CD7A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Logic.Actions", "Quarkless.Projects\Quarkless.Logic.Actions\Quarkless.Logic.Actions.csproj", "{DD1B70CE-9FD4-47D5-9D1B-6A474A99CD7A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

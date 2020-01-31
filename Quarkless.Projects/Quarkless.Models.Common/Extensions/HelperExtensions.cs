@@ -155,9 +155,9 @@ namespace Quarkless.Models.Common.Extensions
 				var buffer = new Span<byte>(new byte[filter.Length]);
 				return Convert.TryFromBase64String(filter, buffer, out int bytesParsed);
 			}
-			catch (Exception err)
+			catch
 			{
-				Console.WriteLine(err);
+				Console.WriteLine("Not base64 format");
 				return false;
 			}
 		}

@@ -11,17 +11,18 @@ namespace Quarkless.Logic.InstagramClient
 		private ContextContainer Context { get; set; }
 		private readonly IApiClientContext _clientContext;
 		private readonly IUserContext _userContext;
+		
+		public ApiClientContainer(IApiClientContext clientContext, string userId, string instaId)
+		{
+			_clientContext = clientContext;
+			this.Context = _clientContext.Create(userId, instaId).Result;
+		}
 		public ApiClientContainer(IApiClientContext clientContext, IUserContext userContext)
 		{
 			_clientContext = clientContext;
 			_userContext = userContext;
 			if (userContext?.FocusInstaAccount != null)
 				this.Context = _clientContext.Create(userContext.CurrentUser, userContext.FocusInstaAccount).Result;
-		}
-		public ApiClientContainer(IApiClientContext clientContext, string userId, string instaId)
-		{
-			_clientContext = clientContext;
-			this.Context = _clientContext.Create(userId, instaId).Result;
 		}
 
 		public ContextContainer GetContext => this.Context;

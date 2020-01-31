@@ -16,6 +16,7 @@ using Quarkless.Models.SeleniumClient.Interfaces;
 using Microsoft.Extensions.Options;
 using OpenQA.Selenium;
 using Quarkless.Models.RestSharpClientManager.Interfaces;
+using Quarkless.Models.Topic;
 
 namespace Quarkless.Logic.ContentSearch
 {
@@ -50,7 +51,7 @@ namespace Quarkless.Logic.ContentSearch
 			}
 			return this;
 		}
-		public SearchResponse<Media> SearchViaGoogle(SearchImageModel searchImageQuery)
+		public SearchResponse<Media> SearchViaGoogle(CTopic topic, SearchImageModel searchImageQuery)
 		{
 			var response = new SearchResponse<Media>();
 			try
@@ -78,7 +79,7 @@ namespace Quarkless.Logic.ContentSearch
 					{
 						Medias = responseValues.MediasObject.Select(s => new MediaResponse
 						{
-							Topic = null,
+							Topic = topic,
 							MediaFrom = MediaFrom.Google,
 							MediaType = InstaMediaType.Image,
 							MediaUrl = new List<string> { s.MediaUrl }

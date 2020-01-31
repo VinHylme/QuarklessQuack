@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using MoreLinq.Extensions;
 using Quarkless.Models.Common.Extensions;
+using Quarkless.Models.HashtagGenerator;
 
 namespace Quarkless.Logic.HashtagGenerator
 {
@@ -30,6 +31,7 @@ namespace Quarkless.Logic.HashtagGenerator
 			var results = new List<string>();
 			if (string.IsNullOrEmpty(topic))
 				return results;
+
 			var response = await _topicLookup.GetMediasFromTopic(topic, limit);
 			
 			if (!response.Any())
@@ -37,12 +39,11 @@ namespace Quarkless.Logic.HashtagGenerator
 			
 			results.AddRange(response.SelectMany(_=>_.Caption?.Text.FilterHashtags()));
 
-			return results.Where(_=>!string.IsNullOrEmpty(_) 
-				&& _.Length > 2).ToList();
+			return results.Where(_=>!string.IsNullOrEmpty(_) && _.Length > 3 && _.IsUsingLatinCharacters()).ToList();
 		}
 
-		public async Task<List<string>> SuggestHashtags(Topic profileTopic = null, CTopic mediaTopic = null, IEnumerable<string> images = null,
-			int pickAmount = 20, int keywordsFetchAmount = 4, 
+		public async Task<List<string>> SuggestHashtags(Topic profileTopic = null, CTopic mediaTopic = null, 
+			IEnumerable<string> images = null, int pickAmount = 20, int keywordsFetchAmount = 3, 
 			IEnumerable<string> preDefinedHashtagsToUse = null, int retries = 3)
 		{
 			if (pickAmount < 5)
@@ -59,7 +60,8 @@ namespace Quarkless.Logic.HashtagGenerator
 				suggestedHashtags.AddRange(preDefinedHashtagsToUse);
 
 			#region Initialise Keywords From Google Vision
-			var visionResults = new List<string>();
+			var visionResults = new List<KeyWordsContainer>();
+
 			// By Vision API
 			if (images != null && images.Any())
 			{
@@ -73,13 +75,16 @@ namespace Quarkless.Logic.HashtagGenerator
 					var web = await _visionClient.DetectImageWebEntities(images
 						.Select(_ => Convert.FromBase64String(_.Split(",")[1])));
 
-					if(web.Any())
-						visionResults.AddRange(web
-							.SelectMany(_=>_.WebEntities)
-							.OrderByDescending(_=>_.Score).Select(_=>_.Description).Take(keywordsFetchAmount));
+					if (web.Any())
+					{
+						visionResults.AddRange(web.SelectMany(_=>
+							_.WebEntities.OrderByDescending(s=>s.Score)
+								.Select(s=>new KeyWordsContainer(s.Description, true, 0))));
+					}
 
 					if (response.Any())
-						visionResults.AddRange(response.Take(keywordsFetchAmount));
+						visionResults.AddRange(response
+							.Select(s=>new KeyWordsContainer(s,true,1)).Take(keywordsFetchAmount));
 				}
 				else
 				{
@@ -90,12 +95,15 @@ namespace Quarkless.Logic.HashtagGenerator
 					var web = await _visionClient.DetectImageWebEntities(images.ToArray());
 
 					if (web.Any())
-						visionResults.AddRange(web
-							.SelectMany(_ => _.WebEntities)
-							.OrderByDescending(_ => _.Score).Select(_ => _.Description).Take(keywordsFetchAmount));
+					{
+						visionResults.AddRange(web.SelectMany(_ =>
+							_.WebEntities.OrderByDescending(s => s.Score)
+								.Select(s => new KeyWordsContainer(s.Description, true, 0))));
+					}
 
 					if (response.Any())
-						visionResults.AddRange(response.Take(keywordsFetchAmount));
+						visionResults.AddRange(response
+							.Select(s => new KeyWordsContainer(s, true, 1)).Take(keywordsFetchAmount));
 				}
 			}
 
@@ -108,41 +116,40 @@ namespace Quarkless.Logic.HashtagGenerator
 			{
 				if (mediaTopic != null)
 				{
-					// add related topics
 					suggestedHashtags.AddRange((await _topicLookup.GetTopicsByParentId(mediaTopic._id))
 						.Select(_ => _.Name)
 						.TakeAny(amount));
 
-					//build from database of hashtags
 					var resDb = await _hashtagLogic.GetHashtagsFromRepositoryByTopic(mediaTopic.Name, 25);
+					
 					if (resDb != null && resDb.Any())
 						hashtags.AddRange(resDb.SelectMany(_ => _.Hashtags));
 					else
 					{
 						var getFromMedias = await GetHashtagsFromMediaSearch(mediaTopic.Name, 1);
 						if (getFromMedias.Any())
-							hashtags.AddRange(getFromMedias);
+							hashtags.AddRange(getFromMedias.OrderByDescending(hashtag=>hashtag.Similarity(mediaTopic.Name)));
 					}
 				}
 
-				foreach (var keyword in visionResults.TakeAny(1))
+				foreach (var keyword in visionResults.Shuffle().DistinctBy(x=>x.TypeId).Take(2))
 				{
 					var resultBuild = await _topicLookup.BuildRelatedTopics(new CTopic
 						{
-							Name = keyword.RemoveNonWordsFromText(),
+							Name = keyword.Keyword.String.RemoveNonWordsFromText(),
 							ParentTopicId = mediaTopic?._id
 						},
 						false, false);
 
 					if (resultBuild == null || !resultBuild.Any()) continue;
+
 					hashtags.AddRange(resultBuild);
 
-					var getFromMedias =
-						await GetHashtagsFromMediaSearch(resultBuild.TakeAny(1).First(), 1);
+					var getFromMedias = await GetHashtagsFromMediaSearch(resultBuild.TakeAny(1).First(), 1);
 
 					if (getFromMedias.Any())
 						hashtags.AddRange(getFromMedias.OrderByDescending(_ => _.ToLower()
-							.Similarity(keyword.RemoveLargeSpacesInText(1).ToLower())));
+							.Similarity(keyword.Keyword.String.RemoveLargeSpacesInText(1).ToLower())));
 				}
 
 				var squashHashtags = hashtags.TakeAny(pickAmount - suggestedHashtags.Count);
@@ -193,7 +200,7 @@ namespace Quarkless.Logic.HashtagGenerator
 				suggestedHashtags.AddRange(preDefinedHashtagsToUse);
 
 			#region Initialise Keywords From Google Vision
-			var visionResults = new List<string>();
+			var visionResults = new List<KeyWordsContainer>();
 			// By Vision API
 			if (images != null && images.Any())
 			{
@@ -205,12 +212,15 @@ namespace Quarkless.Logic.HashtagGenerator
 				var web = await _visionClient.DetectImageWebEntities(images.ToArray());
 
 				if (web.Any())
-					visionResults.AddRange(web
-						.SelectMany(_ => _.WebEntities)
-						.OrderByDescending(_ => _.Score).Select(_ => _.Description).Take(keywordsFetchAmount));
+				{
+					visionResults.AddRange(web.SelectMany(_ =>
+						_.WebEntities.OrderByDescending(s => s.Score)
+							.Select(s => new KeyWordsContainer(s.Description, true, 0))));
+				}
 
 				if (response.Any())
-					visionResults.AddRange(response.Take(keywordsFetchAmount));
+					visionResults.AddRange(response
+						.Select(s => new KeyWordsContainer(s, true, 1)).Take(keywordsFetchAmount));
 			}
 
 			//order by the best match for media
@@ -239,11 +249,11 @@ namespace Quarkless.Logic.HashtagGenerator
 					}
 				}
 
-				foreach (var keyword in visionResults.TakeAny(1))
+				foreach (var keyword in visionResults.Shuffle().DistinctBy(x => x.TypeId).Take(2))
 				{
 					var resultBuild = await _topicLookup.BuildRelatedTopics(new CTopic
 					{
-						Name = keyword.RemoveNonWordsFromText(),
+						Name = keyword.Keyword.String.RemoveNonWordsFromText(),
 						ParentTopicId = mediaTopic?._id
 					},
 						false, false);
@@ -256,7 +266,7 @@ namespace Quarkless.Logic.HashtagGenerator
 
 					if (getFromMedias.Any())
 						hashtags.AddRange(getFromMedias.OrderByDescending(_ => _.ToLower()
-							.Similarity(keyword.RemoveLargeSpacesInText(1).ToLower())));
+							.Similarity(keyword.Keyword.String.RemoveLargeSpacesInText(1).ToLower())));
 				}
 
 				var squashHashtags = hashtags.TakeAny(pickAmount - suggestedHashtags.Count);

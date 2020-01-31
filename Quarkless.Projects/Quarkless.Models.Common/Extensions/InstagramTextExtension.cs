@@ -16,7 +16,10 @@ namespace Quarkless.Models.Common.Extensions
 		public static string MatchOnlyWebAddresses => @"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:\/?#[\]@!\$&'\(\)\*\+,;=.]+$";
 		public static string MatchSpaceAtEnd => @"[^\w]$";
 		public static string MatchFirstOccurrenceOfHashtagCharacter => @"#";
+		public static string MatchLatinAlphabetIncludeNumbers => @"^[#|\-|\w|\d]*$";
 
+		public static bool IsUsingLatinCharacters(this string text) =>
+			Regex.IsMatch(text, MatchLatinAlphabetIncludeNumbers);
 		public static string RemoveFirstHashtagCharacter(this string text) =>
 			Regex.Replace(text, MatchFirstOccurrenceOfHashtagCharacter, "");
 		public static string RemoveSpaceAtEnd(this string text) =>

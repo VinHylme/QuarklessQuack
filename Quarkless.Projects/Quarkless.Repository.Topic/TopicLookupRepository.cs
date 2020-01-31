@@ -98,6 +98,21 @@ namespace Quarkless.Repository.Topic
 				return new List<CTopic>();
 			}
 		}
+
+		public async Task<List<CTopic>> GetAllTopics()
+		{
+			try
+			{
+				var results = await _ctx.FindAsync(_ => true);
+				return results.ToList();
+			}
+			catch(Exception err)
+			{
+				Console.WriteLine(err.Message);
+				return new List<CTopic>();
+			}
+		}
+
 		public async Task<List<CTopic>> GetTopicsNameLike(string name)
 		{
 			try
@@ -127,11 +142,27 @@ namespace Quarkless.Repository.Topic
 			}
 		}
 
+		public async Task<long> DeleteAll(params string[] topicsId)
+		{
+			try
+			{
+				var filter = new FilterDefinitionBuilder<CTopic>().In("_id", topicsId);
+				var results = await _ctx.DeleteManyAsync(filter);
+				return results.DeletedCount;
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err);
+				return 0;
+			}
+		}
 		public async Task<long> DeleteAll()
 		{
 			try
 			{
-				var results = await _ctx.DeleteManyAsync(_ => true);
+				//delete all topics expect the category topics
+				var filter = new FilterDefinitionBuilder<CTopic>().Ne("ParentTopicId", BsonObjectId.Empty);
+				var results = await _ctx.DeleteManyAsync(filter);
 				return results.DeletedCount;
 			}
 			catch (Exception err)

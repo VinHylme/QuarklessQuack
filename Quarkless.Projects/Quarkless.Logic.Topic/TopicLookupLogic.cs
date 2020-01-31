@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using InstagramApiSharp;
 using InstagramApiSharp.Classes.Models;
 using MongoDB.Bson;
-using MoreLinq.Extensions;
 using Quarkless.Events.Interfaces;
 using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.ContentSearch.Interfaces;
@@ -14,6 +13,7 @@ using Quarkless.Models.Profile;
 using Quarkless.Models.Profile.Interfaces;
 using Quarkless.Models.Topic;
 using Quarkless.Models.WorkerManager.Interfaces;
+using MoreLinq.Extensions;
 
 namespace Quarkless.Logic.Topic
 {
@@ -39,6 +39,7 @@ namespace Quarkless.Logic.Topic
 			var medias = new List<InstaMedia>();
 			if (string.IsNullOrEmpty(topic))
 				return medias;
+
 			var cacheResults = await _searchingCache.GetSearchData<InstaMedia>(topic);
 			if (cacheResults.Any())
 				return cacheResults;
@@ -49,6 +50,7 @@ namespace Quarkless.Logic.Topic
 				{
 					var results = await worker.Client.Hashtag.GetTopHashtagMediaListAsync(topic,
 						PaginationParameters.MaxPagesToLoad(limit));
+
 					if (results.Succeeded && results.Value.Medias.Count > 0)
 					{
 						medias.AddRange(results.Value.Medias.OrderByDescending(_ => _.LikesCount).Take(80));
@@ -63,10 +65,12 @@ namespace Quarkless.Logic.Topic
 		public async Task<List<string>> BuildRelatedTopics(CTopic topic, bool saveToDb, bool includeGoogleSuggest = true)
 		{
 			var responseResults = new List<string>();
-			const int instagramTopicTakeAmount = 12;
+			const int instagramTopicTakeAmount = 50;
+
 			var cacheResults = await _searchingCache.GetSearchData<string>(topic.Name);
 			if (cacheResults.Any())
 				return cacheResults;
+
 			await _workerManager.PerformTaskOnWorkers(async workers =>
 			{
 				await workers.PerformAction(async worker =>
@@ -76,46 +80,45 @@ namespace Quarkless.Logic.Topic
 
 					if (results.Succeeded && results.Value.Count <= 0)
 						return;
-					else
+
+					var rankOrdered = results.Value
+						.Where(str=>str.Name.IsUsingLatinCharacters())
+						.OrderByDescending(_ => _.MediaCount)
+						.Take(instagramTopicTakeAmount)
+						.ToList();
+
+					responseResults.AddRange(rankOrdered.Select(_ => _.Name));
+
+					if (saveToDb)
 					{
-						var rankOrdered = results.Value
-							.OrderByDescending(_ => _.MediaCount)
-							.Take(instagramTopicTakeAmount)
-							.ToList();
+						await AddTopics(rankOrdered.Select(_ => new CTopic
+						{
+							Name = _.Name,
+							ParentTopicId = topic._id
+						}).ToList());
+					}
 
-						responseResults.AddRange(rankOrdered.Select(_ => _.Name));
+					if (includeGoogleSuggest)
+					{
+						var googleSuggest = await _googleSearchLogic
+							.GetSuggestions(topic
+								.Name.RemoveLargeSpacesInText(1, ""));
 
+						if (!googleSuggest.Any())
+							return;
+
+						responseResults.AddRange(googleSuggest);
 						if (saveToDb)
 						{
-							await AddTopics(rankOrdered.Select(_ => new CTopic
+							await AddTopics(googleSuggest.Select(_ =>
 							{
-								Name = _.Name,
-								ParentTopicId = topic._id
-							}).ToList());
-						}
-
-						if (includeGoogleSuggest)
-						{
-							var googleSuggest = await _googleSearchLogic
-								.GetSuggestions(topic
-									.Name.RemoveLargeSpacesInText(1, ""));
-
-							if (!googleSuggest.Any())
-								return;
-
-							responseResults.AddRange(googleSuggest);
-							if (saveToDb)
-							{
-								await AddTopics(googleSuggest.Select(_ =>
+								var name = _.RemoveLargeSpacesInText(1, "");
+								return new CTopic
 								{
-									var name = _.RemoveLargeSpacesInText(1, "");
-									return new CTopic
-									{
-										Name = name,
-										ParentTopicId = topic._id
-									};
-								}).ToList());
-							}
+									Name = name,
+									ParentTopicId = topic._id
+								};
+							}).ToList());
 						}
 					}
 				});
@@ -126,7 +129,7 @@ namespace Quarkless.Logic.Topic
 
 			return responseResults;
 		}
-		public async Task<TopicResponse> AddTopic(CTopic topic, bool includeGoogleSuggest = true)
+		public async Task<TopicResponse> AddTopic(CTopic topic, bool includeGoogleSuggest = true, bool saveTopicsSuggested = false)
 		{
 			if (topic == null || string.IsNullOrEmpty(topic.Name)
 							  || string.IsNullOrWhiteSpace(topic.Name)
@@ -143,10 +146,11 @@ namespace Quarkless.Logic.Topic
 			if (response.Exists)
 				return results;
 
-			var related = await BuildRelatedTopics(topic, false, includeGoogleSuggest);
+			var related = await BuildRelatedTopics(topic, saveTopicsSuggested, includeGoogleSuggest);
 			results.RelatedTopicsFound = related;
 			return results;
 		}
+		
 		public async Task<CTopic> GetHighestParent(CTopic topic)
 		{
 			if (topic._id == null) throw new Exception("Id Cannot be null");
@@ -158,6 +162,7 @@ namespace Quarkless.Logic.Topic
 
 			return await GetHighestParent(results);
 		}
+
 		public async Task<List<CTopic>> GetHighestParents(CTopic topic)
 		{
 			if (topic._id == null) throw new Exception("Id Cannot be null");
@@ -187,28 +192,79 @@ namespace Quarkless.Logic.Topic
 
 			return topicResults.ToList();
 		}
+
+		public async Task ResetTopics()
+		{
+			var categories = await GetCategories();
+			var totalTopics = await GetAllTopics();
+
+			var totalCategorySubTopics = new List<CTopic>();
+			foreach (var category in categories)
+			{
+				totalCategorySubTopics.AddRange(await GetTopicsByParentId(category._id));
+			}
+
+			var deleteList = totalTopics.Where(s=>ObjectId.Parse(s.ParentTopicId) != ObjectId.Empty)
+				.Where(_ => !totalCategorySubTopics
+					.Any(s => s.Name.Equals(_.Name))).ToList();
+
+			var deleteResults = await DeleteAll(deleteList.Select(x => x._id).ToArray());
+		}
+
 		public async Task<List<string>> AddTopics(List<CTopic> topics)
 		{
 			return await _topicLookupRepository.AddTopics(topics);
 		}
+
 		public async Task<CTopic> GetTopicById(string id)
 			=> await _topicLookupRepository.GetTopicById(id);
-		public async Task<List<CTopic>> GetTopicsByParentId(string parentId)
-			=> await _topicLookupRepository.GetTopicsByParentId(parentId);
+
+		public async Task<List<CTopic>> GetTopicsByParentId(string parentId, bool buildIfNotExists = false)
+		{
+			var results =  await _topicLookupRepository.GetTopicsByParentId(parentId);
+			if (results.Any())
+				return results;
+			
+			if (!buildIfNotExists)
+				return results;
+
+			var topicDetail = await _topicLookupRepository.GetTopicById(parentId);
+			if (topicDetail == null)
+				return results;
+			
+			await BuildRelatedTopics(topicDetail, true, false);
+			return await _topicLookupRepository.GetTopicsByParentId(parentId);
+		}
+
 		public async Task<List<CTopic>> GetTopicByNameLike(string name)
 			=> await _topicLookupRepository.GetTopicsNameLike(name);
 		public async Task<List<CTopic>> GetTopicByName(string name)
 			=> await _topicLookupRepository.GetTopicsName(name);
 		public async Task<List<CTopic>> GetCategories()
 			=> await _topicLookupRepository.GetCategories();
+		public async Task<List<CTopic>> GetAllTopics()
+			=> await _topicLookupRepository.GetAllTopics();
+
+		public async Task<long> DeleteAll(params string[] topicIds)
+			=> await _topicLookupRepository.DeleteAll(topicIds);
+
 		public async Task<long> DeleteAll()
 			=> await _topicLookupRepository.DeleteAll();
+
 		public async Task Handle(ProfileTopicAddRequest @event)
 		{
 			var profileTopicsUpdate = new List<CTopic>();
 			foreach (var topic in @event.Topics)
 			{
-				var results = await AddTopic(topic);
+				topic.Name = topic.Name.RemoveNonWordsFromText()
+					.RemoveLargeSpacesInText(1, "")
+					.RemoveHashtagsFromText()
+					.RemoveCurrencyFromText();
+
+				if(string.IsNullOrEmpty(topic.Name) || topic.Name.Length <=2)
+					continue;
+
+				var results = await AddTopic(topic, saveTopicsSuggested:true);
 				if (string.IsNullOrEmpty(results.Topic._id)) continue;
 				topic._id = results.Topic._id;
 				profileTopicsUpdate.Add(topic);
@@ -220,7 +276,7 @@ namespace Quarkless.Logic.Topic
 			var updatedTopic = new Models.Profile.Topic
 			{
 				Category = profile.ProfileTopic.Category,
-				Topics = profileTopicsUpdate.DistinctBy(_ => _.Name).ToList()
+				Topics = DistinctByExtension.DistinctBy(profileTopicsUpdate, _ => _.Name).ToList()
 			};
 
 			await _profileLogic.PartialUpdateProfile(@event.ProfileId, new ProfileModel

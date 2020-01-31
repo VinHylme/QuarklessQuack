@@ -131,7 +131,8 @@ namespace Quarkless.Logic.InstagramClient
 								ChallengeInfo = instagramAccount.ChallengeInfo,
 							},
 							Profile = profileOfInstagramAccountModel,
-							Proxy = proxyOfInstagramAccountModel
+							Proxy = proxyOfInstagramAccountModel,
+							InstaClient = client
 						};
 
 					instagramAccount.FullName = stateExtracted.UserSession.LoggedInUser.FullName;
@@ -170,7 +171,8 @@ namespace Quarkless.Logic.InstagramClient
 							ChallengeInfo = instagramAccount.ChallengeInfo,
 						},
 						Profile = profileOfInstagramAccountModel,
-						Proxy = proxyOfInstagramAccountModel
+						Proxy = proxyOfInstagramAccountModel,
+						InstaClient = client
 					};
 				}
 				await _reportHandler.MakeReport($"GetClientFor user: {accountId}, insta: {instagramAccountId} failed, client returned nothing");

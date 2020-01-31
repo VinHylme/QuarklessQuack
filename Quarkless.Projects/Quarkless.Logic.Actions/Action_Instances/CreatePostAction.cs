@@ -87,7 +87,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				MediaType = InstaMediaType.Image
 			};
 		}
-		private MediaData ProcessVideo(string mediaUrl)
+		private async Task<MediaData> ProcessVideo(string mediaUrl)
 		{
 			if (string.IsNullOrEmpty(mediaUrl))
 				return null;
@@ -102,7 +102,8 @@ namespace Quarkless.Logic.Actions.Action_Instances
 					.ElementAt(_user.Profile.Theme.Colors.Count - 1),
 				_user.Profile.Theme.Percentage, 10)) return null;
 
-			var s3UrlLink = UploadToS3(videoBytes, $"Video_{videoBytes.GetHashCode()}_{Guid.NewGuid()}").GetAwaiter().GetResult();
+			var s3UrlLink = await UploadToS3(videoBytes, $"Video_{videoBytes.GetHashCode()}_{Guid.NewGuid()}");
+			
 			return new MediaData
 			{
 				MediaType = InstaMediaType.Video,
@@ -238,11 +239,11 @@ namespace Quarkless.Logic.Actions.Action_Instances
 					User = _user.Profile.InstagramAccountId
 				};
 
-				var filteredResults = totalResults.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User
-					&& (e.ActionType == by.ActionType))).ToList();
+				var filteredResults = totalResults.Where(mediaData => !mediaData.SeenBy.Any(e => e.User == by.User
+					&& e.ActionType == by.ActionType)).ToList();
 
 				var selectedMedia = new TempSelect();
-				var filterMediaSize = new System.Drawing.Size(850, 850);
+				var filterMediaSize = new Size(850, 850);
 				var carouselAmount = SecureRandom.Next(2, 4);
 				var currentAmount = 0;
 				var enteredType = InstaMediaType.All;
@@ -289,7 +290,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 						{
 							enteredType = InstaMediaType.Video;
 							var videoUrl = media.MediaUrl.FirstOrDefault();
-							var resultVideo = ProcessVideo(videoUrl);
+							var resultVideo = await ProcessVideo(videoUrl);
 							if (resultVideo == null)
 								continue;
 
@@ -333,7 +334,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 								}
 								else
 								{
-									var resultCarouselVideo = ProcessVideo(mediaUrl);
+									var resultCarouselVideo = await ProcessVideo(mediaUrl);
 									if (resultCarouselVideo == null)
 										continue;
 
@@ -383,13 +384,15 @@ namespace Quarkless.Logic.Actions.Action_Instances
 					case InstaMediaType.Image:
 					{
 						var imageData = selectedMedia.MediaData.FirstOrDefault();
+						
 						var imageUpload = new InstaImageUpload
 						{
-							Uri = imageData.Url,
+							Uri = imageData.Url
 							// ImageBytes = _actionOptions.PostAnalyser.Manipulation.ImageEditor
 							// 	.ResizeToClosestAspectRatio(_actionOptions.PostAnalyser.Manager
 							// 		.DownloadMedia(imageData.Url))
 						};
+
 						var selectedImageMedia = imageData.SelectedMedia.ObjectItem.Medias.FirstOrDefault();
 
 						var credit = selectedImageMedia.User?.Username;
