@@ -41,7 +41,6 @@ namespace Quarkless.Logic.InstagramClient
 				api = instaApi
 			};
 		}
-
 		public IInstaClient Empty(ProxyModel proxy, bool genDevice = false)
 		{
 			var instaApi = InstaApiBuilder.CreateBuilder()
@@ -310,7 +309,6 @@ namespace Quarkless.Logic.InstagramClient
 				: new InstagramApiSharp.Classes.Result<string>(results.Succeeded,
 					null, results.Info);
 		}
-
 		public async Task<IResult<string>> TryLogin(string username, string password, AndroidDevice device, 
 			ProxyModel proxy = null)
 		{

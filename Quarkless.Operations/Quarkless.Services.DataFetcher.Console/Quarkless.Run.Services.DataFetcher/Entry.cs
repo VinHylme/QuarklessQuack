@@ -43,7 +43,8 @@ namespace Quarkless.Run.Services.DataFetcher
 			var res = await resolver
 				.WithClient(worker.Client)
 				.WithAttempts(1)
-				.WithResolverAsync(()=>worker.Client.Feeds.GetExploreFeedAsync(PaginationParameters.MaxPagesToLoad(1)));
+				.WithResolverAsync(()=>worker.Client.Feeds
+					.GetRecentActivityFeedAsync(PaginationParameters.MaxPagesToLoad(1)));
 
 			if (res.Succeeded)
 			{

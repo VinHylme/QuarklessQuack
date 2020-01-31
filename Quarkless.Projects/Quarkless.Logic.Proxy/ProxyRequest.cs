@@ -7,14 +7,19 @@ using Quarkless.Models.Proxy.Interfaces;
 
 namespace Quarkless.Logic.Proxy
 {
-	public class ProxyRequest : IProxyRequest
+	public class ProxyRequest : ProxyLogic, IProxyRequest
 	{
 		private readonly string _url;
-		public ProxyRequest(ProxyRequestOptions options)
+		public ProxyRequest(ProxyRequestOptions options, IProxyAssignmentsRepository repo) : base(repo)
 		{
 			if (options == null || string.IsNullOrEmpty(options.Url))
 				throw new NullReferenceException();
 			_url = options.Url;
+		}
+
+		public async Task<bool> TestConnectivity(ProxyModel proxy)
+		{
+			return await TestProxyConnectivity(proxy)!=null;
 		}
 
 		public async Task<ProxyModel> AssignProxy(string accountId, string instagramAccountId, string locationQuery)

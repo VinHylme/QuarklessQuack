@@ -17,6 +17,7 @@ using Quarkless.Models.Lookup.Enums;
 using System.Linq;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Messaging;
+using Quarkless.Models.Proxy.Interfaces;
 
 namespace Quarkless.Logic.ResponseResolver
 {
@@ -26,6 +27,8 @@ namespace Quarkless.Logic.ResponseResolver
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
 		private readonly ITimelineEventLogLogic _timelineEventLogLogic;
 		private readonly IReportHandler _reportHandler;
+		private readonly IProxyRequest _proxyRequest;
+
 		private int _attempts = 0;
 		private TimeSpan _intervalBetweenRequests;
 		private IApiClientContainer _client;
@@ -33,7 +36,8 @@ namespace Quarkless.Logic.ResponseResolver
 		private string InstagramAccountId { get; set; }
 
 		public ResponseResolver(IApiClientContainer client, IInstagramAccountLogic instagramAccountLogic,
-			ITimelineEventLogLogic timelineEventLogLogic, IReportHandler reportHandler, ILookupLogic lookup)
+			ITimelineEventLogLogic timelineEventLogLogic, IReportHandler reportHandler, 
+			ILookupLogic lookup, IProxyRequest proxyRequest)
 		{
 			_client = client;
 			_instagramAccountLogic = instagramAccountLogic;
@@ -41,6 +45,7 @@ namespace Quarkless.Logic.ResponseResolver
 			_reportHandler = reportHandler;
 			_reportHandler.SetupReportHandler(nameof(ResponseResolver));
 			_lookupLogic = lookup;
+			_proxyRequest = proxyRequest;
 			_intervalBetweenRequests = TimeSpan.FromSeconds(1.25);
 		}
 
@@ -153,10 +158,15 @@ namespace Quarkless.Logic.ResponseResolver
 			switch (type)
 			{
 				case ResponseType.AlreadyLiked:
+				{
 					break;
+				}
 				case ResponseType.CantLike:
+				{
 					break;
+				}
 				case ResponseType.ChallengeRequired:
+				{
 					var challenge = await GetChallengeRequireVerifyMethodAsync();
 					if (challenge.Succeeded)
 					{
@@ -186,6 +196,7 @@ namespace Quarkless.Logic.ResponseResolver
 										});
 									}
 								}
+
 								if (!string.IsNullOrEmpty(challenge.Value.StepData.Email))
 								{
 									var code = await RequestVerifyCodeToEmailForChallengeRequireAsync();
@@ -206,21 +217,34 @@ namespace Quarkless.Logic.ResponseResolver
 							}
 						}
 					}
+
 					await _client.GetContext.ActionClient.GetLoggedInChallengeDataInfoAsync();
 					await AcceptChallenge();
 					break;
+				}
 				case ResponseType.CheckPointRequired:
+				{
 					break;
+				}
 				case ResponseType.CommentingIsDisabled:
+				{
 					break;
+				}
 				case ResponseType.ConsentRequired:
+				{
 					await AcceptConsent();
 					break;
+				}
 				case ResponseType.DeletedPost:
+				{
 					break;
+				}
 				case ResponseType.InactiveUser:
+				{
 					break;
+				}
 				case ResponseType.LoginRequired:
+				{
 					var results = await WithResolverAsync(await _client.GetContext.InstaClient.TryLogin());
 					if (results.Succeeded)
 					{
@@ -230,9 +254,13 @@ namespace Quarkless.Logic.ResponseResolver
 							State = newState
 						});
 					}
+
 					break;
+				}
 				case ResponseType.InternalException:
+				{
 					break;
+				}
 				case ResponseType.ActionBlocked:
 				case ResponseType.Spam:
 				case ResponseType.RequestsLimit:
@@ -242,24 +270,40 @@ namespace Quarkless.Logic.ResponseResolver
 					});
 					break;
 				case ResponseType.OK:
+				{
 					await MessagingHandler(actionType, request);
 					break;
+				}
 				case ResponseType.MediaNotFound:
+				{
 					break;
+				}
 				case ResponseType.SomePagesSkipped:
+				{
 					break;
+				}
 				case ResponseType.SentryBlock:
+				{
 					break;
+				}
 				case ResponseType.Unknown:
+				{
 					await _client.GetContext.ActionClient.GetLoggedInChallengeDataInfoAsync();
 					await AcceptChallenge();
 					break;
+				}
 				case ResponseType.WrongRequest:
 					break;
 				case ResponseType.UnExpectedResponse:
+				{
+					await TestUserProxy();
 					break;
+				}
 				case ResponseType.NetworkProblem:
+				{
+					await TestUserProxy();
 					break;
+				}
 			}
 		}
 
@@ -636,7 +680,26 @@ namespace Quarkless.Logic.ResponseResolver
 			#endregion
 		}
 
-		#region Other Functionality 
+		#region Other Functionality
+
+		private async Task TestUserProxy()
+		{
+			var context = _client.GetContext.InstagramAccount;
+			try
+			{
+				var testProxyConnectivity = await _proxyRequest.TestConnectivity(_client.GetContext.Proxy);
+				if (!testProxyConnectivity)
+				{
+					await _proxyRequest.AssignProxy(context.AccountId, context.Id,
+						_client.GetContext.Proxy.Location.LocationQuery);
+				}
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err);
+				return;
+			}
+		}
 		private async Task MarkAsComplete(ActionType actionType, params string[] ids)
 		{
 			foreach (var id in ids)
