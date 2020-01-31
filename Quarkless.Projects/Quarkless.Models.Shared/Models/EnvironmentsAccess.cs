@@ -13,6 +13,9 @@ namespace Quarkless.Models.Shared.Models
 		public string YandexApiKey { get; set; }
 		public string DetectApi { get; set; }
 		public string ImageSearchEndpoint { get; set; }
+		public string GoogleGeocodeApiKey { get; set; }
+		public string GeonamesApiKey { get; set; }
+		public string IpGeoLocationApiKey { get; set; }
 		public string RedisConnectionString { get; set; }
 		public string ConnectionString { get; set; }
 		public string MainDatabase { get; set; }

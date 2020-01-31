@@ -5,12 +5,6 @@ using Quarkless.Geolocation.IpInfo;
 
 namespace Quarkless.Geolocation
 {
-	public class GeoLocationOptions
-	{
-		public string IpGeolocationToken { get; set; }
-		public string GoogleGeocodeToken { get; set; }
-		public string GeonamesToken { get; set; }
-	}
 	public class GeoLocationHandler : IGeoLocationHandler
 	{
 		private readonly string _ipGeolocationToken;

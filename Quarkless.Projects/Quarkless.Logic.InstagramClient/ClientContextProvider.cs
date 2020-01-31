@@ -70,7 +70,19 @@ namespace Quarkless.Logic.InstagramClient
 		{
 			try
 			{
-				return this._instaClient.Empty();
+				return _instaClient.Empty();
+			}
+			catch (Exception ee)
+			{
+				_reportHandler.MakeReport(ee).GetAwaiter().GetResult();
+				return null;
+			}
+		}
+		public IInstaClient InitialClientGenerate(UserSessionData userData)
+		{
+			try
+			{
+				return _instaClient.Empty(userData);
 			}
 			catch (Exception ee)
 			{
@@ -79,7 +91,7 @@ namespace Quarkless.Logic.InstagramClient
 			}
 		}
 		public IInstaClient InitialClientGenerateWithProxy(ProxyModel model, bool genDevice = false) 
-			=> this._instaClient.Empty(model, genDevice);
+			=> _instaClient.Empty(model, genDevice);
 
 		private async Task<ContextContainer> GetClient(string accountId, string instagramAccountId)
 		{

@@ -26,7 +26,8 @@ namespace Quarkless.Logic.Profile
 			return _profileRepository.AddMediaUrl(profileId, mediaUrl);
 		}
 
-		public async Task<ProfileModel> AddProfile(ProfileModel profile, bool assignProxy = false, string ipAddress = null)
+		public async Task<ProfileModel> AddProfile(ProfileModel profile,
+			bool assignProxy = false, string ipAddress = null, string location = null)
 		{
 			var results = await _profileRepository.AddProfile(profile);
 			if (results == null) return null;
@@ -35,7 +36,8 @@ namespace Quarkless.Logic.Profile
 				await _eventPublisher.PublishAsync(new ProfilePublishEventModel
 				{
 					Profile = results,
-					IpAddress = ipAddress
+					IpAddress = ipAddress,
+					Location = location
 				});
 
 			return results;
@@ -106,7 +108,7 @@ namespace Quarkless.Logic.Profile
 				},
 				LocationTargetList = new List<Location>(),
 				UserTargetList = new List<string>(),
-			}, true, @event.IpAddress);
+			}, true, @event.IpAddress, @event.LocationLatLon);
 		}
 	}
 }

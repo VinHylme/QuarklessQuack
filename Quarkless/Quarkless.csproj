@@ -44,6 +44,7 @@
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Base.InstagramDiscover\Quarkless.Base.InstagramDiscover.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Base.InstagramUser\Quarkless.Base.InstagramUser.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Events\Quarkless.Events.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Geolocation\Quarkless.Geolocation.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Account\Quarkless.Logic.Account.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Actions\Quarkless.Logic.Actions.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Agent\Quarkless.Logic.Agent.csproj" />

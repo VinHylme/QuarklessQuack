@@ -12,6 +12,8 @@ namespace Quarkless.Models.ResponseResolver.Interfaces
 		Task<IResult<TInput>> WithResolverAsync<TInput>(Func<Task<IResult<TInput>>> func,
 			ActionType actionType, string request);
 		IResponseResolver WithClient(IApiClientContainer client);
+		IResponseResolver WithInstaApiClient(IInstaClient client);
+		Task<IResult<TInput>> WithResolverAsyncEmpty<TInput>(Func<Task<IResult<TInput>>> func);
 		IResponseResolver WithAttempts(int numberOfAttemptsPerRequest = 0, TimeSpan? intervalBetweenRequests = null);
 	}
 }

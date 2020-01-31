@@ -369,6 +369,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Models.Actions", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Logic.Actions", "Quarkless.Projects\Quarkless.Logic.Actions\Quarkless.Logic.Actions.csproj", "{DD1B70CE-9FD4-47D5-9D1B-6A474A99CD7A}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Geolocation", "Quarkless.Projects\Quarkless.Geolocation\Quarkless.Geolocation.csproj", "{16797B3A-82EB-443F-8E62-B7A31D671755}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -863,6 +865,10 @@ Global
 		{DD1B70CE-9FD4-47D5-9D1B-6A474A99CD7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DD1B70CE-9FD4-47D5-9D1B-6A474A99CD7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DD1B70CE-9FD4-47D5-9D1B-6A474A99CD7A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{16797B3A-82EB-443F-8E62-B7A31D671755}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16797B3A-82EB-443F-8E62-B7A31D671755}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16797B3A-82EB-443F-8E62-B7A31D671755}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16797B3A-82EB-443F-8E62-B7A31D671755}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1047,6 +1053,7 @@ Global
 		{63537D8E-4055-430D-A360-3316A1FEF589} = {FA565628-E611-4DB7-93ED-1CCEC2B38518}
 		{792AF004-34F6-4C77-8620-5D9F1F043F22} = {63537D8E-4055-430D-A360-3316A1FEF589}
 		{DD1B70CE-9FD4-47D5-9D1B-6A474A99CD7A} = {63537D8E-4055-430D-A360-3316A1FEF589}
+		{16797B3A-82EB-443F-8E62-B7A31D671755} = {FA565628-E611-4DB7-93ED-1CCEC2B38518}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D3E4C3A5-ADB4-4A48-9A99-78BD4FDE9AE6}

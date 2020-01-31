@@ -60,7 +60,6 @@ namespace Quarkless.Models.Auth
 			if (tryUseXForwardHeader)
 				ip = GetHeaderValueAs<string>("X-Forwarded-For").SplitCsv().FirstOrDefault();
 
-			// RemoteIpAddress is always null in DNX RC1 Update1 (bug).
 			if (ip.IsNullOrWhitespace() && _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress != null)
 				ip = _httpContextAccessor.HttpContext.Connection.RemoteIpAddress.ToString();
 

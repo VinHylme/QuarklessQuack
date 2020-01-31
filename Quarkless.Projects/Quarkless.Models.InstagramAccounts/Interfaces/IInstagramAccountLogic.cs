@@ -7,6 +7,7 @@ namespace Quarkless.Models.InstagramAccounts.Interfaces
 {
 	public interface IInstagramAccountLogic
 	{
+		Task<InstagramAccountModel> InsertInstagramAccount(string accountId, AddInstagramAccountRequest addRequest);
 		Task<ResultCarrier<AddInstagramAccountResponse>> AddInstagramAccount(string accountId, StateData state, AddInstagramAccountRequest addInstagram);
 		Task<IEnumerable<ShortInstagramAccountModel>> GetActiveAgentInstagramAccounts(int actionExType = -1);
 		Task<IEnumerable<ShortInstagramAccountModel>> GetInstagramAccounts(int type);

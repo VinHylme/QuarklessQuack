@@ -30,6 +30,7 @@ using Quarkless.Base.InstagramDiscover;
 using Quarkless.Base.InstagramUser;
 using Quarkless.Events;
 using Quarkless.Events.Interfaces;
+using Quarkless.Geolocation;
 using Quarkless.Logic.Account;
 using Quarkless.Logic.Actions.Factory.ActionExecute.Manager;
 using Quarkless.Logic.Agent;
@@ -92,6 +93,7 @@ using Quarkless.Models.Media.Interfaces;
 using Quarkless.Models.Messaging.Interfaces;
 using Quarkless.Models.Profile;
 using Quarkless.Models.Profile.Interfaces;
+using Quarkless.Models.Proxy;
 using Quarkless.Models.Proxy.Interfaces;
 using Quarkless.Models.Query.Interfaces;
 using Quarkless.Models.ReportHandler.Interfaces;
@@ -348,6 +350,19 @@ namespace Quarkless.Extensions
 			services.AddSingleton<IVideoEditor, VideoEditor>();
 			services.AddSingleton<IAudioEditor, AudioEditor>();
 
+			services.AddSingleton<IGeoLocationHandler, GeoLocationHandler>(s =>
+				new GeoLocationHandler(new GeoLocationOptions
+				{
+					IpGeolocationToken = accessors.IpGeoLocationApiKey,
+					GeonamesToken = accessors.GeonamesApiKey,
+					GoogleGeocodeToken = accessors.GoogleGeocodeApiKey
+				}));
+
+			services.AddTransient<IProxyRequest, ProxyRequest>(s => new ProxyRequest(
+				new ProxyRequestOptions(accessors.ProxyHandlerApiEndPoint),
+				s.GetService<IGeoLocationHandler>(), 
+				s.GetService<IProxyAssignmentsRepository>()));
+
 			services.AddSingleton<IUrlReader>(new UrlReader(accessors.ApiBasePath));
 
 			services.AddTransient<ISearchingCache, SearchingCache>();
@@ -416,6 +431,7 @@ namespace Quarkless.Extensions
 		{
 			services.AddTransient<IEventSubscriber<InstagramAccountPublishEventModel>, ProfileLogic>();
 			services.AddTransient<IEventSubscriber<ProfileTopicAddRequest>, TopicLookupLogic>();
+			services.AddTransient<IEventSubscriber<ProfilePublishEventModel>, ProxyRequest>();
 			services.AddTransient<IEventPublisher, EventPublisher>(
 				s => new EventPublisher(services.BuildServiceProvider(false).CreateScope()));
 		}

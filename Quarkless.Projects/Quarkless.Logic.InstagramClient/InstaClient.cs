@@ -41,6 +41,20 @@ namespace Quarkless.Logic.InstagramClient
 				api = instaApi
 			};
 		}
+		public IInstaClient Empty(UserSessionData userSessionData)
+		{
+			var instaApi = InstaApiBuilder.CreateBuilder()
+				.UseLogger(new DebugLogger(LogLevel.All))
+				.SetUser(userSessionData)
+				.SetRequestDelay(RequestDelay.FromSeconds(0, 2))
+				.Build();
+
+			instaApi.SetApiVersion(INSTAGRAM_VERSION);
+			return new InstaClient()
+			{
+				api = instaApi
+			};
+		}
 		public IInstaClient Empty(ProxyModel proxy, bool genDevice = false)
 		{
 			var instaApi = InstaApiBuilder.CreateBuilder()

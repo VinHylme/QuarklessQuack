@@ -32,6 +32,7 @@ namespace Quarkless.Logic.ResponseResolver
 		private int _attempts = 0;
 		private TimeSpan _intervalBetweenRequests;
 		private IApiClientContainer _client;
+		private IInstaClient _instaClient;
 		private string AccountId { get; set; }
 		private string InstagramAccountId { get; set; }
 
@@ -54,6 +55,13 @@ namespace Quarkless.Logic.ResponseResolver
 			_client = client;
 			return this;
 		}
+
+		public IResponseResolver WithInstaApiClient(IInstaClient client)
+		{
+			_instaClient = client;
+			return this;
+		}
+
 		public IResponseResolver WithAttempts(int numberOfAttemptsPerRequest = 0, TimeSpan? intervalBetweenRequests = null)
 		{
 			_attempts = numberOfAttemptsPerRequest;
@@ -149,12 +157,129 @@ namespace Quarkless.Logic.ResponseResolver
 					break;
 			}
 		}
+
+		private async Task ResponseHandlerNoClient(ResponseType type)
+		{
+			switch (type)
+			{
+				case ResponseType.AlreadyLiked:
+				{
+					break;
+				}
+				case ResponseType.CantLike:
+				{
+					break;
+				}
+				case ResponseType.ChallengeRequired:
+					{
+						var challenge = await GetChallengeRequireVerifyMethodAsync();
+						if (challenge.Succeeded)
+						{
+							if (challenge.Value.SubmitPhoneRequired)
+							{
+
+							}
+							else
+							{
+								if (challenge.Value.StepData != null)
+								{
+									if (!string.IsNullOrEmpty(challenge.Value.StepData.PhoneNumber))
+									{
+										//verify phone
+										var code = await RequestVerifyCodeToSmsForChallengeRequireAsync();
+										
+									}
+
+									if (!string.IsNullOrEmpty(challenge.Value.StepData.Email))
+									{
+										var code = await RequestVerifyCodeToEmailForChallengeRequireAsync();
+										
+									}
+								}
+							}
+						}
+
+						await _instaClient.ReturnClient.GetLoggedInChallengeDataInfoAsync();
+						await AcceptChallenge();
+						break;
+					}
+				case ResponseType.CheckPointRequired:
+				{
+					break;
+				}
+				case ResponseType.CommentingIsDisabled:
+				{
+					break;
+				}
+				case ResponseType.ConsentRequired:
+				{
+					await AcceptConsent();
+					break;
+				}
+				case ResponseType.DeletedPost:
+				{
+					break;
+				}
+				case ResponseType.InactiveUser:
+				{
+					break;
+				}
+				case ResponseType.LoginRequired:
+				{
+					break;
+				}
+				case ResponseType.InternalException:
+				{
+					break;
+				}
+				case ResponseType.ActionBlocked:
+				case ResponseType.Spam:
+				case ResponseType.RequestsLimit:
+					break;
+				case ResponseType.OK:
+				{
+					break;
+				}
+				case ResponseType.MediaNotFound:
+				{
+					break;
+				}
+				case ResponseType.SomePagesSkipped:
+				{
+					break;
+				}
+				case ResponseType.SentryBlock:
+				{
+					break;
+				}
+				case ResponseType.Unknown:
+				{
+					var state = await _instaClient.GetStateDataFromString();
+					await _instaClient.ReturnClient.GetLoggedInChallengeDataInfoAsync();
+					await AcceptChallenge();
+					break;
+				}
+				case ResponseType.WrongRequest:
+					break;
+				case ResponseType.UnExpectedResponse:
+				{
+					break;
+				}
+				case ResponseType.NetworkProblem:
+				{
+					break;
+				}
+			}
+
+		}
+
 		private async Task ResponseHandler(ResponseType type, ActionType actionType = ActionType.None,
 			string request = null)
 		{
 			var context = _client.GetContext.InstagramAccount;
 			AccountId = context.AccountId;
 			InstagramAccountId = context.Id;
+
 			switch (type)
 			{
 				case ResponseType.AlreadyLiked:
@@ -322,6 +447,21 @@ namespace Quarkless.Logic.ResponseResolver
 
 			return results;
 		}
+		public async Task<IResult<TInput>> WithResolverAsyncEmpty<TInput>(Func<Task<IResult<TInput>>> func)
+		{
+			IResult<TInput> results;
+			var currentAttempts = 0;
+			do
+			{
+				results = await WithResolverNoClient(await func());
+				if (results.Succeeded) return results;
+
+				await Task.Delay(_intervalBetweenRequests);
+				currentAttempts++;
+			} while (currentAttempts < _attempts);
+
+			return results;
+		}
 		public async Task<IResult<TInput>> WithResolverAsync<TInput>(Func<Task<IResult<TInput>>> func,
 			ActionType actionType, string request)
 		{
@@ -339,6 +479,7 @@ namespace Quarkless.Logic.ResponseResolver
 			return results;
 		}
 
+		#region Resolver Implementation
 		private async Task<IResult<TInput>> WithResolverAsync<TInput>(IResult<TInput> response, ActionType actionType,
 			string request)
 		{
@@ -679,6 +820,13 @@ namespace Quarkless.Logic.ResponseResolver
 			*/
 			#endregion
 		}
+		private async Task<IResult<TInput>> WithResolverNoClient<TInput>(IResult<TInput> response)
+		{
+			if (response?.Info == null) return response;
+			await ResponseHandlerNoClient(response.Info.ResponseType);
+			return response;
+		}
+		#endregion
 
 		#region Other Functionality
 
@@ -700,6 +848,7 @@ namespace Quarkless.Logic.ResponseResolver
 				return;
 			}
 		}
+
 		private async Task MarkAsComplete(ActionType actionType, params string[] ids)
 		{
 			foreach (var id in ids)
@@ -728,6 +877,9 @@ namespace Quarkless.Logic.ResponseResolver
 		{
 			try
 			{
+				if (_client?.GetContext?.ActionClient == null)
+					return await _instaClient.ReturnClient.AcceptConsentAsync();
+
 				return await _client.GetContext.ActionClient.AcceptConsentAsync();
 			}
 			catch (Exception err)
@@ -741,6 +893,8 @@ namespace Quarkless.Logic.ResponseResolver
 		{
 			try
 			{
+				if (_client?.GetContext?.ActionClient == null)
+					return await _instaClient.ReturnClient.AcceptChallengeAsync();
 				return await _client.GetContext.ActionClient.AcceptChallengeAsync();
 			}
 			catch (Exception err)
@@ -754,6 +908,8 @@ namespace Quarkless.Logic.ResponseResolver
 		{
 			try
 			{
+				if (_client?.GetContext?.ActionClient == null)
+					return await _instaClient.ReturnClient.RequestVerifyCodeToEmailForChallengeRequireAsync();
 				return await _client.GetContext.ActionClient.RequestVerifyCodeToEmailForChallengeRequireAsync();
 			}
 			catch (Exception err)
@@ -767,6 +923,9 @@ namespace Quarkless.Logic.ResponseResolver
 		{
 			try
 			{
+				if (_client?.GetContext?.ActionClient == null)
+					return await _instaClient.ReturnClient.RequestVerifyCodeToSMSForChallengeRequireAsync();
+
 				return await _client.GetContext.ActionClient.RequestVerifyCodeToSMSForChallengeRequireAsync();
 			}
 			catch (Exception err)
@@ -780,6 +939,9 @@ namespace Quarkless.Logic.ResponseResolver
 		{
 			try
 			{
+				if (_client?.GetContext?.ActionClient == null)
+					return _instaClient.ReturnClient.ChallengeLoginInfo;
+
 				return _client.GetContext.ActionClient.ChallengeLoginInfo;
 			}
 			catch (Exception err)
@@ -793,6 +955,9 @@ namespace Quarkless.Logic.ResponseResolver
 		{
 			try
 			{
+				if (_client?.GetContext?.ActionClient == null)
+					return await _instaClient.ReturnClient.GetChallengeRequireVerifyMethodAsync();
+
 				return await _client.GetContext.ActionClient.GetChallengeRequireVerifyMethodAsync();
 			}
 			catch (Exception err)
@@ -806,6 +971,8 @@ namespace Quarkless.Logic.ResponseResolver
 		{
 			try
 			{
+				if (_client?.GetContext?.ActionClient == null)
+					return await _instaClient.ReturnClient.VerifyCodeForChallengeRequireAsync(code);
 				return await _client.GetContext.ActionClient.VerifyCodeForChallengeRequireAsync(code);
 			}
 			catch (Exception err)
@@ -815,6 +982,7 @@ namespace Quarkless.Logic.ResponseResolver
 				return null;
 			}
 		}
+		
 		#endregion
 	}
 }

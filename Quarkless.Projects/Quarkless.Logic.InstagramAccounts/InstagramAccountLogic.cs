@@ -7,6 +7,7 @@ using Quarkless.Models.InstagramAccounts;
 using Quarkless.Models.InstagramAccounts.Interfaces;
 using System.Threading.Tasks;
 using InstagramApiSharp.Classes;
+using InstagramApiSharp.Classes.Android.DeviceInfo;
 using Quarkless.Models.InstagramAccounts.Enums;
 using Quarkless.Models.ReportHandler.Interfaces;
 
@@ -26,7 +27,25 @@ namespace Quarkless.Logic.InstagramAccounts
 			_reportHandler.SetupReportHandler("InstagramAccountLogic");
 		}
 
-		public async Task<ResultCarrier<AddInstagramAccountResponse>> AddInstagramAccount(string accountId, StateData state, AddInstagramAccountRequest addInstagram)
+		public async Task<InstagramAccountModel> InsertInstagramAccount(string accountId,
+			AddInstagramAccountRequest addRequest)
+		{
+			var instagramAccountModel = new InstagramAccountModel
+			{
+				Device = AndroidDeviceGenerator.GetRandomAndroidDevice().DeviceModel,
+				AccountId = accountId,
+				Password = addRequest.Password,
+				Username = addRequest.Username,
+				Type = addRequest.Type,
+				AgentState = (int)AgentState.NotStarted,
+				DateAdded = DateTime.UtcNow,
+			};
+			var results = await _instagramAccountRepository.AddInstagramAccount(instagramAccountModel);
+			return results;
+		}
+
+		public async Task<ResultCarrier<AddInstagramAccountResponse>> AddInstagramAccount(string accountId,
+			StateData state, AddInstagramAccountRequest addInstagram)
 		{
 			var resultCarrier = new ResultCarrier<AddInstagramAccountResponse>();
 			try
@@ -67,7 +86,8 @@ namespace Quarkless.Logic.InstagramAccounts
 					await _publisher.PublishAsync(new InstagramAccountPublishEventModel
 					{
 						InstagramAccount = result,
-						IpAddress = addInstagram.ComingFrom
+						IpAddress = addInstagram.IpAddress,
+						LocationLatLon = addInstagram.LatLonLocation
 					});
 
 					resultCarrier.IsSuccessful = true;

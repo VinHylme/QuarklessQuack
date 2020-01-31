@@ -10,6 +10,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Quarkless.Events\Quarkless.Events.csproj" />
+    <ProjectReference Include="..\Quarkless.Geolocation\Quarkless.Geolocation.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Profile\Quarkless.Models.Profile.csproj" />
     <ProjectReference Include="..\Quarkless.Models.Proxy\Quarkless.Models.Proxy.csproj" />
     <ProjectReference Include="..\Quarkless.Repository.Proxy\Quarkless.Repository.Proxy.csproj" />
   </ItemGroup>

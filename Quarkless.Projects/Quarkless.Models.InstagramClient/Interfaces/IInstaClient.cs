@@ -9,6 +9,7 @@ namespace Quarkless.Models.InstagramClient.Interfaces
 	public interface IInstaClient
 	{
 		IInstaClient Empty();
+		IInstaClient Empty(UserSessionData userSessionData);
 		IInstaApi ReturnClient {get; }
 		IInstaClient StateClient(string state);
 		Task<string> GetStateDataFromString();

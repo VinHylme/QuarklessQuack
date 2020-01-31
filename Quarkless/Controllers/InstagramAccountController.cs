@@ -61,16 +61,27 @@ namespace Quarkless.Controllers
 			try
 			{
 				if (string.IsNullOrEmpty(_userContext.CurrentUser)) return BadRequest("Not authenticated");
-				var loginRes = await _instaUserLogic.TryLogin(addInstagram.Username, addInstagram.Password,
-					AndroidDeviceGenerator.GetRandomAndroidDevice());
+
+				var client = _clientContext.EmptyClientWithUser(new UserSessionData
+				{
+					UserName = addInstagram.Username,
+					Password = addInstagram.Password
+				});
+
+				var loginRes = await _responseResolver
+					.WithAttempts(1)
+					.WithInstaApiClient(client)
+					.WithResolverAsyncEmpty(()=> client.TryLogin(addInstagram.Username, addInstagram.Password,
+					AndroidDeviceGenerator.GetRandomAndroidDevice()));
+
 				if (loginRes == null) return NotFound("Could not authenticate the account");
 
 				if (loginRes.Succeeded) { 
 
 					var state = JsonConvert.DeserializeObject<StateData>(loginRes.Value);
 
-					if (string.IsNullOrEmpty(addInstagram.ComingFrom))
-						addInstagram.ComingFrom = _userContext.UserIpAddress;
+					if (string.IsNullOrEmpty(addInstagram.IpAddress))
+						addInstagram.IpAddress = _userContext.UserIpAddress;
 
 					var results = await _instagramAccountLogic
 						.AddInstagramAccount(_userContext.CurrentUser, state, addInstagram);

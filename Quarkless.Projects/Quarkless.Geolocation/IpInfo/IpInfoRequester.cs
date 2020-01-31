@@ -19,18 +19,16 @@ namespace Quarkless.Geolocation.IpInfo
 		public async Task<IpGeolocation> GetUserLocationFromIp(string ip)
 		{
 			var url = string.Format(_baseUrl, ip);
-			using (var httpClient = new HttpClient())
+			using var httpClient = new HttpClient();
+			try
 			{
-				try
-				{
-					var response = await httpClient.GetStringAsync(url);
-					return JsonConvert.DeserializeObject<IpGeolocation>(response);
-				}
-				catch(Exception err)
-				{
-					Console.WriteLine(err.Message);
-					return null;
-				}
+				var response = await httpClient.GetStringAsync(url);
+				return JsonConvert.DeserializeObject<IpGeolocation>(response);
+			}
+			catch(Exception err)
+			{
+				Console.WriteLine(err.Message);
+				return null;
 			}
 		}
 	}

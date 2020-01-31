@@ -4,7 +4,8 @@
 	{
 		public string Username { get; set; }
 		public string Password { get; set; }
-		public string ComingFrom { get; set; }
+		public string IpAddress { get; set; }
+		public string LatLonLocation { get; set; }
 		public int Type { get; set; }
 	}
 }

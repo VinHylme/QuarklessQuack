@@ -20,6 +20,9 @@ namespace Quarkless.Models.Shared.Models
 		public string YandexApiKey => _configuration["APIServices:Yandex"];
 		public string DetectApi => _configuration["APIServices:DetectLanguageAPI"];
 		public string ImageSearchEndpoint => _configuration["Endpoints:ImageSearchEndpointGoogle"];
+		public string GoogleGeocodeApiKey => _configuration["APIServices:GoogleGeocodeApiKey"];
+		public string GeonamesApiKey => _configuration["APIServices:GeonamesApiKey"];
+		public string IpGeoLocationApiKey => _configuration["APIServices:IpGeoLocationApiKey"];
 		public string RedisConnectionString => _configuration["ConnectionStrings:Redis"];
 		public string ConnectionString => _configuration["ConnectionStrings:MongoClientStrings"];
 		public string MainDatabase => _configuration["ConnectionStrings:DatabaseNames:Accounts"];
