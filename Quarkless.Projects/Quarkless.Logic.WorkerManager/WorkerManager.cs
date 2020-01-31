@@ -90,8 +90,10 @@ namespace Quarkless.Logic.WorkerManager
 						break;
 					case AgentState.Challenge:
 						var client = new ApiClientContainer(_context, accountModel.AccountId, accountModel._id);
-						var loginAttempt = await _responseResolver.WithClient(client)
-							.WithResolverAsync(await _context.EmptyClient
+						var loginAttempt = await _responseResolver
+							.WithClient(client)
+							.WithAttempts(1)
+							.WithResolverAsync(()=> _context.EmptyClient
 								.TryLogin(accountModel.Username, accountModel.Password, accountModel.State.DeviceInfo, 
 									client.GetContext.Proxy));
 

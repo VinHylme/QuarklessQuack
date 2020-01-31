@@ -33,8 +33,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> GetCollections(int limit = 5)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid ID");
-			var results = await _responseResolver.WithResolverAsync(
-				await _collectionsLogic.GetCollections(limit), ActionType.None, "");
+			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
+				()=> _collectionsLogic.GetCollections(limit), ActionType.None, "");
 			if (results.Succeeded && results.Value.Items.Count > 0)
 			{
 				return Ok(results.Value);
@@ -47,8 +47,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> GetCollection(long collectionId, int limit = 5)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid ID");
-			var results = await _responseResolver.WithResolverAsync(
-				await _collectionsLogic.GetCollection(collectionId,limit), ActionType.None, collectionId.ToString());
+			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
+				()=> _collectionsLogic.GetCollection(collectionId,limit), ActionType.None, collectionId.ToString());
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);
@@ -62,8 +62,8 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists || string.IsNullOrEmpty(collectionName))
 				return BadRequest("Invalid ID");
-			var res = await _responseResolver.WithResolverAsync(
-				await _collectionsLogic.CreateCollection(collectionName), ActionType.None, collectionName);
+			var res = await _responseResolver.WithAttempts(1).WithResolverAsync(
+				() => _collectionsLogic.CreateCollection(collectionName), ActionType.None, collectionName);
 			if (res.Succeeded)
 			{
 				return Ok(res.Value);
@@ -77,7 +77,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists || addItemsToCollectionsRequest.MediaIds.Count <= 0)
 				return BadRequest("Invalid ID");
-			var res = await _responseResolver.WithResolverAsync(await _collectionsLogic.AddItemsCollection(collectionId, 
+			var res = await _responseResolver.WithAttempts(1).WithResolverAsync(()=> _collectionsLogic.AddItemsCollection(collectionId, 
 				addItemsToCollectionsRequest.MediaIds.ToArray()), ActionType.None, collectionId.ToString());
 			if (res.Succeeded)
 			{
@@ -91,7 +91,7 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> EditCollections([FromRoute] long collectionId, [FromBody] EditCollectionRequest editCollection)
 		{
 			if (!_userContext.UserAccountExists || editCollection == null) return BadRequest("Invalid Request");
-			var res = await _responseResolver.WithResolverAsync(await _collectionsLogic.CreateCollection(collectionId,
+			var res = await _responseResolver.WithAttempts(1).WithResolverAsync(()=> _collectionsLogic.CreateCollection(collectionId,
 				editCollection.CollectionName,editCollection.PhotoCoverId), ActionType.None, collectionId.ToString());
 			if (res.Succeeded)
 			{
@@ -105,8 +105,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> DeleteCollection(long collectionId)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid ID");
-			var res = await _responseResolver.WithResolverAsync(
-				await _collectionsLogic.DeleteCollection(collectionId), ActionType.None, collectionId.ToString());
+			var res = await _responseResolver.WithAttempts(1).WithResolverAsync(
+				()=> _collectionsLogic.DeleteCollection(collectionId), ActionType.None, collectionId.ToString());
 			if (res.Succeeded)
 			{
 				return Ok(res.Value);

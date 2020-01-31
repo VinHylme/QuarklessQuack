@@ -33,8 +33,8 @@ namespace Quarkless.Controllers
 	    public async Task<IActionResult> GetInbox(int limit)
 	    {
 		    if (!_userContext.UserAccountExists) return BadRequest("Invalid Request");
-		    var results = await _responseResolver
-			    .WithResolverAsync(await _messagingLogic.GetDirectInboxAsync(limit), ActionType.GetInbox, limit.ToString());
+		    var results = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _messagingLogic.GetDirectInboxAsync(limit), ActionType.GetInbox, limit.ToString());
 		    if (results == null) return BadRequest("Invalid Request");
 		    if (results.Succeeded)
 		    {
@@ -49,8 +49,8 @@ namespace Quarkless.Controllers
 	    public async Task<IActionResult> GetThread(string threadId, int limit)
 	    {
 		    if (!_userContext.UserAccountExists) return BadRequest("Invalid Request");
-		    var results = await _responseResolver
-			    .WithResolverAsync(await _messagingLogic.GetDirectInboxThreadAsync(threadId,limit), ActionType.GetThread,
+		    var results = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _messagingLogic.GetDirectInboxThreadAsync(threadId,limit), ActionType.GetThread,
 				    limit.ToString());
 		    if (results == null) return BadRequest("Invalid Request");
 		    if (results.Succeeded)
@@ -75,9 +75,8 @@ namespace Quarkless.Controllers
 			if (sendDirectText.Threads != null && sendDirectText.Threads.Any())
 				threads = string.Join(",", sendDirectText.Threads);
 
-			var results = await _responseResolver
-				.WithResolverAsync(
-					await _messagingLogic.SendDirectTextAsync(recipients, threads, sendDirectText.TextMessage), 
+			var results = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=>_messagingLogic.SendDirectTextAsync(recipients, threads, sendDirectText.TextMessage), 
 					ActionType.SendDirectMessageText, sendDirectText.ToJsonString());
 			if (results == null) return BadRequest("Invalid Request");
 			if (results.Succeeded)
@@ -95,8 +94,8 @@ namespace Quarkless.Controllers
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Request");			
 			if (sendDirectLink == null) return BadRequest("Invalid Params");
 			var results = await _responseResolver
-				.WithResolverAsync(
-					await _messagingLogic.SendDirectLinkAsync(sendDirectLink.TextMessage, sendDirectLink.Link,
+				.WithAttempts(1)
+				.WithResolverAsync(()=> _messagingLogic.SendDirectLinkAsync(sendDirectLink.TextMessage, sendDirectLink.Link,
 						sendDirectLink.Threads.ToArray(), sendDirectLink.Recipients.ToArray()), 
 					ActionType.SendDirectMessageLink,
 					sendDirectLink.ToJsonString());
@@ -116,8 +115,8 @@ namespace Quarkless.Controllers
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Request");
 			if (sendDirectPhoto == null) return BadRequest("Invalid Params");
 			var results = await _responseResolver
-				.WithResolverAsync(
-					await _messagingLogic.SendDirectPhotoToRecipientsAsync(sendDirectPhoto.Image, sendDirectPhoto.Recipients.ToArray()), 
+				.WithAttempts(1)
+				.WithResolverAsync(()=>_messagingLogic.SendDirectPhotoToRecipientsAsync(sendDirectPhoto.Image, sendDirectPhoto.Recipients.ToArray()), 
 					ActionType.SendDirectMessagePhoto,
 					sendDirectPhoto.ToJsonString());
 			if (results == null) return BadRequest("Invalid Request");
@@ -136,8 +135,8 @@ namespace Quarkless.Controllers
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Request");
 			if (shareDirectMedia == null) return BadRequest("Invalid Params");
 			var results = await _responseResolver
-				.WithResolverAsync(
-					await _messagingLogic.ShareMediaToUserAsync(shareDirectMedia.MediaId, shareDirectMedia.MediaType, shareDirectMedia.Text, shareDirectMedia.Recipients.Select(long.Parse).ToArray()), 
+				.WithAttempts(1)
+				.WithResolverAsync(()=> _messagingLogic.ShareMediaToUserAsync(shareDirectMedia.MediaId, shareDirectMedia.MediaType, shareDirectMedia.Text, shareDirectMedia.Recipients.Select(long.Parse).ToArray()), 
 					ActionType.SendDirectMessageMedia,
 					shareDirectMedia.ToJsonString());
 			if (results == null) return BadRequest("Invalid Request");
@@ -156,8 +155,8 @@ namespace Quarkless.Controllers
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Request");
 			if (shareDirectMedia == null) return BadRequest("Invalid Params");
 			var results = await _responseResolver
-				.WithResolverAsync(
-					await _messagingLogic.ShareMediaToThreadAsync(shareDirectMedia.MediaId, shareDirectMedia.MediaType, shareDirectMedia.Text, shareDirectMedia.ThreadIds.ToArray()), 
+				.WithAttempts(1)
+				.WithResolverAsync(()=>_messagingLogic.ShareMediaToThreadAsync(shareDirectMedia.MediaId, shareDirectMedia.MediaType, shareDirectMedia.Text, shareDirectMedia.ThreadIds.ToArray()), 
 					ActionType.SendDirectMessageMedia,
 					shareDirectMedia.ToJsonString());
 			if (results == null) return BadRequest("Invalid Request");
@@ -176,8 +175,8 @@ namespace Quarkless.Controllers
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Request");
 			if (sendDirectVideo == null) return BadRequest("Invalid Params");
 			var results = await _responseResolver
-				.WithResolverAsync(
-					await _messagingLogic.SendDirectVideoToRecipientsAsync(sendDirectVideo.Video, sendDirectVideo.Recipients.ToArray()), 
+				.WithAttempts(1)
+				.WithResolverAsync(()=>_messagingLogic.SendDirectVideoToRecipientsAsync(sendDirectVideo.Video, sendDirectVideo.Recipients.ToArray()), 
 					ActionType.SendDirectMessageVideo,
 					sendDirectVideo.ToJsonString());
 			if (results == null) return BadRequest("Invalid Request");
@@ -201,8 +200,7 @@ namespace Quarkless.Controllers
 				recipients = string.Join(",", sendDirectProfile.Recipients);
 
 			var results = await _responseResolver
-				.WithResolverAsync(
-					await _messagingLogic.SendDirectProfileToRecipientsAsync(sendDirectProfile.userId, recipients), 
+				.WithResolverAsync(()=> _messagingLogic.SendDirectProfileToRecipientsAsync(sendDirectProfile.userId, recipients), 
 					ActionType.SendDirectMessageProfile,
 					sendDirectProfile.ToJsonString());
 			if (results == null) return BadRequest("Invalid Request");

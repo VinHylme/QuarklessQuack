@@ -32,7 +32,8 @@ namespace Quarkless.Controllers
 	    {
 		    if (!_userContext.UserAccountExists) return BadRequest("Invalid Request");
 		    var results = await _responseResolver
-			    .WithResolverAsync(await _businessLogic.GetStatisticsAsync(), ActionType.None, "");
+			    .WithAttempts(1)
+			    .WithResolverAsync(()=> _businessLogic.GetStatisticsAsync(), ActionType.None, "");
 		    if (results == null) return BadRequest("Invalid Request");
 		    if (results.Succeeded)
 		    {

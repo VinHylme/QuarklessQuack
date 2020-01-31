@@ -31,8 +31,10 @@ namespace Quarkless.Logic.Actions.Action_Executes
 
 				var createCommentRequest = JsonConvert.DeserializeObject<CreateCommentRequest>(eventAction.Body.ToJsonString());
 
-				var response = await _responseResolver.WithClient(_worker.Client)
-					.WithResolverAsync(await _worker.Client.Comment
+				var response = await _responseResolver
+					.WithClient(_worker.Client)
+					.WithAttempts(1)
+					.WithResolverAsync(()=> _worker.Client.Comment
 						.CommentMediaAsync(createCommentRequest.MediaId, createCommentRequest.Text), 
 						ActionType.CreateCommentMedia, createCommentRequest.ToJsonString());
 

@@ -33,8 +33,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> UploadPhoto([FromBody]UploadPhotoModel uploadPhoto)
 		{
 			if (!_userContext.UserAccountExists || uploadPhoto == null) return BadRequest("invalid");
-			var results = await _responseResolver.WithResolverAsync(
-				await _mediaLogic.UploadPhotoAsync(uploadPhoto), ActionType.CreatePost, uploadPhoto.ToJsonString());
+			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
+				()=> _mediaLogic.UploadPhotoAsync(uploadPhoto), ActionType.CreatePost, uploadPhoto.ToJsonString());
 			if (!results.Succeeded) return NotFound(results.Info);
 			return Ok(results.Value);
 		}
@@ -44,8 +44,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> UploadCarousel([FromBody]UploadAlbumModel uploadAlbum)
 		{
 			if (!_userContext.UserAccountExists || uploadAlbum == null) return BadRequest("invalid");
-			var results = await _responseResolver.WithResolverAsync(
-				await _mediaLogic.UploadAlbumAsync(uploadAlbum), ActionType.CreatePost, uploadAlbum.ToJsonString());
+			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
+				()=> _mediaLogic.UploadAlbumAsync(uploadAlbum), ActionType.CreatePost, uploadAlbum.ToJsonString());
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);
@@ -57,8 +57,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> UploadVideo([FromBody] UploadVideoModel uploadVideo)
 		{
 			if (!_userContext.UserAccountExists || uploadVideo == null) return BadRequest("invalid");
-			var results = await _responseResolver.WithResolverAsync(
-				await _mediaLogic.UploadVideoAsync(uploadVideo), ActionType.CreatePost, uploadVideo.ToJsonString());
+			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
+				()=> _mediaLogic.UploadVideoAsync(uploadVideo), ActionType.CreatePost, uploadVideo.ToJsonString());
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);
@@ -71,8 +71,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> DeleteMedia(string mediaId, int mediaType)
 		{
 			if (!_userContext.UserAccountExists || mediaId == null) return BadRequest("invalid");
-			var results = await _responseResolver.WithResolverAsync(
-				await _mediaLogic.DeleteMediaAsync(mediaId,mediaType), ActionType.None, mediaId);
+			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
+				()=> _mediaLogic.DeleteMediaAsync(mediaId,mediaType), ActionType.None, mediaId);
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);
@@ -86,8 +86,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> LikeMedia(string mediaId)
 		{
 			if (!_userContext.UserAccountExists || string.IsNullOrEmpty(mediaId)) return BadRequest("invalid");
-			var results = await _responseResolver.WithResolverAsync(
-				await _mediaLogic.LikeMediaAsync(mediaId), ActionType.LikePost, mediaId);
+			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
+				()=> _mediaLogic.LikeMediaAsync(mediaId), ActionType.LikePost, mediaId);
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);

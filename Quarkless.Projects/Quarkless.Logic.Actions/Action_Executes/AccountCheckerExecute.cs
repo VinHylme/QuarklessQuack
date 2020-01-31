@@ -36,7 +36,10 @@ namespace Quarkless.Logic.Actions.Action_Executes
 					return result;
 				}
 
-				var response = await _responseResolver.WithClient(_worker.Client).WithResolverAsync(await _worker.Client
+				var response = await _responseResolver
+					.WithClient(_worker.Client)
+					.WithAttempts(1)
+					.WithResolverAsync(()=> _worker.Client
 						.Media.DeleteMediaAsync(deleteMediaRequest.MediaId,
 							(InstaMediaType) deleteMediaRequest.MediaType),
 					ActionType.MaintainAccount, deleteMediaRequest.ToJsonString());

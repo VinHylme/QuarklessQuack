@@ -274,8 +274,10 @@ namespace Quarkless.Logic.WorkerManager
 					Worker = this,
 					Date = DateTime.UtcNow
 				});
-				var result = await responseResolver.WithClient(Client)
-					.WithResolverAsync(await action(this, query, limit));
+				var result = await responseResolver
+					.WithClient(Client)
+					.WithAttempts(1)
+					.WithResolverAsync(()=> action(this, query, limit));
 				return result;
 			}
 			catch (Exception err)
@@ -314,8 +316,10 @@ namespace Quarkless.Logic.WorkerManager
 					Worker = this,
 					Date = DateTime.UtcNow
 				});
-				var result = await responseResolver.WithClient(Client)
-					.WithResolverAsync(await action(this, limit));
+				var result = await responseResolver
+					.WithClient(Client)
+					.WithAttempts(1)
+					.WithResolverAsync(()=> action(this, limit));
 				return result;
 			}
 			catch (Exception err)
@@ -352,8 +356,10 @@ namespace Quarkless.Logic.WorkerManager
 					Worker = this,
 					Date = DateTime.UtcNow
 				});
-				var result = await responseResolver.WithClient(Client)
-					.WithResolverAsync(await action(this, inputObject, limit));
+				var result = await responseResolver
+					.WithClient(Client)
+					.WithAttempts(1)
+					.WithResolverAsync(()=> action(this, inputObject, limit));
 				return result;
 			}
 			catch (Exception err)

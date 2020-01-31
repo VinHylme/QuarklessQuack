@@ -31,8 +31,10 @@ namespace Quarkless.Logic.Actions.Action_Executes
 
 				var requestLikeMedia = JsonConvert.DeserializeObject<LikeMediaModel>(eventAction.Body.ToJsonString());
 
-				var response = await _responseResolver.WithClient(_worker.Client)
-					.WithResolverAsync(await _worker.Client.Media.LikeMediaAsync(requestLikeMedia.MediaId),
+				var response = await _responseResolver
+					.WithClient(_worker.Client)
+					.WithAttempts(1)
+					.WithResolverAsync(()=> _worker.Client.Media.LikeMediaAsync(requestLikeMedia.MediaId),
 						ActionType.LikePost, requestLikeMedia.ToJsonString());
 
 				if (!response.Succeeded)

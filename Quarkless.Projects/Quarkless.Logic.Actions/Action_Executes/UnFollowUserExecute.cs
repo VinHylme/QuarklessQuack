@@ -32,8 +32,10 @@ namespace Quarkless.Logic.Actions.Action_Executes
 				var unFollowUserRequest =
 					JsonConvert.DeserializeObject<FollowAndUnFollowUserRequest>(eventAction.Body.ToJsonString());
 
-				var response = await _responseResolver.WithClient(_worker.Client)
-					.WithResolverAsync(await _worker.Client.User.UnFollowUserAsync(unFollowUserRequest.UserId),
+				var response = await _responseResolver
+					.WithClient(_worker.Client)
+					.WithAttempts(1)
+					.WithResolverAsync(()=> _worker.Client.User.UnFollowUserAsync(unFollowUserRequest.UserId),
 						ActionType.UnFollowUser, unFollowUserRequest.ToJsonString());
 
 				if (!response.Succeeded)

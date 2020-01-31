@@ -42,9 +42,10 @@ namespace Quarkless.Logic.Actions.Action_Executes
 					if (model.Threads != null && model.Threads.Any())
 						threads = string.Join(",", model.Threads);
 
-					var response = await _responseResolver.WithClient(_worker.Client)
-						.WithResolverAsync(
-							await _worker.Client.Messaging.SendDirectTextAsync(recipients, threads,
+					var response = await _responseResolver
+						.WithClient(_worker.Client)
+						.WithAttempts(1)
+						.WithResolverAsync(()=>_worker.Client.Messaging.SendDirectTextAsync(recipients, threads,
 								model.TextMessage), ActionType.SendDirectMessageText,
 							model.ToJsonString());
 
@@ -66,8 +67,10 @@ namespace Quarkless.Logic.Actions.Action_Executes
 				else if (eventAction.BodyType == typeof(SendDirectLinkModel))
 				{
 					var model = JsonConvert.DeserializeObject<SendDirectLinkModel>(eventAction.Body.ToJsonString());
-					var response = await _responseResolver.WithClient(_worker.Client)
-						.WithResolverAsync(await _worker.Client.Messaging.SendDirectLinkAsync(model.TextMessage,
+					var response = await _responseResolver
+						.WithClient(_worker.Client)
+						.WithAttempts(1)
+						.WithResolverAsync(()=> _worker.Client.Messaging.SendDirectLinkAsync(model.TextMessage,
 								model.Link,
 								model.Threads.ToArray(), model.Recipients.ToArray()),
 							ActionType.SendDirectMessageLink,
@@ -93,9 +96,10 @@ namespace Quarkless.Logic.Actions.Action_Executes
 					var recipients = string.Empty;
 					if (model.Recipients != null && model.Recipients.Any())
 						recipients = string.Join(",", model.Recipients);
-					var response = await _responseResolver.WithClient(_worker.Client)
-						.WithResolverAsync(
-							await _worker.Client.Messaging.SendDirectProfileToRecipientsAsync(model.userId,
+					var response = await _responseResolver
+						.WithClient(_worker.Client)
+						.WithAttempts(1)
+						.WithResolverAsync(()=>_worker.Client.Messaging.SendDirectProfileToRecipientsAsync(model.userId,
 								recipients), ActionType.SendDirectMessageProfile, model.ToJsonString());
 
 					if (!response.Succeeded)
@@ -116,9 +120,10 @@ namespace Quarkless.Logic.Actions.Action_Executes
 				else if (eventAction.BodyType == typeof(SendDirectPhotoModel))
 				{
 					var model = JsonConvert.DeserializeObject<SendDirectPhotoModel>(eventAction.Body.ToJsonString());
-					var response = await _responseResolver.WithClient(_worker.Client)
-						.WithResolverAsync(
-							await _worker.Client.Messaging.SendDirectPhotoToRecipientsAsync(model.Image,
+					var response = await _responseResolver
+						.WithClient(_worker.Client)
+						.WithAttempts(1)
+						.WithResolverAsync(()=>_worker.Client.Messaging.SendDirectPhotoToRecipientsAsync(model.Image,
 								model.Recipients.ToArray()), ActionType.SendDirectMessagePhoto, model.ToJsonString());
 
 					if (!response.Succeeded)
@@ -139,9 +144,10 @@ namespace Quarkless.Logic.Actions.Action_Executes
 				else if (eventAction.BodyType == typeof(SendDirectVideoModel))
 				{
 					var model = JsonConvert.DeserializeObject<SendDirectVideoModel>(eventAction.Body.ToJsonString());
-					var response = await _responseResolver.WithClient(_worker.Client)
-						.WithResolverAsync(
-							await _worker.Client.Messaging.SendDirectVideoToRecipientsAsync(model.Video,
+					var response = await _responseResolver
+						.WithClient(_worker.Client)
+						.WithAttempts(1)
+						.WithResolverAsync(()=>_worker.Client.Messaging.SendDirectVideoToRecipientsAsync(model.Video,
 								model.Recipients.ToArray()), ActionType.SendDirectMessageVideo, model.ToJsonString());
 
 					if (!response.Succeeded)

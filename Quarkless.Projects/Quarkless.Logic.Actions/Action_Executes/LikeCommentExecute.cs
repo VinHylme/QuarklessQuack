@@ -32,8 +32,10 @@ namespace Quarkless.Logic.Actions.Action_Executes
 				var requestLikeCommentRequest =
 					JsonConvert.DeserializeObject<LikeCommentRequest>(eventAction.Body.ToJsonString());
 
-				var response = await _responseResolver.WithClient(_worker.Client)
-					.WithResolverAsync(await _worker.Client.Comment.LikeCommentAsync(requestLikeCommentRequest.CommentId.ToString()),
+				var response = await _responseResolver
+					.WithClient(_worker.Client)
+					.WithAttempts(1)
+					.WithResolverAsync(()=> _worker.Client.Comment.LikeCommentAsync(requestLikeCommentRequest.CommentId.ToString()),
 						ActionType.LikeComment, requestLikeCommentRequest.ToJsonString());
 				
 				if (!response.Succeeded)

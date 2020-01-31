@@ -22,13 +22,16 @@ namespace Quarkless.Logic.ResponseResolver
 {
 	public class ResponseResolver : IResponseResolver
 	{
-		private IApiClientContainer _client;
 		private readonly ILookupLogic _lookupLogic;
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
 		private readonly ITimelineEventLogLogic _timelineEventLogLogic;
 		private readonly IReportHandler _reportHandler;
+		private int _attempts = 0;
+		private TimeSpan _intervalBetweenRequests;
+		private IApiClientContainer _client;
 		private string AccountId { get; set; }
 		private string InstagramAccountId { get; set; }
+
 		public ResponseResolver(IApiClientContainer client, IInstagramAccountLogic instagramAccountLogic,
 			ITimelineEventLogLogic timelineEventLogLogic, IReportHandler reportHandler, ILookupLogic lookup)
 		{
@@ -38,11 +41,21 @@ namespace Quarkless.Logic.ResponseResolver
 			_reportHandler = reportHandler;
 			_reportHandler.SetupReportHandler(nameof(ResponseResolver));
 			_lookupLogic = lookup;
+			_intervalBetweenRequests = TimeSpan.FromSeconds(1.25);
 		}
 
 		public IResponseResolver WithClient(IApiClientContainer client)
 		{
 			_client = client;
+			return this;
+		}
+		public IResponseResolver WithAttempts(int numberOfAttemptsPerRequest = 0, TimeSpan? intervalBetweenRequests = null)
+		{
+			_attempts = numberOfAttemptsPerRequest;
+
+			if (intervalBetweenRequests.HasValue)
+				_intervalBetweenRequests = intervalBetweenRequests.Value;
+
 			return this;
 		}
 
@@ -131,7 +144,6 @@ namespace Quarkless.Logic.ResponseResolver
 					break;
 			}
 		}
-
 		private async Task ResponseHandler(ResponseType type, ActionType actionType = ActionType.None,
 			string request = null)
 		{
@@ -250,8 +262,40 @@ namespace Quarkless.Logic.ResponseResolver
 					break;
 			}
 		}
-		
-		public async Task<IResult<TInput>> WithResolverAsync<TInput>(IResult<TInput> response, ActionType actionType,
+
+		public async Task<IResult<TInput>> WithResolverAsync<TInput>(Func<Task<IResult<TInput>>> func)
+		{
+			IResult<TInput> results;
+			var currentAttempts = 0;
+			do
+			{
+				results = await WithResolverAsync(await func());
+				if (results.Succeeded) return results;
+
+				await Task.Delay(_intervalBetweenRequests);
+				currentAttempts++;
+			} while (currentAttempts < _attempts);
+
+			return results;
+		}
+		public async Task<IResult<TInput>> WithResolverAsync<TInput>(Func<Task<IResult<TInput>>> func,
+			ActionType actionType, string request)
+		{
+			IResult<TInput> results;
+			var currentAttempts = 0;
+			do
+			{
+				results = await WithResolverAsync(await func(), actionType, request);
+				if (results.Succeeded) return results;
+
+				await Task.Delay(_intervalBetweenRequests);
+				currentAttempts++;
+			} while (currentAttempts < _attempts);
+
+			return results;
+		}
+
+		private async Task<IResult<TInput>> WithResolverAsync<TInput>(IResult<TInput> response, ActionType actionType,
 			string request)
 		{
 			var context = _client.GetContext.InstagramAccount;
@@ -460,8 +504,7 @@ namespace Quarkless.Logic.ResponseResolver
 			// }
 			#endregion
 		}
-
-		public async Task<IResult<TInput>> WithResolverAsync<TInput>(IResult<TInput> response)
+		private async Task<IResult<TInput>> WithResolverAsync<TInput>(IResult<TInput> response)
 		{
 			var context = _client.GetContext.InstagramAccount;
 			AccountId = context.AccountId;

@@ -143,7 +143,8 @@ namespace Quarkless.Controllers
 				
 				var loginRes = await _responseResolver
 					.WithClient(new ApiClientContainer(_clientContext, _userContext.CurrentUser, instagramAccountId))
-					.WithResolverAsync(await _instaUserLogic.TryLogin(instaDetails.Username, instaDetails.Password, instaDetails.State.DeviceInfo), 
+					.WithAttempts(1)
+					.WithResolverAsync(()=> _instaUserLogic.TryLogin(instaDetails.Username, instaDetails.Password, instaDetails.State.DeviceInfo), 
 						ActionType.RefreshLogin, instagramAccountId);
 				
 				if (loginRes == null) return Ok(false);

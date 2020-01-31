@@ -56,8 +56,10 @@ namespace Quarkless.Logic.Actions.Action_Executes
 
 					model.Image.Uri = string.Empty;
 
-					response = await _responseResolver.WithClient(_worker.Client)
-						.WithResolverAsync(await _worker.Client.Media
+					response = await _responseResolver
+						.WithClient(_worker.Client)
+						.WithAttempts(1)
+						.WithResolverAsync(()=> _worker.Client.Media
 								.UploadPhotoAsync(model.Image, MakeCaption(model.MediaInfo), model.Location),
 							ActionType.CreatePost, model.ToJsonString());
 				}
@@ -67,8 +69,10 @@ namespace Quarkless.Logic.Actions.Action_Executes
 					model.Video.Video.VideoBytes = _postAnalyser.Manager.DownloadMedia(model.Video.Video.Uri);
 					model.Video.Video.Uri = string.Empty;
 
-					response = await _responseResolver.WithClient(_worker.Client)
-						.WithResolverAsync(await _worker.Client.Media
+					response = await _responseResolver
+						.WithClient(_worker.Client)
+						.WithAttempts(1)
+						.WithResolverAsync(()=> _worker.Client.Media
 								.UploadVideoAsync(model.Video, MakeCaption(model.MediaInfo), model.Location),
 							ActionType.CreatePost, model.ToJsonString());
 				}
@@ -92,8 +96,10 @@ namespace Quarkless.Logic.Actions.Action_Executes
 						}
 					}
 
-					response = await _responseResolver.WithClient(_worker.Client)
-						.WithResolverAsync(await _worker.Client.Media
+					response = await _responseResolver
+						.WithClient(_worker.Client)
+						.WithAttempts(1)
+						.WithResolverAsync(()=> _worker.Client.Media
 								.UploadAlbumAsync(model.Album, MakeCaption(model.MediaInfo), model.Location),
 							ActionType.CreatePost, model.ToJsonString());
 				}

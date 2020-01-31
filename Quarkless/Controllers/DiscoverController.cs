@@ -36,8 +36,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> GetFollowingRecentActivityFeed(int limit = 1)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
-			var results = await _responseResolver
-				.WithResolverAsync(await _discoverLogic.GetFollowingRecentActivityFeed(limit), ActionType.None, "");
+			var results = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _discoverLogic.GetFollowingRecentActivityFeed(limit), ActionType.None, "");
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);
@@ -49,8 +49,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> SearchTopMediaByTopic(string topic, int limit = 1)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid, empty id");
-			var results = await _responseResolver
-				.WithResolverAsync(await _hashtagLogic.GetTopHashtagMediaListAsync(topic,limit), ActionType.None, topic);
+			var results = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _hashtagLogic.GetTopHashtagMediaListAsync(topic,limit), ActionType.None, topic);
 			if (results.Succeeded)
 			{
 				return Ok(results.Value);
@@ -63,8 +63,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> GetExploreFeedAsync(int limit = 1)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid, empty id");
-			var results = await _responseResolver
-				.WithResolverAsync(await _discoverLogic.GetExploreFeedAsync(limit), ActionType.None, "");
+			var results = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _discoverLogic.GetExploreFeedAsync(limit), ActionType.None, "");
 			if (results.Succeeded) { 
 				return Ok(results.Value);
 			}
@@ -76,8 +76,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> GetRecentActivityFeed(int limit = 1)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty id");
-			var res = await _responseResolver
-				.WithResolverAsync(await _discoverLogic.GetRecentActivityFeedAsync(limit), ActionType.None, "");
+			var res = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _discoverLogic.GetRecentActivityFeedAsync(limit), ActionType.None, "");
 			if (res.Succeeded) { 
 				return Ok(res);
 			}
@@ -89,8 +89,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> GetLikedFeed(int limit = 1)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
-			var res = await _responseResolver
-				.WithResolverAsync(await _discoverLogic.GetLikedFeed(limit), ActionType.None, "");
+			var res = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _discoverLogic.GetLikedFeed(limit), ActionType.None, "");
 			if (res.Succeeded) { 
 				return Ok(res.Value);
 			}
@@ -102,8 +102,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> GetTagFeed(string searchTag = "", int limit = 1)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
-			var res = await _responseResolver
-				.WithResolverAsync(await _discoverLogic.GetTagFeed(searchTag,limit), ActionType.None, searchTag);
+			var res = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _discoverLogic.GetTagFeed(searchTag,limit), ActionType.None, searchTag);
 			if (res.Succeeded) { 
 				return Ok(res.Value);
 			}
@@ -115,8 +115,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> GetUserTimelineFeed(int limit = 1)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
-			var res = await _responseResolver
-				.WithResolverAsync(await _discoverLogic.GetUserTimelineFeed(limit), ActionType.None, "");
+			var res = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _discoverLogic.GetUserTimelineFeed(limit), ActionType.None, "");
 			if (res.Succeeded) { 
 				return Ok(res.Value);
 			}
@@ -128,8 +128,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> GetChainingUser()
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
-			var res = await _responseResolver
-				.WithResolverAsync(await _discoverLogic.GetChainingUser(), ActionType.None, "");
+			var res = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _discoverLogic.GetChainingUser(), ActionType.None, "");
 			if (res.Succeeded) { 
 				return Ok(res.Value);
 			}
@@ -141,7 +141,7 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> SyncContacts(InstaContact[] contacts)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
-			var res = await _responseResolver.WithResolverAsync(await _discoverLogic.SyncContacts(contacts), ActionType.None, "");
+			var res = await _responseResolver.WithAttempts(1).WithResolverAsync(()=> _discoverLogic.SyncContacts(contacts), ActionType.None, "");
 			if (res.Succeeded) { 
 				return Ok(res.Value);
 			}
@@ -153,8 +153,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> RecentSearches()
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
-			var res = await _responseResolver
-				.WithResolverAsync(await _discoverLogic.RecentSearches(), ActionType.None, "");
+			var res = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _discoverLogic.RecentSearches(), ActionType.None, "");
 			if(res.Succeeded)
 				return Ok(res.Value);
 
@@ -166,8 +166,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> ClearRecentSearches()
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty id");
-			var res = await _responseResolver
-				.WithResolverAsync(await _discoverLogic.ClearRecentSearches(), ActionType.None, string.Empty);
+			var res = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _discoverLogic.ClearRecentSearches(), ActionType.None, string.Empty);
 			if(res.Succeeded)
 				return Ok(res.Value);
 
@@ -179,9 +179,9 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> SuggestedSearches(int discoverySearchType = 1)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty id");
-			var res = await _responseResolver
+			var res = await _responseResolver.WithAttempts(1)
 				.WithResolverAsync(
-					await _discoverLogic.SuggestedSearches((InstagramApiSharp.Enums.InstaDiscoverSearchType) discoverySearchType), 
+					()=> _discoverLogic.SuggestedSearches((InstagramApiSharp.Enums.InstaDiscoverSearchType) discoverySearchType), 
 					ActionType.None, "");
 			if(res.Succeeded)
 				return Ok(res.Value);
@@ -194,8 +194,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> GetAllMediaByUsername(string searchUsername)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty id");
-			var res = await _responseResolver
-				.WithResolverAsync(await _discoverLogic.GetAllMediaByUsername(searchUsername), ActionType.None, searchUsername);
+			var res = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _discoverLogic.GetAllMediaByUsername(searchUsername), ActionType.None, searchUsername);
 			if(res.Succeeded)
 				return Ok(res.Value);
 
@@ -208,8 +208,8 @@ namespace Quarkless.Controllers
 		{
 			if (string.IsNullOrEmpty(username) || !_userContext.UserAccountExists)
 				return BadRequest("Invalid, empty Id");
-			var res = await _responseResolver
-				.WithResolverAsync(await _discoverLogic.SearchUser(username, limit), ActionType.None, "");
+			var res = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _discoverLogic.SearchUser(username, limit), ActionType.None, "");
 			if(res.Succeeded)
 				return Ok(res.Value);
 			return NotFound(res.Info);
@@ -220,8 +220,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> GetRecentLocationFeed(long locationId, int limit = 1)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
-			var res = await _responseResolver
-				.WithResolverAsync(await _discoverLogic.GetRecentLocationFeed(locationId, limit), ActionType.None, locationId.ToString());
+			var res = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _discoverLogic.GetRecentLocationFeed(locationId, limit), ActionType.None, locationId.ToString());
 			if (res.Succeeded)
 				return Ok(res.Value);
 			return NotFound(res.Info);
@@ -231,8 +231,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> GetTopicalExploreFeed([FromRoute]int limit, [FromRoute] string clusterId = null)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty id");
-			var res = await _responseResolver
-				.WithResolverAsync(await _discoverLogic.GetTopicalExploreFeed(limit,clusterId), ActionType.None, clusterId);
+			var res = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _discoverLogic.GetTopicalExploreFeed(limit,clusterId), ActionType.None, clusterId);
 			if(res.Succeeded)
 				return Ok(res.Value);
 			return NotFound(res.Info);
@@ -242,8 +242,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> GetTopLocationFeedsAsync(long locationId, int limit = 1)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
-			var res = await _responseResolver
-				.WithResolverAsync(await _discoverLogic.GetTopLocationFeedsAsync(locationId, limit), ActionType.None, locationId.ToString());
+			var res = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _discoverLogic.GetTopLocationFeedsAsync(locationId, limit), ActionType.None, locationId.ToString());
 			if (res.Succeeded)
 				return Ok(res.Value);
 			return NotFound(res.Info);
@@ -253,8 +253,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> SearchLocation(double lat, double lon, string query)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
-			var res = await _responseResolver
-				.WithResolverAsync(await _discoverLogic.SearchLocation(lat, lon, query), ActionType.None, query);
+			var res = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _discoverLogic.SearchLocation(lat, lon, query), ActionType.None, query);
 			if (res.Succeeded)
 				return Ok(res.Value);
 			return NotFound(res.Info);
@@ -265,8 +265,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> SearchPlaces(double lat, double lon, string query = "", int limit = 1)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
-			var res = await _responseResolver
-				.WithResolverAsync(await _discoverLogic.SearchPlaces(lat, lon, query,limit), ActionType.None, query);
+			var res = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _discoverLogic.SearchPlaces(lat, lon, query,limit), ActionType.None, query);
 			if (res.Succeeded)
 				return Ok(res.Value);
 			return NotFound(res.Info);
@@ -276,8 +276,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> SearchUserByLocation(double lat, double lon, string username, int limit = 1)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
-			var res = await _responseResolver
-				.WithResolverAsync(await _discoverLogic.SearchUserByLocation(lat, lon, username, limit), ActionType.None, username);
+			var res = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _discoverLogic.SearchUserByLocation(lat, lon, username, limit), ActionType.None, username);
 			if (res.Succeeded)
 				return Ok(res.Value);
 			return NotFound(res.Info);
@@ -288,8 +288,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> GetLocationInfoAsync(string externalIdOrFacebookPlacesId)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
-			var res = await _responseResolver
-				.WithResolverAsync(await _discoverLogic.GetLocationInfoAsync(externalIdOrFacebookPlacesId), ActionType.None, externalIdOrFacebookPlacesId);
+			var res = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _discoverLogic.GetLocationInfoAsync(externalIdOrFacebookPlacesId), ActionType.None, externalIdOrFacebookPlacesId);
 			if (res.Succeeded)
 				return Ok(res.Value);
 			return NotFound(res.Info);
@@ -300,8 +300,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> GetLocationStoriesAsync(long locationId)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
-			var res = await _responseResolver
-				.WithResolverAsync(await _discoverLogic.GetLocationStoriesAsync(locationId), ActionType.None, locationId.ToString());
+			var res = await _responseResolver.WithAttempts(1)
+				.WithResolverAsync(()=> _discoverLogic.GetLocationStoriesAsync(locationId), ActionType.None, locationId.ToString());
 			if (res.Succeeded)
 				return Ok(res.Value);
 			return NotFound(res.Info);
