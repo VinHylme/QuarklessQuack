@@ -90,6 +90,8 @@ namespace Quarkless.Controllers
 					{
 						return Ok(results.Results);
 					}
+
+					return BadRequest(results.Info);
 				}
 				else
 				{

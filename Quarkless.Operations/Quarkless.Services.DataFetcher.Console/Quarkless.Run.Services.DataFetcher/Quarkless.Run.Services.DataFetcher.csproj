@@ -64,6 +64,7 @@
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.Timeline\Quarkless.Models.Timeline.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.Utilities\Quarkless.Models.Utilities.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.WorkerManager\Quarkless.Models.WorkerManager.csproj" />
+    <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Repository.Auth\Quarkless.Repository.Auth.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Repository.Comments\Quarkless.Repository.Comments.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Repository.ContentSearch\Quarkless.Repository.ContentSearch.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Repository.Hashtag\Quarkless.Repository.Hashtag.csproj" />

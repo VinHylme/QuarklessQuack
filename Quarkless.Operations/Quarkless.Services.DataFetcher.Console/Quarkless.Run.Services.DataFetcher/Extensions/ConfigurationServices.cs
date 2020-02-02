@@ -115,8 +115,6 @@ namespace Quarkless.Run.Services.DataFetcher.Extensions
 			services.AddTransient<IInstagramAccountRepository, InstagramAccountRepository>();
 			services.AddTransient<IRedisClient, RedisClient>();
 			services.AddTransient<IProxyLogic, ProxyLogic>();
-			services.AddTransient<IProxyRequest, ProxyRequest>(s =>
-				new ProxyRequest(new ProxyRequestOptions(accessors.ProxyHandlerApiEndPoint), s.GetService<IProxyAssignmentsRepository>()));
 			services.AddTransient<IProxyAssignmentsRepository, ProxyAssignmentsRepository>();
 			services.AddTransient<IProfileLogic, ProfileLogic>();
 			services.AddTransient<IEventSubscriber<InstagramAccountPublishEventModel>, ProfileLogic>();

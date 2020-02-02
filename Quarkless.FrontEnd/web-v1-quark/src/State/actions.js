@@ -688,5 +688,5 @@ export default {
 				resolve(resp)
 			}).catch(err=> reject(err))
 		})
-	}
   }
+}

@@ -429,9 +429,14 @@ namespace Quarkless.Extensions
 		}
 		internal static void IncludeEventServices(this IServiceCollection services)
 		{
+			var accessors = new Config().Environments;
 			services.AddTransient<IEventSubscriber<InstagramAccountPublishEventModel>, ProfileLogic>();
 			services.AddTransient<IEventSubscriber<ProfileTopicAddRequest>, TopicLookupLogic>();
-			services.AddTransient<IEventSubscriber<ProfilePublishEventModel>, ProxyRequest>();
+			services.AddTransient<IEventSubscriber<ProfilePublishEventModel>, ProxyRequest>(
+				s=> new ProxyRequest(
+					new ProxyRequestOptions(accessors.ProxyHandlerApiEndPoint),
+					s.GetService<IGeoLocationHandler>(),
+					s.GetService<IProxyAssignmentsRepository>()));
 			services.AddTransient<IEventPublisher, EventPublisher>(
 				s => new EventPublisher(services.BuildServiceProvider(false).CreateScope()));
 		}

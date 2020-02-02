@@ -135,21 +135,17 @@ namespace Quarkless.Controllers
 					UserName = registerAccountModel.Username,
 					Sub = results.Results.UserSub,
 					IsUserConfirmed = results.Results.UserConfirmed,
-					Roles = new List<string> { { AuthTypes.TrialUsers.ToString() } }
+					Roles = new List<string> { AuthTypes.TrialUsers.ToString()}
 				};
 
 				await _authHandler.CreateAccount(accountUser, registerAccountModel.Password);
-				if (results.Results.UserConfirmed)
-				{
-					var userIs = await _authHandler.GetUserByUsername(registerAccountModel.Username);
-					await _authHandler.SignIn(userIs);
-					await Login(new LoginRequest { Username = registerAccountModel.Username, Password = registerAccountModel.Password });
-					return Ok(results);
-				}
-				else
-				{
-					return NotFound("User not confirmed");
-				}
+				if (!results.Results.UserConfirmed) return NotFound("User not confirmed");
+				
+				var userIs = await _authHandler.GetUserByUsername(registerAccountModel.Username);
+				await _authHandler.SignIn(userIs);
+				await Login(new LoginRequest { Username = registerAccountModel.Username, Password = registerAccountModel.Password });
+				return Ok(results);
+
 			}
 			catch(Exception ee)
 			{

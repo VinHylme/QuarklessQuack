@@ -87,7 +87,7 @@ namespace Quarkless.Logic.InstagramAccounts
 					{
 						InstagramAccount = result,
 						IpAddress = addInstagram.IpAddress,
-						LocationLatLon = addInstagram.LatLonLocation
+						LocationLatLon = addInstagram.Location
 					});
 
 					resultCarrier.IsSuccessful = true;

@@ -1,48 +1,72 @@
 <template>
-	<div v-if="IsHome" class="container">
+	<div v-if="IsHome" class="container home">
 		<button class="button is-success" @click="LoadComponent('login')">Login</button>
 		<button class="button is-success" @click="LoadComponent('register')">Register</button>
 	</div>
-	<router-view v-else :key="$route.fullPath"></router-view>
+  <div v-else class="container modal-view">
+    <router-view :key="$route.fullPath"></router-view>
+  </div>
+	
 </template>
 
 <script>
-import Fingerprint2 from 'fingerprintjs2';
+import {GetUserLocation} from '../localHelpers';
+import vue from 'vue';
 export default {
   name:"MainPage",
-  methods:{
-	  LoadComponent(componentName){
-		  this.$router.push({name:componentName});
-	  }
-  },
-  computed:{
-	  IsHome(){
-		  return this.$route.path === '/'
-	  }
-  },
-  mounted(){
-    if (window.requestIdleCallback) {
-      requestIdleCallback(function () {
-          Fingerprint2.get(function (components) {
-            //console.log(components) // an array of components: {key: ..., value: ...}
-            var values = components.map(function (component) { return component.value })
-            var murmur = Fingerprint2.x64hash128(values.join(''), 31)
-            //console.log(murmur)
-          })
-      });
-    } else {
-      setTimeout(function () {
-          Fingerprint2.get(function (components) {
-            console.log(components) // an array of components: {key: ..., value: ...}
-          })  
-      }, 500)
+  data(){
+    return {
     }
   },
+  methods:{
+    LoadComponent(componentName){
+      this.$router.push({name:componentName});
+    }
+  },
+  computed:{
+    IsHome(){
+      return this.$route.path === '/'
+    }
+  },
+  mounted(){
+    GetUserLocation().then(resp=>{
+    }).catch(err=>{
+      vue.prototype.$toast.open({
+				message: 'Enabling your location allows us to provide you with safer and more accurate results',
+        type: 'is-white',
+        duration:10000
+			});
+    })
+  }
 }
 </script>
 
-<style lang="scss">
-	.container{
-		margin:0 auto;
-	}
+<style lang="scss" scoped>
+.container{
+  &.modal-view{
+    margin:0 auto;
+    margin-top:10vw;
+    padding:5em;
+    width:50vw;
+    height:30vw;
+  }
+  &.home{
+    margin:0 auto;
+    margin-top:10vw;
+    padding:5em;
+    width:50vw;
+    height:30vw;
+    border-radius:.5em;
+    background: #4568DC;
+    background: -webkit-linear-gradient(to right, #B06AB3, #4568DC);
+    background: linear-gradient(to right, #B06AB3, #4568DC);
+    box-shadow: -0.1rem 0 .4rem rgba(0,0,0,.5);
+
+    .button{
+      width:150px;
+      height:80px;
+      border-radius: 0;
+    }
+  }
+}
 </style>

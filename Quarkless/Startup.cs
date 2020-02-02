@@ -34,10 +34,10 @@ namespace Quarkless
 			#region Add Services
 			services.IncludeHangFrameworkServices();
 			services.IncludeLogicServices();
+			services.IncludeRepositories();
 			services.IncludeAuthHandlers();
 			services.IncludeRequestLogging();
 			services.IncludeConfigurators();
-			services.IncludeRepositories();
 			services.IncludeHandlers();
 			services.IncludeContexts();
 			services.IncludeEventServices();

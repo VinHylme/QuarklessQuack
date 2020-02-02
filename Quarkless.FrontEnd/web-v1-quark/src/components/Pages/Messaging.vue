@@ -420,10 +420,10 @@ export default {
 	}
   },
   updated(){
-	  let chatContext = this.$el.querySelector('#chat');
-	  if(chatContext){
-		chatContext.scrollTop = chatContext.clientHeight+3000;
-	  }
+    let chatContext = this.$el.querySelector('#chat');
+    if(chatContext){
+      chatContext.scrollTop = chatContext.clientHeight+3000;
+    }
   },
   methods:{
 	SubmitReply(e){
@@ -455,7 +455,7 @@ export default {
 			vue.prototype.$toast.open({
 				message: 'Failed to like comment ' +  err.response.data.message,
 				type: 'is-danger'
-        	});
+      });
 		})
 	},
 	SubmitComment(e){

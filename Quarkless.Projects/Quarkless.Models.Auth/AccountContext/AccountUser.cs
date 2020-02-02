@@ -4,17 +4,10 @@ using AspNetCore.Identity.MongoDbCore.Models;
 
 namespace Quarkless.Models.Auth.AccountContext
 {
-	public class AssociatedBrowser
-	{
-		public string HashCode { get; set; }
-		public DateTime AddDate { get; set; }
-		public DateTime LastLogged { get; set; }
-	}
 	public class AccountUser : MongoIdentityUser<string>
 	{
 		public bool IsUserConfirmed { get; set; }
-		public List<string> AssociatedIps { get; set; }
-		public List<AssociatedBrowser> AssociatedBrowser { get; set; }
+		public List<UserInformationDetail> Details { get; set; } = new List<UserInformationDetail>();
 		public DateTime LastLoggedIn { get; set; }
 		public string Sub { get; set; }
 

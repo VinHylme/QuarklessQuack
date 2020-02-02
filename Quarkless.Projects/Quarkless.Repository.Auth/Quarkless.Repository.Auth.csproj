@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Quarkless.Models.Auth\Quarkless.Models.Auth.csproj" />
+    <ProjectReference Include="..\Quarkless.Repository.MongoContext\Quarkless.Repository.MongoContext.csproj" />
     <ProjectReference Include="..\Quarkless.Repository.RedisClientContext\Quarkless.Repository.RedisContext.csproj" />
   </ItemGroup>
 
