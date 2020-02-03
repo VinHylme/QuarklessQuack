@@ -90,6 +90,7 @@
 <script>
 import Vue from 'vue';
 import InstaCard from "../Objects/InstaAccountCard";
+import {GetUserDetails} from '../../localHelpers'
 export default {
         name:"manage",
         components:{
@@ -117,16 +118,22 @@ export default {
                this.$emit('unSelectAccount');
         },
         mounted(){
-                this.isNavOn = this.$store.getters.MenuState === 'true';
-                this.InstagramAccounts = this.$store.getters.GetInstagramAccounts;
-                if(this.$store.getters.UserProfiles!==undefined)
-                        this.IsProfileButtonDisabled=false;       
-                        
-                        this.$bus.$on('onFocusBio', (id)=>{
-                                this.$bus.$emit('cancel-other-focused');
-                                this.$bus.$emit('focus-main', id);
-                        })
-                },
+		// this.$store.getters.UserInformation.then(res=>{
+		// 	this.$store.dispatch('AddUserDetails', res).then(r=>{
+		// 		console.log(r)
+		// 	})
+		// })
+
+		this.isNavOn = this.$store.getters.MenuState === 'true';
+		this.InstagramAccounts = this.$store.getters.GetInstagramAccounts;
+		if(this.$store.getters.UserProfiles!==undefined)
+			this.IsProfileButtonDisabled=false;       
+			
+			this.$bus.$on('onFocusBio', (id)=>{
+				this.$bus.$emit('cancel-other-focused');
+				this.$bus.$emit('focus-main', id);
+			})
+        },
         computed:{
 
         },

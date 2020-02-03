@@ -17,6 +17,6 @@ namespace Quarkless.Models.Auth
 		public string IpName { get; set; }
 
 		[JsonProperty("org")]
-		public string Organisation { get; set; }
+		public string Org { get; set; }
 	}
 }

@@ -12,6 +12,7 @@ export default new Vuex.Store({
     showingLogs:false,
     AccountData:{
       InstagramAccounts:[],
+      Information:{},
       Profiles:[],
       Library:{
         MediaLibrary:[],

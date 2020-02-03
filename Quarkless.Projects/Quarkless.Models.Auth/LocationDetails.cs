@@ -23,6 +23,6 @@ namespace Quarkless.Models.Auth
 		public string RegionOtherNames { get; set; }
 		
 		[JsonProperty("location")]
-		public LocationPosition Position { get; set; }
+		public LocationPosition Location { get; set; }
 	}
 }

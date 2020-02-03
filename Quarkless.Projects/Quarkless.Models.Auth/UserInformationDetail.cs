@@ -11,12 +11,12 @@ namespace Quarkless.Models.Auth
 		public string _id { get; set; }
 
 		[JsonProperty("ipDetails")]
-		public IpDetails IpDetail { get; set; }
+		public IpDetails IpDetails { get; set; }
 
 		[JsonProperty("geoLocationDetails")]
-		public LocationDetails LocationDetail { get; set; }
+		public LocationDetails GeoLocationDetails { get; set; }
 
 		[JsonProperty("deviceDetails")]
-		public DeviceDetails DeviceDetail { get; set; }
+		public DeviceDetails DeviceDetails { get; set; }
 	}
 }

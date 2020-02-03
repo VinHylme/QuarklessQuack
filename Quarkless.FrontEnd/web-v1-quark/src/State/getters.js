@@ -1,5 +1,17 @@
+import {GetUserDetails} from '../localHelpers'
 export default {
     User: state => state.user,
+    UserInformation: state => {
+      return new Promise((resolve,reject)=>{
+        GetUserDetails().then(information=>{
+          const data = {
+            userId: state.user,
+            userInformation: information
+          }
+          resolve(data)
+        }).catch(err=> reject(err))
+      })
+    },
     IsLoggedIn: state => !!state.token,
     AuthStatus: state => state.status,
     UserRole:state=> state.role,

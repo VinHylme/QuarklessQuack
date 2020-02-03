@@ -12,7 +12,8 @@ namespace Quarkless.Controllers
     [HashtagAuthorize(AuthTypes.EnterpriseUsers)]
     [HashtagAuthorize(AuthTypes.TrialUsers)]
     [HashtagAuthorize(AuthTypes.PremiumUsers)]
-    [HashtagAuthorize(AuthTypes.Admin)]
+    [HashtagAuthorize(AuthTypes.BasicUsers)]
+	[HashtagAuthorize(AuthTypes.Admin)]
     public class BusinessController : ControllerBase
     {
 	    private readonly IUserContext _userContext;

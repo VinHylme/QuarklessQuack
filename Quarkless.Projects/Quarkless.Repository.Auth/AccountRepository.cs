@@ -52,12 +52,12 @@ namespace Quarkless.Repository.Auth
 				{
 					detail._id = ObjectId.GenerateNewId(DateTime.UtcNow).ToString();
 					var updatePush = Builders<AccountUser>.Update.Push(_ => _.Details, detail);
-					var resultsAdd = await _ctx.UpdateOneAsync(new FilterDefinitionBuilder<AccountUser>().Eq("_id", id),
-						updatePush);
+					var resultsAdd = await _ctx
+						.UpdateOneAsync(new FilterDefinitionBuilder<AccountUser>().Eq(_=>_.UserName, id), updatePush);
 					return resultsAdd.IsAcknowledged;
 				}
 
-				var filter = Builders<AccountUser>.Filter.And(Builders<AccountUser>.Filter.Eq("_id", id),
+				var filter = Builders<AccountUser>.Filter.And(Builders<AccountUser>.Filter.Eq(_=>_.UserName, id),
 					Builders<AccountUser>.Filter.ElemMatch(x => x.Details, f => f._id == detail._id));
 
 				var update = Builders<AccountUser>.Update.Set(model => model.Details[-1], detail);

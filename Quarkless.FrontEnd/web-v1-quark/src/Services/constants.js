@@ -16,6 +16,7 @@ module.exports.Calling = {
   "account_add_profile_topics": process.env.VUE_APP_PROFILE_ADD_TOPICS,
   "account_upload": process.env.VUE_APP_ACCOUNT_UPLOAD,
   "account_session": process.env.VUE_APP_ACCOUNT_SESSION,
+  "account_detail": process.env.VUE_APP_ACCOUNT_DETAILS,
 
   "query_config": process.env.VUE_APP_QUERY_CONFIG,
   "query_related_by_parent": process.env.VUE_APP_QUERY_RELATED_TOPIC,

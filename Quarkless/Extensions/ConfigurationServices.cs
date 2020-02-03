@@ -39,6 +39,7 @@ using Quarkless.Logic.Auth.Manager;
 using Quarkless.Logic.Comments;
 using Quarkless.Logic.ContentInfo;
 using Quarkless.Logic.ContentSearch;
+using Quarkless.Logic.Details;
 using Quarkless.Logic.Hashtag;
 using Quarkless.Logic.HashtagGenerator;
 using Quarkless.Logic.Heartbeat;
@@ -184,6 +185,7 @@ namespace Quarkless.Extensions
 			services.AddSingleton<IMediaManipulation, MediaManipulation>();
 			services.AddSingleton<ITopicLookupLogic, TopicLookupLogic>();
 			services.AddSingleton<ISearchProvider, SearchProvider>();
+			services.AddTransient<IAccountDetailLogic, AccountDetailLogic>();
 		}
 		internal static void IncludeAuthHandlers(this IServiceCollection services)
 		{
@@ -403,6 +405,7 @@ namespace Quarkless.Extensions
 			services.AddTransient<IAccountCache, AccountCache>();
 			services.AddTransient<ITopicLookupRepository, TopicLookupRepository>();
 			services.AddTransient<IReportHandlerRepository, ReportHandlerRepository>();
+			services.AddTransient<IAccountRepository, AccountRepository>();
 		}
 		internal static void IncludeHandlers(this IServiceCollection services)
 		{

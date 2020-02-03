@@ -6,6 +6,10 @@ export default {
   Login(params){
     return Api(false).post(Calling['account_login'], params)
   },
+  AddUserDetails(userId, data){
+    console.log(data)
+    return Api(true).post(Calling['account_detail'] + userId, data)
+  },
   RefreshToken(params){
     return Api(false).post(Calling['account_refresh'], params)
   },

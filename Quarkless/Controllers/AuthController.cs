@@ -6,6 +6,7 @@ using Amazon.CognitoIdentityProvider;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using Quarkless.Logic.Details;
 using Quarkless.Models.Auth;
 using Quarkless.Models.Auth.AccountContext;
 using Quarkless.Models.Auth.Enums;
@@ -17,9 +18,11 @@ namespace Quarkless.Controllers
     public class AuthController : ControllerBase
     {
 		private readonly IAuthHandler _authHandler;
-		public AuthController(IAuthHandler authHandler)
+		private readonly IAccountDetailLogic _accountDetailLogic;
+		public AuthController(IAuthHandler authHandler, IAccountDetailLogic accountDetailLogic)
 		{
 			_authHandler = authHandler;
+			_accountDetailLogic = accountDetailLogic;
 		}
 
 		[EnableCors("HashtagGrowCORSPolicy")]
@@ -116,11 +119,23 @@ namespace Quarkless.Controllers
 			}
 			return BadRequest("something went wrong on our side");
 		}
-		/// <summary>
-		/// TODO: Need to add other props such as fingerprint stuff, unqiue identifier, Ips, etc
-		/// </summary>
-		/// <param name="registerAccountModel"></param>
-		/// <returns></returns>
+
+		[HashtagAuthorize(AuthTypes.EnterpriseUsers)]
+		[HashtagAuthorize(AuthTypes.TrialUsers)]
+		[HashtagAuthorize(AuthTypes.BasicUsers)]
+		[HashtagAuthorize(AuthTypes.PremiumUsers)]
+		[HashtagAuthorize(AuthTypes.Admin)]
+		[HttpPost]
+		[Route("api/auth/addDetails/{accountId}")]
+		public async Task<IActionResult> AddUserDetails([FromRoute]string accountId,
+			[FromBody] UserInformationDetail userInformation)
+		{
+			if (userInformation == null || string.IsNullOrEmpty(accountId))
+				return BadRequest("Invalid Request");
+
+			return Ok(await _accountDetailLogic.AddOrUpdateAccountDetails(accountId, userInformation));
+		}
+
 		[AllowAnonymous]
 		[HttpPost]
 		[Route("api/auth/registeraccount")]
@@ -135,7 +150,8 @@ namespace Quarkless.Controllers
 					UserName = registerAccountModel.Username,
 					Sub = results.Results.UserSub,
 					IsUserConfirmed = results.Results.UserConfirmed,
-					Roles = new List<string> { AuthTypes.TrialUsers.ToString()}
+					Roles = new List<string> { AuthTypes.TrialUsers.ToString()},
+					Details = new List<UserInformationDetail>()
 				};
 
 				await _authHandler.CreateAccount(accountUser, registerAccountModel.Password);

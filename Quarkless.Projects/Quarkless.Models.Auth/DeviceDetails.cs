@@ -2,16 +2,19 @@
 
 namespace Quarkless.Models.Auth
 {
+	public class ScreenWidth
+	{
+		[JsonProperty("width")]
+		public int Width { get; set; }
+
+		[JsonProperty("height")]
+		public int Height { get; set; }
+	}
+
 	public class DeviceDetails
 	{
-		public class ScreenWidth
-		{
-			public int Width { get; set; }
-			public int Height { get; set; }
-		}
-
 		[JsonProperty("uniqueId")]
-		public string UniqueDeviceIdentifier { get; set; }
+		public string UniqueId { get; set; }
 
 		[JsonProperty("userAgent")]
 		public string UserAgent { get; set; }

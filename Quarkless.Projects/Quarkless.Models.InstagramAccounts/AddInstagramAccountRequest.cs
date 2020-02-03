@@ -18,5 +18,7 @@ namespace Quarkless.Models.InstagramAccounts
 
 		[JsonProperty("Type")]
 		public int Type { get; set; }
+		
+		public bool EnableAutoLocate { get; set; }
 	}
 }

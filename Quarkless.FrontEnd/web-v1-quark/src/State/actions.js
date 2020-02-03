@@ -688,5 +688,12 @@ export default {
 				resolve(resp)
 			}).catch(err=> reject(err))
 		})
+  },
+  AddUserDetails({commit}, data){
+    return new Promise((resolve,reject)=>{
+      AccountServices.AddUserDetails(data.userId, data.userInformation).then(res=>{
+        resolve(res)
+      }).catch(err=>reject(err))
+    })
   }
 }

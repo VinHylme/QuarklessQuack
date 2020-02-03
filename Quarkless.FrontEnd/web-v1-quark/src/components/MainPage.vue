@@ -3,10 +3,9 @@
 		<button class="button is-success" @click="LoadComponent('login')">Login</button>
 		<button class="button is-success" @click="LoadComponent('register')">Register</button>
 	</div>
-  <div v-else class="container modal-view">
+  <div v-else class="container">
     <router-view :key="$route.fullPath"></router-view>
   </div>
-	
 </template>
 
 <script>
@@ -41,15 +40,8 @@ export default {
 }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 .container{
-  &.modal-view{
-    margin:0 auto;
-    margin-top:10vw;
-    padding:5em;
-    width:50vw;
-    height:30vw;
-  }
   &.home{
     margin:0 auto;
     margin-top:10vw;
