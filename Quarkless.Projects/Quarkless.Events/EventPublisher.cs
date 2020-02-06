@@ -1,4 +1,8 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Events.Interfaces;
 
@@ -6,33 +10,32 @@ namespace Quarkless.Events
 {
 	public class EventPublisher : IEventPublisher
 	{
-		private readonly IServiceScope _scope;
-		public EventPublisher(IServiceScope scope)
+		private readonly IContainer _container;
+		public EventPublisher(IServiceCollection services)
 		{
-			_scope = scope;
+			var builder = new ContainerBuilder();
+			builder.Populate(services);
+			_container = builder.Build();
 		}
 
 		public void Publish<TEvent>(TEvent @event)
 		{
-			using (_scope)
+			using var scope = _container.BeginLifetimeScope();
+			var handlers = scope.Resolve<IEnumerable<IEventSubscriberSync<TEvent>>>();
+			foreach (var eventSubscriber in handlers)
 			{
-				var handlers = _scope.ServiceProvider.GetServices<IEventSubscriberSync<TEvent>>();
-				foreach (var eventSubscriber in handlers)
-				{
-					eventSubscriber.Handle(@event);
-				}
+				eventSubscriber.Handle(@event);
 			}
+			
 		}
 
 		public async Task PublishAsync<TEvent>(TEvent @event)
 		{
-			using (_scope)
+			await using var scope = _container.BeginLifetimeScope();
+			var handlers = scope.Resolve<IEnumerable<IEventSubscriber<TEvent>>>();
+			foreach (var eventSubscriber in handlers)
 			{
-				var handlers = _scope.ServiceProvider.GetServices<IEventSubscriber<TEvent>>();
-				foreach (var eventSubscriber in handlers)
-				{
-					await eventSubscriber.Handle(@event);
-				}
+				await eventSubscriber.Handle(@event);
 			}
 		}
 	}

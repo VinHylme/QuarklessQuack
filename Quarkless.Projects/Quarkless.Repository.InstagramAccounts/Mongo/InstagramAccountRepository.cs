@@ -211,5 +211,18 @@ namespace Quarkless.Repository.InstagramAccounts.Mongo
 			var res = await _ctx.FindAsync(filter);
 			return res.ToList();
 		}
+
+		public async Task<bool> RemoveInstagramAccount(string id)
+		{
+			try
+			{
+				var res = await _ctx.DeleteOneAsync(new FilterDefinitionBuilder<InstagramAccountModel>().Eq(_ => _._id, id));
+				return res.IsAcknowledged;
+			}
+			catch
+			{
+				return false;
+			}
+		}
 	}
 }

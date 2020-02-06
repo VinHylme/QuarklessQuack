@@ -374,7 +374,7 @@ namespace Quarkless.Base.AccountOptions
 		{
 			try
 			{
-				if(_client.GetContext.InstagramAccount.UserBiography.Text == bio) 
+				if(_client.GetContext.Container.InstagramAccount.UserBiography.Text == bio) 
 					return new Result<InstaBiography>(true, 
 						new InstaBiography()
 						{

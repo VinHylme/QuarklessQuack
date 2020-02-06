@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Quarkless.Models.Common.Models;
 
 namespace Quarkless.Models.InstagramAccounts
 {
@@ -14,7 +15,7 @@ namespace Quarkless.Models.InstagramAccounts
 		public string IpAddress { get; set; }
 
 		[JsonProperty("Location")]
-		public string Location { get; set; }
+		public Location Location { get; set; }
 
 		[JsonProperty("Type")]
 		public int Type { get; set; }

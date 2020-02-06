@@ -9,6 +9,7 @@ using Quarkless.Models.InstagramAccounts.Enums;
 using Quarkless.Models.WorkerManager;
 using InstagramApiSharp.Classes;
 using Quarkless.Models.ResponseResolver.Interfaces;
+using Quarkless.Models.ResponseResolver.Models;
 using Quarkless.Models.WorkerManager.Interfaces;
 
 namespace Quarkless.Logic.WorkerManager
@@ -44,7 +45,7 @@ namespace Quarkless.Logic.WorkerManager
 			_context = context;
 			_instagramAccountLogic = instagramAccountLogic;
 			Client = new ApiClientContainer(_context, accountId, instagramAccountId);
-			_workerAccount = Client.GetContext.InstagramAccount;
+			_workerAccount = Client.GetContext.Container.InstagramAccount;
 		}
 
 		#region Event Handlers
@@ -263,7 +264,7 @@ namespace Quarkless.Logic.WorkerManager
 			}
 		}
 
-		public async Task<IResult<TInput>> PerformQueryTaskWithWorkerWithClient<TInput>(
+		public async Task<ResolverResponse<TInput>> PerformQueryTaskWithWorkerWithClient<TInput>(
 			IResponseResolver responseResolver,
 			Func<IWorker, string, int, Task<IResult<TInput>>> action, string query, int limit)
 		{
@@ -278,6 +279,7 @@ namespace Quarkless.Logic.WorkerManager
 					.WithClient(Client)
 					.WithAttempts(1)
 					.WithResolverAsync(()=> action(this, query, limit));
+				
 				return result;
 			}
 			catch (Exception err)
@@ -305,7 +307,7 @@ namespace Quarkless.Logic.WorkerManager
 			}
 		}
 
-		public async Task<IResult<TInput>> PerformQueryTaskWithWorkerWithClient<TInput>(
+		public async Task<ResolverResponse<TInput>> PerformQueryTaskWithWorkerWithClient<TInput>(
 			IResponseResolver responseResolver,
 			Func<IWorker, int, Task<IResult<TInput>>> action, int limit)
 		{
@@ -320,6 +322,7 @@ namespace Quarkless.Logic.WorkerManager
 					.WithClient(Client)
 					.WithAttempts(1)
 					.WithResolverAsync(()=> action(this, limit));
+
 				return result;
 			}
 			catch (Exception err)
@@ -345,7 +348,7 @@ namespace Quarkless.Logic.WorkerManager
 				});
 			}
 		}
-		public async Task<IResult<TInput>> PerformQueryTaskWithWorkerWithClient<TInput>(
+		public async Task<ResolverResponse<TInput>> PerformQueryTaskWithWorkerWithClient<TInput>(
 			IResponseResolver responseResolver,
 			Func<IWorker, object, int, Task<IResult<TInput>>> action, object inputObject, int limit)
 		{
@@ -360,6 +363,7 @@ namespace Quarkless.Logic.WorkerManager
 					.WithClient(Client)
 					.WithAttempts(1)
 					.WithResolverAsync(()=> action(this, inputObject, limit));
+
 				return result;
 			}
 			catch (Exception err)

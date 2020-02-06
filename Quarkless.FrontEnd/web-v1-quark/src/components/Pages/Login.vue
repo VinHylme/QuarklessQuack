@@ -20,17 +20,7 @@
 					</div>
 				</section>
 				<section v-else class="modal-card-body">
-				<h3 class="title has-text-centered">Confirm Account</h3>
-				<div class="box long">
-					<b-field>
-					<b-input v-model="confirmationCode" placeholder="your confirmation code"></b-input>
-					</b-field>
-					<div class="buttons has-addons is-centered">
-					<a @click="verificationNeeded=false" class="button">Back to login</a>
-					<a class="button">Confirm Account</a>
-					<a @click="resendConfirmation" class="button">Resend Confirmation Code</a>
-					</div>
-				</div>
+					<v-verify :username=this.username :reload="true"></v-verify>
 				</section>
 		</div>
 		<div class="footer">
@@ -41,6 +31,7 @@
 
 <script>
 import Vue from 'vue';
+import VerificationComp from '../Objects/Verify'
 export default {
 	data(){
 		return {
@@ -51,27 +42,11 @@ export default {
 			isActive :false,
 			verificationNeeded:false
 		}
-	  },
+	},
+	components:{
+		'v-verify':VerificationComp
+	},
 	methods:{
-		resendConfirmation(){
-			this.$store.dispatch('resendConfirmation',this.username).then(resp=>{
-				Vue.prototype.$toast.open({
-					message: 'Your confirmation code has been resend to ' + resp.data,
-					type: 'is-info',
-					position:'is-top',
-					duration:6000,
-					queue:false
-				});
-			}).catch(err=>{
-				Vue.prototype.$toast.open({
-					message: err.response.data.message,
-					type: 'is-danger',
-					position:'is-bottom',
-					duration:6000,
-					queue:false
-				});
-			})
-		},
 		doLogin(){
 			this.isActive = true;
 			this.$store.dispatch('login',{Username:this.username, Password:this.password}).then(res=>{
@@ -88,21 +63,21 @@ export default {
 			}).catch(err=>{
 				this.isActive = false;
 				if(err.response.status === 401){
-				this.verificationNeeded = true;
-				Vue.prototype.$toast.open({
-					message: 'Please confirm your account by entering the confirmation code.',
-					type: 'is-info',
-					position:'is-top',
-					duration:6000
-				});
+					this.verificationNeeded = true;
+					Vue.prototype.$toast.open({
+						message: 'Please confirm your account by entering the confirmation code.',
+						type: 'is-info',
+						position:'is-top',
+						duration:6000
+					});
 				} 
 				else{
-				Vue.prototype.$toast.open({
-					message: 'Failed to login, please check your account details',
-					type: 'is-danger',
-					position:'is-bottom',
-					duration:6000
-				})
+					Vue.prototype.$toast.open({
+						message: 'Failed to login, please check your account details',
+						type: 'is-danger',
+						position:'is-bottom',
+						duration:6000
+					})
 				}
 			})
 		}

@@ -196,7 +196,7 @@
               </button>
               </div>
               <b-field style="text-align:center;" :label="'Follow the color theme('+profile.theme.percentage+'%)' " class="is-dark">
-                  <input type="range" min="0" max="90" v-model="profile.theme.percentage" class="slider" id="myRange">
+                  <input type="range" :min="0" :max="90" v-model="profile.theme.percentage" class="slider" id="myRange">
               </b-field>
               <b-modal :active.sync="isModalActive">
                 <div class="content">
@@ -511,10 +511,11 @@ export default {
         return;
       }
       const topicsProfile = this.profile.profileTopic; 
-      this.profile.profileTopic = null;
+      //this.profile.profileTopic = null;
+      this.profile.theme.percentage = parseFloat(this.profile.theme.percentage)
       if(this.profile!==undefined || this.profile!==null || this.profile){
          this.$store.dispatch('UpdateProfile', this.profile).then(resp=>{
-           this.profile.profileTopic = topicsProfile;
+           //this.profile.profileTopic = topicsProfile;
            this.savingProfile = false;
            Vue.prototype.$toast.open({
                   message: 'Changes Saved!',
@@ -537,7 +538,7 @@ export default {
            })
          }).catch(err=>{
            this.savingProfile = false;
-           this.profile.profileTopic = topicsProfile;
+           //this.profile.profileTopic = topicsProfile;
            Vue.prototype.$toast.open({
               message: 'Oops, looks like something went wrong on our end',
               type: 'is-danger'

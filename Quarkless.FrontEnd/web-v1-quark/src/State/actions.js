@@ -4,6 +4,7 @@ import TimelineServices from '../Services/timelineService';
 import QueryServices from '../Services/queryServices';
 import LibraryServices from '../Services/libraryServices';
 import MessagingServices from '../Services/messagingServices';
+import {GetUserDetails} from '../localHelpers'
 import Axios from 'axios';
 import decoder from 'jwt-decode';
 
@@ -625,6 +626,24 @@ export default {
         })
       });
     },
+    registerAccount({commit},user){
+      return new Promise((resolve,reject)=>{
+        AccountServices.Register(user).then(resp=>{
+          resolve(resp)
+        }).catch(err=>{
+          
+        })
+      })
+    },
+    confirmAccount({commit}, confirmData){
+      return new Promise((resolve,reject)=>{
+        AccountServices.Confirm(confirmData).then(resp=>{
+          resolve(resp)
+        }).catch(err =>{
+          reject(err)
+        })
+      })
+    },
     async login({commit}, user){
       return new Promise((resolve, reject) => {
         commit('auth_request')
@@ -675,13 +694,30 @@ export default {
         })
       })
     },
-    SubmitCodeForChallange({commit},data){
+    DeleteInstagramAccount({commit}, instagramAccountId){
       return new Promise((resolve,reject)=>{
-        AccountServices.SubmitCodeForChallange(data.code, data.account).then(resp=>{
+        AccountServices.DeleteInstagramAccount(instagramAccountId).then(resp=>{
+          commit('insta_acc_deleted', instagramAccountId)
+          resolve(resp)
+        }).catch(err=>{
+          reject(err)
+        })
+      })
+    },
+    SubmitCodeForChallange({commit}, data){
+      return new Promise((resolve,reject)=>{
+        AccountServices.SubmitCodeForChallange(data.code, data.instagramAccountId).then(resp=>{
           resolve(resp)
         }).catch(err=>reject(err));
       })
-	},
+    },
+    SubmitPhoneForChallange({commit}, data){
+      return new Promise((resolve,reject)=>{
+        AccountServices.SubmitPhoneForChallange(data.phoneNumber, data.instagramAccountId).then(resp=>{
+          resolve(resp)
+        }).catch(err=>reject(err));
+      })
+    },
 	CreateSession({commit}, data){
 		return new Promise((resolve,reject)=>{
 			AccountServices.CreateSession(data.ptype,data.curr,data.sauce,data.accid).then(resp=>{

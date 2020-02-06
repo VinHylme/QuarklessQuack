@@ -45,17 +45,30 @@ namespace Quarkless.Logic.InstagramAccounts
 		}
 
 		public async Task<ResultCarrier<AddInstagramAccountResponse>> AddInstagramAccount(string accountId,
-			StateData state, AddInstagramAccountRequest addInstagram)
+			AddInstagramAccountRequest addInstagram)
 		{
 			var resultCarrier = new ResultCarrier<AddInstagramAccountResponse>();
+			if (addInstagram.Location == null || (!addInstagram.EnableAutoLocate && addInstagram.Location?.Address == null))
+			{
+				resultCarrier.IsSuccessful = false;
+				resultCarrier.Info = new ErrorResponse
+				{
+					Message = "Location needs to be provided"
+				};
+			}
+			if (string.IsNullOrEmpty(addInstagram.Username) || string.IsNullOrEmpty(addInstagram.Password))
+			{
+				resultCarrier.IsSuccessful = false;
+				resultCarrier.Info = new ErrorResponse
+				{
+					Message = "Username or password must be provided"
+				};
+			}
+
 			try
 			{
-				var device = state.DeviceInfo.DeviceModel;
-
 				var instagramAccountModel = new InstagramAccountModel
 				{
-					Device = device,
-					State = state,
 					AccountId = accountId,
 					FollowersCount = null,
 					FollowingCount = null,
@@ -68,10 +81,8 @@ namespace Quarkless.Logic.InstagramAccounts
 					DateAdded = DateTime.UtcNow,
 					SleepTimeRemaining = null,
 					Email = null,
-					FullName = state.UserSession.LoggedInUser.FullName,
 					IsBusiness = null,
 					PhoneNumber = null,
-					ProfilePicture = state.UserSession.LoggedInUser.ProfilePicture ?? state.UserSession.LoggedInUser.ProfilePicUrl,
 					UserBiography = null,
 					UserLimits = null,
 					Location = null,
@@ -87,7 +98,7 @@ namespace Quarkless.Logic.InstagramAccounts
 					{
 						InstagramAccount = result,
 						IpAddress = addInstagram.IpAddress,
-						LocationLatLon = addInstagram.Location
+						Location = addInstagram.Location
 					});
 
 					resultCarrier.IsSuccessful = true;
@@ -337,6 +348,18 @@ namespace Quarkless.Logic.InstagramAccounts
 			{
 				await _reportHandler.MakeReport(ee);
 			}
+		}
+
+		public async Task<bool> RemoveInstagramAccount(string instagramAccountId)
+		{
+			var results = await _instagramAccountRepository.RemoveInstagramAccount(instagramAccountId);
+			if (!results) return false;
+			await _publisher.PublishAsync(new InstagramAccountDeletePublishEvent
+			{
+				InstagramAccountId = instagramAccountId
+			});
+			return true;
+
 		}
 	}
 }

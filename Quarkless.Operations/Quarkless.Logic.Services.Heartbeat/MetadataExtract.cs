@@ -70,7 +70,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 					var top = workers.PerformAction(async worker =>
 					{
 						var instagramSearch = 
-							_searchProvider.InstagramSearch(worker.Client, worker.Client.GetContext.Proxy);
+							_searchProvider.InstagramSearch(worker.Client, worker.Client.GetContext.Container.Proxy);
 
 						var topMedias = await instagramSearch.SearchMediaDetailInstagram(topicSelect, limit);
 
@@ -106,7 +106,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 					var recent = workers.PerformAction(async worker =>
 					{
 						var instagramSearch = _searchProvider.InstagramSearch(worker.Client,
-							worker.Client.GetContext.Proxy);
+							worker.Client.GetContext.Container.Proxy);
 						var recentMedias = await instagramSearch.SearchMediaDetailInstagram(topicSelect, limit, true);
 
 						if (recentMedias != null)
@@ -176,7 +176,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 							var results = await workers.PerformQueryTask<Media>(async (worker, query, l) =>
 							{
 								var instagramSearch = _searchProvider.InstagramSearch(worker.Client,
-									worker.Client.GetContext.Proxy);
+									worker.Client.GetContext.Container.Proxy);
 
 								return await instagramSearch.SearchUsersMediaDetailInstagram(randomTopic, query, l);
 							}, userLoc, limit);
@@ -236,7 +236,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 							var results = await workers.PerformQueryTask(async (worker, location, lim) =>
 							{
 								var instagramSearch = _searchProvider.InstagramSearch(worker.Client,
-									worker.Client.GetContext.Proxy);
+									worker.Client.GetContext.Container.Proxy);
 								var topMediasByLocation =
 									await instagramSearch.SearchTopLocationMediaDetailInstagram((Location) location,
 										lim);
@@ -310,7 +310,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 					var results = await workers.PerformQueryTask(async (worker, username, lim) =>
 					{
 						var instagramSearch = _searchProvider.InstagramSearch(worker.Client,
-							worker.Client.GetContext.Proxy);
+							worker.Client.GetContext.Container.Proxy);
 						return await instagramSearch.SearchUsersMediaDetailInstagram(randomTopic, username, lim);
 					}, user.Username, limit);
 
@@ -335,12 +335,37 @@ namespace Quarkless.Logic.Services.Heartbeat
 							});
 						}
 
-						var userDetail = results.Medias.First();
 						await workers.PerformAction(async worker =>
 						{
 							var instagramSearch = _searchProvider.InstagramSearch(worker.Client,
-								worker.Client.GetContext.Proxy);
-							var details = await instagramSearch.SearchInstagramFullUserDetail(userDetail.User.UserId);
+								worker.Client.GetContext.Container.Proxy);
+							UserResponse userDetail;
+							if (!results.Medias.Any())
+							{
+								var userResult = await worker.Client.User.GetUserAsync(user.Username);
+								if (userResult.Succeeded)
+								{
+									userDetail = new UserResponse
+									{
+										FullName = userResult.Value.FullName,
+										IsPrivate = userResult.Value.IsPrivate,
+										IsVerified = userResult.Value.IsVerified,
+										ProfilePicture = userResult.Value.ProfilePicture,
+										Username = userResult.Value.UserName,
+										UserId = userResult.Value.Pk
+									};
+								}
+								else
+								{
+									return;
+								}
+							}
+							else
+							{
+								userDetail = results.Medias.First().User;
+							}
+
+							var details = await instagramSearch.SearchInstagramFullUserDetail(userDetail.UserId);
 							if (details.UserDetail.Pk != 0)
 							{
 								await _instagramAccountLogic.PartialUpdateInstagramAccount(user.AccountId, user.Id,
@@ -409,7 +434,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 						tempWorker.ChangeUser(user.AccountId, user.Id);
 
 						var instagramSearch = _searchProvider.InstagramSearch(tempWorker.Client,
-							tempWorker.Client.GetContext.Proxy);
+							tempWorker.Client.GetContext.Container.Proxy);
 
 						var results = await instagramSearch.SearchUserFeedMediaDetailInstagram(limit: limit);
 
@@ -463,7 +488,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 					await workers.PerformAction(async worker =>
 					{
 						var instagramSearch = _searchProvider.InstagramSearch(worker.Client,
-							worker.Client.GetContext.Proxy);
+							worker.Client.GetContext.Container.Proxy);
 
 						var fetchUsersMedia = await instagramSearch.GetUserFollowingList(user.Username, limit);
 
@@ -516,7 +541,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 					await workers.PerformAction(async worker =>
 					{
 						var instagramSearch = _searchProvider.InstagramSearch(worker.Client,
-							worker.Client.GetContext.Proxy);
+							worker.Client.GetContext.Container.Proxy);
 
 						var fetchUsersMedia = await instagramSearch.GetUsersFollowersList(user.Username, limit);
 
@@ -571,7 +596,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 						tempWorker.ChangeUser(user.AccountId, user.Id);
 
 						var instagramSearch = _searchProvider.InstagramSearch(tempWorker.Client,
-							tempWorker.Client.GetContext.Proxy);
+							tempWorker.Client.GetContext.Container.Proxy);
 
 						var fetchUsersMedia = await instagramSearch.GetSuggestedPeopleToFollow(limit);
 
@@ -627,7 +652,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 						tempWorker.ChangeUser(user.AccountId, user.Id);
 
 						var instagramSearch = _searchProvider.InstagramSearch(tempWorker.Client,
-							tempWorker.Client.GetContext.Proxy);
+							tempWorker.Client.GetContext.Container.Proxy);
 
 						var fetchUserInbox = await instagramSearch.SearchUserInbox(limit);
 						if (fetchUserInbox != null)
@@ -696,7 +721,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 					await workers.PerformAction(async worker =>
 					{
 						var instagramSearch = _searchProvider.InstagramSearch(worker.Client,
-							worker.Client.GetContext.Proxy);
+							worker.Client.GetContext.Container.Proxy);
 
 						foreach (var media in mediasForUser)
 						{
@@ -764,7 +789,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 					await workers.PerformAction(async worker =>
 					{
 						var instagramSearch = _searchProvider.InstagramSearch(worker.Client,
-							worker.Client.GetContext.Proxy);
+							worker.Client.GetContext.Container.Proxy);
 
 						foreach (var medias in results.TakeAny(takeMediaAmount))
 						{
@@ -847,7 +872,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 					await workers.PerformAction(async worker =>
 					{
 						var instagramSearch = _searchProvider.InstagramSearch(worker.Client,
-							worker.Client.GetContext.Proxy);
+							worker.Client.GetContext.Container.Proxy);
 
 						foreach (var media in results.TakeAny(takeMediaAmount))
 						{
@@ -937,7 +962,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 					await workers.PerformAction(async worker =>
 					{
 						var instagramSearch = _searchProvider.InstagramSearch(worker.Client,
-							worker.Client.GetContext.Proxy);
+							worker.Client.GetContext.Container.Proxy);
 
 						foreach (var medias in results.TakeAny(takeMediaAmount))
 						{
@@ -1021,7 +1046,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 						await workers.PerformAction(async worker =>
 						{
 							var instagramSearch = _searchProvider.InstagramSearch(worker.Client,
-								worker.Client.GetContext.Proxy);
+								worker.Client.GetContext.Container.Proxy);
 
 							foreach (var medias in res.TakeAny(takeMediaAmount))
 							{
@@ -1115,8 +1140,8 @@ namespace Quarkless.Logic.Services.Heartbeat
 					await workers.PerformAction(async worker =>
 					{
 						var instagramSearch = _searchProvider.InstagramSearch(worker.Client,
-							worker.Client.GetContext.Proxy);
-
+							worker.Client.GetContext.Container.Proxy);
+						
 						foreach (var medias in results.TakeAny(takeMediaAmount))
 						{
 							if (medias == null) continue;

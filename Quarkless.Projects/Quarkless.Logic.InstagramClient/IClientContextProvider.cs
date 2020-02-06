@@ -8,7 +8,7 @@ namespace Quarkless.Logic.InstagramClient
 {
 	public interface IClientContextProvider
 	{
-		Task<ContextContainer> Get(string accId, string insAccId);
+		Task<InstagramAccountFetcherResponse> Get(string accId, string insAccId);
 		IInstaClient InitialClientGenerate();
 		IInstaClient InitialClientGenerate(UserSessionData userData);
 		IInstaClient InitialClientGenerateWithProxy(ProxyModel model, bool genDevice = false);

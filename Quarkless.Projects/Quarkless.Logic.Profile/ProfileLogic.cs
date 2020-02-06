@@ -12,7 +12,8 @@ using Quarkless.Models.Topic;
 
 namespace Quarkless.Logic.Profile
 {
-	public class ProfileLogic : IProfileLogic, IEventSubscriber<InstagramAccountPublishEventModel>
+	public class ProfileLogic : IProfileLogic, IEventSubscriber<InstagramAccountPublishEventModel>, 
+		IEventSubscriber<InstagramAccountDeletePublishEvent>
 	{
 		private readonly IProfileRepository _profileRepository;
 		private readonly IEventPublisher _eventPublisher;
@@ -27,7 +28,7 @@ namespace Quarkless.Logic.Profile
 		}
 
 		public async Task<ProfileModel> AddProfile(ProfileModel profile,
-			bool assignProxy = false, string ipAddress = null, string location = null)
+			bool assignProxy = false, string ipAddress = null, Location location = null)
 		{
 			var results = await _profileRepository.AddProfile(profile);
 			if (results == null) return null;
@@ -70,6 +71,10 @@ namespace Quarkless.Logic.Profile
 				return false;
 			}
 		}
+
+		public async Task<bool> RemoveProfile(string instagramAccountId)
+			=> await _profileRepository.RemoveProfile(instagramAccountId);
+
 		public async Task<long?> PartialUpdateProfile(string profileId, ProfileModel profile)
 		{
 			return await _profileRepository.PartialUpdateProfile(profileId, profile);
@@ -83,7 +88,12 @@ namespace Quarkless.Logic.Profile
 				InstagramAccountId = @event.InstagramAccount._id,
 				ProfileTopic = new Topic
 				{
-					Category = null,
+					Category = new CTopic()
+					{
+						Name = "Art",
+						_id = "c9b7c5bb41bc9001b3c0bed5",
+						ParentTopicId = "000000000000000000000000"
+					},
 					Topics = new List<CTopic>()
 				},
 				Description = "Add a description about this profile",
@@ -108,7 +118,17 @@ namespace Quarkless.Logic.Profile
 				},
 				LocationTargetList = new List<Location>(),
 				UserTargetList = new List<string>(),
-			}, true, @event.IpAddress, @event.LocationLatLon);
+			}, true, @event.IpAddress, @event.Location);
+		}
+
+		public async Task Handle(InstagramAccountDeletePublishEvent @event)
+		{
+			var res = await RemoveProfile(@event.InstagramAccountId);
+			if (res)
+			{
+				await _eventPublisher.PublishAsync(new ProfileDeletedEventModel()
+					{InstagramAccountId = @event.InstagramAccountId});
+			}
 		}
 	}
 }

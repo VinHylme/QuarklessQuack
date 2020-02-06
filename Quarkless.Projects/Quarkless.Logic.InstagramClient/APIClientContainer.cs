@@ -8,60 +8,62 @@ namespace Quarkless.Logic.InstagramClient
 {
 	public class ApiClientContainer : IApiClientContainer
 	{
-		private ContextContainer Context { get; set; }
+		private InstagramAccountFetcherResponse Context { get; set; }
 		private readonly IApiClientContext _clientContext;
 		private readonly IUserContext _userContext;
 		
 		public ApiClientContainer(IApiClientContext clientContext, string userId, string instaId)
 		{
 			_clientContext = clientContext;
-			this.Context = _clientContext.Create(userId, instaId).Result;
+			Context = _clientContext.Create(userId, instaId).Result;
 		}
+
 		public ApiClientContainer(IApiClientContext clientContext, IUserContext userContext)
 		{
 			_clientContext = clientContext;
 			_userContext = userContext;
 			if (userContext?.FocusInstaAccount != null)
-				this.Context = _clientContext.Create(userContext.CurrentUser, userContext.FocusInstaAccount).Result;
+				Context = _clientContext.Create(userContext.CurrentUser, userContext.FocusInstaAccount).Result;
 		}
 
-		public ContextContainer GetContext => this.Context;
-
-		public IInstaClient EmptyClient => _clientContext.EmptyClient;
-
+		#region Getters
+		public InstagramAccountFetcherResponse GetContext => Context;
 		public IInstaClient EmpClientWithProxy (ProxyModel model, bool genDevice = false) 
 			=> _clientContext.EmptyClientWithProxy(model, genDevice);
 
-		public IDiscoverProcessor Discover => Context.ActionClient.DiscoverProcessor;
+		public IInstaClient EmptyClient => _clientContext.EmptyClient;
 
-		public ICollectionProcessor Collections => Context.ActionClient.CollectionProcessor;
+		public IDiscoverProcessor Discover => Context.Container.ActionClient.DiscoverProcessor;
 
-		public IFeedProcessor Feeds => Context.ActionClient.FeedProcessor;
+		public ICollectionProcessor Collections => Context.Container.ActionClient.CollectionProcessor;
 
-		public IMediaProcessor Media => Context.ActionClient.MediaProcessor;
+		public IFeedProcessor Feeds => Context.Container.ActionClient.FeedProcessor;
 
-		public IUserProcessor User => Context.ActionClient.UserProcessor;
+		public IMediaProcessor Media => Context.Container.ActionClient.MediaProcessor;
 
-		public IAccountProcessor Account => Context.ActionClient.AccountProcessor;
+		public IUserProcessor User => Context.Container.ActionClient.UserProcessor;
 
-		public ILocationProcessor Location => Context.ActionClient.LocationProcessor;
+		public IAccountProcessor Account => Context.Container.ActionClient.AccountProcessor;
 
-		public ICommentProcessor Comment => Context.ActionClient.CommentProcessor;
+		public ILocationProcessor Location => Context.Container.ActionClient.LocationProcessor;
 
-		public IHashtagProcessor Hashtag => Context.ActionClient.HashtagProcessor;
+		public ICommentProcessor Comment => Context.Container.ActionClient.CommentProcessor;
 
-		public IBusinessProcessor Business => Context.ActionClient.BusinessProcessor;
+		public IHashtagProcessor Hashtag => Context.Container.ActionClient.HashtagProcessor;
 
-		public ILiveProcessor Live => Context.ActionClient.LiveProcessor;
+		public IBusinessProcessor Business => Context.Container.ActionClient.BusinessProcessor;
 
-		public IMessagingProcessor Messaging => Context.ActionClient.MessagingProcessor;
+		public ILiveProcessor Live => Context.Container.ActionClient.LiveProcessor;
 
-		public IWebProcessor Web => Context.ActionClient.WebProcessor;
+		public IMessagingProcessor Messaging => Context.Container.ActionClient.MessagingProcessor;
 
-		public IShoppingProcessor Shopping => Context.ActionClient.ShoppingProcessor;
+		public IWebProcessor Web => Context.Container.ActionClient.WebProcessor;
 
-		public IStoryProcessor Story => Context.ActionClient.StoryProcessor;
+		public IShoppingProcessor Shopping => Context.Container.ActionClient.ShoppingProcessor;
 
-		public ITVProcessor Tv => Context.ActionClient.TVProcessor;
+		public IStoryProcessor Story => Context.Container.ActionClient.StoryProcessor;
+
+		public ITVProcessor Tv => Context.Container.ActionClient.TVProcessor;
+		#endregion
 	}
 }

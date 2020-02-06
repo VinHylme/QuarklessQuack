@@ -14,7 +14,7 @@ namespace Quarkless.Logic.InstagramClient
 			_clientContextProvider = clientContextProvider;
 		}
 
-		public override async Task<ContextContainer>Create(string userId, string instaId)
+		public override async Task<InstagramAccountFetcherResponse> Create(string userId, string instaId)
 		{
 			return await _clientContextProvider.Get(userId, instaId);
 		}

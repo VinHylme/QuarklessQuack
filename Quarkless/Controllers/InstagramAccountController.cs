@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Android.DeviceInfo;
@@ -13,6 +14,7 @@ using Quarkless.Models.InstagramAccounts;
 using Quarkless.Models.InstagramAccounts.Enums;
 using Quarkless.Models.InstagramAccounts.Interfaces;
 using Quarkless.Models.InstagramClient.Interfaces;
+using Quarkless.Models.ResponseResolver.Enums;
 using Quarkless.Models.ResponseResolver.Interfaces;
 
 namespace Quarkless.Controllers
@@ -23,7 +25,7 @@ namespace Quarkless.Controllers
 	[HashtagAuthorize(AuthTypes.BasicUsers)]
 	[HashtagAuthorize(AuthTypes.PremiumUsers)]
 	[HashtagAuthorize(AuthTypes.Admin)]
-    public class InstagramAccountController : ControllerBase
+    public class InstagramAccountController : ControllerBaseExtended
     {
 		private readonly IUserContext _userContext;
 		private readonly IInstaUserLogic _instaUserLogic;
@@ -44,104 +46,132 @@ namespace Quarkless.Controllers
 
 		[HttpPut]
 		[Route("api/insta/challange/submitCode/{code}")]
-		public async Task<IActionResult> SubmitChallengeCode([FromBody]SubmitVerifyCodeRequest model,[FromRoute] string code)
+		public async Task<IActionResult> SubmitChallengeCode([FromRoute] string code)
 		{
-			if(string.IsNullOrEmpty(_userContext.CurrentUser))
+			if(!_userContext.UserAccountExists)
 				return BadRequest("Invalid Request");
-			var res = await _instaUserLogic.SubmitChallengeCode(model.Username, model.Password, model.ChallengeLoginInfo, code);
+
+			var instagramAccountDetails =
+				await _instagramAccountLogic.GetInstagramAccount(_userContext.CurrentUser,
+					_userContext.FocusInstaAccount);
+			if (instagramAccountDetails == null)
+				return NotFound("Account was not found");
+			
+			var res = await _instaUserLogic.SubmitChallengeCode(instagramAccountDetails.Username,
+				instagramAccountDetails.Password, instagramAccountDetails.ChallengeInfo?.ChallengePath, code);
+
 			if (!res.Result.Succeeded) return NotFound(res.Result.Info);
+			
 			if (string.IsNullOrEmpty(res.InstagramId)) return Ok(true);
+			
 			await _instagramAccountLogic.EmptyChallengeInfo(res.InstagramId);
 			return Ok(true);
 		}
+
+		[HttpPut]
+		[Route("api/insta/challenge/submitPhone/{phone}")]
+		public async Task<IActionResult> SubmitPhoneChallenge([FromRoute] string phoneNumber)
+		{
+			if (!_userContext.UserAccountExists)
+				return BadRequest("Invalid Request");
+			if (string.IsNullOrEmpty(phoneNumber) || !Regex.IsMatch(phoneNumber, @"\d+"))
+				return BadRequest("Invalid Number");
+
+			var instagramAccountDetails =
+				await _instagramAccountLogic.GetInstagramAccount(_userContext.CurrentUser,
+					_userContext.FocusInstaAccount);
+
+			if (instagramAccountDetails == null)
+				return NotFound("Account was not found");
+
+
+			var result =
+				await _instaUserLogic.SubmitPhoneVerify(phoneNumber,
+					instagramAccountDetails.ChallengeInfo?.ChallengePath);
+
+			if (!result) return NotFound("failed to add phone");
+
+			await _instagramAccountLogic.EmptyChallengeInfo(_userContext.FocusInstaAccount);
+			return Ok(true);
+		}
+
+		[HttpDelete]
+		[Route("api/insta/delete/{instagramAccountId}")]
+		public async Task<IActionResult> RemoveInstagramAccount(string instagramAccountId)
+		{
+			if (string.IsNullOrEmpty(_userContext.CurrentUser)) return BadRequest("Not authenticated");
+			try
+			{
+				var results = await _instagramAccountLogic.RemoveInstagramAccount(instagramAccountId);
+				if(results)
+					return Ok("Account Deleted");
+
+				return NotFound("Account failed to delete");
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err);
+				return BadRequest("Something went wrong");
+			}
+		}
+
 		[HttpPost]
 		[Route("api/insta/add")]
-		public async Task<IActionResult> AddInstagramAccount(AddInstagramAccountRequest addInstagram)
+		public async Task<IActionResult> AddInstagramAccount(AddInstagramAccountRequest addRequest)
 		{
 			try
 			{
 				if (string.IsNullOrEmpty(_userContext.CurrentUser)) return BadRequest("Not authenticated");
+				
+				var response = await _instagramAccountLogic.AddInstagramAccount(_userContext.CurrentUser, addRequest);
+				if (!response.IsSuccessful)
+					return BadRequest(response.Info);
 
-				var client = _clientContext.EmptyClientWithUser(new UserSessionData
+				try
 				{
-					UserName = addInstagram.Username,
-					Password = addInstagram.Password
-				});
+					//if successful then try to login
 
-				var loginRes = await _responseResolver
-					.WithAttempts(1)
-					.WithInstaApiClient(client)
-					.WithResolverAsyncEmpty(()=> client.TryLogin(addInstagram.Username, addInstagram.Password,
-					AndroidDeviceGenerator.GetRandomAndroidDevice()));
+					var clientContainer = new ApiClientContainer(_clientContext,
+						response.Results.AccountId, response.Results.InstagramAccountId);
+					
+					if (clientContainer.GetContext.SuccessfullyRetrieved)
+						return Ok(response);
+					
+					if (clientContainer.GetContext.Container == null)//exception was thrown or account failed add to the db
+						goto Failed;
 
-				if (loginRes == null) return NotFound("Could not authenticate the account");
-
-				if (loginRes.Succeeded) { 
-
-					var state = JsonConvert.DeserializeObject<StateData>(loginRes.Value);
-
-					if (string.IsNullOrEmpty(addInstagram.IpAddress))
-						addInstagram.IpAddress = _userContext.UserIpAddress;
-
-					var results = await _instagramAccountLogic
-						.AddInstagramAccount(_userContext.CurrentUser, state, addInstagram);
-
-					if (results.Results!=null)
+					if (clientContainer.GetContext.Response.Info.NeedsChallenge)
 					{
-						return Ok(results.Results);
-					}
-
-					return BadRequest(results.Info);
-				}
-				else
-				{
-					if (loginRes.Info.ResponseType != ResponseType.ChallengeRequired) 
-						return NotFound(loginRes.Info);
-
-					var requireVerifyMethodAsync = await _instaUserLogic.GetChallengeRequireVerifyMethodAsync(addInstagram.Username, addInstagram.Password);
-					if (!requireVerifyMethodAsync.Succeeded) return NotFound(loginRes.Info);
-					if (requireVerifyMethodAsync.Value.SubmitPhoneRequired)
-					{
-
-					}
-					else
-					{
-						if (requireVerifyMethodAsync.Value.StepData == null) return NotFound(loginRes.Info);
-						if (!string.IsNullOrEmpty(requireVerifyMethodAsync.Value.StepData.PhoneNumber))
+						var responseR = await _responseResolver
+							.WithClient(clientContainer)
+							.WithResolverAsync(clientContainer.GetContext.Response);
+						//challenge was handled
+						if (responseR.Response.Succeeded)
 						{
-							//verify phone
-							var code = await _instaUserLogic.RequestVerifyCodeToSmsForChallengeRequireAsync(addInstagram.Username, addInstagram.Password);
-							if (code.Succeeded)
-							{
-								return Ok(new 
-								{ 
-									Verify = "phone", 
-									Details = requireVerifyMethodAsync.Value.StepData.PhoneNumber,
-									ChallangePath = _instaUserLogic.GetChallengeInfo(),
-									Resp = code.Value
-								});
-							}
+							return Ok(response);
 						}
-
-						if (string.IsNullOrEmpty(requireVerifyMethodAsync.Value.StepData.Email))
-							return NotFound(loginRes.Info);
-						{
-							var code = await _instaUserLogic.RequestVerifyCodeToEmailForChallengeRequireAsync(addInstagram.Username, addInstagram.Password);
-							return Ok(new { 
-								Verify = "email", 
-								Details = requireVerifyMethodAsync.Value.StepData.Email,
-								ChallangePath = _instaUserLogic.GetChallengeInfo(),
-								Resp = code.Value });
-						}
+						
+						// if requires user's input (e.g. phone verify, email, captcha)
+						return OkChallengeResponse(responseR.HandlerResults.ChallengeResponse);
 					}
 				}
-				return NotFound(loginRes.Info);
+				catch(Exception err)
+				{
+					await _instagramAccountLogic.RemoveInstagramAccount(response.Results.InstagramAccountId);
+					return BadRequest(err.Message);
+				}
+
+				Failed:
+				//delete everything that was added if failed
+				await _instagramAccountLogic.RemoveInstagramAccount(response.Results.InstagramAccountId);
+				return BadRequest("Could not authenticate the account");
 			}
 			catch(Exception ee)
 			{
 				return BadRequest(ee.Message);
-			}		
+			}
 		}
+
 		[HttpGet]
 		[Route("api/insta/refreshLogin/{instagramAccountId}")]
 		public async Task<IActionResult> RefreshLogin(string instagramAccountId)
@@ -153,17 +183,30 @@ namespace Quarkless.Controllers
 				
 				if (instaDetails == null || string.IsNullOrEmpty(instaDetails.Username))
 					return NotFound("Could not find account");
-				
+
+				var clientContainer =
+					new ApiClientContainer(_clientContext, _userContext.CurrentUser, instagramAccountId);
+
 				var loginRes = await _responseResolver
-					.WithClient(new ApiClientContainer(_clientContext, _userContext.CurrentUser, instagramAccountId))
+					.WithClient(clientContainer)
 					.WithAttempts(1)
-					.WithResolverAsync(()=> _instaUserLogic.TryLogin(instaDetails.Username, instaDetails.Password, instaDetails.State.DeviceInfo), 
+					.WithResolverAsync(() => clientContainer.GetContext.Container.InstaClient
+							.TryLogin(instaDetails.Username, instaDetails.Password, instaDetails.State.DeviceInfo),
 						ActionType.RefreshLogin, instagramAccountId);
 				
 				if (loginRes == null) return Ok(false);
-				if (!loginRes.Succeeded) return NotFound(loginRes.Info);
 
-				var newState = JsonConvert.DeserializeObject<StateData>(loginRes.Value);
+				if (!loginRes.Response.Succeeded)
+				{
+					if (loginRes.Response.Info.NeedsChallenge)
+					{
+						return OkChallengeResponse(loginRes.HandlerResults.ChallengeResponse);
+					}
+
+					return NotFound(loginRes.Response.Info);
+				}
+
+				var newState = JsonConvert.DeserializeObject<StateData>(loginRes.Response.Value);
 				
 				await _instagramAccountLogic.PartialUpdateInstagramAccount(_userContext.CurrentUser,
 					instagramAccountId,

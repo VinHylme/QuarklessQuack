@@ -1,6 +1,8 @@
 module.exports.Calling = {
   "base_path": process.env.VUE_APP_API,
   "account_login": process.env.VUE_APP_ACCOUNT_LOGIN,
+  "account_register": process.env.VUE_APP_ACCOUNT_REGISTER,
+  "account_confirm": process.env.VUE_APP_ACCOUNT_CONFIRM,
   "account_refresh" : process.env.VUE_APP_ACCOUNT_REFRESH,
   "account_confirmation": process.env.VUE_APP_ACCOUNT_CONFIRMATION,
   "account_changepp": process.env.VUE_APP_ACCOUNT_CHANGEPP,
@@ -9,7 +11,9 @@ module.exports.Calling = {
   "account_get_user_instagram_account": process.env.VUE_APP_ACCOUNT_GET_USER_INSTAGRAM_ACCOUNT_STATE,
   "account_update_agent_state": process.env.VUE_APP_ACCOUNT_UPDATE_AGENT_STATE,
   "account_add_instagram": process.env.VUE_APP_ACCOUNT_ADD_INSTAGRAM,
+  "account_delete_instagram": process.env.VUE_APP_ACCOUNT_DELETE_INSTAGRAM,
   "account_instagram_challenge": process.env.VUE_APP_ACCOUNT_INSTAGRAM_CHALLENGE,
+  "account_instagram_challenge_phone":process.env.VUE_APP_ACCOUNT_INSTAGRAM_PHONE_CHALLENGE,
   "account_instagram_refresh": process.env.VUE_APP_ACCOUNT_INSTAGRAM_REFRESH,
   "account_get_profiles": process.env.VUE_APP_ACCOUNT_GET_PROFILES,
   "account_update_profile": process.env.VUE_APP_ACCOUNT_UPDATE_PROFILE,

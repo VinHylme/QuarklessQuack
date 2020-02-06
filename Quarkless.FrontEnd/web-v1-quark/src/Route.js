@@ -125,7 +125,7 @@ router.beforeEach((to, from, next) => {
         next()
         return
       }
-      if(router.currentRoute.fullPath !== '/')
+      if(router.currentRoute.fullPath !== '/login')
         next()
     } else {
       next() 

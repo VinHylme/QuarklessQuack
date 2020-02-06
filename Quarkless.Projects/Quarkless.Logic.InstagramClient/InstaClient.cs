@@ -19,48 +19,45 @@ namespace Quarkless.Logic.InstagramClient
 {
 	public class InstaClient : IInstaClient
 	{
-		private const InstaApiVersionType INSTAGRAM_VERSION 
-			= InstaApiVersionType.Version123;
-
+		private const InstaApiVersionType INSTAGRAM_VERSION = InstaApiVersionType.Version123;
 		private const string INSTAGRAM_BASE_URL = "https://i.instagram.com";
 
-		public IInstaApi ReturnClient => api;
+		public IInstaApi ReturnClient => instagramApi;
+		private IInstaApi instagramApi { get; }
 		private string StateString { get; set; }
-		private IInstaApi api { get; set; }
+
+		public InstaClient(IInstaApi instagramApi)
+		{
+			if (instagramApi == null)
+				instagramApi = CreateEmptyClient();
+
+			this.instagramApi = instagramApi;
+		}
+
+		public IInstaApi CreateEmptyClient()
+		{
+			var instaApi = InstaApiBuilder.CreateBuilder()
+				.UseLogger(new DebugLogger(LogLevel.All))
+				.SetRequestDelay(RequestDelay.FromSeconds(0, 2))
+				.Build();
+			instaApi.SetApiVersion(INSTAGRAM_VERSION);
+			return instaApi;
+		}
 
 		public IInstaClient Empty()
 		{
-			var instaApi = InstaApiBuilder.CreateBuilder()
-			.UseLogger(new DebugLogger(LogLevel.All))
-			.SetRequestDelay(RequestDelay.FromSeconds(0, 2))
-			.Build();
-
-			instaApi.SetApiVersion(INSTAGRAM_VERSION);
-			return new InstaClient()
-			{
-				api = instaApi
-			};
+			var instaApi = CreateEmptyClient();
+			return new InstaClient(instaApi);
 		}
 		public IInstaClient Empty(UserSessionData userSessionData)
 		{
-			var instaApi = InstaApiBuilder.CreateBuilder()
-				.UseLogger(new DebugLogger(LogLevel.All))
-				.SetUser(userSessionData)
-				.SetRequestDelay(RequestDelay.FromSeconds(0, 2))
-				.Build();
-
-			instaApi.SetApiVersion(INSTAGRAM_VERSION);
-			return new InstaClient()
-			{
-				api = instaApi
-			};
+			var instaApi = CreateEmptyClient();
+			instaApi.SetUser(userSessionData);
+			return new InstaClient(instaApi);
 		}
 		public IInstaClient Empty(ProxyModel proxy, bool genDevice = false)
 		{
-			var instaApi = InstaApiBuilder.CreateBuilder()
-				.UseLogger(new DebugLogger(LogLevel.All))
-				.SetRequestDelay(RequestDelay.FromSeconds(0, 2))
-				.Build();
+			var instaApi = CreateEmptyClient();
 
 			if(proxy!=null)
 				instaApi.UseHttpClientHandler(SetupClientHandler(proxy));
@@ -68,12 +65,8 @@ namespace Quarkless.Logic.InstagramClient
 			if(genDevice)
 				instaApi.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
 
-			instaApi.SetApiVersion(INSTAGRAM_VERSION);
 			instaApi.HttpClient.BaseAddress = new Uri(INSTAGRAM_BASE_URL);
-			return new InstaClient()
-			{
-				api = instaApi
-			};
+			return new InstaClient(instaApi);
 		}
 
 		/*
@@ -187,12 +180,14 @@ namespace Quarkless.Logic.InstagramClient
 			clientApi.HttpClient.BaseAddress = new Uri(INSTAGRAM_BASE_URL);
 			return clientApi;
 		}
-		public IInstaClient GetClientFromModel(InstagramClientAccount instagramAccount)
+		
+		public IResult<IInstaClient> GetClientFromModel(InstagramClientAccount instagramAccount)
 		{
 			if (instagramAccount?.InstagramAccount == null)
 			{
 				throw new Exception("Model cannot be null");
 			}
+
 			if (instagramAccount.InstagramAccount?.State == null)
 			{
 				var instance = CreateApiClient(new UserSessionData
@@ -200,54 +195,52 @@ namespace Quarkless.Logic.InstagramClient
 					UserName = instagramAccount.InstagramAccount.Username,
 					Password = instagramAccount.InstagramAccount.Password
 				}, instagramAccount.Proxy);
-
 				instance.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
 
 				var res = instance.LoginAsync().GetAwaiter().GetResult();
+				
+				var instaClient = new InstaClient(instance);
 
-				if (!res.Succeeded) throw new Exception("Failed to login");
+				if (!res.Succeeded)
+					return new InstagramApiSharp.Classes.Result<IInstaClient>(res.Succeeded, instaClient, res.Info);
 
 				var stateDataAsString = instance.GetStateDataAsString();
-
-				return new InstaClient()
-				{
-					api = instance,
-					StateString = stateDataAsString
-				};
+				instaClient.StateString = stateDataAsString;
+				
+				return new InstagramApiSharp.Classes.Result<IInstaClient>(res.Succeeded, instaClient, res.Info);
 			}
 			else
 			{
 				var instance = CreateApiClient(instagramAccount.InstagramAccount.State.UserSession,
 					instagramAccount.Proxy);
-
 				instance.SetDevice(instagramAccount.InstagramAccount.State.DeviceInfo);
-
 				instance.LoadStateDataFromString(JsonConvert.SerializeObject(instagramAccount.InstagramAccount.State));
 
 				if (instance.IsUserValidated() && instance.Username == instagramAccount.InstagramAccount.Username)
-					return new InstaClient()
+				{
+					var client = new InstaClient(instance)
 					{
-						api = instance,
-						StateString = JsonConvert.SerializeObject(instagramAccount.InstagramAccount.State),
+						StateString = JsonConvert.SerializeObject(instagramAccount.InstagramAccount.State)
 					};
+					return new InstagramApiSharp.Classes.Result<IInstaClient>(true, client, null);
+				}
 
-				instance.SetUser(new UserSessionData()
+				instance.SetUser(new UserSessionData
 				{
 					UserName = instagramAccount.InstagramAccount.Username, 
 					Password = instagramAccount.InstagramAccount.Password
 				});
 
-				var res = instance.LoginAsync().GetAwaiter().GetResult();
+				var instaClient = new InstaClient(instance);
 
-				if (!res.Succeeded) throw new Exception("Failed to login");
+				var res = instance.LoginAsync().GetAwaiter().GetResult();
+				if (!res.Succeeded)
+					return new InstagramApiSharp.Classes.Result<IInstaClient>(res.Succeeded, instaClient, res.Info);
 
 				var stateDataAsString = instance.GetStateDataAsString();
-				
-				return new InstaClient()
-				{
-					api = instance,
-					StateString = stateDataAsString
-				};
+				instaClient.StateString = stateDataAsString;
+
+				return new InstagramApiSharp.Classes.Result<IInstaClient>(res.Succeeded, instaClient, res.Info);
 			}
 		}
 
@@ -266,63 +259,61 @@ namespace Quarkless.Logic.InstagramClient
 				.Build();
 
 			anotherInstance.LoadStateDataFromString(state);
-				return new InstaClient() 
+				return new InstaClient(anotherInstance) 
 				{ 
-					api = anotherInstance,
 					StateString = state,
 				};
 		}
 		public async Task<string> GetStateDataFromString()
 		{
-			StateString = await api.GetStateDataAsStringAsync();
+			StateString = await instagramApi.GetStateDataAsStringAsync();
 			return StateString;
 		}
-
 		public async Task LoadStateDataFromStringAsync(string state)
-			=> await api.LoadStateDataFromStringAsync(state);
+			=> await instagramApi.LoadStateDataFromStringAsync(state);
 		
 		public async Task<IResult<InstaChallengeRequireVerifyMethod>> GetChallengeRequireVerifyMethodAsync(string username, string password)
 		{
-			api.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
-			api.SetUser(new UserSessionData
+			instagramApi.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
+			instagramApi.SetUser(new UserSessionData
 			{
 				Password = password,
 				UserName = username
 			});
-			api.SetApiVersion(INSTAGRAM_VERSION);
-			return await api.GetChallengeRequireVerifyMethodAsync();
+			instagramApi.SetApiVersion(INSTAGRAM_VERSION);
+			return await instagramApi.GetChallengeRequireVerifyMethodAsync();
 		}
 		public async Task<IResult<InstaLoginResult>> SubmitChallengeCode(string username, string password, InstaChallengeLoginInfo instaChallengeLoginInfo, string code)
 		{
-			api.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
-			api.SetUser(new UserSessionData
+			instagramApi.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
+			instagramApi.SetUser(new UserSessionData
 			{
 				Password = password,
 				UserName = username
 			});
-			api.ChallengeLoginInfo = instaChallengeLoginInfo;
-			api.SetApiVersion(INSTAGRAM_VERSION);
-			return await api.VerifyCodeForChallengeRequireAsync(code);
+			instagramApi.ChallengeLoginInfo = instaChallengeLoginInfo;
+			instagramApi.SetApiVersion(INSTAGRAM_VERSION);
+			return await instagramApi.VerifyCodeForChallengeRequireAsync(code);
 		}
 		
 		#endregion
-
 		public async Task<IResult<string>> TryLogin()
 		{
-			if (api == null)
+			if (instagramApi == null)
 				throw new Exception("Api Client is empty");
-			if(string.IsNullOrEmpty(api.Username))
+			if(string.IsNullOrEmpty(instagramApi.Username))
 				throw new Exception("No User Found");
 
-			var results = await api.LoginAsync();
+			var results = await instagramApi.LoginAsync();
 
 			return results.Succeeded
 				? new InstagramApiSharp.Classes.Result<string>(results.Succeeded,
-					await api.GetStateDataAsStringAsync(), results.Info)
+					await instagramApi.GetStateDataAsStringAsync(), results.Info)
 
 				: new InstagramApiSharp.Classes.Result<string>(results.Succeeded,
 					null, results.Info);
 		}
+
 		public async Task<IResult<string>> TryLogin(string username, string password, AndroidDevice device, 
 			ProxyModel proxy = null)
 		{

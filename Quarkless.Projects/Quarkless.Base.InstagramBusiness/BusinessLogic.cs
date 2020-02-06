@@ -18,7 +18,7 @@ namespace Quarkless.Base.InstagramBusiness
 		{
 			_reportHandler = reportHandler;
 			_client = client;
-			var account = _client?.GetContext?.InstagramAccount;
+			var account = _client?.GetContext?.Container?.InstagramAccount;
 			if(account!=null)
 				_reportHandler.SetupReportHandler(nameof(BusinessLogic), account.AccountId, account.Id);
 			else

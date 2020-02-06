@@ -36,7 +36,7 @@ namespace Quarkless.Run.Services.Delegator.Extensions
 			services.AddTransient<IReportHandlerRepository, ReportHandlerRepository>();
 
 			services.AddTransient<IEventPublisher, EventPublisher>(
-				s => new EventPublisher(services.BuildServiceProvider(false).CreateScope()));
+				s => new EventPublisher(services));
 
 			services.Configure<RedisOptions>(o =>
 			{

@@ -10,6 +10,7 @@ using Quarkless.Models.InstagramAccounts.Enums;
 using Quarkless.Models.InstagramAccounts.Interfaces;
 using Quarkless.Models.InstagramClient.Interfaces;
 using Quarkless.Models.ResponseResolver.Interfaces;
+using Quarkless.Models.ResponseResolver.Models;
 using Quarkless.Models.WorkerManager;
 using Quarkless.Models.WorkerManager.Interfaces;
 
@@ -185,7 +186,7 @@ namespace Quarkless.Logic.WorkerManager
 			}
 		}
 
-		public async Task<IResult<TInput>> PerformQueryTaskWithClient<TInput>
+		public async Task<ResolverResponse<TInput>> PerformQueryTaskWithClient<TInput>
 			(IResponseResolver responseResolver,Func<IWorker, string, int, Task<IResult<TInput>>> action,
 			string query, int limit)
 		{
@@ -213,7 +214,7 @@ namespace Quarkless.Logic.WorkerManager
 			return await worker.PerformQueryTaskWithWorkerWithClient(responseResolver, action, query, limit);
 		}
 
-		public async Task<IResult<TResult>> PerformQueryTaskWithClient<TResult>
+		public async Task<ResolverResponse<TResult>> PerformQueryTaskWithClient<TResult>
 		(IResponseResolver responseResolver, Func<IWorker, object, int, Task<IResult<TResult>>> action,
 			object inputObject, int limit)
 		{
@@ -241,7 +242,7 @@ namespace Quarkless.Logic.WorkerManager
 			return await worker.PerformQueryTaskWithWorkerWithClient(responseResolver, action, inputObject, limit);
 		}
 
-		public async Task<IResult<TInput>> PerformQueryTaskWithClient<TInput>
+		public async Task<ResolverResponse<TInput>> PerformQueryTaskWithClient<TInput>
 			(IResponseResolver responseResolver, Func<IWorker, int, Task<IResult<TInput>>> action, int limit)
 		{
 			if (responseResolver == null) throw new Exception("Response Resolver cannot be null");

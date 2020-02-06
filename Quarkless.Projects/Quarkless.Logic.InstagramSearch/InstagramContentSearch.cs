@@ -36,8 +36,9 @@ namespace Quarkless.Logic.InstagramSearch
 				.WithAttempts(1)
 				.WithResolverAsync(()=> _container.User.GetUserFollowersAsync(username,
 					PaginationParameters.MaxPagesToLoad(limit), query, mutualFirst));
-			if (!userResponse.Succeeded) return null;
-			var users = userResponse.Value;
+
+			if (!userResponse.Response.Succeeded) return null;
+			var users = userResponse.Response.Value;
 			return users.Select(_ => new UserResponse<string>
 			{
 				Username = _.UserName,
@@ -56,8 +57,8 @@ namespace Quarkless.Logic.InstagramSearch
 				.WithResolverAsync(()=> _container.User.GetUserFollowingAsync(username,
 				PaginationParameters.MaxPagesToLoad(limit), query,
 				InstagramApiSharp.Enums.InstaFollowingOrderType.DateFollowedEarliest));
-			if (!userResponse.Succeeded) return null;
-			var users = userResponse.Value;
+			if (!userResponse.Response.Succeeded) return null;
+			var users = userResponse.Response.Value;
 			return users.Select(_ => new UserResponse<string>
 			{
 				Username = _.UserName,
@@ -74,9 +75,9 @@ namespace Quarkless.Logic.InstagramSearch
 				.WithClient(_container)
 				.WithAttempts(1)
 				.WithResolverAsync(()=> _container.User.GetSuggestionUsersAsync(PaginationParameters.MaxPagesToLoad(limit)));
-			if (!res.Succeeded) return null;
+			if (!res.Response.Succeeded) return null;
 			var usersTotals = new List<UserResponse<UserSuggestionDetails>>();
-			var users = res.Value;
+			var users = res.Response.Value;
 			usersTotals.AddRange(users.NewSuggestedUsers.Select(_ => new UserResponse<UserSuggestionDetails>
 			{
 				Object = new UserSuggestionDetails
@@ -125,9 +126,9 @@ namespace Quarkless.Logic.InstagramSearch
 				.WithClient(_container)
 				.WithAttempts(1)
 				.WithResolverAsync(()=> _container.User.GetSuggestionDetailsAsync(userId, chainingIds));
-			if (!res.Succeeded) return null;
+			if (!res.Response.Succeeded) return null;
 			var usersTotals = new List<UserResponse<UserSuggestionDetails>>();
-			var users = res.Value;
+			var users = res.Response.Value;
 			usersTotals.AddRange(users.Select(_ => new UserResponse<UserSuggestionDetails>
 			{
 				Object = new UserSuggestionDetails
@@ -153,9 +154,9 @@ namespace Quarkless.Logic.InstagramSearch
 				.WithClient(_container)
 				.WithAttempts(1)
 				.WithResolverAsync(()=> _container.Media.GetMediaLikersAsync(mediaId));
-			if (userLikerResult.Succeeded)
+			if (userLikerResult.Response.Succeeded)
 			{
-				return userLikerResult.Value.Select(s => new UserResponse<string>
+				return userLikerResult.Response.Value.Select(s => new UserResponse<string>
 				{
 					Object = mediaId,
 					UserId = s.Pk,
@@ -178,8 +179,8 @@ namespace Quarkless.Logic.InstagramSearch
 					.WithClient(_container)
 					.WithAttempts(1)
 					.WithResolverAsync(()=> _container.Comment.GetMediaCommentsAsync(mediaId, PaginationParameters.MaxPagesToLoad(limit)));
-				if (!userCommentResult.Succeeded) return null;
-				var results = userCommentResult.Value.Comments;
+				if (!userCommentResult.Response.Succeeded) return null;
+				var results = userCommentResult.Response.Value.Comments;
 				return results.Select(res => new UserResponse<InstaComment>
 					{
 						Object = res,
@@ -206,7 +207,7 @@ namespace Quarkless.Logic.InstagramSearch
 				.WithClient(_container)
 				.WithAttempts(1)
 				.WithResolverAsync(()=> _container.User.GetFullUserInfoAsync(userId));
-			return userDetailsResp.Succeeded ? userDetailsResp.Value : null;
+			return userDetailsResp.Response.Succeeded ? userDetailsResp.Response.Value : null;
 		}
 		public async Task<Media> SearchMediaDetailInstagram(IEnumerable<CTopic> topics, int limit, bool isRecent = false)
 		{
@@ -381,11 +382,11 @@ namespace Quarkless.Logic.InstagramSearch
 				.WithAttempts(1)
 				.WithResolverAsync(()=> _container.User
 					.GetUserMediaAsync(userName, PaginationParameters.MaxPagesToLoad(limit)));
-			if (medias.Succeeded)
+			if (medias.Response.Succeeded)
 			{
 				return new Media
 				{
-					Medias = medias.Value.Select(s =>
+					Medias = medias.Response.Value.Select(s =>
 					{
 						var mediaDetail = new MediaResponse
 						{
@@ -466,8 +467,8 @@ namespace Quarkless.Logic.InstagramSearch
 				.WithAttempts(1)
 				.WithResolverAsync(()=> _container.Location
 					.SearchPlacesAsync(location.City.OnlyWords(), PaginationParameters.MaxPagesToLoad(limit)));
-			if (!locationResult.Succeeded && !locationResult.Value.Items.Any()) return null;
-			var id = locationResult.Value.Items.First().Location.Pk;
+			if (!locationResult.Response.Succeeded && !locationResult.Response.Value.Items.Any()) return null;
+			var id = locationResult.Response.Value.Items.First().Location.Pk;
 			var mediasRes = await _container.Location.GetTopLocationFeedsAsync(id, PaginationParameters.MaxPagesToLoad(limit));
 			if (mediasRes.Succeeded)
 			{
@@ -553,8 +554,8 @@ namespace Quarkless.Logic.InstagramSearch
 				.WithAttempts(1)
 				.WithResolverAsync(()=> _container.Location
 					.SearchPlacesAsync(location.City, PaginationParameters.MaxPagesToLoad(limit)));
-			if (!locationResult.Succeeded && !locationResult.Value.Items.Any()) return null;
-			var id = locationResult.Value.Items.First().Location.Pk;
+			if (!locationResult.Response.Succeeded && !locationResult.Response.Value.Items.Any()) return null;
+			var id = locationResult.Response.Value.Items.First().Location.Pk;
 			var mediasRes = await _container.Location.GetRecentLocationFeedsAsync(id, PaginationParameters.MaxPagesToLoad(limit));
 			if (mediasRes.Succeeded)
 			{
@@ -640,9 +641,9 @@ namespace Quarkless.Logic.InstagramSearch
 				.WithClient(_container)
 				.WithAttempts(1)
 				.WithResolverAsync(()=> _container.Feeds.GetUserTimelineFeedAsync(PaginationParameters.MaxPagesToLoad(limit), seenMedias, requestRefresh));
-			if (mediasResults.Succeeded)
+			if (mediasResults.Response.Succeeded)
 			{
-				medias.Medias.AddRange(mediasResults.Value.Medias.Select(s =>
+				medias.Medias.AddRange(mediasResults.Response.Value.Medias.Select(s =>
 				{
 					var mediaDetail = new MediaResponse
 					{
@@ -721,7 +722,7 @@ namespace Quarkless.Logic.InstagramSearch
 				.WithAttempts(1)
 				.WithResolverAsync(()=> _container.Messaging.GetDirectInboxAsync(PaginationParameters.MaxPagesToLoad(limit)));
 
-			return results.Succeeded ? results.Value : null;
+			return results.Response.Succeeded ? results.Response.Value : null;
 		}
 	}
 }

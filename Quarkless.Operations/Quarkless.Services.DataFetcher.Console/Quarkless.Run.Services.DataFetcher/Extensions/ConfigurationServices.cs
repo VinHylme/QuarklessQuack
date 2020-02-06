@@ -118,17 +118,17 @@ namespace Quarkless.Run.Services.DataFetcher.Extensions
 			services.AddTransient<IProxyAssignmentsRepository, ProxyAssignmentsRepository>();
 			services.AddTransient<IProfileLogic, ProfileLogic>();
 			services.AddTransient<IEventSubscriber<InstagramAccountPublishEventModel>, ProfileLogic>();
-			services.AddScoped<IInstaClient, InstaClient>();
 			services.AddScoped<IResponseResolver, ResponseResolver>();
 			services.AddSingleton<ILookupLogic, LookupLogic>();
 			services.AddSingleton<ILookupCache, LookupCache>();
 			services.AddSingleton<ITimelineEventLogLogic, TimelineEventLogLogic>();
 			services.AddSingleton<ITimelineLoggingRepository, TimelineLoggingRepository>();
 			services.AddSingleton<ISearchingCache, SearchingCache>();
+			services.AddTransient<IProxyRequest, ProxyRequest>();
 
 			services.Configure<GoogleSearchOptions>(options => { options.Endpoint = accessors.ImageSearchEndpoint; });
 			services.AddTransient<IEventPublisher, EventPublisher>(
-				s => new EventPublisher(services.BuildServiceProvider(false).CreateScope()));
+				s => new EventPublisher(services));
 			services.Configure<RedisOptions>(o =>
 			{
 				o.ConnectionString = accessors.RedisConnectionString;

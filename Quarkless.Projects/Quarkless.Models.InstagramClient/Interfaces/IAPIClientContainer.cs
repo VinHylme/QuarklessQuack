@@ -5,15 +5,15 @@ namespace Quarkless.Models.InstagramClient.Interfaces
 {
 	public interface IApiClientContainer
 	{
+		InstagramAccountFetcherResponse GetContext { get; }
+		IInstaClient EmpClientWithProxy(ProxyModel model, bool genDevice = false);
+		IInstaClient EmptyClient { get; }
 		IAccountProcessor Account { get; }
 		IBusinessProcessor Business { get; }
 		ICollectionProcessor Collections { get; }
 		ICommentProcessor Comment { get; }
 		IDiscoverProcessor Discover { get; }
-		IInstaClient EmptyClient { get; }
-		IInstaClient EmpClientWithProxy(ProxyModel model, bool genDevice = false);
 		IFeedProcessor Feeds { get; }
-		ContextContainer GetContext { get; }
 		IHashtagProcessor Hashtag { get; }
 		ILiveProcessor Live { get; }
 		ILocationProcessor Location { get; }

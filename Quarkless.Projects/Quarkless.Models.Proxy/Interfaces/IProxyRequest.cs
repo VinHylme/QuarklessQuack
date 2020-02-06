@@ -6,5 +6,6 @@ namespace Quarkless.Models.Proxy.Interfaces
 	{ 
 		Task<bool> TestConnectivity(ProxyModel proxy);
 		Task<ProxyModel> AssignProxy(string accountId, string instagramAccountId, string locationQuery);
+		Task<bool> UnAssignProxy(string instagramAccountId);
 	}
 }

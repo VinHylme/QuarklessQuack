@@ -4,6 +4,7 @@ using Quarkless.Models.InstagramClient.Interfaces;
 using Quarkless.Models.ResponseResolver.Interfaces;
 using System;
 using System.Threading.Tasks;
+using Quarkless.Models.ResponseResolver.Models;
 
 namespace Quarkless.Models.WorkerManager.Interfaces
 {
@@ -27,13 +28,13 @@ namespace Quarkless.Models.WorkerManager.Interfaces
 		Task<TResult> PerformQueryTaskWithWorker<TResult>(
 			Func<IWorker, object, int, Task<TResult>> action, object inputObject, int limit);
 
-		Task<IResult<TInput>> PerformQueryTaskWithWorkerWithClient<TInput>(IResponseResolver responseResolver, 
+		Task<ResolverResponse<TInput>> PerformQueryTaskWithWorkerWithClient<TInput>(IResponseResolver responseResolver, 
 			Func<IWorker, string, int, Task<IResult<TInput>>> action, string query, int limit);
 
-		Task<IResult<TInput>> PerformQueryTaskWithWorkerWithClient<TInput>(IResponseResolver responseResolver,
+		Task<ResolverResponse<TInput>> PerformQueryTaskWithWorkerWithClient<TInput>(IResponseResolver responseResolver,
 			Func<IWorker, int, Task<IResult<TInput>>> action, int limit);
 
-		Task<IResult<TInput>> PerformQueryTaskWithWorkerWithClient<TInput>(IResponseResolver responseResolver,
+		Task<ResolverResponse<TInput>> PerformQueryTaskWithWorkerWithClient<TInput>(IResponseResolver responseResolver,
 			Func<IWorker, object, int, Task<IResult<TInput>>> action, object inputObject, int limit);
 	}
 }

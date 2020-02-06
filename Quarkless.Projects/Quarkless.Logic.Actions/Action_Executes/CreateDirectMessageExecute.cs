@@ -49,13 +49,13 @@ namespace Quarkless.Logic.Actions.Action_Executes
 								model.TextMessage), ActionType.SendDirectMessageText,
 							model.ToJsonString());
 
-					if (!response.Succeeded)
+					if (!response.Response.Succeeded)
 					{
 						result.IsSuccessful = false;
 						result.Info = new ErrorResponse
 						{
-							Message = response.Info.Message,
-							Exception = response.Info.Exception
+							Message = response.Response.Info.Message,
+							Exception = response.Response.Info.Exception
 						};
 						return result;
 					}
@@ -75,13 +75,13 @@ namespace Quarkless.Logic.Actions.Action_Executes
 								model.Threads.ToArray(), model.Recipients.ToArray()),
 							ActionType.SendDirectMessageLink,
 							model.ToJsonString());
-					if (!response.Succeeded)
+					if (!response.Response.Succeeded)
 					{
 						result.IsSuccessful = false;
 						result.Info = new ErrorResponse
 						{
-							Message = response.Info.Message,
-							Exception = response.Info.Exception
+							Message = response.Response.Info.Message,
+							Exception = response.Response.Info.Exception
 						};
 						return result;
 					}
@@ -102,13 +102,13 @@ namespace Quarkless.Logic.Actions.Action_Executes
 						.WithResolverAsync(()=>_worker.Client.Messaging.SendDirectProfileToRecipientsAsync(model.userId,
 								recipients), ActionType.SendDirectMessageProfile, model.ToJsonString());
 
-					if (!response.Succeeded)
+					if (!response.Response.Succeeded)
 					{
 						result.IsSuccessful = false;
 						result.Info = new ErrorResponse
 						{
-							Message = response.Info.Message,
-							Exception = response.Info.Exception
+							Message = response.Response.Info.Message,
+							Exception = response.Response.Info.Exception
 						};
 						return result;
 					}
@@ -126,13 +126,13 @@ namespace Quarkless.Logic.Actions.Action_Executes
 						.WithResolverAsync(()=>_worker.Client.Messaging.SendDirectPhotoToRecipientsAsync(model.Image,
 								model.Recipients.ToArray()), ActionType.SendDirectMessagePhoto, model.ToJsonString());
 
-					if (!response.Succeeded)
+					if (!response.Response.Succeeded)
 					{
 						result.IsSuccessful = false;
 						result.Info = new ErrorResponse
 						{
-							Message = response.Info.Message,
-							Exception = response.Info.Exception
+							Message = response.Response.Info.Message,
+							Exception = response.Response.Info.Exception
 						};
 						return result;
 					}
@@ -150,13 +150,13 @@ namespace Quarkless.Logic.Actions.Action_Executes
 						.WithResolverAsync(()=>_worker.Client.Messaging.SendDirectVideoToRecipientsAsync(model.Video,
 								model.Recipients.ToArray()), ActionType.SendDirectMessageVideo, model.ToJsonString());
 
-					if (!response.Succeeded)
+					if (!response.Response.Succeeded)
 					{
 						result.IsSuccessful = false;
 						result.Info = new ErrorResponse
 						{
-							Message = response.Info.Message,
-							Exception = response.Info.Exception
+							Message = response.Response.Info.Message,
+							Exception = response.Response.Info.Exception
 						};
 						return result;
 					}

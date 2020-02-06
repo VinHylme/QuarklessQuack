@@ -15,14 +15,20 @@ using Quarkless.Models.Lookup.Interfaces;
 using Quarkless.Models.Lookup;
 using Quarkless.Models.Lookup.Enums;
 using System.Linq;
+using InstagramApiSharp.Classes.Models;
 using Quarkless.Models.Common.Enums;
+using Quarkless.Models.Common.Extensions;
+using Quarkless.Models.InstagramClient;
 using Quarkless.Models.Messaging;
 using Quarkless.Models.Proxy.Interfaces;
+using Quarkless.Models.ResponseResolver.Enums;
+using Quarkless.Models.ResponseResolver.Models;
 
 namespace Quarkless.Logic.ResponseResolver
 {
 	public class ResponseResolver : IResponseResolver
 	{
+		#region Init
 		private readonly ILookupLogic _lookupLogic;
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
 		private readonly ITimelineEventLogLogic _timelineEventLogLogic;
@@ -49,7 +55,9 @@ namespace Quarkless.Logic.ResponseResolver
 			_proxyRequest = proxyRequest;
 			_intervalBetweenRequests = TimeSpan.FromSeconds(1.25);
 		}
+		#endregion
 
+		#region With
 		public IResponseResolver WithClient(IApiClientContainer client)
 		{
 			_client = client;
@@ -61,7 +69,6 @@ namespace Quarkless.Logic.ResponseResolver
 			_instaClient = client;
 			return this;
 		}
-
 		public IResponseResolver WithAttempts(int numberOfAttemptsPerRequest = 0, TimeSpan? intervalBetweenRequests = null)
 		{
 			_attempts = numberOfAttemptsPerRequest;
@@ -71,10 +78,155 @@ namespace Quarkless.Logic.ResponseResolver
 
 			return this;
 		}
+		#endregion
+
+		#region Client Functions
+		private async Task<IResult<bool>> AcceptConsent()
+		{
+			try
+			{
+				if (Context?.ActionClient == null)
+					return await _instaClient.ReturnClient.AcceptConsentAsync();
+
+				return await Context.ActionClient.AcceptConsentAsync();
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err);
+				await _reportHandler.MakeReport(err);
+				return null;
+			}
+		}
+		private async Task<IResult<bool>> AcceptChallenge()
+		{
+			try
+			{
+				if (Context?.ActionClient == null)
+					return await _instaClient.ReturnClient.AcceptChallengeAsync();
+				return await Context.ActionClient.AcceptChallengeAsync();
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err);
+				await _reportHandler.MakeReport(err);
+				return null;
+			}
+		}
+		private async Task<IResult<InstaChallengeRequireEmailVerify>> RequestVerifyCodeToEmailForChallengeRequireAsync()
+		{
+			try
+			{
+				if (Context?.ActionClient == null)
+					return await _instaClient.ReturnClient.RequestVerifyCodeToEmailForChallengeRequireAsync();
+				return await Context.ActionClient.RequestVerifyCodeToEmailForChallengeRequireAsync();
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err);
+				await _reportHandler.MakeReport(err);
+				return null;
+			}
+		}
+		private async Task<IResult<InstaChallengeRequireSMSVerify>> RequestVerifyCodeToSmsForChallengeRequireAsync()
+		{
+			try
+			{
+				if (Context?.ActionClient == null)
+					return await _instaClient.ReturnClient.RequestVerifyCodeToSMSForChallengeRequireAsync();
+
+				return await Context.ActionClient.RequestVerifyCodeToSMSForChallengeRequireAsync();
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err);
+				await _reportHandler.MakeReport(err);
+				return null;
+			}
+		}
+		private InstaChallengeLoginInfo GetChallengeInfo()
+		{
+			try
+			{
+				if (Context?.ActionClient == null)
+					return _instaClient.ReturnClient.ChallengeLoginInfo;
+
+				return Context.ActionClient.ChallengeLoginInfo;
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err);
+				_reportHandler.MakeReport(err).GetAwaiter().GetResult();
+				return null;
+			}
+		}
+		private async Task<IResult<InstaLoggedInChallengeDataInfo>> GetLoggedInChallengeInfo()
+		{
+			try
+			{
+				if (Context?.ActionClient == null)
+					return await _instaClient.ReturnClient.GetLoggedInChallengeDataInfoAsync();
+
+				return await Context.ActionClient.GetLoggedInChallengeDataInfoAsync();
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err);
+				await _reportHandler.MakeReport(err);
+				return null;
+			}
+		}
+		private async Task<IResult<InstaChallengeRequireVerifyMethod>> GetChallengeRequireVerifyMethodAsync()
+		{
+			try
+			{
+				if (Context?.ActionClient == null)
+					return await _instaClient.ReturnClient.GetChallengeRequireVerifyMethodAsync();
+
+				return await Context.ActionClient.GetChallengeRequireVerifyMethodAsync();
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err);
+				await _reportHandler.MakeReport(err);
+				return null;
+			}
+		}
+		private async Task<IResult<InstaLoginResult>> VerifyCodeForChallengeRequireAsync(string code)
+		{
+			try
+			{
+				if (Context?.ActionClient == null)
+					return await _instaClient.ReturnClient.VerifyCodeForChallengeRequireAsync(code);
+				return await Context.ActionClient.VerifyCodeForChallengeRequireAsync(code);
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err);
+				await _reportHandler.MakeReport(err);
+				return null;
+			}
+		}
+		private async Task<bool> IsUserLoggedIn()
+		{
+			try
+			{
+				return Context?.ActionClient?.IsUserAuthenticated 
+				       ?? _instaClient.ReturnClient.IsUserAuthenticated;
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err);
+				await _reportHandler.MakeReport(err);
+				return false;
+			}
+		}
+		#endregion
+		private ContextContainer Context 
+			=>  _client.GetContext.Container;
 
 		private async Task UpdateAccountState(InstagramAccountModel newState)
 		{
-			var context = _client?.GetContext?.InstagramAccount;
+			var context = Context.InstagramAccount;
 			if (context == null)
 				return;
 
@@ -153,198 +305,57 @@ namespace Quarkless.Logic.ResponseResolver
 					break;
 				case ActionType.None:
 					break;
-				default:
-					break;
 			}
 		}
-
-		private async Task ResponseHandlerNoClient(ResponseType type)
+		private async Task<ResponseHandlerResults> ResponseHandler(ResultInfo info, ActionType actionType = ActionType.None, string request = null)
 		{
-			switch (type)
-			{
-				case ResponseType.AlreadyLiked:
-				{
-					break;
-				}
-				case ResponseType.CantLike:
-				{
-					break;
-				}
-				case ResponseType.ChallengeRequired:
-					{
-						var challenge = await GetChallengeRequireVerifyMethodAsync();
-						if (challenge.Succeeded)
-						{
-							if (challenge.Value.SubmitPhoneRequired)
-							{
-
-							}
-							else
-							{
-								if (challenge.Value.StepData != null)
-								{
-									if (!string.IsNullOrEmpty(challenge.Value.StepData.PhoneNumber))
-									{
-										//verify phone
-										var code = await RequestVerifyCodeToSmsForChallengeRequireAsync();
-										
-									}
-
-									if (!string.IsNullOrEmpty(challenge.Value.StepData.Email))
-									{
-										var code = await RequestVerifyCodeToEmailForChallengeRequireAsync();
-										
-									}
-								}
-							}
-						}
-
-						await _instaClient.ReturnClient.GetLoggedInChallengeDataInfoAsync();
-						await AcceptChallenge();
-						break;
-					}
-				case ResponseType.CheckPointRequired:
-				{
-					break;
-				}
-				case ResponseType.CommentingIsDisabled:
-				{
-					break;
-				}
-				case ResponseType.ConsentRequired:
-				{
-					await AcceptConsent();
-					break;
-				}
-				case ResponseType.DeletedPost:
-				{
-					break;
-				}
-				case ResponseType.InactiveUser:
-				{
-					break;
-				}
-				case ResponseType.LoginRequired:
-				{
-					break;
-				}
-				case ResponseType.InternalException:
-				{
-					break;
-				}
-				case ResponseType.ActionBlocked:
-				case ResponseType.Spam:
-				case ResponseType.RequestsLimit:
-					break;
-				case ResponseType.OK:
-				{
-					break;
-				}
-				case ResponseType.MediaNotFound:
-				{
-					break;
-				}
-				case ResponseType.SomePagesSkipped:
-				{
-					break;
-				}
-				case ResponseType.SentryBlock:
-				{
-					break;
-				}
-				case ResponseType.Unknown:
-				{
-					var state = await _instaClient.GetStateDataFromString();
-					await _instaClient.ReturnClient.GetLoggedInChallengeDataInfoAsync();
-					await AcceptChallenge();
-					break;
-				}
-				case ResponseType.WrongRequest:
-					break;
-				case ResponseType.UnExpectedResponse:
-				{
-					break;
-				}
-				case ResponseType.NetworkProblem:
-				{
-					break;
-				}
-			}
-
-		}
-
-		private async Task ResponseHandler(ResponseType type, ActionType actionType = ActionType.None,
-			string request = null)
-		{
-			var context = _client.GetContext.InstagramAccount;
+			var context = _client.GetContext.Container.InstagramAccount;
 			AccountId = context.AccountId;
 			InstagramAccountId = context.Id;
-
-			switch (type)
+			var response = new ResponseHandlerResults
+			{
+				ResponseType = info.ResponseType
+			};
+			switch (info.ResponseType)
 			{
 				case ResponseType.AlreadyLiked:
 				{
+					response.Resolved = true;
 					break;
 				}
 				case ResponseType.CantLike:
 				{
+					response.Resolved = true;
 					break;
 				}
 				case ResponseType.ChallengeRequired:
 				{
-					var challenge = await GetChallengeRequireVerifyMethodAsync();
-					if (challenge.Succeeded)
+					var challengeInfo = await ChallengeHandle(info);
+					response.ChallengeResponse = challengeInfo;
+					switch (challengeInfo.ResponseCode)
 					{
-						if (challenge.Value.SubmitPhoneRequired)
-						{
-
-						}
-						else
-						{
-							if (challenge.Value.StepData != null)
+						case ChallengeResponse.Ok:
+							response.Resolved = true;
+							break;
+						case ChallengeResponse.Unknown:
+							break;
+						case ChallengeResponse.Captcha:
+						case ChallengeResponse.RequireSmsCode:
+						case ChallengeResponse.RequireEmailCode:
+						case ChallengeResponse.RequirePhoneNumber:
+							await UpdateAccountState(new InstagramAccountModel
 							{
-								if (!string.IsNullOrEmpty(challenge.Value.StepData.PhoneNumber))
+								AgentState = (int) AgentState.Challenge,
+								ChallengeInfo = new ChallengeCodeRequestResponse
 								{
-									//verify phone
-									var code = await RequestVerifyCodeToSmsForChallengeRequireAsync();
-									if (code.Succeeded)
-									{
-										await UpdateAccountState(new InstagramAccountModel
-										{
-											AgentState = (int) AgentState.Challenge,
-											ChallengeInfo = new ChallengeCodeRequestResponse
-											{
-												Verify = "phone",
-												Details = challenge.Value.StepData.PhoneNumber,
-												ChallengePath = GetChallengeInfo()
-											}
-										});
-									}
+									Verify = challengeInfo.VerifyMethod.GetDescription(),
+									Details = challengeInfo.StepDataEmailOrPhone,
+									ChallengePath = challengeInfo.ChallengeData
 								}
-
-								if (!string.IsNullOrEmpty(challenge.Value.StepData.Email))
-								{
-									var code = await RequestVerifyCodeToEmailForChallengeRequireAsync();
-									if (code.Succeeded)
-									{
-										await UpdateAccountState(new InstagramAccountModel
-										{
-											AgentState = (int) AgentState.Challenge,
-											ChallengeInfo = new ChallengeCodeRequestResponse
-											{
-												Verify = "email",
-												Details = challenge.Value.StepData.Email,
-												ChallengePath = GetChallengeInfo()
-											}
-										});
-									}
-								}
-							}
-						}
+							});
+							response.UpdatedAccountState = true;
+							break;
 					}
-
-					await _client.GetContext.ActionClient.GetLoggedInChallengeDataInfoAsync();
-					await AcceptChallenge();
 					break;
 				}
 				case ResponseType.CheckPointRequired:
@@ -353,33 +364,38 @@ namespace Quarkless.Logic.ResponseResolver
 				}
 				case ResponseType.CommentingIsDisabled:
 				{
+					response.Resolved = true;
 					break;
 				}
 				case ResponseType.ConsentRequired:
 				{
 					await AcceptConsent();
+					response.Resolved = true;
 					break;
 				}
 				case ResponseType.DeletedPost:
 				{
+					response.Resolved = true;
 					break;
 				}
 				case ResponseType.InactiveUser:
 				{
+					response.Resolved = true;
 					break;
 				}
 				case ResponseType.LoginRequired:
 				{
-					var results = await WithResolverAsync(await _client.GetContext.InstaClient.TryLogin());
-					if (results.Succeeded)
+					var results = await WithResolverAsync(await Context.InstaClient.TryLogin());
+					if (results.Response.Succeeded)
 					{
-						var newState = JsonConvert.DeserializeObject<StateData>(results.Value);
+						var newState = JsonConvert.DeserializeObject<StateData>(results.Response.Value);
 						await UpdateAccountState(new InstagramAccountModel
 						{
 							State = newState
 						});
+						response.UpdatedAccountState = true;
 					}
-
+					response.Resolved = true;
 					break;
 				}
 				case ResponseType.InternalException:
@@ -393,18 +409,23 @@ namespace Quarkless.Logic.ResponseResolver
 					{
 						AgentState = (int) AgentState.Blocked
 					});
+					response.UpdatedAccountState = true;
+					response.Resolved = true;
 					break;
 				case ResponseType.OK:
 				{
 					await MessagingHandler(actionType, request);
+					response.Resolved = true;
 					break;
 				}
 				case ResponseType.MediaNotFound:
 				{
+					response.Resolved = true;
 					break;
 				}
 				case ResponseType.SomePagesSkipped:
 				{
+					response.Resolved = true;
 					break;
 				}
 				case ResponseType.SentryBlock:
@@ -413,33 +434,181 @@ namespace Quarkless.Logic.ResponseResolver
 				}
 				case ResponseType.Unknown:
 				{
-					await _client.GetContext.ActionClient.GetLoggedInChallengeDataInfoAsync();
-					await AcceptChallenge();
+					if (info.NeedsChallenge)
+					{
+						var challengeInfo = await ChallengeHandle(info);
+						response.ChallengeResponse = challengeInfo;
+						switch (challengeInfo.ResponseCode)
+						{
+							case ChallengeResponse.Ok:
+								response.Resolved = true;
+								break;
+							case ChallengeResponse.Unknown:
+								break;
+							case ChallengeResponse.Captcha:
+							case ChallengeResponse.RequireSmsCode:
+							case ChallengeResponse.RequireEmailCode:
+							case ChallengeResponse.RequirePhoneNumber:
+								await UpdateAccountState(new InstagramAccountModel
+								{
+									AgentState = (int)AgentState.Challenge,
+									ChallengeInfo = new ChallengeCodeRequestResponse
+									{
+										Verify = challengeInfo.VerifyMethod.GetDescription(),
+										Details = challengeInfo.StepDataEmailOrPhone,
+										ChallengePath = challengeInfo.ChallengeData
+									}
+								});
+								response.UpdatedAccountState = true;
+								break;
+						}
+					}
 					break;
 				}
 				case ResponseType.WrongRequest:
+					response.Resolved = true;
 					break;
 				case ResponseType.UnExpectedResponse:
 				{
 					await TestUserProxy();
+					response.Resolved = true;
 					break;
 				}
 				case ResponseType.NetworkProblem:
 				{
 					await TestUserProxy();
+					response.Resolved = true;
 					break;
 				}
 			}
+			return response;
 		}
-
-		public async Task<IResult<TInput>> WithResolverAsync<TInput>(Func<Task<IResult<TInput>>> func)
+		private async Task<ChallengeHandleResponse> ChallengeHandle(ResultInfo info)
 		{
-			IResult<TInput> results;
+			var isLoggedIn = await IsUserLoggedIn();
+			if (isLoggedIn)
+			{
+				var method = await GetLoggedInChallengeInfo();
+				if (!method.Succeeded)
+					return new ChallengeHandleResponse(ChallengeResponse.Captcha, info)
+					{
+						IsUserLoggedIn = true,
+						VerifyMethod =  VerifyMethod.Captcha,
+						ChallengeData = GetChallengeInfo()
+					};
+				
+				// this is me feature
+				var challengeAccept = await AcceptChallenge();
+				if (challengeAccept.Succeeded)
+				{
+					return new ChallengeHandleResponse(ChallengeResponse.Ok, info)
+					{
+						IsUserLoggedIn = true
+					};
+				}
+
+				return challengeAccept.Info.NeedsChallenge
+					? new ChallengeHandleResponse(ChallengeResponse.Captcha, info)
+					{
+						VerifyMethod = VerifyMethod.Captcha,
+						IsUserLoggedIn = true,
+						ChallengeData = GetChallengeInfo()
+					}
+					: new ChallengeHandleResponse(ChallengeResponse.Unknown, info)
+					{
+						IsUserLoggedIn = true
+					};
+
+				// most likely captcha
+			}
+			else
+			{
+				var method = await GetChallengeRequireVerifyMethodAsync();
+
+				if (!method.Succeeded)
+					return method.Info.NeedsChallenge
+						? new ChallengeHandleResponse(ChallengeResponse.Captcha, info)
+						{
+							VerifyMethod = VerifyMethod.Captcha,
+							ChallengeData = GetChallengeInfo()
+						}
+						: new ChallengeHandleResponse(ChallengeResponse.Unknown, info);
+
+				if (method.Value.SubmitPhoneRequired)
+				{
+					// ask for phone number then call submit phone verify
+					return new ChallengeHandleResponse(ChallengeResponse.RequirePhoneNumber, info)
+					{
+						ChallengeData = GetChallengeInfo(),
+						VerifyMethod = VerifyMethod.Phone
+					};
+				}
+				if (method.Value.StepData == null)
+				{
+					return new ChallengeHandleResponse(ChallengeResponse.Unknown, info);
+				}
+
+				if (!string.IsNullOrEmpty(method.Value.StepData.PhoneNumber))
+				{
+					//send code to phone via sms
+					var request = await RequestVerifyCodeToSmsForChallengeRequireAsync();
+					if (request.Succeeded)
+					{
+						return new ChallengeHandleResponse(ChallengeResponse.RequireSmsCode, info)
+						{
+							StepDataEmailOrPhone = request.Value.StepData.PhoneNumberPreview,
+							ChallengeData = GetChallengeInfo(),
+							VerifyMethod = VerifyMethod.Sms
+						};
+					}
+
+					return request.Info.NeedsChallenge 
+						? new ChallengeHandleResponse(ChallengeResponse.Captcha, info)
+						{
+							VerifyMethod = VerifyMethod.Captcha,
+							ChallengeData = GetChallengeInfo()
+						}
+						: new ChallengeHandleResponse(ChallengeResponse.Unknown, info);
+				}
+				if (string.IsNullOrEmpty(method.Value.StepData.Email)) 
+					return new ChallengeHandleResponse(ChallengeResponse.Captcha, info)
+					{
+						VerifyMethod = VerifyMethod.Captcha,
+						ChallengeData = GetChallengeInfo()
+					};
+				{
+					//send code to email
+					var request = await RequestVerifyCodeToEmailForChallengeRequireAsync();
+					if (request.Succeeded)
+					{ 
+						return new ChallengeHandleResponse(ChallengeResponse.RequireEmailCode, info)
+						{
+							StepDataEmailOrPhone = request.Value.StepData.ContactPoint,
+							ChallengeData = GetChallengeInfo(),
+							VerifyMethod = VerifyMethod.Email
+						};
+					}
+
+					return request.Info.NeedsChallenge
+						? new ChallengeHandleResponse(ChallengeResponse.Captcha, info)
+						{
+							VerifyMethod = VerifyMethod.Captcha,
+							ChallengeData = GetChallengeInfo()
+						}
+						: new ChallengeHandleResponse(ChallengeResponse.Unknown, info);
+				}
+			}
+		}
+		
+		#region Resolver Implementation
+		public async Task<ResolverResponse<TInput>> WithResolverAsync<TInput>(Func<Task<IResult<TInput>>> func)
+		{
+			ResolverResponse<TInput> results;
 			var currentAttempts = 0;
 			do
 			{
 				results = await WithResolverAsync(await func());
-				if (results.Succeeded) return results;
+				if (results.Response.Succeeded) return results;
 
 				await Task.Delay(_intervalBetweenRequests);
 				currentAttempts++;
@@ -447,30 +616,15 @@ namespace Quarkless.Logic.ResponseResolver
 
 			return results;
 		}
-		public async Task<IResult<TInput>> WithResolverAsyncEmpty<TInput>(Func<Task<IResult<TInput>>> func)
-		{
-			IResult<TInput> results;
-			var currentAttempts = 0;
-			do
-			{
-				results = await WithResolverNoClient(await func());
-				if (results.Succeeded) return results;
-
-				await Task.Delay(_intervalBetweenRequests);
-				currentAttempts++;
-			} while (currentAttempts < _attempts);
-
-			return results;
-		}
-		public async Task<IResult<TInput>> WithResolverAsync<TInput>(Func<Task<IResult<TInput>>> func,
+		public async Task<ResolverResponse<TInput>> WithResolverAsync<TInput>(Func<Task<IResult<TInput>>> func,
 			ActionType actionType, string request)
 		{
-			IResult<TInput> results;
+			ResolverResponse<TInput> results;
 			var currentAttempts = 0;
 			do
 			{
 				results = await WithResolverAsync(await func(), actionType, request);
-				if (results.Succeeded) return results;
+				if (results.Response.Succeeded) return results;
 
 				await Task.Delay(_intervalBetweenRequests);
 				currentAttempts++;
@@ -479,20 +633,23 @@ namespace Quarkless.Logic.ResponseResolver
 			return results;
 		}
 
-		#region Resolver Implementation
-		private async Task<IResult<TInput>> WithResolverAsync<TInput>(IResult<TInput> response, ActionType actionType,
+		private async Task<ResolverResponse<TInput>> WithResolverAsync<TInput>(IResult<TInput> response, ActionType actionType,
 			string request)
 		{
-			var context = _client.GetContext.InstagramAccount;
-			AccountId = context.AccountId;
-			InstagramAccountId = context.Id;
+			var account = Context.InstagramAccount;
+			AccountId = account.AccountId;
+			InstagramAccountId = account.Id;
+			var resolverResponse = new ResolverResponse<TInput>
+			{
+				Response = response,
+			};
 
 			if (response?.Info == null)
 			{
 				await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
 				{
-					AccountID = context.AccountId,
-					InstagramAccountID = context.Id,
+					AccountID = account.AccountId,
+					InstagramAccountID = account.Id,
 					ActionType = actionType,
 					DateAdded = DateTime.UtcNow,
 					Level = 3,
@@ -501,15 +658,16 @@ namespace Quarkless.Logic.ResponseResolver
 					Status = TimelineEventStatus.ServerError,
 					Message = "Something is not exactly happy dappy right now, we're sorry"
 				});
-				return response;
+				return resolverResponse;
 			};
+
 			if (response.Succeeded)
 			{
 				await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
 				{
 					_id = Guid.NewGuid().ToString(),
-					AccountID = context.AccountId,
-					InstagramAccountID = context.Id,
+					AccountID = account.AccountId,
+					InstagramAccountID = account.Id,
 					ActionType = actionType,
 					DateAdded = DateTime.UtcNow,
 					Level = 1,
@@ -523,8 +681,8 @@ namespace Quarkless.Logic.ResponseResolver
 			{
 				await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
 				{
-					AccountID = context.AccountId,
-					InstagramAccountID = context.Id,
+					AccountID = account.AccountId,
+					InstagramAccountID = account.Id,
 					ActionType = actionType,
 					DateAdded = DateTime.UtcNow,
 					Level = 2,
@@ -534,297 +692,25 @@ namespace Quarkless.Logic.ResponseResolver
 					Message = $"Failed to carry out {actionType.ToString()} action"
 				});
 			}
-
-			await ResponseHandler(response.Info.ResponseType, actionType, request);
-			return response;
-
-			#region OldHandler
-			// switch (response.Info.ResponseType)
-			// {
-			// 	case ResponseType.AlreadyLiked:
-			// 		break;
-			// 	case ResponseType.CantLike:
-			// 		break;
-			// 	case ResponseType.ChallengeRequired:
-			// 		var challenge = await GetChallengeRequireVerifyMethodAsync();
-			// 		if (challenge.Succeeded)
-			// 		{
-			// 			if (challenge.Value.SubmitPhoneRequired)
-			// 			{
-			//
-			// 			}
-			// 			else
-			// 			{
-			// 				if (challenge.Value.StepData != null)
-			// 				{
-			// 					if (!string.IsNullOrEmpty(challenge.Value.StepData.PhoneNumber))
-			// 					{
-			// 						//verify phone
-			// 						var code = await RequestVerifyCodeToSmsForChallengeRequireAsync();
-			// 						if (code.Succeeded)
-			// 						{
-			// 							await _instagramAccountLogic.PartialUpdateInstagramAccount(context.AccountId,
-			// 								context.Id,
-			// 								new InstagramAccountModel
-			// 								{
-			// 									AgentState = (int)AgentState.Challenge,
-			// 									ChallengeInfo = new ChallengeCodeRequestResponse
-			// 									{
-			// 										Verify = "phone",
-			// 										Details = challenge.Value.StepData.PhoneNumber,
-			// 										ChallengePath = GetChallengeInfo()
-			// 									}
-			// 								});
-			// 						}
-			// 					}
-			// 					if (!string.IsNullOrEmpty(challenge.Value.StepData.Email))
-			// 					{
-			// 						var code = await RequestVerifyCodeToEmailForChallengeRequireAsync();
-			// 						if (code.Succeeded)
-			// 						{
-			// 							await _instagramAccountLogic.PartialUpdateInstagramAccount(context.AccountId,
-			// 								context.Id,
-			// 								new InstagramAccountModel
-			// 								{
-			// 									AgentState = (int)AgentState.Challenge,
-			// 									ChallengeInfo = new ChallengeCodeRequestResponse
-			// 									{
-			// 										Verify = "email",
-			// 										Details = challenge.Value.StepData.Email,
-			// 										ChallengePath = GetChallengeInfo()
-			// 									}
-			// 								});
-			// 						}
-			// 					}
-			// 				}
-			// 			}
-			// 		}
-			// 		await _client.GetContext.ActionClient.GetLoggedInChallengeDataInfoAsync();
-			// 		await AcceptChallenge();
-			// 		break;
-			// 	case ResponseType.CheckPointRequired:
-			// 		break;
-			// 	case ResponseType.CommentingIsDisabled:
-			// 		break;
-			// 	case ResponseType.ConsentRequired:
-			// 		await AcceptConsent();
-			// 		break;
-			// 	case ResponseType.DeletedPost:
-			// 		break;
-			// 	case ResponseType.InactiveUser:
-			// 		break;
-			// 	case ResponseType.LoginRequired:
-			// 		var results = await WithResolverAsync(await _client.GetContext.InstaClient.TryLogin());
-			// 		if (results.Succeeded)
-			// 		{
-			// 			var newState = JsonConvert.DeserializeObject<StateData>(results.Value);
-			// 			await _instagramAccountLogic.PartialUpdateInstagramAccount(context.AccountId, context.Id,
-			// 				new InstagramAccountModel
-			// 				{
-			// 					State = newState
-			// 				});
-			// 		}
-			// 		break;
-			// 	case ResponseType.InternalException:
-			// 		break;
-			// 	case ResponseType.ActionBlocked:
-			// 	case ResponseType.Spam:
-			// 	case ResponseType.RequestsLimit:
-			// 		await _instagramAccountLogic.PartialUpdateInstagramAccount(context.AccountId,
-			// 			context.Id,
-			// 			new InstagramAccountModel
-			// 			{
-			// 				AgentState = (int)AgentState.Blocked
-			// 			});
-			// 		break;
-			// 	case ResponseType.OK:
-			// 		switch (actionType)
-			// 		{
-			// 			case ActionType.SendDirectMessageMedia:
-			// 				await MarkAsComplete(actionType,
-			// 					JsonConvert.DeserializeObject<ShareDirectMediaModel>(request).Recipients.ToArray());
-			// 				break;
-			// 			case ActionType.SendDirectMessageAudio:
-			// 				await MarkAsComplete(actionType,
-			// 					JsonConvert.DeserializeObject<SendDirectPhotoModel>(request).Recipients.ToArray());
-			// 				break;
-			// 			case ActionType.SendDirectMessageLink:
-			// 				await MarkAsComplete(actionType,
-			// 					JsonConvert.DeserializeObject<SendDirectLinkModel>(request).Recipients.ToArray());
-			// 				break;
-			// 			case ActionType.SendDirectMessagePhoto:
-			// 				await MarkAsComplete(actionType,
-			// 					JsonConvert.DeserializeObject<SendDirectPhotoModel>(request).Recipients.ToArray());
-			// 				break;
-			// 			case ActionType.SendDirectMessageProfile:
-			// 				await MarkAsComplete(actionType,
-			// 					JsonConvert.DeserializeObject<SendDirectProfileModel>(request).Recipients.ToArray());
-			// 				break;
-			// 			case ActionType.SendDirectMessageText:
-			// 				await MarkAsComplete(actionType,
-			// 					JsonConvert.DeserializeObject<SendDirectTextModel>(request).Recipients.ToArray());
-			// 				break;
-			// 			case ActionType.SendDirectMessageVideo:
-			// 				await MarkAsComplete(actionType,
-			// 					JsonConvert.DeserializeObject<SendDirectVideoModel>(request).Recipients.ToArray());
-			// 				break;
-			// 		}
-			// 		break;
-			// 	case ResponseType.MediaNotFound:
-			// 		break;
-			// 	case ResponseType.SomePagesSkipped:
-			// 		break;
-			// 	case ResponseType.SentryBlock:
-			// 		break;
-			// 	case ResponseType.Unknown:
-			// 		await _client.GetContext.ActionClient.GetLoggedInChallengeDataInfoAsync();
-			// 		await _client.GetContext.ActionClient.AcceptChallengeAsync();
-			// 		break;
-			// 	case ResponseType.WrongRequest:
-			// 		break;
-			// 	case ResponseType.UnExpectedResponse:
-			// 		break;
-			// 	case ResponseType.NetworkProblem:
-			// 		break;
-			// }
-			#endregion
+			var results = await ResponseHandler(response.Info, actionType, request);
+			resolverResponse.HandlerResults = results;
+			return resolverResponse;
 		}
-		private async Task<IResult<TInput>> WithResolverAsync<TInput>(IResult<TInput> response)
-		{
-			var context = _client.GetContext.InstagramAccount;
-			AccountId = context.AccountId;
-			InstagramAccountId = context.Id;
 
-			if (response?.Info == null) return response;
-			await ResponseHandler(response.Info.ResponseType);
-			return response;
-			#region Old Handle
-			/*
-			switch (response.Info.ResponseType)
+		public async Task<ResolverResponse<TInput>> WithResolverAsync<TInput>(IResult<TInput> response)
+		{
+			var account = Context.InstagramAccount;
+			AccountId = account.AccountId;
+			InstagramAccountId = account.Id;
+			var resolverResponse = new ResolverResponse<TInput>
 			{
-				case ResponseType.AlreadyLiked:
-					break;
-				case ResponseType.CantLike:
-					break;
-				case ResponseType.ChallengeRequired:
-					var challenge = await GetChallengeRequireVerifyMethodAsync();
-					if (challenge.Succeeded)
-					{
-						if (challenge.Value.SubmitPhoneRequired)
-						{
+				Response = response
+			};
 
-						}
-						else
-						{
-							if (challenge.Value.StepData != null)
-							{
-								if (!string.IsNullOrEmpty(challenge.Value.StepData.PhoneNumber))
-								{
-									//verify phone
-									var code = await RequestVerifyCodeToSmsForChallengeRequireAsync();
-									if (code.Succeeded)
-									{
-										await _instagramAccountLogic.PartialUpdateInstagramAccount(context.AccountId,
-											context.Id,
-											new InstagramAccountModel
-											{
-												AgentState = (int)AgentState.Challenge,
-												ChallengeInfo = new ChallengeCodeRequestResponse
-												{
-													Verify = "phone",
-													Details = challenge.Value.StepData.PhoneNumber,
-													ChallengePath = GetChallengeInfo()
-												}
-											});
-									}
-								}
-								if (!string.IsNullOrEmpty(challenge.Value.StepData.Email))
-								{
-									var code = await RequestVerifyCodeToEmailForChallengeRequireAsync();
-									if (code.Succeeded)
-									{
-										await _instagramAccountLogic.PartialUpdateInstagramAccount(context.AccountId,
-											context.Id,
-											new InstagramAccountModel
-											{
-												AgentState = (int)AgentState.Challenge,
-												ChallengeInfo = new ChallengeCodeRequestResponse
-												{
-													Verify = "email",
-													Details = challenge.Value.StepData.Email,
-													ChallengePath = GetChallengeInfo()
-												}
-											});
-									}
-								}
-							}
-						}
-					}
-					await _client.GetContext.ActionClient.GetLoggedInChallengeDataInfoAsync();
-					await AcceptChallenge();
-					break;
-				case ResponseType.CheckPointRequired:
-					break;
-				case ResponseType.CommentingIsDisabled:
-					break;
-				case ResponseType.ConsentRequired:
-					await AcceptConsent();
-					break;
-				case ResponseType.DeletedPost:
-					break;
-				case ResponseType.InactiveUser:
-					break;
-				case ResponseType.LoginRequired:
-					var results = await WithResolverAsync(await _client.GetContext.InstaClient.TryLogin());
-					if (results.Succeeded)
-					{
-						var newState = JsonConvert.DeserializeObject<StateData>(results.Value);
-						await _instagramAccountLogic.PartialUpdateInstagramAccount(context.AccountId, context.Id,
-							new InstagramAccountModel
-							{
-								State = newState
-							});
-					}
-					break;
-				case ResponseType.InternalException:
-					break;
-				case ResponseType.ActionBlocked:
-				case ResponseType.Spam:
-				case ResponseType.RequestsLimit:
-					await _instagramAccountLogic.PartialUpdateInstagramAccount(context.AccountId,
-						context.Id,
-						new InstagramAccountModel
-						{
-							AgentState = (int)AgentState.Blocked
-						});
-					break;
-				case ResponseType.OK:
-					break;
-				case ResponseType.MediaNotFound:
-					break;
-				case ResponseType.SomePagesSkipped:
-					break;
-				case ResponseType.SentryBlock:
-					break;
-				case ResponseType.Unknown:
-					await _client.GetContext.ActionClient.GetLoggedInChallengeDataInfoAsync();
-					await _client.GetContext.ActionClient.AcceptChallengeAsync();
-					break;
-				case ResponseType.WrongRequest:
-					break;
-				case ResponseType.UnExpectedResponse:
-					break;
-				case ResponseType.NetworkProblem:
-					break;
-			}
-			*/
-			#endregion
-		}
-		private async Task<IResult<TInput>> WithResolverNoClient<TInput>(IResult<TInput> response)
-		{
-			if (response?.Info == null) return response;
-			await ResponseHandlerNoClient(response.Info.ResponseType);
-			return response;
+			if (response?.Info == null) return resolverResponse;
+			var results = await ResponseHandler(response.Info);
+			resolverResponse.HandlerResults = results;
+			return resolverResponse;
 		}
 		#endregion
 
@@ -832,23 +718,24 @@ namespace Quarkless.Logic.ResponseResolver
 
 		private async Task TestUserProxy()
 		{
-			var context = _client.GetContext.InstagramAccount;
+			var account = Context?.InstagramAccount;
+			if (account == null)
+				return;
+
 			try
 			{
-				var testProxyConnectivity = await _proxyRequest.TestConnectivity(_client.GetContext.Proxy);
+				var testProxyConnectivity = await _proxyRequest.TestConnectivity(Context.Proxy);
 				if (!testProxyConnectivity)
 				{
-					await _proxyRequest.AssignProxy(context.AccountId, context.Id,
-						_client.GetContext.Proxy.Location.LocationQuery);
+					await _proxyRequest.AssignProxy(account.AccountId, account.Id,
+						Context.Proxy.Location.LocationQuery);
 				}
 			}
 			catch (Exception err)
 			{
 				Console.WriteLine(err);
-				return;
 			}
 		}
-
 		private async Task MarkAsComplete(ActionType actionType, params string[] ids)
 		{
 			foreach (var id in ids)
@@ -873,116 +760,6 @@ namespace Quarkless.Logic.ResponseResolver
 				}
 			}
 		}
-		private async Task<IResult<bool>> AcceptConsent()
-		{
-			try
-			{
-				if (_client?.GetContext?.ActionClient == null)
-					return await _instaClient.ReturnClient.AcceptConsentAsync();
-
-				return await _client.GetContext.ActionClient.AcceptConsentAsync();
-			}
-			catch (Exception err)
-			{
-				Console.WriteLine(err);
-				await _reportHandler.MakeReport(err);
-				return null;
-			}
-		}
-		private async Task<IResult<bool>> AcceptChallenge()
-		{
-			try
-			{
-				if (_client?.GetContext?.ActionClient == null)
-					return await _instaClient.ReturnClient.AcceptChallengeAsync();
-				return await _client.GetContext.ActionClient.AcceptChallengeAsync();
-			}
-			catch (Exception err)
-			{
-				Console.WriteLine(err);
-				await _reportHandler.MakeReport(err);
-				return null;
-			}
-		}
-		private async Task<IResult<InstaChallengeRequireEmailVerify>> RequestVerifyCodeToEmailForChallengeRequireAsync()
-		{
-			try
-			{
-				if (_client?.GetContext?.ActionClient == null)
-					return await _instaClient.ReturnClient.RequestVerifyCodeToEmailForChallengeRequireAsync();
-				return await _client.GetContext.ActionClient.RequestVerifyCodeToEmailForChallengeRequireAsync();
-			}
-			catch (Exception err)
-			{
-				Console.WriteLine(err);
-				await _reportHandler.MakeReport(err);
-				return null;
-			}
-		}
-		private async Task<IResult<InstaChallengeRequireSMSVerify>> RequestVerifyCodeToSmsForChallengeRequireAsync()
-		{
-			try
-			{
-				if (_client?.GetContext?.ActionClient == null)
-					return await _instaClient.ReturnClient.RequestVerifyCodeToSMSForChallengeRequireAsync();
-
-				return await _client.GetContext.ActionClient.RequestVerifyCodeToSMSForChallengeRequireAsync();
-			}
-			catch (Exception err)
-			{
-				Console.WriteLine(err);
-				await _reportHandler.MakeReport(err);
-				return null;
-			}
-		}
-		private InstaChallengeLoginInfo GetChallengeInfo()
-		{
-			try
-			{
-				if (_client?.GetContext?.ActionClient == null)
-					return _instaClient.ReturnClient.ChallengeLoginInfo;
-
-				return _client.GetContext.ActionClient.ChallengeLoginInfo;
-			}
-			catch (Exception err)
-			{
-				Console.WriteLine(err);
-				_reportHandler.MakeReport(err).GetAwaiter().GetResult();
-				return null;
-			}
-		}
-		private async Task<IResult<InstaChallengeRequireVerifyMethod>> GetChallengeRequireVerifyMethodAsync()
-		{
-			try
-			{
-				if (_client?.GetContext?.ActionClient == null)
-					return await _instaClient.ReturnClient.GetChallengeRequireVerifyMethodAsync();
-
-				return await _client.GetContext.ActionClient.GetChallengeRequireVerifyMethodAsync();
-			}
-			catch (Exception err)
-			{
-				Console.WriteLine(err);
-				await _reportHandler.MakeReport(err);
-				return null;
-			}
-		}
-		private async Task<IResult<InstaLoginResult>> VerifyCodeForChallengeRequireAsync(string code)
-		{
-			try
-			{
-				if (_client?.GetContext?.ActionClient == null)
-					return await _instaClient.ReturnClient.VerifyCodeForChallengeRequireAsync(code);
-				return await _client.GetContext.ActionClient.VerifyCodeForChallengeRequireAsync(code);
-			}
-			catch (Exception err)
-			{
-				Console.WriteLine(err);
-				await _reportHandler.MakeReport(err);
-				return null;
-			}
-		}
-		
 		#endregion
 	}
 }

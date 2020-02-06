@@ -137,7 +137,6 @@ namespace Quarkless.Run.Services.Automation.Extensions
 			services.AddTransient<IInstagramAccountLogic, InstagramAccountLogic>();
 			services.AddTransient<IProfileLogic, ProfileLogic>();
 			services.AddTransient<ICommentLogic, CommentLogic>();
-			services.AddTransient<IInstaClient, InstaClient>();
 			services.AddTransient<IHashtagLogic, HashtagLogic>();
 			services.AddTransient<IMediaLogic, MediaLogic>();
 			services.AddTransient<ITimelineLogic, TimelineLogic>();
@@ -269,7 +268,7 @@ namespace Quarkless.Run.Services.Automation.Extensions
 			//services.AddTransient<IEventSubscriber<InstagramAccountPublishEventModel>, ProfileLogic>();
 			//services.AddTransient<IEventSubscriber<ProfileTopicAddRequest>, TopicLookupLogic>();
 			services.AddTransient<IEventPublisher, EventPublisher>(
-				s => new EventPublisher(services.BuildServiceProvider(false).CreateScope()));
+				s => new EventPublisher(services));
 		}
 		public static void IncludeAuthHandlers(this IServiceCollection services)
 		{

@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using InstagramApiSharp.Classes;
 using Quarkless.Models.ResponseResolver.Interfaces;
+using Quarkless.Models.ResponseResolver.Models;
 
 namespace Quarkless.Models.WorkerManager.Interfaces
 {
@@ -24,16 +25,16 @@ namespace Quarkless.Models.WorkerManager.Interfaces
 		Task<TResult> PerformAction<TResult>(
 			Func<IWorker, Task<TResult>> action);
 
-		Task<IResult<TInput>> PerformQueryTaskWithClient<TInput>
+		Task<ResolverResponse<TInput>> PerformQueryTaskWithClient<TInput>
 			(IResponseResolver responseResolver, Func<IWorker, string, int, Task<IResult<TInput>>> action, 
 			string query, int limit);
 
 		Task<TResult> PerformQueryTask<TResult>(
 			Func<IWorker, object, int, Task<TResult>> action, object query, int limit);
-		Task<IResult<TInput>> PerformQueryTaskWithClient<TInput>
+		Task<ResolverResponse<TInput>> PerformQueryTaskWithClient<TInput>
 			(IResponseResolver responseResolver, Func<IWorker, int, Task<IResult<TInput>>> action, int limit);
 
-		Task<IResult<TResult>> PerformQueryTaskWithClient<TResult>
+		Task<ResolverResponse<TResult>> PerformQueryTaskWithClient<TResult>
 		(IResponseResolver responseResolver, Func<IWorker, object, int, Task<IResult<TResult>>> action,
 			object inputObject, int limit);
 	}

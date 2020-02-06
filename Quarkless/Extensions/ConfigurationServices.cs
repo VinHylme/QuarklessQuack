@@ -161,7 +161,6 @@ namespace Quarkless.Extensions
 			services.AddTransient<ICommentLogic, CommentLogic>();
 			services.AddTransient<ICollectionsLogic, CollectionsLogic>();
 			services.AddTransient<IInstaAccountOptionsLogic, InstaAccountOptionsLogic>();
-			services.AddTransient<IInstaClient, InstaClient>();
 			services.AddTransient<IHashtagLogic, HashtagLogic>();
 			services.AddTransient<IMediaLogic, MediaLogic>();
 			services.AddTransient<ITimelineLogic, TimelineLogic>();
@@ -433,15 +432,25 @@ namespace Quarkless.Extensions
 		internal static void IncludeEventServices(this IServiceCollection services)
 		{
 			var accessors = new Config().Environments;
+
 			services.AddTransient<IEventSubscriber<InstagramAccountPublishEventModel>, ProfileLogic>();
+			services.AddTransient<IEventSubscriber<InstagramAccountDeletePublishEvent>, ProfileLogic>();
 			services.AddTransient<IEventSubscriber<ProfileTopicAddRequest>, TopicLookupLogic>();
+
 			services.AddTransient<IEventSubscriber<ProfilePublishEventModel>, ProxyRequest>(
-				s=> new ProxyRequest(
+				s => new ProxyRequest(
 					new ProxyRequestOptions(accessors.ProxyHandlerApiEndPoint),
 					s.GetService<IGeoLocationHandler>(),
 					s.GetService<IProxyAssignmentsRepository>()));
+			
+			services.AddTransient<IEventSubscriber<ProfileDeletedEventModel>, ProxyRequest>(
+				s => new ProxyRequest(
+					new ProxyRequestOptions(accessors.ProxyHandlerApiEndPoint),
+					s.GetService<IGeoLocationHandler>(),
+					s.GetService<IProxyAssignmentsRepository>()));
+
 			services.AddTransient<IEventPublisher, EventPublisher>(
-				s => new EventPublisher(services.BuildServiceProvider(false).CreateScope()));
+				s => new EventPublisher(services));
 		}
 	}
 }

@@ -41,6 +41,21 @@ namespace Quarkless.Repository.Profile
 				return false;
 			}
 		}
+
+		public async Task<bool> RemoveProfile(string instagramAccountId)
+		{
+			try
+			{
+				var res = await _ctx.DeleteOneAsync(
+					new FilterDefinitionBuilder<ProfileModel>().Eq(_ => _.InstagramAccountId, instagramAccountId));
+				return res.IsAcknowledged;
+			}
+			catch
+			{
+				return false;
+			}
+		}
+
 		public async Task<ProfileModel> AddProfile(ProfileModel profile)
 		{
 			try

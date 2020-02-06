@@ -49,13 +49,7 @@ function GetUserIpAddress(){
     let _axios = axios;
     _axios.defaults.baseURL = base_url;
     return new Promise((resolve, reject)=>{
-        _axios.get('/json', {
-            headers:{
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*' 
-            }
-        }).then(resp=>{
+        _axios.get('/json').then(resp=>{
             resolve(resp)
         }).catch(err=>{
             reject(err)

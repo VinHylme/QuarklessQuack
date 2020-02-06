@@ -13,5 +13,7 @@ namespace Quarkless.Models.Proxy
 		public CountryCode CountryCode { get; set; }
 		public string PostalCode { get; set; }
 		public string FullAddress { get; set; }
+		public string City { get; set; }
+		public string State { get; set; }
 	}
 }

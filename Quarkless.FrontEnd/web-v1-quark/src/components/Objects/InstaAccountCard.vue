@@ -39,19 +39,39 @@
             <div class="content">
                 <div id="user_info" style="margin-left:-.7em">
                     <div class="field is-grouped">
-                    <div class="control is-expanded has-icons-left">
-                        <div class="control has-icons-left">
-                            <div class="select ">
-                                <select is-primary @change="OnSelectChange($event)" :disabled="!IsAdmin">
-                                    <option selected>{{MapToCorrectState(agentState)}}</option>
-                                    <option v-for="(option,index) in GetAgentOptionList(agentState)" :value="option.index" v-bind:key="index">{{option.name}}</option>
-                                </select>
-                            </div>
-                            <span class="icon is-left">
-                                <i class="fas fa-bug"></i>
-                            </span>
-                        </div>
+                    <div v-if="agentState === 7 || agentState === 6" class="control">
+                        <b-tooltip label="Account needs attention" type="is-dark" position="is-top">
+                            <a @click="HandleVerify" class="button is-warning">
+                                <b-icon pack="fas" icon="exclamation-triangle"></b-icon>
+                            </a>
+                        </b-tooltip>
                     </div>
+                    <div v-if="agentState === 0 || agentState === 2" class="control">
+                        <b-tooltip label="Start Account" type="is-dark" position="is-top">
+                            <a @click="ChangeState(1)" class="button is-info is-default">
+                                <b-icon pack="fas" icon="chess-queen"></b-icon>
+                            </a>
+                        </b-tooltip>
+                    </div>
+                    <div v-if="agentState === 1 || agentState === 3 || agentState===4" class="control">
+                        <b-tooltip label="Pause Account" type="is-dark" position="is-top">
+                            <a @click="ChangeState(2)" class="button is-danger">
+                                <b-icon pack="fas" icon="ribbon"></b-icon>
+                            </a>
+                        </b-tooltip>
+                    </div>
+                    <div v-if="agentState === 3 || agentState === 4" class="control">
+                        <b-tooltip label="Resting" type="is-dark" position="is-top">
+                            <a class="button is-dark is-default">
+                                <b-icon pack="fas" icon="bed"></b-icon>
+                            </a>
+                        </b-tooltip>
+                    </div>
+                   <div class="control is-expanded">
+                        <div class="control">
+                            <a class="button is-light-dark is-fullwidth" style="font-weight:bold; font-size:1rem; max-width:150px;">{{MapToCorrectState(agentState)}}</a>
+                        </div>
+                    </div> 
                       <div class="control">
                         <b-tooltip label="Profile" type="is-dark" position="is-top">
                             <a @click="ViewProfile" class="button is-light-dark" :disabled="IsProfileButtonDisabled">
@@ -77,8 +97,8 @@
                         </b-tooltip>
                         </div>
                         <div class="control">
-                        <b-tooltip label="Remove this account" type="is-dark" position="is-top">
-                            <a @click="ViewProfile" class="button is-light-dark">
+                        <b-tooltip label="Remove this account" type="is-danger" position="is-top">
+                            <a @click="DeleteAccount" class="button is-light-dark">
                                 <b-icon pack="fas" icon="trash" >
                                 </b-icon>
                             </a>
@@ -130,27 +150,24 @@ props: {
   },
   data(){
       return {
-		  IsRefreshing:false,
-          IsLoading:false,
-          IsAdmin:false,
-          IsAmendingAccount:false,
-          AgentOptions:[
-              {name:"Not Started", index:0},
-              {name:"Running", index:1},
-              {name:"Stop", index:2},
-              {name:"Resting", index:3},
-              {name:"Sleeping",index:4},
-              {name:"Blocked by instagram",index:5},
-              {name:"Challange required",index:6},
-              {name:"Awaiting from user",index:7}
-          ]
+        IsRefreshing:false,
+        IsLoading:false,
+        IsAdmin:false,
+        IsAmendingAccount:false,
+        AgentOptions:[
+            {name:"Not Started", index:0},
+            {name:"Running", index:1},
+            {name:"Stop", index:2},
+            {name:"Resting", index:3},
+            {name:"Sleeping",index:4},
+            {name:"Blocked by instagram",index:5},
+            {name:"Challange required",index:6},
+            {name:"Awaiting from user",index:7}
+        ]
       }
   },
   mounted(){
       this.IsAdmin = this.$store.getters.UserRole == 'Admin';
-      if(this.agentState === 4){
-          this.$emit('OnConfirmUser', this.id);
-      }
       let _self = this;
       this.$bus.$on('doneUpdatingBiography',()=>{
           _self.onFinishedUpdate();
@@ -185,38 +202,44 @@ props: {
       ViewProfile(){
           this.$emit("ViewProfile", this.id);
       },
-    ViewLibrary(){
-          this.$emit("ViewLibrary", this.id);
+      DeleteAccount(){
+          this.$emit("DeleteAccount", this.id);
+      },
+      HandleVerify(){
+          this.$emit("HandleVerify", this.id);
+      },
+      ViewLibrary(){
+        this.$emit("ViewLibrary", this.id);
       },
       RefreshState(){
-		  this.IsRefreshing = true;
-          this.$store.dispatch('RefreshState',this.id).then(res=>{
-              if(res.data == 'true' || res.data == true){
-                  //SUCCESS
-                    this.$emit("RefreshState", true);
-              }
-              else{
-                  this.$emit("RefreshState",false)
-			  }
-			this.IsRefreshing = false;
-          }).catch(err=>{
-			this.IsRefreshing = false;
-		  })
+        this.IsRefreshing = true;
+        this.$store.dispatch('RefreshState',this.id).then(res=>{
+            if(res.data == 'true' || res.data == true){
+                //SUCCESS
+                this.$emit("RefreshState", true);
+            }
+            else{
+                this.$emit("RefreshState",false)
+            }
+        this.IsRefreshing = false;
+        }).catch(err=>{
+        this.IsRefreshing = false;
+        })
       },
        GetAgentOptionList(currentSelected){
-           var index = this.AgentOptions.findIndex(item=>item.index == currentSelected);
-           if(index>-1){
-               return this.AgentOptions.splice(index,1);
-		   }
-		   return this.AgentOptions;
-        //    return this.AgentOptions.filter(res=>{
-		// 	   if(res.index === 1 || res.index === 2)
-		// 	   	return res;
-		//    });
+        var index = this.AgentOptions.findIndex(item=>item.index == currentSelected);
+        if(index>-1){
+            return this.AgentOptions.splice(index,1);
+        }
+        return this.AgentOptions;
       },
       OnSelectChange(event){
           var objectToSend = {"instaId": this.id, "state": event.target.value};
           this.$emit("ChangeState", objectToSend);
+      },
+      ChangeState(state){
+          const objectToSend = {"instaId":this.id, "state": state}
+          this.$emit("ChangeState", objectToSend)
       },
       MapToCorrectState(state){
           switch(state){
@@ -225,13 +248,13 @@ props: {
               case 1:
                   return "Running";
               case 2:
-                  return "Stopped";
+                  return "Paused";
               case 3:
                   return "Resting";
               case 4:
                   return "Sleeping";
               case 5:
-                  return "Blocked by instagram";
+                  return "Blocked, need to rest";
               case 6:
                   return "Challange required";
               case 7:
@@ -283,6 +306,7 @@ select{
     overflow: hidden;
     padding-top:0.3em;    
 }
+
 .is-light-dark{
     background: #414141;
     color:white;

@@ -118,7 +118,7 @@ namespace Quarkless
 
 			app.UseHttpsRedirection();
 			app.UseRouting();
-			app.UseIpRateLimiting();
+			//app.UseIpRateLimiting();
 
 			app.UseCors(CORS_POLICY);
 			app.UseHangfireServer(jobServerOptions);
@@ -131,9 +131,9 @@ namespace Quarkless
 			app.UseCookiePolicy();
 			app.UseAuthentication();
 			app.UseAuthorization();
-			app.UseEndpoints(endpoints =>
+			app.UseEndpoints(options =>
 			{
-				endpoints.MapControllers();
+				options.MapControllers();
 			});
 
 			app.UseSecurityMiddleware(new SecurityHeadersBuilder()

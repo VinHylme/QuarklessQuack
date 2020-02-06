@@ -16,7 +16,7 @@ namespace Quarkless.Controllers
 	[HashtagAuthorize(AuthTypes.TrialUsers)]
 	[HashtagAuthorize(AuthTypes.PremiumUsers)]
 	[HashtagAuthorize(AuthTypes.Admin)]
-    public class MessagingController : ControllerBase
+    public class MessagingController : ControllerBaseExtended
     {
 	    private readonly IUserContext _userContext;
 	    private readonly IResponseResolver _responseResolver;
@@ -35,14 +35,8 @@ namespace Quarkless.Controllers
 		    if (!_userContext.UserAccountExists) return BadRequest("Invalid Request");
 		    var results = await _responseResolver.WithAttempts(1)
 				.WithResolverAsync(()=> _messagingLogic.GetDirectInboxAsync(limit), ActionType.GetInbox, limit.ToString());
-		    if (results == null) return BadRequest("Invalid Request");
-		    if (results.Succeeded)
-		    {
-			    return Ok(results.Value);
-		    }
-
-		    return BadRequest(results.Info);
-	    }
+			return ResolverResponse(results);
+		}
 
 	    [HttpGet]
 	    [Route("api/messaging/thread/{threadId}/{limit}")]
@@ -52,14 +46,8 @@ namespace Quarkless.Controllers
 		    var results = await _responseResolver.WithAttempts(1)
 				.WithResolverAsync(()=> _messagingLogic.GetDirectInboxThreadAsync(threadId,limit), ActionType.GetThread,
 				    limit.ToString());
-		    if (results == null) return BadRequest("Invalid Request");
-		    if (results.Succeeded)
-		    {
-			    return Ok(results.Value);
-		    }
-
-		    return BadRequest(results.Info);
-	    }
+			return ResolverResponse(results);
+		}
 
 	    [HttpPost]
 	    [Route("api/messaging/text")]
@@ -78,13 +66,7 @@ namespace Quarkless.Controllers
 			var results = await _responseResolver.WithAttempts(1)
 				.WithResolverAsync(()=>_messagingLogic.SendDirectTextAsync(recipients, threads, sendDirectText.TextMessage), 
 					ActionType.SendDirectMessageText, sendDirectText.ToJsonString());
-			if (results == null) return BadRequest("Invalid Request");
-			if (results.Succeeded)
-			{
-				return Ok(results.Value);
-			}
-
-			return BadRequest(results.Info);
+			return ResolverResponse(results);
 		}
 
 		[HttpPost]
@@ -99,13 +81,7 @@ namespace Quarkless.Controllers
 						sendDirectLink.Threads.ToArray(), sendDirectLink.Recipients.ToArray()), 
 					ActionType.SendDirectMessageLink,
 					sendDirectLink.ToJsonString());
-			if (results == null) return BadRequest("Invalid Request");
-			if (results.Succeeded)
-			{
-				return Ok(results.Value);
-			}
-
-			return BadRequest(results.Info);
+			return ResolverResponse(results);
 		}
 
 		[HttpPost]
@@ -119,13 +95,7 @@ namespace Quarkless.Controllers
 				.WithResolverAsync(()=>_messagingLogic.SendDirectPhotoToRecipientsAsync(sendDirectPhoto.Image, sendDirectPhoto.Recipients.ToArray()), 
 					ActionType.SendDirectMessagePhoto,
 					sendDirectPhoto.ToJsonString());
-			if (results == null) return BadRequest("Invalid Request");
-			if (results.Succeeded)
-			{
-				return Ok(results.Value);
-			}
-
-			return BadRequest(results.Info);
+			return ResolverResponse(results);
 		}
 
 		[HttpPost]
@@ -139,13 +109,7 @@ namespace Quarkless.Controllers
 				.WithResolverAsync(()=> _messagingLogic.ShareMediaToUserAsync(shareDirectMedia.MediaId, shareDirectMedia.MediaType, shareDirectMedia.Text, shareDirectMedia.Recipients.Select(long.Parse).ToArray()), 
 					ActionType.SendDirectMessageMedia,
 					shareDirectMedia.ToJsonString());
-			if (results == null) return BadRequest("Invalid Request");
-			if (results.Succeeded)
-			{
-				return Ok(results.Value);
-			}
-
-			return BadRequest(results.Info);
+			return ResolverResponse(results);
 		}
 
 		[HttpPost]
@@ -159,13 +123,7 @@ namespace Quarkless.Controllers
 				.WithResolverAsync(()=>_messagingLogic.ShareMediaToThreadAsync(shareDirectMedia.MediaId, shareDirectMedia.MediaType, shareDirectMedia.Text, shareDirectMedia.ThreadIds.ToArray()), 
 					ActionType.SendDirectMessageMedia,
 					shareDirectMedia.ToJsonString());
-			if (results == null) return BadRequest("Invalid Request");
-			if (results.Succeeded)
-			{
-				return Ok(results.Value);
-			}
-
-			return BadRequest(results.Info);
+			return ResolverResponse(results);
 		}
 
 		[HttpPost]
@@ -179,13 +137,7 @@ namespace Quarkless.Controllers
 				.WithResolverAsync(()=>_messagingLogic.SendDirectVideoToRecipientsAsync(sendDirectVideo.Video, sendDirectVideo.Recipients.ToArray()), 
 					ActionType.SendDirectMessageVideo,
 					sendDirectVideo.ToJsonString());
-			if (results == null) return BadRequest("Invalid Request");
-			if (results.Succeeded)
-			{
-				return Ok(results.Value);
-			}
-
-			return BadRequest(results.Info);
+			return ResolverResponse(results);
 		}
 
 		[HttpPost]
@@ -203,14 +155,7 @@ namespace Quarkless.Controllers
 				.WithResolverAsync(()=> _messagingLogic.SendDirectProfileToRecipientsAsync(sendDirectProfile.userId, recipients), 
 					ActionType.SendDirectMessageProfile,
 					sendDirectProfile.ToJsonString());
-			if (results == null) return BadRequest("Invalid Request");
-			if (results.Succeeded)
-			{
-				return Ok(results.Value);
-			}
-
-			return BadRequest(results.Info);
+			return ResolverResponse(results);
 		}
-
     }
 }

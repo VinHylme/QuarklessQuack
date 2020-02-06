@@ -95,13 +95,13 @@ namespace Quarkless.Logic.WorkerManager
 							.WithAttempts(1)
 							.WithResolverAsync(()=> _context.EmptyClient
 								.TryLogin(accountModel.Username, accountModel.Password, accountModel.State.DeviceInfo, 
-									client.GetContext.Proxy));
+									client.GetContext.Container.Proxy));
 
 						if (loginAttempt == null) break;
 
-						if (!loginAttempt.Succeeded) break;
+						if (!loginAttempt.Response.Succeeded) break;
 
-						var newState = JsonConvert.DeserializeObject<StateData>(loginAttempt.Value);
+						var newState = JsonConvert.DeserializeObject<StateData>(loginAttempt.Response.Value);
 
 						var updateResult = await _instagramAccountLogic.PartialUpdateInstagramAccount(
 							accountModel.AccountId, accountModel._id,

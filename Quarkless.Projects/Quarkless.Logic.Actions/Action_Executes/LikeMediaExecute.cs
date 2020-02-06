@@ -37,19 +37,19 @@ namespace Quarkless.Logic.Actions.Action_Executes
 					.WithResolverAsync(()=> _worker.Client.Media.LikeMediaAsync(requestLikeMedia.MediaId),
 						ActionType.LikePost, requestLikeMedia.ToJsonString());
 
-				if (!response.Succeeded)
+				if (!response.Response.Succeeded)
 				{
 					result.IsSuccessful = false;
 					result.Info = new ErrorResponse
 					{
-						Message = response.Info.Message,
-						Exception = response.Info.Exception
+						Message = response.Response.Info.Message,
+						Exception = response.Response.Info.Exception
 					};
 					return result;
 				}
 
 				result.IsSuccessful = true;
-				result.Results = response.Succeeded;
+				result.Results = response.Response.Succeeded;
 				return result;
 			}
 			catch (Exception err)

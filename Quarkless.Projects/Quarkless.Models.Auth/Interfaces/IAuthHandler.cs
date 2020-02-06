@@ -14,7 +14,7 @@ namespace Quarkless.Models.Auth.Interfaces
 		Task<bool> UpdateUser(AccountUser accountUser);
 		Task<ResultCarrier<AdminInitiateAuthResponse>> Login(LoginRequest loginRequest);
 		Task<ResultCarrier<RespondToAuthChallengeResponse>> SetNewPassword(NewPasswordRequest Newrequest);
-		Task<ResultCarrier<SignUpResponse>> Register(RegisterAccountModel registerAccount);
+		Task<ResultCarrier<RegisterAccountResponse>> Register(RegisterAccountModel registerAccount);
 		Task<ResultCarrier<GetUserResponse>> GetUser(string accessToken);
 		Task<ResultCarrier<CodeDeliveryDetailsType>> ResendConfirmationCode(string userName);
 		Task<ResultCarrier<ConfirmSignUpResponse>> ConfirmSignUp(SignupConfirmationModel signupConfirmationModel);

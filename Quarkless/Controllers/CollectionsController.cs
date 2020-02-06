@@ -16,7 +16,7 @@ namespace Quarkless.Controllers
 	[HashtagAuthorize(AuthTypes.BasicUsers)]
 	[HashtagAuthorize(AuthTypes.PremiumUsers)]
 	[HashtagAuthorize(AuthTypes.Admin)]
-	public class CollectionsController : ControllerBase
+	public class CollectionsController : ControllerBaseExtended
 	{
 		private readonly IUserContext _userContext;
 		private readonly ICollectionsLogic _collectionsLogic;
@@ -33,13 +33,11 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> GetCollections(int limit = 5)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid ID");
-			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _collectionsLogic.GetCollections(limit), ActionType.None, "");
-			if (results.Succeeded && results.Value.Items.Count > 0)
-			{
-				return Ok(results.Value);
-			}
-			return NotFound(results.Info);
+			var results = await _responseResolver
+				.WithAttempts(1)
+				.WithResolverAsync(()=> _collectionsLogic.GetCollections(limit), ActionType.None, "");
+			
+			return ResolverResponse(results, () => results.Response.Value.Items.Count > 0);
 		}
 
 		[HttpGet]
@@ -47,13 +45,13 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> GetCollection(long collectionId, int limit = 5)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid ID");
-			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _collectionsLogic.GetCollection(collectionId,limit), ActionType.None, collectionId.ToString());
-			if (results.Succeeded)
-			{
-				return Ok(results.Value);
-			}
-			return NotFound(results.Info);
+
+			var results = await _responseResolver
+				.WithAttempts(1)
+				.WithResolverAsync(()=> _collectionsLogic.GetCollection(collectionId,limit), 
+					ActionType.None, collectionId.ToString());
+
+			return ResolverResponse(results);
 		}
 
 		[HttpPost]
@@ -62,13 +60,13 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists || string.IsNullOrEmpty(collectionName))
 				return BadRequest("Invalid ID");
-			var res = await _responseResolver.WithAttempts(1).WithResolverAsync(
-				() => _collectionsLogic.CreateCollection(collectionName), ActionType.None, collectionName);
-			if (res.Succeeded)
-			{
-				return Ok(res.Value);
-			}
-			return BadRequest(res.Info);
+
+			var results = await _responseResolver
+				.WithAttempts(1)
+				.WithResolverAsync(() => _collectionsLogic.CreateCollection(collectionName),
+					ActionType.None, collectionName);
+
+			return ResolverResponse(results);
 		}
 
 		[HttpPut]
@@ -77,13 +75,13 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists || addItemsToCollectionsRequest.MediaIds.Count <= 0)
 				return BadRequest("Invalid ID");
-			var res = await _responseResolver.WithAttempts(1).WithResolverAsync(()=> _collectionsLogic.AddItemsCollection(collectionId, 
+			
+			var results = await _responseResolver
+				.WithAttempts(1)
+				.WithResolverAsync(()=> _collectionsLogic.AddItemsCollection(collectionId,
 				addItemsToCollectionsRequest.MediaIds.ToArray()), ActionType.None, collectionId.ToString());
-			if (res.Succeeded)
-			{
-				return Ok(res.Value);
-			}
-			return BadRequest(res.Info);
+
+			return ResolverResponse(results);
 		}
 
 		[HttpPut]
@@ -91,13 +89,13 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> EditCollections([FromRoute] long collectionId, [FromBody] EditCollectionRequest editCollection)
 		{
 			if (!_userContext.UserAccountExists || editCollection == null) return BadRequest("Invalid Request");
-			var res = await _responseResolver.WithAttempts(1).WithResolverAsync(()=> _collectionsLogic.CreateCollection(collectionId,
+			
+			var results = await _responseResolver
+				.WithAttempts(1)
+				.WithResolverAsync(()=> _collectionsLogic.CreateCollection(collectionId,
 				editCollection.CollectionName,editCollection.PhotoCoverId), ActionType.None, collectionId.ToString());
-			if (res.Succeeded)
-			{
-				return Ok(res.Value);
-			}
-			return NotFound(res.Info);
+			
+			return ResolverResponse(results);
 		}
 
 		[HttpDelete]
@@ -105,13 +103,13 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> DeleteCollection(long collectionId)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid ID");
-			var res = await _responseResolver.WithAttempts(1).WithResolverAsync(
+
+			var results = await _responseResolver
+				.WithAttempts(1)
+				.WithResolverAsync(
 				()=> _collectionsLogic.DeleteCollection(collectionId), ActionType.None, collectionId.ToString());
-			if (res.Succeeded)
-			{
-				return Ok(res.Value);
-			}
-			return NotFound(res.Info);
+			
+			return ResolverResponse(results);
 		}
 	}
 }

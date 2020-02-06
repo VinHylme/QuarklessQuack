@@ -3,7 +3,10 @@
         <div :style="!isNavOn?'margin-left:7em;':''">
                 <div class="accounts_container" >
                         <div v-for="(acc,index) in InstagramAccounts" :key="index">
-                                <InstaCard @onChangeBiography="onChangeBiography" @onChangeProfilePicture="onChangeProfilePic" @OnConfirmUser="ConfirmUser" @ChangeState="StateChanged" @RefreshState="NotifyRefresh" @ViewLibrary="GetLibrary" @ViewProfile="GetProfile" :id="acc.id" :username="acc.username" :agentState="acc.agentState" 
+                                <InstaCard @onChangeBiography="onChangeBiography" @onChangeProfilePicture="onChangeProfilePic" 
+                                @ChangeState="StateChanged" @RefreshState="NotifyRefresh" @ViewLibrary="GetLibrary" 
+                                @ViewProfile="GetProfile" @DeleteAccount="DeleteInstagramAccount" @HandleVerify="onHandleVerify"
+                                :id="acc.id" :username="acc.username" :agentState="acc.agentState" 
                                 :name="acc.fullName" :profilePicture="acc.profilePicture" :biography="acc.userBiography"
                                 :userFollowers="acc.followersCount" :userFollowing="acc.followingCount" :totalPost="acc.totalPostsCount" :IsProfileButtonDisabled="IsProfileButtonDisabled"/>
                         </div>
@@ -15,12 +18,12 @@
                 </div>
         </div>
         <b-modal :active.sync="isAccountLinkModalOpened" has-modal-card>
-                <div class="modal-card is-custom" style="width: 100%; height:35vw; padding:0;">
+                <div class="modal-card is-custom" style="width: 100%; height:45vw; padding:0;">
                     <header class="modal-card-head">
                         <p class="modal-card-title">Link your Instagram Account</p>
                     </header>
-                    <section class="modal-card-body" style="padding-top:1em; padding-left:2em; padding-right:2em;">
-                        <b-field label="Username">
+                    <section class="modal-card-body">
+                        <b-field label="Username" custom-class="has-text-white">
                             <b-input
                                 type="text"
                                 v-model="linkData.username"
@@ -29,7 +32,7 @@
                             </b-input>
                         </b-field>
 
-                        <b-field label="Password">
+                        <b-field label="Password" custom-class="has-text-white">
                             <b-input
                                 type="password"
                                 v-model="linkData.password"
@@ -39,6 +42,39 @@
                             </b-input>
                         </b-field>
                         <br>
+                        <b-field>
+                                <p class="control">
+                                        <b-radio-button v-model="linkData.useMyLocation"
+                                                native-value="true"
+                                                type="is-success">
+                                                <b-icon icon="check"></b-icon>
+                                                <span>Use My Location</span>
+                                        </b-radio-button>
+                                </p>
+                                <p class="control">
+                                        <b-radio-button v-model="linkData.useMyLocation"
+                                                native-value="false"
+                                                type="is-danger">
+                                                <b-icon icon="close"></b-icon>
+                                                <span>Manually enter location</span>
+                                        </b-radio-button>
+                                </p>
+                        </b-field>
+                        
+                        <b-field v-if="linkData.useMyLocation === 'false'">
+                                <b-autocomplete
+                                        size="is-medium"
+                                        type="is-dark"
+                                        v-model="linkData.location.address"
+                                        :data="searchItems"
+                                        autocomplete
+                                        :allow-new="false"
+                                        field="address"
+                                        icon="map-marker"
+                                        placeholder="Add a location"
+                                        @typing="performAutoCompletePlacesSearch">
+                                </b-autocomplete>
+                        </b-field>
                         <b-message title="Account Linking" type="is-danger" has-icon aria-close-label="Close message">
                         Please enter your Instagram Credentials, your password is encrypted and not seen by anyone
                         </b-message>
@@ -56,79 +92,59 @@
                     </footer>
                 </div>
         </b-modal>
-        <b-modal :active.sync="needToVerify">
-                <div class="modal-card is-custom" style="width: 90%; height:25vw; padding:0; z-index:99999;">
-                        <header class="modal-card-head">
-                                <p class="modal-card-title">Verify your Instagram Account</p>
-                         </header>
-                    <section class="modal-card-body" style="width:35vw;">
-                        <b-field label="Verification Code">
-                            <b-input
-                                type="text"
-                                v-model="code"
-                                placeholder="Your Code"
-                                required>
-                            </b-input>
-                        </b-field>
-                        <br>
-                        <b-message title="Account Linking - Verify" type="is-info" has-icon aria-close-label="Close message">
-                         Please enter the verification code sent to you, sometimes Instagram detects your account as a spammer or for other security reasons, verifying your account will allow instagram to register your current location as safe
-                        </b-message>
-                    </section>
-                <footer class="modal-card-foot">
-                   <button @click="SendVerifyCode" :class="isSendingVerifyCode?'button is-light is-rounded is-large is-loading' : 'button is-light is-rounded'" style="margin:0 auto;">
-                                <b-icon icon="badge">
-                                </b-icon>
-                                <span>Send Verification Code</span>
-                        </button>                    
-                    </footer>
-                </div>
-        </b-modal>
+        <div v-if="needToVerify">
+               <InstaVerify @Finished="needToVerify = false" :details="verifyDetails"/>
+        </div>
 </div>
 </template>
 
 <script>
 import Vue from 'vue';
 import InstaCard from "../Objects/InstaAccountCard";
-import {GetUserDetails} from '../../localHelpers'
+import debounce from 'lodash/debounce'
+import InstaVerify from '../Objects/VerifyInstagram';
 export default {
         name:"manage",
         components:{
-                InstaCard
+                InstaCard,
+                InstaVerify
         },
         data(){
         return{
+                searchItems:[],
                 IsProfileButtonDisabled:true,
                 InstagramAccounts:[],
                 alert_text:'',
                 isNavOn:false,
                 isAccountLinkModalOpened:false,
                 isLinkingAccount:false,
-                isSendingVerifyCode:false,
                 linkData:{
                         username:'',
-                        password:''
+                        password:'',
+                        useMyLocation:'true',
+                        location:{
+                                address:'',
+                                coordinates:{
+                                        latitude:0,
+                                        longitude:0
+                                }
+                        }
+                },
+                verifyDetails:{
+                        instagramAccountId:'',
+                        challengeDetail:{}
                 },
                 needToVerify:false,
-                code:'',
-                verifyPath:{}
         }
         },
         created(){
                this.$emit('unSelectAccount');
         },
         mounted(){
-		// this.$store.getters.UserInformation.then(res=>{
-		// 	this.$store.dispatch('AddUserDetails', res).then(r=>{
-		// 		console.log(r)
-		// 	})
-		// })
-
 		this.isNavOn = this.$store.getters.MenuState === 'true';
-		this.InstagramAccounts = this.$store.getters.GetInstagramAccounts;
+                this.InstagramAccounts = this.$store.getters.GetInstagramAccounts;
 		if(this.$store.getters.UserProfiles!==undefined)
 			this.IsProfileButtonDisabled=false;       
-			
 			this.$bus.$on('onFocusBio', (id)=>{
 				this.$bus.$emit('cancel-other-focused');
 				this.$bus.$emit('focus-main', id);
@@ -138,8 +154,26 @@ export default {
 
         },
         methods:{
+                performAutoCompletePlacesSearch: debounce(function (query){
+                        if(query && query!==''){
+                                this.$store.dispatch('GooglePlacesAutoCompleteSearch', {query: query, radius:1500}).then(({ data })=>{
+                                this.searchItems = []
+                                JSON.parse(data).predictions.forEach((item) =>
+                                this.searchItems.push(
+                                        {
+                                                city:item.structured_formatting.main_text, 
+                                                address:item.description
+                                        })); // this.searchItems.push(item))
+                                })
+                        }
+                },500),
                 clickOutside(){
                         this.$bus.$emit('clickedOutside')
+                },
+                onHandleVerify(id){
+                        this.verifyDetails.instagramAccountId = id
+                        this.verifyDetails.challengeDetail = this.InstagramAccounts.find(s=>s.id === id).challengeInfo
+                        this.needToVerify = true;
                 },
                 onChangeBiography(data){
                         this.$store.dispatch('ChangeBiography', {instagramAccountId: data.id, biography: data.biography}).then(resp=>{
@@ -177,49 +211,60 @@ export default {
                                 })
                         })
                 },
-                SendVerifyCode(){
-                        if(this.code){
-                                this.isSendingVerifyCode = true;
-                                let data = JSON.stringify({username:this.linkData.username, password:this.linkData.password, challangeLoginInfo:this.verifyPath});
-                                this.$store.dispatch('SubmitCodeForChallange', {code:this.code, account:data}).then(resp=>{
-                                        this.isSendingVerifyCode = false;
-                                        if(resp.data===true || resp.data === 'true'){
-                                                this.LinkAccount();
-                                        }
-                                }).catch(err=>{
-                                        this.isSendingVerifyCode = false;
-                                })
-                        }
-                },
                 LinkAccount(){
                         if(this.linkData.username && this.linkData.password){
                                 this.isLinkingAccount = true;
-                                let data = JSON.stringify({username:this.linkData.username, password:this.linkData.password, type:0});
+                                if(this.linkData.useMyLocation === 'true'){
+                                        this.$store.getters.UserInformation.then(res=>{
+                                                const locationDetails = res.userInformation.geoLocationDetails
+                                                this.linkData.location.address = locationDetails.city + "," + locationDetails.country;
+                                                this.linkData.location.coordinates.latitude = locationDetails.location.latitude
+                                                this.linkData.location.coordinates.longitude = locationDetails.location.longitude
+                                        }).catch(err=>{
+                                                this.isLinkingAccount = false;
+                                                Vue.prototype.$toast.open({
+                                                        message: "Please enter your location manually as we are having trouble detecting your location",
+                                                        type: 'is-info',
+                                                        position:'is-top',
+                                                        duration:4000
+                                                })
+                                                this.linkData.useMyLocation = 'false'
+                                        })
+                                }
+                                if(!this.linkData.location.address)
+                                        return;
+                                let data = 
+                                        {
+                                                username:this.linkData.username, 
+                                                password:this.linkData.password, 
+                                                type:0,
+                                                location: this.linkData.location,
+                                                enableAutoLocate: this.linkData.useMyLocation === 'true'
+                                        };
+                                
+                                
                                 this.$store.dispatch('LinkInstagramAccount',data).then(resp=>{
-                                        if(resp.data !== undefined || resp.data !==null || resp.data.instagramAccountId!==undefined){
-                                                if(resp.data.verify!==undefined){
-                                                        Vue.prototype.$toast.open({
-                                                                message: "We need to verify you are the right account holder, please verify with the code sent to you at " + resp.data.details,
-                                                                type: 'is-info',
-                                                                position:'is-top',
-                                                                duration:25000
-                                                        });
-                                                        this.needToVerify = true;
-                                                        this.verifyPath  = resp.data.challangePath;
+                                        const instaId = resp.data.results.instagramAccountId
+                                        if(resp.data !== undefined || resp.data !==null || instaId!==undefined){
+                                                Vue.prototype.$toast.open({
+                                                        message: "Successfully added, will now redirect you to your profile page",
+                                                        type: 'is-success',
+                                                        position:'is-bottom',
+                                                        duration:8000
+                                                })
 
-                                                }else{
-                                                        Vue.prototype.$toast.open({
-                                                                message: "Successfully added, will now redirect you to your profile page",
-                                                                type: 'is-success',
-                                                                position:'is-bottom',
-                                                                duration:8000
-                                                        })
-                                                        this.$store.dispatch('AccountDetails', {"userId":this.$store.state.user}).then(resp=>{
-                                                        }).catch(err=>{console.log(err.response)})
-                                                        this.$store.dispatch('GetProfiles', this.$store.state.user).then(respo=>{
-                                                                this.$router.push('/profile/'+ resp.data.profileId)
-                                                        }).catch(err=>console.log(err.response));
-                                                }
+                                                this.$store.dispatch('AccountDetails', {"userId":this.$store.state.user}).then(_=>{
+
+                                                }).catch(err=>{})
+
+                                                this.$store.dispatch('GetProfiles', this.$store.state.user).then(resp=>{
+                                                        const index = resp.data.findIndex(ob=>ob.instagramAccountId === instaId)
+                                                        if(index > -1){
+                                                                const profileId = resp.data[index]._id
+                                                                this.$router.push('/profile/'+ profileId)
+                                                        }
+                                                }).catch(err=>console.log(err.response));
+                                
                                         }
                                         this.isLinkingAccount = false;
                                 }).catch(err=>{                   
@@ -240,32 +285,26 @@ export default {
                                 this.$router.push('/profile/'+ profile._id)
                         }
                 },
+                DeleteInstagramAccount(id){
+                        if(id){
+                                this.$store.dispatch('DeleteInstagramAccount', id).then(resp=>{
+                                        this.InstagramAccounts = this.$store.getters.GetInstagramAccounts;
+                                }).catch(err => console.log(err))
+                        }
+                },
                 GetLibrary(id){
                         this.$router.push('/library/'+ id)
                 },
-                ConfirmUser(id){
-                       let targetAccount = this.InstagramAccounts[this.InstagramAccounts.findIndex((op)=>op.id === id)]
-                       if(targetAccount.challengeInfo){
-                               Vue.prototype.$toast.open({
-                                        message: "We need to verify you are the right account holder, please verify with the code sent to you at " + targetAccount.challengeInfo.details,
-                                        type: 'is-info',
-                                        position:'is-top',
-                                        duration:25000
-                                });
-                                this.needToVerify = true;
-                                this.verifyPath  = targetAccount.challengeInfo.challangePath
-                       }
-                },
                 StateChanged(data){
                         this.$store.dispatch('ChangeState', data).then(res=>{
-                                if(res)
-                                        Vue.prototype.$toast.open(
-                                        {
+                                if(res){
+                                        Vue.prototype.$toast.open({
                                                 message: 'Updated!',
                                                 type: 'is-success',
                                                 position: 'is-bottom',
-                                        }   
-                                );   
+                                        })
+                                window.location.reload();
+                                }
                         })
                 },
                 NotifyRefresh(isSuccess){
@@ -289,43 +328,53 @@ export default {
 <style lang="scss">
 @import '../../Style/darkTheme.scss';
 .modal-card{
-  background-color:$modal_background;
-
-}
-.modal-card .modal-card-body{
-     background-color:$modal_background;
-     
-}
-.modal-card-body{
-        background:$modal_body;
-        color:$main_font_color;
-        label{
-                color:$main_font_color;
-                text-align: left;
-        }
-        .input{
-                color:$main_font_color !important;
-                &::placeholder{
+        &.is-custom{
+                 background-color:$modal_background;
+                 .modal-card-body{
+                        padding-top:1em;
+                        padding-left:2em;
+                        padding-right:2em;
+                        background:$modal_body;
                         color:$main_font_color;
+                        label{
+                                //color:$main_font_color;
+                                text-align: left;
+                        }
+                        .input{
+                                color:$main_font_color !important;
+                                &::placeholder{
+                                        color:$main_font_color;
+                                }
+                                border:none;
+                        }
+                        .control-label{
+                                &:hover{
+                                        color:$wheat;
+                                }
+                        }
+                        .dropdown-menu{
+                                background:$backround_back;
+                                .dropdown-item{
+                                        color:$main_font_color;
+                                        &:hover{
+                                                background:#292929;
+                                        }
+                                }
+                        }
+                }
+                .modal-card-foot{
+                        background:$backround_back;
+                        border:none;
+                }
+                .modal-card-head{
+                        background:$backround_back;
+                        border:none;
+                        .modal-card-title{
+                                color:$main_font_color;
+                        }
+                        
                 }
         }
-        .control-label{
-                &:hover{
-                        color:$wheat;
-                }
-        }
-}
-.modal-card-foot{
-        background:$backround_back;
-        border:none;
-}
-.modal-card-head{
-        background:$backround_back;
-        border:none;
-        .modal-card-title{
-                color:$main_font_color;
-        }
-        
 }
 .accounts_container{
         width: 100%;

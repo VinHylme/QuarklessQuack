@@ -16,5 +16,6 @@ namespace Quarkless.Models.InstagramAccounts.Interfaces
 		Task<long?> PartialUpdateInstagramAccount(string instagramAccountId, InstagramAccountModel instagramAccountModel);
 		Task<ResultCarrier<StateData>> GetInstagramAccountStateData(string accountId, string instagramAccountId);
 		Task EmptyChallengeInfo(string instagramAccountId);
+		Task<bool> RemoveInstagramAccount(string id);
 	}
 }

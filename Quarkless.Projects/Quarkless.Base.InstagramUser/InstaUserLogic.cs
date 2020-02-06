@@ -2,15 +2,11 @@
 using System.Threading.Tasks;
 using InstagramApiSharp;
 using InstagramApiSharp.Classes;
-using InstagramApiSharp.Classes.Android.DeviceInfo;
 using InstagramApiSharp.Classes.Models;
 using InstagramApiSharp.Enums;
-using Quarkless.Base.InstagramUser.Models;
 using Quarkless.Models.InstagramAccounts;
 using Quarkless.Models.InstagramClient.Interfaces;
-using Quarkless.Models.Proxy;
 using Quarkless.Models.ReportHandler.Interfaces;
-using Quarkless.Models.Utilities.Interfaces;
 
 namespace Quarkless.Base.InstagramUser
 {
@@ -18,93 +14,13 @@ namespace Quarkless.Base.InstagramUser
 	{
 		private readonly IReportHandler _reportHandler;
 		private readonly IApiClientContainer _clientContainer;
-		private readonly IUtilProviders _utilProviders;
-		public InstaUserLogic(IApiClientContainer clientContainer, 
-			IReportHandler reportHandler, IUtilProviders utilProviders)
+		public InstaUserLogic(IApiClientContainer clientContainer, IReportHandler reportHandler)
 		{
 			_clientContainer = clientContainer;
 			_reportHandler = reportHandler;
-			_utilProviders = utilProviders;
 			_reportHandler.SetupReportHandler("Logic/InstaUser");
 		}
 
-		public async Task<IResult<string>> TryLogin(string username, string password, AndroidDevice device)
-		{
-			try
-			{
-				return await _clientContainer.EmptyClient.TryLogin(username, password, device);
-			}
-			catch (Exception ee)
-			{
-				await _reportHandler.MakeReport(ee);
-				return null;
-			}
-		}
-		public async Task<Tempo> CreateAccount(ProxyModel proxy)
-		{
-			try
-			{
-				var person = _utilProviders.GeneratePerson(emailProvider: "gmail.com");
-				//await _utilProviders.EmailService.CreateGmailEmail(proxy, person);
-				IResult<InstaAccountCreation> res;
-				if (proxy != null)
-				{
-					res = await _clientContainer.EmpClientWithProxy(proxy, true).ReturnClient.CreateNewAccountAsync(
-						person.Username, person.Password, person.Email,
-						person.FirstName);
-				}
-				else
-				{
-					res = await _clientContainer.EmptyClient.ReturnClient.CreateNewAccountAsync(
-						person.Username, person.Password, person.Email, person.FirstName);
-				}
-
-				if (!(res.Succeeded && res.Value.AccountCreated))
-				{
-					return null;
-					//var s = await Client.GetContext.ActionClient.LoginAsync();
-				}
-				return new Tempo
-				{
-					Email = person.Email,
-					FirstName = person.FirstName,
-					Gender = person.Gender,
-					InResult = res,
-					Username = person.Username,
-					Password = person.Password,
-					LastName = person.LastName
-				};
-			}
-			catch (Exception e)
-			{
-				Console.WriteLine(e);
-				return null;
-			}
-		}
-		public async Task<IResult<bool>> AcceptConsent()
-		{
-			try
-			{
-				return await _clientContainer.GetContext.ActionClient.AcceptConsentAsync();
-			}
-			catch(Exception ee)
-			{
-				await _reportHandler.MakeReport(ee);
-				return null;
-			}
-		}
-		public async Task<string> GetStateDataFromString()
-		{
-			try
-			{
-				return await _clientContainer.EmptyClient.GetStateDataFromString();
-			}
-			catch (Exception ee)
-			{
-				await _reportHandler.MakeReport(ee);
-				return null;
-			}
-		}
 		public async Task<IResult<InstaFriendshipStatus>> AcceptFriendshipRequestAsync(long userId)
 		{
 			try
@@ -118,64 +34,52 @@ namespace Quarkless.Base.InstagramUser
 			}
 		}
 
-		public async Task<IResult<InstaChallengeRequireEmailVerify>> RequestVerifyCodeToEmailForChallengeRequireAsync(string username, string password)
+		public async Task<bool> SubmitPhoneVerify(string phoneNumber, InstaChallengeLoginInfo challengeLoginInfo)
 		{
 			try
 			{
-				return await _clientContainer.EmptyClient.ReturnClient.RequestVerifyCodeToEmailForChallengeRequireAsync();
-			}
-			catch(Exception ee)
-			{
-				await _reportHandler.MakeReport(ee);
-				return null;
-			}
-		}
-		public async Task<IResult<InstaChallengeRequireSMSVerify>> RequestVerifyCodeToSmsForChallengeRequireAsync(string username, string password)
-		{
-			try
-			{
-				return await _clientContainer.EmptyClient.ReturnClient.RequestVerifyCodeToSMSForChallengeRequireAsync();
-			}
-			catch (Exception ee)
-			{
-				await _reportHandler.MakeReport(ee);
-				return null;
-			}
-		}
-		public InstaChallengeLoginInfo GetChallengeInfo()
-		{
-			try
-			{
-				return _clientContainer.EmptyClient.ReturnClient.ChallengeLoginInfo;
-			}
-			catch (Exception ee)
-			{
-				_reportHandler.MakeReport(ee).GetAwaiter().GetResult();
-				return null;
-			}
-		}
-		public async Task<IResult<InstaChallengeRequireVerifyMethod>> GetChallengeRequireVerifyMethodAsync(string username, string password)
-		{
-			try
-			{
-				return await _clientContainer.EmptyClient.GetChallengeRequireVerifyMethodAsync(username,password);
-			}
-			catch(Exception ee)
-			{
-				await _reportHandler.MakeReport(ee);
-				return null;
-			}
-		}
+				if (!_clientContainer.GetContext.SuccessfullyRetrieved)
+					return false;
+				
+				if (_clientContainer.GetContext.Container.ActionClient.ChallengeLoginInfo == null)
+					_clientContainer.GetContext.Container.ActionClient.ChallengeLoginInfo = challengeLoginInfo;
+				
+				var results = await _clientContainer.GetContext.Container.ActionClient
+					.SubmitPhoneNumberForChallengeRequireAsync(phoneNumber);
 
-		public async Task<SubmitChallengeResponse> SubmitChallengeCode(string username, string password, InstaChallengeLoginInfo instaChallengeLoginInfo, string code)
+				return results.Succeeded;
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err);
+				await _reportHandler.MakeReport(err);
+				return false;
+			}
+		}
+		public async Task<SubmitChallengeResponse> SubmitChallengeCode(string username, string password,
+			InstaChallengeLoginInfo instaChallengeLoginInfo, string code)
 		{
 			try
 			{
-				var res = await _clientContainer.EmptyClient.SubmitChallengeCode(username, password, instaChallengeLoginInfo, code);
+				IResult<InstaLoginResult> results;
+
+				if (_clientContainer.GetContext.SuccessfullyRetrieved)
+				{
+					_clientContainer.GetContext.Container.ActionClient.ChallengeLoginInfo = instaChallengeLoginInfo; 
+					results = await _clientContainer.GetContext.Container
+						.ActionClient.VerifyCodeForChallengeRequireAsync(code);
+				}
+				else
+				{
+					results = await _clientContainer
+						.EmptyClient
+						.SubmitChallengeCode(username, password, instaChallengeLoginInfo, code);
+				}
+
 				return new SubmitChallengeResponse
 				{
-					Result = res,
-					InstagramId = _clientContainer?.GetContext?.InstagramAccount?.Id
+					Result = results,
+					InstagramId = _clientContainer?.GetContext?.Container?.InstagramAccount?.Id
 				};
 			}
 			catch (Exception ee)

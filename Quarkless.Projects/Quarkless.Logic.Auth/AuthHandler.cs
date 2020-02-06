@@ -356,9 +356,31 @@ namespace Quarkless.Logic.Auth
 				return responseResults;
 			}
 		}
-		public async Task<ResultCarrier<SignUpResponse>> Register(RegisterAccountModel registerAccount)
+		public async Task<ResultCarrier<RegisterAccountResponse>> Register(RegisterAccountModel registerAccount)
 		{
-			var responseResults = new ResultCarrier<SignUpResponse>();
+			var responseResults = new ResultCarrier<RegisterAccountResponse>();
+			if (registerAccount == null)
+			{
+				responseResults.IsSuccessful = false;
+				responseResults.Info = new ErrorResponse
+				{
+					Message = "model is empty"
+				};
+				return responseResults;
+			}
+			if (string.IsNullOrEmpty(registerAccount.Name)
+				|| string.IsNullOrEmpty(registerAccount.Username)
+				|| string.IsNullOrEmpty(registerAccount.Email)
+				|| string.IsNullOrEmpty(registerAccount.Password)
+				|| string.IsNullOrEmpty(registerAccount.PhoneNumber))
+			{
+				responseResults.IsSuccessful = false;
+				responseResults.Info = new ErrorResponse
+				{
+					Message = "value cannot be empty"
+				};
+				return responseResults;
+			}
 			try { 
 				var registerAccountRequest = new SignUpRequest
 				{
@@ -383,7 +405,11 @@ namespace Quarkless.Logic.Auth
 
 				var response = await _cognito.SignUpAsync(registerAccountRequest);
 				if (response.HttpStatusCode != HttpStatusCode.OK) return responseResults;
-				responseResults.Results = response;
+				responseResults.Results = new RegisterAccountResponse
+				{
+					RegisteredAccount = registerAccount,
+					SignUpResponse = response
+				};
 				responseResults.IsSuccessful = true;
 				return responseResults;
 

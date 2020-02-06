@@ -1,9 +1,11 @@
-﻿namespace Quarkless.Models.Profile
+﻿using Quarkless.Models.Common.Models;
+
+namespace Quarkless.Models.Profile
 {
 	public class ProfilePublishEventModel
 	{
 		public ProfileModel Profile { get; set; }
 		public string IpAddress { get; set; }
-		public string Location { get; set; }
+		public Location Location { get; set; }
 	}
 }

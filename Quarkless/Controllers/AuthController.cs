@@ -106,9 +106,9 @@ namespace Quarkless.Controllers
 
 		[AllowAnonymous]
 		[HttpPost]
-		[Route("api/auth/confirmTrialEmail")]
+		[Route("api/auth/confirm-account")]
 		
-		public async Task<IActionResult> ConfirmEmail([FromBody]SignupConfirmationModel signupConfirmationModel)
+		public async Task<IActionResult> ConfirmAccount([FromBody]SignupConfirmationModel signupConfirmationModel)
 		{
 			var results = await _authHandler.ConfirmSignUp(signupConfirmationModel);
 			if (results == null || !results.IsSuccessful) return BadRequest("Failed to confirm user");
@@ -120,11 +120,7 @@ namespace Quarkless.Controllers
 			return BadRequest("something went wrong on our side");
 		}
 
-		[HashtagAuthorize(AuthTypes.EnterpriseUsers)]
-		[HashtagAuthorize(AuthTypes.TrialUsers)]
-		[HashtagAuthorize(AuthTypes.BasicUsers)]
-		[HashtagAuthorize(AuthTypes.PremiumUsers)]
-		[HashtagAuthorize(AuthTypes.Admin)]
+		[AllowAnonymous]
 		[HttpPost]
 		[Route("api/auth/addDetails/{accountId}")]
 		public async Task<IActionResult> AddUserDetails([FromRoute]string accountId,
@@ -138,28 +134,35 @@ namespace Quarkless.Controllers
 
 		[AllowAnonymous]
 		[HttpPost]
-		[Route("api/auth/registeraccount")]
+		[Route("api/auth/register-account")]
 		public async Task<IActionResult> Register([FromBody]RegisterAccountModel registerAccountModel)
 		{
 			try { 
 				var results = await _authHandler.Register(registerAccountModel);
-				if (results.Results == null) return BadRequest(results);
+				if (results.Results == null || !results.IsSuccessful)
+					return BadRequest(results);
+
 				var accountUser = new AccountUser()
 				{
 					Email = registerAccountModel.Email,
 					UserName = registerAccountModel.Username,
-					Sub = results.Results.UserSub,
-					IsUserConfirmed = results.Results.UserConfirmed,
+					Sub = results.Results.SignUpResponse.UserSub,
+					IsUserConfirmed = results.Results.SignUpResponse.UserConfirmed,
 					Roles = new List<string> { AuthTypes.TrialUsers.ToString()},
 					Details = new List<UserInformationDetail>()
 				};
 
 				await _authHandler.CreateAccount(accountUser, registerAccountModel.Password);
-				if (!results.Results.UserConfirmed) return NotFound("User not confirmed");
+				if (!results.Results.SignUpResponse.UserConfirmed)
+					return Ok(results);
 				
 				var userIs = await _authHandler.GetUserByUsername(registerAccountModel.Username);
 				await _authHandler.SignIn(userIs);
-				await Login(new LoginRequest { Username = registerAccountModel.Username, Password = registerAccountModel.Password });
+				await Login(new LoginRequest 
+				{ 
+					Username = registerAccountModel.Username, 
+					Password = registerAccountModel.Password
+				});
 				return Ok(results);
 
 			}

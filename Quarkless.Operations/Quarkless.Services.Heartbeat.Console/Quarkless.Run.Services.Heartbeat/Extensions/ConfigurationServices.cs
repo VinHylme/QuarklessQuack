@@ -10,6 +10,7 @@ using Quarkless.Base.ContentSearch;
 using Quarkless.Base.InstagramComments;
 using Quarkless.Events;
 using Quarkless.Events.Interfaces;
+using Quarkless.Geolocation;
 using Quarkless.Logic.ContentSearch;
 using Quarkless.Logic.Hashtag;
 using Quarkless.Logic.Heartbeat;
@@ -38,6 +39,7 @@ using Quarkless.Models.InstagramClient.Interfaces;
 using Quarkless.Models.Lookup.Interfaces;
 using Quarkless.Models.Profile;
 using Quarkless.Models.Profile.Interfaces;
+using Quarkless.Models.Proxy;
 using Quarkless.Models.Proxy.Interfaces;
 using Quarkless.Models.ReportHandler.Interfaces;
 using Quarkless.Models.ResponseResolver.Interfaces;
@@ -77,7 +79,6 @@ namespace Quarkless.Run.Services.Heartbeat.Extensions
 			services.AddTransient<IProfileLogic, ProfileLogic>();
 			services.AddTransient<ICommentLogic, CommentLogic>();
 			services.AddTransient<IInstaAccountOptionsLogic, InstaAccountOptionsLogic>();
-			services.AddTransient<IInstaClient, InstaClient>();
 			services.AddTransient<IHashtagLogic, HashtagLogic>();
 			services.AddTransient<IHeartbeatLogic, HeartbeatLogic>();
 			services.AddTransient<IResponseResolver, ResponseResolver>();
@@ -105,6 +106,19 @@ namespace Quarkless.Run.Services.Heartbeat.Extensions
 			});
 
 			BsonSerializer.RegisterSerializer(typeof(Guid), new GuidSerializer(BsonType.String));
+
+			services.AddSingleton<IGeoLocationHandler, GeoLocationHandler>(s =>
+				new GeoLocationHandler(new GeoLocationOptions
+				{
+					IpGeolocationToken = accessors.IpGeoLocationApiKey,
+					GeonamesToken = accessors.GeonamesApiKey,
+					GoogleGeocodeToken = accessors.GoogleGeocodeApiKey
+				}));
+
+			services.AddTransient<IProxyRequest, ProxyRequest>(s => new ProxyRequest(
+				new ProxyRequestOptions(accessors.ProxyHandlerApiEndPoint),
+				s.GetService<IGeoLocationHandler>(),
+				s.GetService<IProxyAssignmentsRepository>()));
 
 			services.AddTransient<IMongoClientContext, MongoClientContext>(s =>
 				new MongoClientContext(new MongoOptions
@@ -153,7 +167,7 @@ namespace Quarkless.Run.Services.Heartbeat.Extensions
 			services.AddTransient<IEventSubscriber<InstagramAccountPublishEventModel>, ProfileLogic>();
 			services.AddTransient<IEventSubscriber<ProfileTopicAddRequest>, TopicLookupLogic>();
 			services.AddTransient<IEventPublisher, EventPublisher>(
-				s => new EventPublisher(services.BuildServiceProvider(false).CreateScope()));
+				s => new EventPublisher(services));
 		}
 	}
 }

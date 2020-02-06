@@ -17,7 +17,12 @@ instance.interceptors.request.use((config) => {
   return config;
 });
 // Response
-instance.interceptors.response.use((response) => { return response }, (error) => {
+instance.interceptors.response.use((response) => {
+  if(response.status === 201){
+    
+  }
+  return response 
+}, (error) => {
   const originalRequest = error.config
   if (error.response.status === 401 && error.config && !error.config.__isRetryRequest) {
     originalRequest._retry = true   

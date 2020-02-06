@@ -16,7 +16,7 @@ namespace Quarkless.Controllers
 	[HashtagAuthorize(AuthTypes.BasicUsers)]
 	[HashtagAuthorize(AuthTypes.PremiumUsers)]
 	[HashtagAuthorize(AuthTypes.Admin)]
-	public class MediaController : ControllerBase
+	public class MediaController : ControllerBaseExtended
 	{
 		private readonly IMediaLogic _mediaLogic;
 		private readonly IUserContext _userContext;
@@ -35,8 +35,7 @@ namespace Quarkless.Controllers
 			if (!_userContext.UserAccountExists || uploadPhoto == null) return BadRequest("invalid");
 			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
 				()=> _mediaLogic.UploadPhotoAsync(uploadPhoto), ActionType.CreatePost, uploadPhoto.ToJsonString());
-			if (!results.Succeeded) return NotFound(results.Info);
-			return Ok(results.Value);
+			return ResolverResponse(results);
 		}
 		[HttpPost]
 		[Route("api/media/upload/carousel")]
@@ -46,11 +45,7 @@ namespace Quarkless.Controllers
 			if (!_userContext.UserAccountExists || uploadAlbum == null) return BadRequest("invalid");
 			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
 				()=> _mediaLogic.UploadAlbumAsync(uploadAlbum), ActionType.CreatePost, uploadAlbum.ToJsonString());
-			if (results.Succeeded)
-			{
-				return Ok(results.Value);
-			}
-			return NotFound(results.Info);
+			return ResolverResponse(results);
 		}
 		[HttpPost]
 		[Route("api/media/upload/video")]
@@ -59,11 +54,7 @@ namespace Quarkless.Controllers
 			if (!_userContext.UserAccountExists || uploadVideo == null) return BadRequest("invalid");
 			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
 				()=> _mediaLogic.UploadVideoAsync(uploadVideo), ActionType.CreatePost, uploadVideo.ToJsonString());
-			if (results.Succeeded)
-			{
-				return Ok(results.Value);
-			}
-			return NotFound(results.Info);
+			return ResolverResponse(results);
 		}
 
 		[HttpPost]
@@ -73,12 +64,7 @@ namespace Quarkless.Controllers
 			if (!_userContext.UserAccountExists || mediaId == null) return BadRequest("invalid");
 			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
 				()=> _mediaLogic.DeleteMediaAsync(mediaId,mediaType), ActionType.None, mediaId);
-			if (results.Succeeded)
-			{
-				return Ok(results.Value);
-			}
-
-			return NotFound(results.Info);
+			return ResolverResponse(results);
 		}
 
 		[HttpPost]
@@ -88,12 +74,7 @@ namespace Quarkless.Controllers
 			if (!_userContext.UserAccountExists || string.IsNullOrEmpty(mediaId)) return BadRequest("invalid");
 			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
 				()=> _mediaLogic.LikeMediaAsync(mediaId), ActionType.LikePost, mediaId);
-			if (results.Succeeded)
-			{
-				return Ok(results.Value);
-			}
-			return NotFound(results.Info);
+			return ResolverResponse(results);
 		}
-
 	}
 }

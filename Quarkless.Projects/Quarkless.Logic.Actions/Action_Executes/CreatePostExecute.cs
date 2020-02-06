@@ -12,6 +12,7 @@ using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.Common.Models.Carriers;
 using Quarkless.Models.Media;
 using Quarkless.Models.ResponseResolver.Interfaces;
+using Quarkless.Models.ResponseResolver.Models;
 using Quarkless.Models.WorkerManager.Interfaces;
 
 namespace Quarkless.Logic.Actions.Action_Executes
@@ -45,7 +46,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 			{
 				Console.WriteLine($"Started to execute {GetType().Name} for {_worker.WorkerAccountId}/{_worker.WorkerUsername}");
 				
-				IResult<InstaMedia> response;
+				ResolverResponse<InstaMedia> response;
 				if (eventAction.BodyType == typeof(UploadPhotoModel))
 				{
 					var model = JsonConvert.DeserializeObject<UploadPhotoModel>(eventAction.Body.ToJsonString());
@@ -113,13 +114,13 @@ namespace Quarkless.Logic.Actions.Action_Executes
 					throw new Exception("Response returned null");
 				}
 
-				if (!response.Succeeded)
+				if (!response.Response.Succeeded)
 				{
 					result.IsSuccessful = false;
 					result.Info = new ErrorResponse
 					{
-						Message = response.Info.Message,
-						Exception = response.Info.Exception
+						Message = response.Response.Info.Message,
+						Exception = response.Response.Info.Exception
 					};
 					return result;
 				}

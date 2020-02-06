@@ -15,7 +15,7 @@ namespace Quarkless.Models.InstagramClient.Interfaces
 		Task<string> GetStateDataFromString();
 		Task LoadStateDataFromStringAsync(string state);
 		IInstaClient Empty(ProxyModel proxy, bool genDevice = false);
-		IInstaClient GetClientFromModel(InstagramClientAccount instagramAccount);
+		IResult<IInstaClient> GetClientFromModel(InstagramClientAccount instagramAccount);
 		Task<IResult<string>> TryLogin();
 		Task<IResult<string>> TryLogin(string username, string password, AndroidDevice device, ProxyModel proxy = null);
 		Task<IResult<InstaChallengeRequireVerifyMethod>> GetChallengeRequireVerifyMethodAsync(string username, string password);

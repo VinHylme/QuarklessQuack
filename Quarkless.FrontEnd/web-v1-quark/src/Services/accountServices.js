@@ -6,9 +6,14 @@ export default {
   Login(params){
     return Api(false).post(Calling['account_login'], params)
   },
+  Register(data){
+    return Api(false).post(Calling['account_register'], data)
+  },
+  Confirm(data){
+    return Api(false).post(Calling['account_confirm'], data)
+  },
   AddUserDetails(userId, data){
-    console.log(data)
-    return Api(true).post(Calling['account_detail'] + userId, data)
+    return Api(false).post(Calling['account_detail'] + userId, data)
   },
   RefreshToken(params){
     return Api(false).post(Calling['account_refresh'], params)
@@ -43,14 +48,20 @@ export default {
   GetInstagramAccount(params){
     return Api(true).get(Calling['account_get_user_instagram_account']+ params.accountId + '/' + params.instagramAccountId)
   },
+  DeleteInstagramAccount(instagramAccountId){
+    return Api(true).delete(Calling['account_delete_instagram']+ instagramAccountId)
+  },
   UpdateAgentState(params){
     return Api(true).put(Calling['account_update_agent_state'] + params.instagramAccountId + '/' + params.newState)
   },
   LinkInstagramAccount(params){
     return Api(true).post(Calling['account_add_instagram'],params)
   },
-  SubmitCodeForChallange(code,data){
-    return Api(true).put(Calling['account_instagram_challenge']+code,data);
+  SubmitCodeForChallange(code, instagramAccountId){
+    return Api(true, instagramAccountId).put(Calling['account_instagram_challenge']+code);
+  },
+  SubmitPhoneForChallange(phoneNumber, instagramAccountId){
+    return Api(true, instagramAccountId).put(Calling['account_instagram_challenge_phone']+phoneNumber);
   },
   RefreshState(id){
     return Api(true).get(Calling['account_instagram_refresh']+id)

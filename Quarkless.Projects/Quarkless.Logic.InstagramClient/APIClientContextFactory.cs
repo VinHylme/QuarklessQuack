@@ -5,6 +5,6 @@ namespace Quarkless.Logic.InstagramClient
 {
 	public abstract class ApiClientContextFactory
 	{
-		public abstract Task<ContextContainer> Create(string userId, string InstaId);
+		public abstract Task<InstagramAccountFetcherResponse> Create(string userId, string InstaId);
 	}
 }
