@@ -46,8 +46,9 @@ namespace Quarkless.Controllers
 			if (!_userContext.UserAccountExists && string.IsNullOrEmpty(biographyRequest.Biography)) return BadRequest("Invalid Request");
 			try
 			{
-				var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
-					()=> _instaAccountOptions.SetBiographyAsync(biographyRequest.Biography), 
+				var results = await _responseResolver
+					.WithAttempts(1)
+					.WithResolverAsync(()=> _instaAccountOptions.SetBiographyAsync(biographyRequest.Biography), 
 					ActionType.CreateBiography, biographyRequest.ToJsonString());
 				return ResolverResponse(results);
 			}
@@ -71,8 +72,9 @@ namespace Quarkless.Controllers
 				file.CopyTo(ms);
 				var bytes = ms.ToArray();
 
-				var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
-					()=> _instaAccountOptions.ChangeProfilePictureAsync(bytes),
+				var results = await _responseResolver
+					.WithAttempts(1)
+					.WithResolverAsync(()=> _instaAccountOptions.ChangeProfilePictureAsync(bytes),
 					ActionType.ChangeProfilePicture, file.FileName);
 				return ResolverResponse(results);
 			}

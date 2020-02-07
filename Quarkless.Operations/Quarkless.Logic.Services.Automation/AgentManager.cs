@@ -679,7 +679,7 @@ namespace Quarkless.Logic.Services.Automation
 							var items = _timelineLogic.GetScheduledEventsForUser(userStoreDetails.AccountId,
 								userStoreDetails.InstagramAccountUser, 2000).ToList();
 							items.ForEach(_ => { _timelineLogic.DeleteEvent(_.ItemId); });
-							account.SleepTimeRemaining = DateTime.UtcNow.AddHours(6);
+							account.SleepTimeRemaining = DateTime.UtcNow.AddMinutes(20);
 							account.AgentState = (int) AgentState.DeepSleep;
 							await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.AccountId,
 								userStoreDetails.InstagramAccountUser, new InstagramAccountModel

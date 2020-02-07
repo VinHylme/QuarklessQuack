@@ -55,12 +55,10 @@ namespace Quarkless.Logic.WorkerManager
 		{
 			return new Timer(_=> OnCallBack(), null, _updateLoopTime, Timeout.Infinite);
 		}
-
 		private Timer SetRefreshAccountsTimer()
 		{
 			return new Timer(async _=> await OnRefreshCallback(), null, _refreshLoopTime, Timeout.Infinite);
 		}
-
 		private async Task OnRefreshCallback()
 		{
 			_refreshTimer.Dispose();
@@ -68,6 +66,7 @@ namespace Quarkless.Logic.WorkerManager
 			OnCallBack();
 			_refreshTimer = SetRefreshAccountsTimer();
 		}
+
 		private async Task RefreshAccounts()
 		{
 			var workerAccountsTotal = _instagramAccountLogic.GetInstagramAccountsFull(_workerAccountType).Result;

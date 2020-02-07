@@ -226,10 +226,10 @@ $v-cal-button-disabled-cursor	:not-allowed;
 	color:white; 
 	display:inline-block;
 	.title{
-		margin-left:7em; 
+		margin-left:2em; 
 		margin-top:2em; 
 		color:#d9d9d9;
-		text-align:left;
+		text-align:center;
 	}
 }
 html,body{

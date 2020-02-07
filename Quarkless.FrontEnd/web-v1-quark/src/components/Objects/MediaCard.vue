@@ -6,7 +6,9 @@
 		</div>
 		<hr>
 		<div class="media-card-content">
-			<img :src="media.mediaUrl" alt="">
+			<img v-if="media.mediaType === 1" :src="media.mediaUrl" alt="">
+			<video v-else-if="media.mediaType === 2" :src="media.mediaUrl"></video>
+			<img v-if="media.mediaType === 8" :src="media.mediaUrl" alt="">
 			<div class="media-info">
 				<span class="icon has-text-danger">
 					<i class="fas fa-heart"></i>
@@ -31,7 +33,7 @@
 							</span>
 							<span>Reply</span>
 						</a>
-				  	</p>
+					</p>
 					<p class="control">
 						<a @click="!comment.item.object.hasLikedComment ? LikeComment(index) : UnlikeComment(index)" 
 						class="like-comment button is-rounded is-dark is-small">
@@ -40,7 +42,7 @@
 							</span>
 							<span>Like</span>
 						</a>
-				  	</p>
+					</p>
 					<p class="control">
 						<a @click="DeleteComment(index)" class="delete-comment button is-rounded is-dark is-small">
 							<span class="icon">
@@ -108,6 +110,7 @@ export default {
 		}
 	},
 	mounted(){
+		console.log(this.media)
 		if(this.comments!==undefined && this.comments!==null)
 			this.commentsData = this.comments.map(res=> { return { item:res, isHovering:false } });
 	},
@@ -214,6 +217,10 @@ export default {
 			width:450px;
 			height:450px;
 			object-fit: fill;
+		}
+		video{
+			width:450px;
+			height:450px;
 		}
 		.media-info{
 			display: flex;

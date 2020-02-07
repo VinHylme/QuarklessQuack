@@ -43,9 +43,11 @@ namespace Quarkless.Logic.Query
 		private readonly ILookupLogic _lookupLogic;
 		private readonly IApiClientContext _context;
 		private readonly IHashtagGenerator _hashtagGenerator;
-		public QueryLogic(IReportHandler reportHandler, IRestSharpClientManager restSharpClientManager, ISearchProvider searchProvider,
-			ISearchingCache searchingCache, ITopicLookupLogic topicLookupLogic, IHashtagGenerator hashtagGenerator,
-			IHashtagLogic hashtagLogic, IHeartbeatLogic heartbeatLogic, ILookupLogic lookupLogic, IApiClientContext context)
+
+		public QueryLogic(IReportHandler reportHandler, IRestSharpClientManager restSharpClientManager,
+			ISearchProvider searchProvider, ISearchingCache searchingCache, ITopicLookupLogic topicLookupLogic,
+			IHashtagGenerator hashtagGenerator, IHashtagLogic hashtagLogic, IHeartbeatLogic heartbeatLogic,
+			ILookupLogic lookupLogic, IApiClientContext context)
 		:base(reportHandler, nameof(QueryLogic))
 		{
 			_lookupLogic = lookupLogic;
@@ -58,6 +60,7 @@ namespace Quarkless.Logic.Query
 			_searchProvider = searchProvider;
 			_context = context;
 		}
+		
 		public object SearchPlaces(string query)
 		{
 

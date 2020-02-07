@@ -44,7 +44,7 @@
                         <br>
                         <b-field>
                                 <p class="control">
-                                        <b-radio-button v-model="linkData.useMyLocation"
+                                        <b-radio-button v-model="linkData.useMyLocation" @input="askForLocation"
                                                 native-value="true"
                                                 type="is-success">
                                                 <b-icon icon="check"></b-icon>
@@ -103,6 +103,7 @@ import Vue from 'vue';
 import InstaCard from "../Objects/InstaAccountCard";
 import debounce from 'lodash/debounce'
 import InstaVerify from '../Objects/VerifyInstagram';
+import {GetUserLocation} from '../../localHelpers'
 export default {
         name:"manage",
         components:{
@@ -143,6 +144,9 @@ export default {
         mounted(){
 		this.isNavOn = this.$store.getters.MenuState === 'true';
                 this.InstagramAccounts = this.$store.getters.GetInstagramAccounts;
+                if(this.linkData.useMyLocation === 'true'){
+                        this.askForLocation();
+                }
 		if(this.$store.getters.UserProfiles!==undefined)
 			this.IsProfileButtonDisabled=false;       
 			this.$bus.$on('onFocusBio', (id)=>{
@@ -154,6 +158,17 @@ export default {
 
         },
         methods:{
+                askForLocation(){
+                        GetUserLocation().then().catch(err=>{
+                                Vue.prototype.$toast.open({
+                                        message: "Oops, looks like you've turned off location sharing for our site, please enable it in order to use this feature",
+                                        type: 'is-info',
+                                        position:'is-bottom',
+                                        duration:8000
+                                })
+                                this.linkData.useMyLocation = 'false'
+                        })
+                },
                 performAutoCompletePlacesSearch: debounce(function (query){
                         if(query && query!==''){
                                 this.$store.dispatch('GooglePlacesAutoCompleteSearch', {query: query, radius:1500}).then(({ data })=>{

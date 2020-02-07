@@ -46,8 +46,8 @@
                             </a>
                         </b-tooltip>
                     </div>
-                    <div v-if="agentState === 0 || agentState === 2" class="control">
-                        <b-tooltip label="Start Account" type="is-dark" position="is-top">
+                    <div v-if="agentState === 0 || agentState === 2 || (agentState === 3 || agentState === 4)" class="control">
+                        <b-tooltip :label="agentState === 0 || agentState ===2 ? 'Run' : agentState === 3 || agentState === 4 ? 'Run (Recommended to wait until ready)' : 'Start Account'" type="is-dark" position="is-top">
                             <a @click="ChangeState(1)" class="button is-info is-default">
                                 <b-icon pack="fas" icon="chess-queen"></b-icon>
                             </a>
@@ -60,7 +60,7 @@
                             </a>
                         </b-tooltip>
                     </div>
-                    <div v-if="agentState === 3 || agentState === 4" class="control">
+                    <div v-if="agentState === 3 || agentState === 4 || agentState === 5" class="control">
                         <b-tooltip label="Resting" type="is-dark" position="is-top">
                             <a class="button is-dark is-default">
                                 <b-icon pack="fas" icon="bed"></b-icon>
@@ -252,9 +252,9 @@ props: {
               case 3:
                   return "Resting";
               case 4:
-                  return "Resting";
+                  return "Sleeping";
               case 5:
-                  return "Blocked, need to rest";
+                  return "Limit Reached";
               case 6:
                   return "Challange required";
               case 7:

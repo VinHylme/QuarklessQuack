@@ -43,6 +43,7 @@ namespace Quarkless.Controllers
 				return BadRequest("Invalid Request");
 			return Ok(await _queryLogic.GetRelatedTopics(topicParentId));
 		}
+		
 		[HttpGet]
 		[Route("api/query/releated/{topic}")]
 		public async Task<IActionResult> SearchReleatedTopic(string topic)
@@ -60,6 +61,7 @@ namespace Quarkless.Controllers
 				return BadRequest("Invalid Request");
 			return Ok(await _queryLogic.BuildHashtags(suggestHashtagRequest));
 		}
+		
 		[HttpGet]
 		[Route("api/query/search/places/{query}")]
 		public IActionResult SearchPlaces(string query)

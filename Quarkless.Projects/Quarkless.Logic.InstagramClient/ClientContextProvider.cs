@@ -122,8 +122,13 @@ namespace Quarkless.Logic.InstagramClient
 					try
 					{
 						var state = JsonConvert.DeserializeObject<StateData>(stateJson);
-						instagramAccountDetails.FullName = state.UserSession?.LoggedInUser?.FullName;
-						instagramAccountDetails.ProfilePicture = state.UserSession?.LoggedInUser?.ProfilePicture;
+
+						if(string.IsNullOrEmpty(instagramAccountDetails.FullName))
+							instagramAccountDetails.FullName = state.UserSession?.LoggedInUser?.FullName;
+
+						if(string.IsNullOrEmpty(instagramAccountDetails.ProfilePicture))
+							instagramAccountDetails.ProfilePicture = state.UserSession?.LoggedInUser?.ProfilePicture;
+
 						if (!state.SameAs(instagramAccount.State))
 						{
 							await _instagramAccountLogic.PartialUpdateInstagramAccount(accountId, instagramAccountId,
