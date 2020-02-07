@@ -267,14 +267,14 @@ export default {
                                 
                                         }
                                         this.isLinkingAccount = false;
-                                }).catch(err=>{                   
-                                                Vue.prototype.$toast.open({
-                                                        message: "Oops, looks like the account details don't match the instagram servers or the account has already been registered here, please try again",
-                                                        type: 'is-danger',
-                                                        position:'is-bottom',
-                                                        duration:8000
-                                                })
-                                        
+                                }).catch(err=>{      
+                                        Vue.prototype.$toast.open({
+                                                message: "Oops, looks like the account details don't match the instagram servers or the account has already been registered here, please try again",
+                                                type: 'is-danger',
+                                                position:'is-bottom',
+                                                duration:8000
+                                        })
+                                
                                         this.isLinkingAccount = false;
                                 })
                         }
@@ -319,6 +319,7 @@ export default {
                                         message: 'Could not log into the account',
                                         type: 'is-danger'
                                 })
+                                window.location.reload();
                         }
                 }
         }

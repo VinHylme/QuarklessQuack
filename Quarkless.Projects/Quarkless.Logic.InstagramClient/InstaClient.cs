@@ -198,14 +198,17 @@ namespace Quarkless.Logic.InstagramClient
 				instance.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
 
 				var res = instance.LoginAsync().GetAwaiter().GetResult();
-				
-				var instaClient = new InstaClient(instance);
+
+				var stateDataAsString = instance.GetStateDataAsString();
+				var instaClient = new InstaClient(instance)
+				{
+					StateString = stateDataAsString
+				};
 
 				if (!res.Succeeded)
 					return new InstagramApiSharp.Classes.Result<IInstaClient>(res.Succeeded, instaClient, res.Info);
 
-				var stateDataAsString = instance.GetStateDataAsString();
-				instaClient.StateString = stateDataAsString;
+				instaClient.StateString = instance.GetStateDataAsString();
 				
 				return new InstagramApiSharp.Classes.Result<IInstaClient>(res.Succeeded, instaClient, res.Info);
 			}
@@ -231,14 +234,17 @@ namespace Quarkless.Logic.InstagramClient
 					Password = instagramAccount.InstagramAccount.Password
 				});
 
-				var instaClient = new InstaClient(instance);
+				var stateDataAsString = instance.GetStateDataAsString();
+				var instaClient = new InstaClient(instance)
+				{
+					StateString = stateDataAsString
+				};
 
 				var res = instance.LoginAsync().GetAwaiter().GetResult();
 				if (!res.Succeeded)
 					return new InstagramApiSharp.Classes.Result<IInstaClient>(res.Succeeded, instaClient, res.Info);
 
-				var stateDataAsString = instance.GetStateDataAsString();
-				instaClient.StateString = stateDataAsString;
+				instaClient.StateString = instance.GetStateDataAsString();
 
 				return new InstagramApiSharp.Classes.Result<IInstaClient>(res.Succeeded, instaClient, res.Info);
 			}
@@ -317,13 +323,13 @@ namespace Quarkless.Logic.InstagramClient
 		public async Task<IResult<string>> TryLogin(string username, string password, AndroidDevice device, 
 			ProxyModel proxy = null)
 		{
-			var instance = CreateApiClient(new UserSessionData
+			var instance = instagramApi ?? CreateApiClient(new UserSessionData
 			{
 				UserName = username,
 				Password = password
 			}, proxy);
 
-			instance.SetDevice(device);
+			instance.SetDevice(device ?? AndroidDeviceGenerator.GetRandomAndroidDevice());
 
 			var results = await instance.LoginAsync();
 			return results.Succeeded 

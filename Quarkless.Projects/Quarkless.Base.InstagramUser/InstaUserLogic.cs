@@ -38,9 +38,6 @@ namespace Quarkless.Base.InstagramUser
 		{
 			try
 			{
-				if (!_clientContainer.GetContext.SuccessfullyRetrieved)
-					return false;
-				
 				if (_clientContainer.GetContext.Container.ActionClient.ChallengeLoginInfo == null)
 					_clientContainer.GetContext.Container.ActionClient.ChallengeLoginInfo = challengeLoginInfo;
 				
@@ -61,20 +58,11 @@ namespace Quarkless.Base.InstagramUser
 		{
 			try
 			{
-				IResult<InstaLoginResult> results;
+				if (_clientContainer.GetContext.Container.ActionClient.ChallengeLoginInfo == null)
+					_clientContainer.GetContext.Container.ActionClient.ChallengeLoginInfo = instaChallengeLoginInfo;
 
-				if (_clientContainer.GetContext.SuccessfullyRetrieved)
-				{
-					_clientContainer.GetContext.Container.ActionClient.ChallengeLoginInfo = instaChallengeLoginInfo; 
-					results = await _clientContainer.GetContext.Container
-						.ActionClient.VerifyCodeForChallengeRequireAsync(code);
-				}
-				else
-				{
-					results = await _clientContainer
-						.EmptyClient
-						.SubmitChallengeCode(username, password, instaChallengeLoginInfo, code);
-				}
+				var results = await _clientContainer.GetContext.Container
+					.ActionClient.VerifyCodeForChallengeRequireAsync(code);
 
 				return new SubmitChallengeResponse
 				{

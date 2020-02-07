@@ -69,12 +69,12 @@ namespace Quarkless.Controllers
 		}
 
 		[HttpPut]
-		[Route("api/insta/challenge/submitPhone/{phone}")]
+		[Route("api/insta/challenge/submitPhone/{phoneNumber}")]
 		public async Task<IActionResult> SubmitPhoneChallenge([FromRoute] string phoneNumber)
 		{
 			if (!_userContext.UserAccountExists)
 				return BadRequest("Invalid Request");
-			if (string.IsNullOrEmpty(phoneNumber) || !Regex.IsMatch(phoneNumber, @"\d+"))
+			if (string.IsNullOrEmpty(phoneNumber) || !Regex.IsMatch(phoneNumber, @"^[+]{0,1}\d+$"))
 				return BadRequest("Invalid Number");
 
 			var instagramAccountDetails =
@@ -191,7 +191,7 @@ namespace Quarkless.Controllers
 					.WithClient(clientContainer)
 					.WithAttempts(1)
 					.WithResolverAsync(() => clientContainer.GetContext.Container.InstaClient
-							.TryLogin(instaDetails.Username, instaDetails.Password, instaDetails.State.DeviceInfo),
+							.TryLogin(instaDetails.Username, instaDetails.Password, instaDetails?.State?.DeviceInfo),
 						ActionType.RefreshLogin, instagramAccountId);
 				
 				if (loginRes == null) return Ok(false);

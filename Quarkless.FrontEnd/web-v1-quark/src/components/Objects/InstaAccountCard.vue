@@ -53,7 +53,7 @@
                             </a>
                         </b-tooltip>
                     </div>
-                    <div v-if="agentState === 1 || agentState === 3 || agentState===4" class="control">
+                    <div v-if="agentState === 1" class="control">
                         <b-tooltip label="Pause Account" type="is-dark" position="is-top">
                             <a @click="ChangeState(2)" class="button is-danger">
                                 <b-icon pack="fas" icon="ribbon"></b-icon>
@@ -252,7 +252,7 @@ props: {
               case 3:
                   return "Resting";
               case 4:
-                  return "Sleeping";
+                  return "Resting";
               case 5:
                   return "Blocked, need to rest";
               case 6:

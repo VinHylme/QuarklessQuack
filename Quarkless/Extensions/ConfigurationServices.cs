@@ -30,6 +30,7 @@ using Quarkless.Base.InstagramDiscover;
 using Quarkless.Base.InstagramUser;
 using Quarkless.Events;
 using Quarkless.Events.Interfaces;
+using Quarkless.Filters;
 using Quarkless.Geolocation;
 using Quarkless.Logic.Account;
 using Quarkless.Logic.Actions.Factory.ActionExecute.Manager;
@@ -78,6 +79,7 @@ using Quarkless.Models.Auth.AccountContext;
 using Quarkless.Models.Auth.Enums;
 using Quarkless.Models.Auth.Interfaces;
 using Quarkless.Models.Comments.Interfaces;
+using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.ContentInfo.Interfaces;
 using Quarkless.Models.ContentSearch.Interfaces;
 using Quarkless.Models.ContentSearch.Models;
@@ -314,6 +316,7 @@ namespace Quarkless.Extensions
 		internal static void IncludeConfigurators(this IServiceCollection services)
 		{
 			var accessors = new Config().Environments;
+			var apiAccessors = new Configuration().Environments;
 			services.Configure<S3Options>(options => { options.BucketName = accessors.S3BucketName; });
 			services.Configure<GoogleSearchOptions>(options => { options.Endpoint = accessors.ImageSearchEndpoint; });
 			services.Configure<RedisOptions>(o =>
@@ -321,6 +324,15 @@ namespace Quarkless.Extensions
 				o.ConnectionString = accessors.RedisConnectionString;
 				o.DefaultKeyExpiry = TimeSpan.FromDays(7);
 			});
+			services.Configure<MaxConcurrentRequestsOptions>(options =>
+				{
+					options.Limit = apiAccessors.MaxConcurrentRequests.Limit;
+					options.Enabled = apiAccessors.MaxConcurrentRequests.Enabled;
+					options.ExcludePaths = apiAccessors.MaxConcurrentRequests.ExcludePaths;
+					options.LimitExceededPolicy = apiAccessors.MaxConcurrentRequests.LimitExceededPolicy.GetValueFromDescription<MaxConcurrentRequestsLimitExceededPolicy>();
+					options.MaxQueueLength = apiAccessors.MaxConcurrentRequests.MaxQueueLength;
+					options.MaxTimeInQueue = apiAccessors.MaxConcurrentRequests.MaxTimeInQueue;
+				});
 			services.Configure<TranslateOptions>(options =>
 			{
 				options.DetectLangAPIKey = accessors.DetectApi;

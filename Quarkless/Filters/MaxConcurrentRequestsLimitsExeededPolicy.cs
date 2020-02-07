@@ -1,9 +1,14 @@
-﻿namespace Quarkless.Filters
+﻿using System.ComponentModel;
+
+namespace Quarkless.Filters
 {
 	public enum MaxConcurrentRequestsLimitExceededPolicy
 	{
+		[Description("Drop")]
 		Drop,
+		[Description("FifoQueueDropTail")]
 		FifoQueueDropTail,
+		[Description("FifoQueueDropHead")]
 		FifoQueueDropHead
 	}
 

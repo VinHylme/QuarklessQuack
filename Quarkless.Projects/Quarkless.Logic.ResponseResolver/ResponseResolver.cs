@@ -175,12 +175,33 @@ namespace Quarkless.Logic.ResponseResolver
 				return null;
 			}
 		}
+
+		private async Task<IResult<InstaChallengeRequireVerifyMethod>> ResetChallenge()
+		{
+			try
+			{
+				if (Context?.ActionClient == null)
+				{
+					return await _instaClient.ReturnClient.ResetChallengeRequireVerifyMethodAsync();
+				}
+
+				return await Context.ActionClient.ResetChallengeRequireVerifyMethodAsync();
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err);
+				await _reportHandler.MakeReport(err);
+				return null;
+			}
+		}
 		private async Task<IResult<InstaChallengeRequireVerifyMethod>> GetChallengeRequireVerifyMethodAsync()
 		{
 			try
 			{
 				if (Context?.ActionClient == null)
+				{
 					return await _instaClient.ReturnClient.GetChallengeRequireVerifyMethodAsync();
+				}
 
 				return await Context.ActionClient.GetChallengeRequireVerifyMethodAsync();
 			}
@@ -490,13 +511,15 @@ namespace Quarkless.Logic.ResponseResolver
 			{
 				var method = await GetLoggedInChallengeInfo();
 				if (!method.Succeeded)
+				{
 					return new ChallengeHandleResponse(ChallengeResponse.Captcha, info)
 					{
 						IsUserLoggedIn = true,
-						VerifyMethod =  VerifyMethod.Captcha,
+						VerifyMethod = VerifyMethod.Captcha,
 						ChallengeData = GetChallengeInfo()
 					};
-				
+				}
+
 				// this is me feature
 				var challengeAccept = await AcceptChallenge();
 				if (challengeAccept.Succeeded)
@@ -526,31 +549,58 @@ namespace Quarkless.Logic.ResponseResolver
 				var method = await GetChallengeRequireVerifyMethodAsync();
 
 				if (!method.Succeeded)
-					return method.Info.NeedsChallenge
-						? new ChallengeHandleResponse(ChallengeResponse.Captcha, info)
-						{
-							VerifyMethod = VerifyMethod.Captcha,
-							ChallengeData = GetChallengeInfo()
-						}
-						: new ChallengeHandleResponse(ChallengeResponse.Unknown, info);
+				{
+					var reset = await ResetChallenge();
+					if (!reset.Succeeded)
+					{
+						return reset.Info.NeedsChallenge
+							? new ChallengeHandleResponse(ChallengeResponse.Captcha, info)
+							{
+								VerifyMethod = VerifyMethod.Captcha,
+								ChallengeData = GetChallengeInfo()
+							}
+							: new ChallengeHandleResponse(ChallengeResponse.Unknown, info);
+					}
+					method = reset;
+				}
 
 				if (method.Value.SubmitPhoneRequired)
 				{
-					// ask for phone number then call submit phone verify
 					return new ChallengeHandleResponse(ChallengeResponse.RequirePhoneNumber, info)
 					{
 						ChallengeData = GetChallengeInfo(),
 						VerifyMethod = VerifyMethod.Phone
 					};
 				}
+
 				if (method.Value.StepData == null)
 				{
+					if (method.Value.StepName == "verify_code")
+					{
+						return new ChallengeHandleResponse(ChallengeResponse.RequireSmsCode, info)
+						{
+							StepDataEmailOrPhone = "phone number",
+							ChallengeData = GetChallengeInfo(),
+							VerifyMethod = VerifyMethod.Sms
+						};
+					}
 					return new ChallengeHandleResponse(ChallengeResponse.Unknown, info);
 				}
 
 				if (!string.IsNullOrEmpty(method.Value.StepData.PhoneNumber))
 				{
 					//send code to phone via sms
+					var reset = await ResetChallenge();
+					if (!reset.Succeeded)
+					{
+						return reset.Info.NeedsChallenge
+							? new ChallengeHandleResponse(ChallengeResponse.Captcha, info)
+							{
+								VerifyMethod = VerifyMethod.Captcha,
+								ChallengeData = GetChallengeInfo()
+							}
+							: new ChallengeHandleResponse(ChallengeResponse.Unknown, info);
+					}
 					var request = await RequestVerifyCodeToSmsForChallengeRequireAsync();
 					if (request.Succeeded)
 					{
@@ -578,6 +628,17 @@ namespace Quarkless.Logic.ResponseResolver
 					};
 				{
 					//send code to email
+					var reset = await ResetChallenge();
+					if (!reset.Succeeded)
+					{
+						return reset.Info.NeedsChallenge
+							? new ChallengeHandleResponse(ChallengeResponse.Captcha, info)
+							{
+								VerifyMethod = VerifyMethod.Captcha,
+								ChallengeData = GetChallengeInfo()
+							}
+							: new ChallengeHandleResponse(ChallengeResponse.Unknown, info);
+					}
 					var request = await RequestVerifyCodeToEmailForChallengeRequireAsync();
 					if (request.Succeeded)
 					{ 

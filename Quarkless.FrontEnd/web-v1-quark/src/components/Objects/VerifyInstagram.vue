@@ -35,13 +35,13 @@
                     </b-message>
                 </section>
                 <footer class="modal-card-foot">
-                    <button v-if="type === 'sms_code' || type === 'email_code'" @click="SendVerifyCode" :class="isSendingVerifyCode?'button is-light is-rounded is-large is-loading' : 'button is-light is-rounded'" style="margin:0 auto;">
-                        <b-icon icon="badge"></b-icon>
-                        <span>Send Verification Code</span>
+                    <button v-if="type === 'sms_code' || type === 'email_code'" @click="SendVerifyCode" :class="isVerifying?'button is-light is-rounded is-large is-loading' : 'button is-light is-rounded'" style="margin:0 auto;">
+                        <b-icon pack="fas" icon="user-check" type="is-success"></b-icon>
+                        <span style="font-weight:bold;">Send Verification Code</span>
                     </button>
-                     <button v-if="type === 'phone_number'" @click="SendPhoneVerify" :class="isSendingVerifyCode?'button is-light is-rounded is-large is-loading' : 'button is-light is-rounded'" style="margin:0 auto;">
-                        <b-icon icon="badge"></b-icon>
-                        <span>Verify</span>
+                     <button v-if="type === 'phone_number'" @click="SendPhoneVerify" :class="isVerifying?'button is-light is-rounded is-large is-loading' : 'button is-light is-rounded'" style="margin:0 auto;">
+                        <b-icon pack="fas" icon="user-check" type="is-success"></b-icon>
+                        <span style="font-weight:bold;">Verify</span>
                     </button>                    
                 </footer>
         </div>
@@ -67,13 +67,14 @@ export default {
     mounted(){
         if(this.details.challengeDetail!==undefined){
             this.type = this.details.challengeDetail.verify
+            console.log(this.details)
         }
-        vue.prototype.$toast.open({
-                message: "We need to verify you are the right account holder, please verify with the code sent to you (either your email or phone)",
-                type: 'is-info',
-                position:'is-top',
-                duration:25000
-        });
+        // vue.prototype.$toast.open({
+        //         message: "We need to verify you are the right account holder, please verify with the code sent to you (either your email or phone)",
+        //         type: 'is-info',
+        //         position:'is-top',
+        //         duration:25000
+        // });
     },
     methods:{
         canceled(){
@@ -94,9 +95,10 @@ export default {
                 return;
             }
             const data = {
-                phoneNumber: this.code,
+                phoneNumber: this.phonenumber,
                 instagramAccountId: instagramAccountId
             }
+            console.log(data)
             this.$store.dispatch('SubmitPhoneForChallange', data).then(result=>{
                 vue.prototype.$toast.open({
                     message: "Verified!",

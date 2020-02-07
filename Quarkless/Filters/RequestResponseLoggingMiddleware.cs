@@ -25,7 +25,7 @@ namespace Quarkless.Filters
 		#endregion
 
 		public RequestResponseLoggingMiddleware(RequestDelegate next, 
-			SecurityHeadersPolicy securityHeadersPolicy, 
+			SecurityHeadersPolicy securityHeadersPolicy,
 			IApiLogCache apiLogCache,
 			IOptions<MaxConcurrentRequestsOptions> options)
 		{

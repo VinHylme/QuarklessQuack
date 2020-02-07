@@ -24,6 +24,7 @@ using Quarkless.Base.ContentSearch;
 using Quarkless.Base.InstagramComments;
 using Quarkless.Events;
 using Quarkless.Events.Interfaces;
+using Quarkless.Geolocation;
 using Quarkless.Logic.Actions.Factory.ActionBuilder.Manager;
 using Quarkless.Logic.Agent;
 using Quarkless.Logic.Auth;
@@ -77,6 +78,7 @@ using Quarkless.Models.Lookup.Interfaces;
 using Quarkless.Models.Media.Interfaces;
 using Quarkless.Models.Messaging.Interfaces;
 using Quarkless.Models.Profile.Interfaces;
+using Quarkless.Models.Proxy;
 using Quarkless.Models.Proxy.Interfaces;
 using Quarkless.Models.ReportHandler.Interfaces;
 using Quarkless.Models.RequestBuilder.Interfaces;
@@ -183,6 +185,18 @@ namespace Quarkless.Run.Services.Automation.Extensions
 				options.ChromePath = accessors.SeleniumChromeAddress;
 			});
 
+			services.AddSingleton<IGeoLocationHandler, GeoLocationHandler>(s =>
+				new GeoLocationHandler(new GeoLocationOptions
+				{
+					IpGeolocationToken = accessors.IpGeoLocationApiKey,
+					GeonamesToken = accessors.GeonamesApiKey,
+					GoogleGeocodeToken = accessors.GoogleGeocodeApiKey
+				}));
+
+			services.AddTransient<IProxyRequest, ProxyRequest>(s => new ProxyRequest(
+				new ProxyRequestOptions(accessors.ProxyHandlerApiEndPoint),
+				s.GetService<IGeoLocationHandler>(),
+				s.GetService<IProxyAssignmentsRepository>()));
 			// var stripeCredentials = JsonConvert.DeserializeObject<StripeCredentials>(accessors.JsonStripeCredentials);
 			//
 			// services.AddSingleton<IAccountLogic, AccountLogic>(s =>
