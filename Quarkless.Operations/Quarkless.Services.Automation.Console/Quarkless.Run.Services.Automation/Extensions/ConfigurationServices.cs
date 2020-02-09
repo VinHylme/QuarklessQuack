@@ -1,23 +1,13 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using Amazon;
-using Amazon.CognitoIdentity;
-using Amazon.CognitoIdentityProvider;
-using Amazon.Extensions.CognitoAuthentication;
-using Amazon.Extensions.NETCore.Setup;
 using Amazon.S3;
 using Hangfire;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
-using MongoDbGenericRepository;
-using Newtonsoft.Json;
 using Quarkless.Analyser;
 using Quarkless.Analyser.Models;
 using Quarkless.Base.ContentSearch;
@@ -27,8 +17,6 @@ using Quarkless.Events.Interfaces;
 using Quarkless.Geolocation;
 using Quarkless.Logic.Actions.Factory.ActionBuilder.Manager;
 using Quarkless.Logic.Agent;
-using Quarkless.Logic.Auth;
-using Quarkless.Logic.Auth.Manager;
 using Quarkless.Logic.Comments;
 using Quarkless.Logic.ContentInfo;
 using Quarkless.Logic.ContentSearch;
@@ -61,8 +49,6 @@ using Quarkless.Models.Actions.Interfaces;
 using Quarkless.Models.Agent.Interfaces;
 using Quarkless.Models.ApiLogger.Interfaces;
 using Quarkless.Models.Auth;
-using Quarkless.Models.Auth.AccountContext;
-using Quarkless.Models.Auth.Enums;
 using Quarkless.Models.Auth.Interfaces;
 using Quarkless.Models.Comments.Interfaces;
 using Quarkless.Models.ContentInfo.Interfaces;
@@ -166,8 +152,21 @@ namespace Quarkless.Run.Services.Automation.Extensions
 		internal static void IncludeConfigurators(this IServiceCollection services)
 		{
 			var accessors = new Config().Environments;
+			var apiAccessors = new Configuration().Environments;
 
 			services.Configure<S3Options>(options => { options.BucketName = accessors.S3BucketName; });
+			services.AddAWSService<IAmazonS3>();
+			var regionEndpoint = RegionEndpoint.EUWest2;
+
+			services.AddSingleton<IAmazonS3>(new AmazonS3Client(apiAccessors.AwsAccess.AccessKey,
+				apiAccessors.AwsAccess.SecretKey, new AmazonS3Config
+				{
+					RegionEndpoint = regionEndpoint,
+					SignatureVersion = "v4",
+					SignatureMethod = Amazon.Runtime.SigningAlgorithm.HmacSHA256
+				}));
+
+			services.AddSingleton<IS3BucketLogic, S3BucketLogic>();
 			services.Configure<GoogleSearchOptions>(options => { options.Endpoint = accessors.ImageSearchEndpoint; });
 			services.Configure<RedisOptions>(o =>
 			{
@@ -252,7 +251,7 @@ namespace Quarkless.Run.Services.Automation.Extensions
 			services.AddTransient<ITopicLookupRepository, TopicLookupRepository>();
 			services.AddTransient<IReportHandlerRepository, ReportHandlerRepository>();
 			services.AddTransient<IRedisClient, RedisClient>();
-
+			services.AddTransient<IAccountRepository, AccountRepository>();
 			//services.AddTransient<IInstagramAccountCreatorRepository, InstagramAccountCreatorRepository>();
 			//services.AddTransient<IEmailAccountCreatorRepository, EmailAccountCreatorRepository>();
 		}
@@ -283,82 +282,6 @@ namespace Quarkless.Run.Services.Automation.Extensions
 			//services.AddTransient<IEventSubscriber<ProfileTopicAddRequest>, TopicLookupLogic>();
 			services.AddTransient<IEventPublisher, EventPublisher>(
 				s => new EventPublisher(services));
-		}
-		public static void IncludeAuthHandlers(this IServiceCollection services)
-		{
-			var accessors = new Config().Environments;
-			var apiAccessors = new Configuration().Environments;
-
-			Environment.GetEnvironmentVariable("JWT_KEY");
-			Environment.SetEnvironmentVariable("AWS_ACCESS_KEY_ID", apiAccessors.AwsAccess.AccessKey);
-			Environment.SetEnvironmentVariable("AWS_SECRET_ACCESS_KEY", apiAccessors.AwsAccess.SecretKey);
-			Environment.SetEnvironmentVariable("AWS_REGION", apiAccessors.AwsAccess.Region);
-
-			var regionEndpoint = RegionEndpoint.EUWest2;
-			IAmazonCognitoIdentityProvider amazonCognitoIdentityProvider = new AmazonCognitoIdentityProviderClient(apiAccessors.AwsAccess.AccessKey, apiAccessors.AwsAccess.SecretKey, regionEndpoint);
-			var userPool = new CognitoUserPool(apiAccessors.AwsPool.PoolID, apiAccessors.AwsPool.AppClientID, amazonCognitoIdentityProvider, apiAccessors.AwsPool.AppClientSecret);
-			services.AddSingleton(amazonCognitoIdentityProvider);
-			services.AddSingleton(userPool);
-
-			services.AddAWSService<IAmazonS3>();
-
-			services.AddSingleton<IAmazonS3>(new AmazonS3Client(apiAccessors.AwsAccess.AccessKey,
-				apiAccessors.AwsAccess.SecretKey, new AmazonS3Config
-				{
-					RegionEndpoint = regionEndpoint,
-					SignatureVersion = "v4",
-					SignatureMethod = Amazon.Runtime.SigningAlgorithm.HmacSHA256
-				}));
-
-			services.AddSingleton<IS3BucketLogic, S3BucketLogic>();
-
-			services.AddLogging();
-			//services.AddScoped<ILoggerFactory, LoggerFactory>();
-			var mongoDbContext = new MongoDbContext(accessors.ConnectionString, "Accounts");
-
-			services.AddIdentity<AccountUser, AccountRole>()
-				.AddMongoDbStores<AccountUser, AccountRole, string>(mongoDbContext)
-				.AddDefaultTokenProviders();
-
-			services.AddDefaultAWSOptions(new AWSOptions
-			{
-				Region = regionEndpoint,
-				Credentials = new CognitoAWSCredentials(userPool.PoolID, regionEndpoint),
-				ProfilesLocation = apiAccessors.AwsOptions.ProfileLocation,
-				Profile = apiAccessors.AwsOptions.Profile
-			});
-
-			services.AddAuthorization(
-			auth => {
-				auth.DefaultPolicy = new AuthorizationPolicyBuilder(JwtBearerDefaults.AuthenticationScheme‌​)
-					.RequireAuthenticatedUser()
-					.Build();
-				auth.AddPolicy("TrialUsers", p => p.Requirements.Add(new GroupAuthorisationRequirement(AuthTypes.TrialUsers.ToString())));
-				auth.AddPolicy("BasicUsers", p => p.Requirements.Add(new GroupAuthorisationRequirement(AuthTypes.BasicUsers.ToString())));
-				auth.AddPolicy("PremiumUsers", p => p.Requirements.Add(new GroupAuthorisationRequirement(AuthTypes.PremiumUsers.ToString())));
-				auth.AddPolicy("EnterpriseUsers", p => p.Requirements.Add(new GroupAuthorisationRequirement(AuthTypes.EnterpriseUsers.ToString())));
-			});
-
-			services.AddAuthentication(
-				options =>
-				{
-					options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-					options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-				}).AddJwtBearer(
-				o =>
-				{
-
-					o.Audience = apiAccessors.AwsPool.AppClientID;
-					o.Authority = apiAccessors.AwsPool.AuthUrl;
-					o.RequireHttpsMetadata = false;
-					o.SaveToken = true;
-
-				}
-			);
-
-			services.AddSingleton<IAuthAccessHandler>(new AuthAccessHandler(apiAccessors.AwsPool.AppClientSecret));
-			services.AddScoped<IAuthHandler, AuthHandler>();
-			services.AddScoped<IAuthorizationHandler, AuthClientHandler>();
 		}
 	}
 }

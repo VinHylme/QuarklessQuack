@@ -18,6 +18,7 @@
           <b-icon v-if="timelineLog.actionType === 23" icon="inbox" pack="fas" class="is-success" size="is-default"></b-icon>
           <b-icon v-if="timelineLog.actionType === 24" icon="inbox" pack="fas" class="is-success" size="is-default"></b-icon>
           <b-icon v-if="timelineLog.actionType === 25" icon="inbox" pack="fas" class="is-success" size="is-default"></b-icon>
+          <b-icon v-if="timelineLog.actionType === 28" icon="tv" pack="fas" class="is-success" size="is-default"></b-icon>
         </div>
         <div class="card-activity-content">
           {{timelineLog.message}}

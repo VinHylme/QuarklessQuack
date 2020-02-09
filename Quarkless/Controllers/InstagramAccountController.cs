@@ -213,7 +213,7 @@ namespace Quarkless.Controllers
 					new InstagramAccountModel
 					{
 						State = newState,
-						//AgentState = (int) AgentState.Running
+						AgentState = (int) AgentState.Running
 					});
 
 				return Ok(true);

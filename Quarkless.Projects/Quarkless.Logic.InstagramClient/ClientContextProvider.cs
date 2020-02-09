@@ -114,7 +114,10 @@ namespace Quarkless.Logic.InstagramClient
 					UserLimits = instagramAccount.UserLimits,
 					Location = instagramAccount.Location,
 					IsBusiness = instagramAccount.IsBusiness,
-					ChallengeInfo = instagramAccount.ChallengeInfo
+					ChallengeInfo = instagramAccount.ChallengeInfo,
+					BlockedActions = instagramAccount.BlockedActions,
+					Type = instagramAccount.Type,
+					UserId = instagramAccount.UserId
 				};
 
 				if (!string.IsNullOrEmpty(stateJson))

@@ -21,7 +21,6 @@ namespace Quarkless.Run.Services.Automation
 
 			services.IncludeHangFrameworkServices();
 			services.IncludeLogicServices();
-			services.IncludeAuthHandlers();
 			services.IncludeConfigurators();
 			services.IncludeRepositories();
 			services.IncludeHandlers();
@@ -39,7 +38,8 @@ namespace Quarkless.Run.Services.Automation
 				InvisibilityTimeout = TimeSpan.FromMinutes(30),
 				FetchTimeout = TimeSpan.FromMinutes(30),
 				UseTransactions = true
-			}).WithJobExpirationTimeout(TimeSpan.FromHours(12));
+			})
+				.WithJobExpirationTimeout(TimeSpan.FromHours(12));
 
 			var results = WithExceptionLogAsync(async () =>
 			{

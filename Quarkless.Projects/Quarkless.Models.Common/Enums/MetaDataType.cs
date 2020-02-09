@@ -13,6 +13,7 @@
 		FetchUsersFollowerList,
 
 		FetchUsersFeed,
+		FetchUsersStoryFeed,
 		FetchMediaByTopic,
 		FetchMediaByTopicRecent,
 
@@ -31,6 +32,7 @@
 		FetchCommentsViaUserFeed,
 
 		FetchUserDirectInbox,
-		UsersRecentComments
+		UsersRecentComments,
+		FetchUsersStoryViaTopics
 	}
 }

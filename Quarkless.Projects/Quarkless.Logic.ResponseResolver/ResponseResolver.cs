@@ -63,7 +63,6 @@ namespace Quarkless.Logic.ResponseResolver
 			_client = client;
 			return this;
 		}
-
 		public IResponseResolver WithInstaApiClient(IInstaClient client)
 		{
 			_instaClient = client;
@@ -175,7 +174,6 @@ namespace Quarkless.Logic.ResponseResolver
 				return null;
 			}
 		}
-
 		private async Task<IResult<InstaChallengeRequireVerifyMethod>> ResetChallenge()
 		{
 			try
@@ -242,9 +240,8 @@ namespace Quarkless.Logic.ResponseResolver
 			}
 		}
 		#endregion
-		private ContextContainer Context 
-			=>  _client.GetContext.Container;
 
+		#region Account Functions
 		private async Task UpdateAccountState(InstagramAccountModel newState)
 		{
 			var context = Context.InstagramAccount;
@@ -328,25 +325,92 @@ namespace Quarkless.Logic.ResponseResolver
 					break;
 			}
 		}
-		private async Task<ResponseHandlerResults> ResponseHandler(ResultInfo info, ActionType actionType = ActionType.None, string request = null)
+		private async Task<bool> AddBlockedAction(ActionType actionType)
+		{
+			if (actionType == ActionType.None)
+				return false;
+
+			if (Context?.InstagramAccount == null)
+				return false;
+
+			return await _instagramAccountLogic.AddBlockedAction(Context.InstagramAccount.Id, actionType);
+		}
+		private async Task<bool> RemoveBlockedAction(ActionType actionType)
+		{
+			if (actionType == ActionType.None)
+				return false;
+
+			if (Context?.InstagramAccount == null)
+				return false;
+
+			return await _instagramAccountLogic.RemoveBlockedAction(Context.InstagramAccount.Id, actionType);
+		}
+		private async Task BlockedActionHandle(ActionType actionType)
+		{
+			if (Context?.InstagramAccount == null)
+				return;
+
+			var context = Context.InstagramAccount;
+
+			if (context.AgentState == (int)AgentState.Blocked
+				|| context.AgentState == (int)AgentState.AwaitingActionFromUser
+				|| context.AgentState == (int)AgentState.Challenge)
+			{
+				await UpdateAccountState(new InstagramAccountModel
+				{
+					AgentState = (int)AgentState.Running
+				});
+				await RemoveBlockedAction(actionType);
+			}
+		}
+		private ContextContainer Context
+			=> _client?.GetContext?.Container;
+		#endregion
+
+		private async Task<ResponseHandlerResults> ResponseHandler(ResultInfo info,
+			ActionType actionType = ActionType.None, string request = null)
 		{
 			var context = _client.GetContext.Container.InstagramAccount;
 			AccountId = context.AccountId;
 			InstagramAccountId = context.Id;
+
 			var response = new ResponseHandlerResults
 			{
 				ResponseType = info.ResponseType
 			};
+			
+			if (context.BlockedActions != null && context.BlockedActions.Any())
+			{
+				foreach (var blockedAction in context.BlockedActions)
+				{
+					if (DateTime.UtcNow > blockedAction.DateBlocked)
+					{
+						await RemoveBlockedAction(blockedAction.ActionType);
+					}
+				}
+			}
+
+			if (context.AgentState == (int) AgentState.Blocked)
+			{
+				await UpdateAccountState(new InstagramAccountModel
+				{
+					AgentState = (int) AgentState.DeepSleep,
+					SleepTimeRemaining = DateTime.UtcNow.AddHours(2)
+				});
+			}
+
 			switch (info.ResponseType)
 			{
 				case ResponseType.AlreadyLiked:
 				{
 					response.Resolved = true;
+					await RemoveBlockedAction(actionType);
 					break;
 				}
 				case ResponseType.CantLike:
 				{
 					response.Resolved = true;
+					await RemoveBlockedAction(actionType);
 					break;
 				}
 				case ResponseType.ChallengeRequired:
@@ -359,6 +423,10 @@ namespace Quarkless.Logic.ResponseResolver
 							response.Resolved = true;
 							break;
 						case ChallengeResponse.Unknown:
+							await UpdateAccountState(new InstagramAccountModel
+							{
+								AgentState = (int) AgentState.AwaitingActionFromUser
+							});
 							break;
 						case ChallengeResponse.Captcha:
 						case ChallengeResponse.RequireSmsCode:
@@ -366,7 +434,7 @@ namespace Quarkless.Logic.ResponseResolver
 						case ChallengeResponse.RequirePhoneNumber:
 							await UpdateAccountState(new InstagramAccountModel
 							{
-								AgentState = (int) AgentState.Challenge,
+								AgentState = (int) AgentState.AwaitingActionFromUser,
 								ChallengeInfo = new ChallengeCodeRequestResponse
 								{
 									Verify = challengeInfo.VerifyMethod.GetDescription(),
@@ -386,6 +454,7 @@ namespace Quarkless.Logic.ResponseResolver
 				case ResponseType.CommentingIsDisabled:
 				{
 					response.Resolved = true;
+					await RemoveBlockedAction(actionType);
 					break;
 				}
 				case ResponseType.ConsentRequired:
@@ -397,11 +466,13 @@ namespace Quarkless.Logic.ResponseResolver
 				case ResponseType.DeletedPost:
 				{
 					response.Resolved = true;
+					await RemoveBlockedAction(actionType);
 					break;
 				}
 				case ResponseType.InactiveUser:
 				{
 					response.Resolved = true;
+					await RemoveBlockedAction(actionType);
 					break;
 				}
 				case ResponseType.LoginRequired:
@@ -426,15 +497,13 @@ namespace Quarkless.Logic.ResponseResolver
 				case ResponseType.ActionBlocked:
 				case ResponseType.Spam:
 				case ResponseType.RequestsLimit:
-					await UpdateAccountState(new InstagramAccountModel
-					{
-						AgentState = (int) AgentState.Blocked
-					});
 					response.UpdatedAccountState = true;
-					response.Resolved = true;
+					var result = await AddBlockedAction(actionType);
+					response.Resolved = result;
 					break;
 				case ResponseType.OK:
 				{
+					await BlockedActionHandle(actionType);
 					await MessagingHandler(actionType, request);
 					response.Resolved = true;
 					break;
@@ -442,11 +511,13 @@ namespace Quarkless.Logic.ResponseResolver
 				case ResponseType.MediaNotFound:
 				{
 					response.Resolved = true;
+					await RemoveBlockedAction(actionType);
 					break;
 				}
 				case ResponseType.SomePagesSkipped:
 				{
 					response.Resolved = true;
+					await RemoveBlockedAction(actionType);
 					break;
 				}
 				case ResponseType.SentryBlock:
@@ -455,6 +526,7 @@ namespace Quarkless.Logic.ResponseResolver
 				}
 				case ResponseType.Unknown:
 				{
+					await RemoveBlockedAction(actionType);
 					if (info.NeedsChallenge)
 					{
 						var challengeInfo = await ChallengeHandle(info);
@@ -677,6 +749,7 @@ namespace Quarkless.Logic.ResponseResolver
 
 			return results;
 		}
+
 		public async Task<ResolverResponse<TInput>> WithResolverAsync<TInput>(Func<Task<IResult<TInput>>> func,
 			ActionType actionType, string request)
 		{
@@ -700,6 +773,7 @@ namespace Quarkless.Logic.ResponseResolver
 			var account = Context.InstagramAccount;
 			AccountId = account.AccountId;
 			InstagramAccountId = account.Id;
+
 			var resolverResponse = new ResolverResponse<TInput>
 			{
 				Response = response,
@@ -758,11 +832,18 @@ namespace Quarkless.Logic.ResponseResolver
 			return resolverResponse;
 		}
 
+		/// <summary>
+		/// Please use 'WithClient' before this
+		/// </summary>
+		/// <typeparam name="TInput"></typeparam>
+		/// <param name="response"></param>
+		/// <returns></returns>
 		public async Task<ResolverResponse<TInput>> WithResolverAsync<TInput>(IResult<TInput> response)
 		{
 			var account = Context.InstagramAccount;
 			AccountId = account.AccountId;
 			InstagramAccountId = account.Id;
+
 			var resolverResponse = new ResolverResponse<TInput>
 			{
 				Response = response
@@ -782,7 +863,8 @@ namespace Quarkless.Logic.ResponseResolver
 			var account = Context?.InstagramAccount;
 			if (account == null)
 				return;
-
+			if (Context.Proxy == null)
+				return;
 			try
 			{
 				var testProxyConnectivity = await _proxyRequest.TestConnectivity(Context.Proxy);

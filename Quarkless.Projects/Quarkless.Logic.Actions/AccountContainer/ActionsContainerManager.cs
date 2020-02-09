@@ -29,7 +29,10 @@ namespace Quarkless.Logic.Actions.AccountContainer
 			_finishedActions = new Queue<EventActionModel>();
 		}
 
-		public void AddAction(IActionCommit action, DateTimeOffset execTime, double chance)
+		public List<CommitContainer> RegisteredActions
+			=> _actions.Select(s => s.Object).ToList();
+
+		public void RegisterAction(IActionCommit action, DateTimeOffset execTime, double chance)
 		{
 			if (_actions.Any(_ => _.Object.ActionType == action.GetActionType()))
 			{
@@ -130,6 +133,7 @@ namespace Quarkless.Logic.Actions.AccountContainer
 				ActionType.LikePost => LikeActionOptions.TimeFrameSeconds,
 				ActionType.LikeComment => LikeCommentActionOptions.TimeFrameSeconds,
 				ActionType.SendDirectMessage => SendDirectMessageActionOptions.TimeFrameSeconds,
+				ActionType.WatchStory => WatchStoryOptions.TimeFrameSeconds,
 				_ => throw new NotImplementedException()
 			};
 		}
@@ -143,6 +147,7 @@ namespace Quarkless.Logic.Actions.AccountContainer
 				ActionType.LikePost => LikeActionOptions.TimeFrameSeconds,
 				ActionType.LikeComment => LikeCommentActionOptions.TimeFrameSeconds,
 				ActionType.SendDirectMessage => SendDirectMessageActionOptions.TimeFrameSeconds,
+				ActionType.WatchStory => WatchStoryOptions.TimeFrameSeconds,
 				_ => throw new NotImplementedException()
 			};
 		}
@@ -152,7 +157,6 @@ namespace Quarkless.Logic.Actions.AccountContainer
 			if (find != null)
 				find.ActionState = actionState;
 		}
-
 		public void UpdateExecutionTime(ActionType actionType, DateTime newDate)
 		{
 			var find = _actions.Find(_ => _.Object.ActionType == actionType);

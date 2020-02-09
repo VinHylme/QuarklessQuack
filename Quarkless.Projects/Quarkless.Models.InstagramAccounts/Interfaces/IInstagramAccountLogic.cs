@@ -1,12 +1,15 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using InstagramApiSharp.Classes;
+using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Models.Carriers;
 
 namespace Quarkless.Models.InstagramAccounts.Interfaces
 {
 	public interface IInstagramAccountLogic
 	{
+		Task<bool> RemoveBlockedAction(string instagramAccountId, ActionType actionType);
+		Task<bool> AddBlockedAction(string instagramAccountId, ActionType actionType);
 		Task<InstagramAccountModel> InsertInstagramAccount(string accountId, AddInstagramAccountRequest addRequest);
 		Task<ResultCarrier<AddInstagramAccountResponse>> AddInstagramAccount(string accountId, AddInstagramAccountRequest addInstagram);
 		Task<IEnumerable<ShortInstagramAccountModel>> GetActiveAgentInstagramAccounts(int actionExType = -1);

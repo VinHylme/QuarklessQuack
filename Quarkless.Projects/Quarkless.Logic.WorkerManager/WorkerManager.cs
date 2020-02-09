@@ -79,35 +79,8 @@ namespace Quarkless.Logic.WorkerManager
 				switch ((AgentState)accountModel.AgentState)
 				{
 					case AgentState.Blocked:
-						var updateResults = await _instagramAccountLogic.PartialUpdateInstagramAccount(
-							accountModel.AccountId, accountModel._id,
-							new InstagramAccountModel
-							{
-								AgentState = (int) AgentState.DeepSleep,
-								SleepTimeRemaining =  DateTime.UtcNow.AddHours(2)
-							});
 						break;
-					case AgentState.Challenge:
-						var client = new ApiClientContainer(_context, accountModel.AccountId, accountModel._id);
-						var loginAttempt = await _responseResolver
-							.WithClient(client)
-							.WithAttempts(1)
-							.WithResolverAsync(()=> _context.EmptyClient
-								.TryLogin(accountModel.Username, accountModel.Password, accountModel.State.DeviceInfo, 
-									client.GetContext.Container.Proxy));
-
-						if (loginAttempt == null) break;
-
-						if (!loginAttempt.Response.Succeeded) break;
-
-						var newState = JsonConvert.DeserializeObject<StateData>(loginAttempt.Response.Value);
-
-						var updateResult = await _instagramAccountLogic.PartialUpdateInstagramAccount(
-							accountModel.AccountId, accountModel._id,
-							new InstagramAccountModel
-							{
-								State = newState
-							});
+					case AgentState.AwaitingActionFromUser:
 						break;
 					case AgentState.DeepSleep:
 						if (accountModel.SleepTimeRemaining == null)
@@ -130,6 +103,7 @@ namespace Quarkless.Logic.WorkerManager
 						}
 						break;
 					case AgentState.Working:
+						continue;
 					case AgentState.Running:
 						continue;
 				}

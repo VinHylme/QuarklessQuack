@@ -18,6 +18,7 @@ namespace Quarkless.Logic.Actions.AccountContainer.Extensions
 				nameof(UnFollowUserAction) => ActionType.UnFollowUser,
 				nameof(LikeCommentAction) => ActionType.LikeComment,
 				nameof(DirectMessagingAction) => ActionType.SendDirectMessage,
+				nameof(WatchStoryAction) => ActionType.WatchStory,
 
 				_ => throw new NotImplementedException()
 			};

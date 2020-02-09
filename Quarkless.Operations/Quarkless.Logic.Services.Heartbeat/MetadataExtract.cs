@@ -464,15 +464,138 @@ namespace Quarkless.Logic.Services.Heartbeat
 					});
 				});
 			}
-			catch (Exception ee)
+			catch (Exception err)
 			{
-				Console.WriteLine(ee.Message);
+				Console.WriteLine(err);
 			}
 			finally
 			{
 				watch.Stop();
 				Console.WriteLine(
 					$"Ended - BuildUsersFeed : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			}
+		}
+
+		public async Task BuildUsersStoryFromTopics(int limit = 1, int cutBy = 1)
+		{
+			Console.WriteLine("Began - BuildUsersStoryFromTopics");
+			var watch = System.Diagnostics.Stopwatch.StartNew();
+			try
+			{
+				var user = _customer.InstagramAccount;
+				var topicTotal = new List<CTopic>();
+				if (!_customer.Profile.ProfileTopic.Topics.Any())
+					return;
+
+				var profileSubTopic = _customer.Profile.ProfileTopic.Topics.Shuffle().First();
+				topicTotal.AddRange(_topicLookup.GetTopicsByParentId(profileSubTopic._id, true).Result);
+
+				if (!topicTotal.Any())
+					return;
+
+				var topicSelect = topicTotal.DistinctBy(x => x.Name).Shuffle().First();
+
+				await _workerManager.PerformTaskOnWorkers(async workers =>
+				{
+					await workers.PerformAction(async worker =>
+					{
+						var instagramSearch = _searchProvider.InstagramSearch(worker.Client,
+							worker.Client.GetContext.Container.Proxy);
+
+						var results = await instagramSearch.GetUserStoriesByTopic(topicSelect , limit);
+						if (results == null)
+							return;
+
+						await _heartbeatLogic.RefreshMetaData(new MetaDataFetchRequest
+						{
+							MetaDataType = MetaDataType.FetchUsersStoryViaTopics,
+							ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
+							InstagramId = user.Id
+						});
+
+						foreach (var userStoryObject in results.ToList().CutObject(cutBy))
+						{
+							var usersToAdd = userStoryObject.Where(_ => !_.IsPrivate)?.ToList();
+							if (!usersToAdd.Any())
+								return;
+
+							await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<List<UserResponse<InstaStory>>>
+							{
+								MetaDataType = MetaDataType.FetchUsersStoryViaTopics,
+								ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
+								InstagramId = user.Id,
+								Data = new Meta<List<UserResponse<InstaStory>>>(usersToAdd)
+							});
+						}
+					});
+				});
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err);
+			}
+			finally
+			{
+				watch.Stop();
+				Console.WriteLine(
+					$"Ended - BuildUsersStoryFromTopics : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
+			}
+		}
+
+		public async Task BuildUsersStoryFeed(int limit = 1, int cutBy = 1)
+		{
+			Console.WriteLine("Began - BuildUsersStoryFeed");
+			var watch = System.Diagnostics.Stopwatch.StartNew();
+			try
+			{
+				var user = _customer.InstagramAccount;
+				await _workerManager.PerformTaskOnWorkers(async workers =>
+				{
+					await workers.PerformAction(async worker =>
+					{
+						var tempWorker = worker;
+						tempWorker.ChangeUser(user.AccountId, user.Id);
+
+						var instagramSearch = _searchProvider.InstagramSearch(tempWorker.Client,
+							tempWorker.Client.GetContext.Container.Proxy);
+
+						var results = await instagramSearch.GetUserFeedStories(limit);
+						if (results == null)
+							return;
+
+						await _heartbeatLogic.RefreshMetaData(new MetaDataFetchRequest
+						{
+							MetaDataType = MetaDataType.FetchUsersStoryFeed,
+							ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
+							InstagramId = user.Id
+						});
+
+						foreach (var userStoryObject in results.ToList().CutObject(cutBy))
+						{
+							var usersToAdd = userStoryObject.Where(_ => !_.IsPrivate && _.Object.Seen <= 0)?.ToList();
+							if (!usersToAdd.Any())
+								return;
+
+							await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<List<UserResponse<InstaReelFeed>>>
+							{
+								MetaDataType = MetaDataType.FetchUsersStoryFeed,
+								ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
+								InstagramId = user.Id,
+								Data = new Meta<List<UserResponse<InstaReelFeed>>>(usersToAdd)
+							});
+						}
+					});
+				});
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err);
+			}
+			finally
+			{
+				watch.Stop();
+				Console.WriteLine(
+					$"Ended - BuildUsersStoryFeed : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
 			}
 		}
 
@@ -879,6 +1002,9 @@ namespace Quarkless.Logic.Services.Heartbeat
 							if (media == null) continue;
 							foreach (var user in media.ObjectItem)
 							{
+								if(user.IsPrivate)
+									continue;
+
 								var suggested =
 									await instagramSearch.SearchUsersMediaDetailInstagram(randomTopic, user.Username,
 										limit);
@@ -1147,6 +1273,9 @@ namespace Quarkless.Logic.Services.Heartbeat
 							if (medias == null) continue;
 							foreach (var commenter in medias.ObjectItem)
 							{
+								if (commenter.IsPrivate)
+									continue;
+
 								var suggested =
 									await instagramSearch.SearchUsersMediaDetailInstagram(randomTopic,
 										commenter.Username, limit);

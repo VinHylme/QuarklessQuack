@@ -9,6 +9,8 @@ namespace Quarkless.Models.InstagramSearch.Interfaces
 {
 	public interface IInstagramContentSearch
 	{
+		Task<IEnumerable<UserResponse<InstaStory>>> GetUserStoriesByTopic(CTopic topic, int limit = 1);
+		Task<IEnumerable<UserResponse<InstaReelFeed>>> GetUserFeedStories(int limit = 1);
 		Task<IEnumerable<UserResponse<string>>> GetUsersFollowersList(string username, int limit,
 			string query = null, bool mutualFirst = true);
 		Task<List<UserResponse<UserSuggestionDetails>>> GetSuggestedPeopleToFollow(int limit);

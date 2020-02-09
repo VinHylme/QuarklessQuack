@@ -28,12 +28,12 @@ namespace Quarkless.Logic.Actions.Factory.ActionBuilder.Manager
 				{ ActionType.MaintainAccount, new ExecuteAccountCheckerActionFactory() },
 				{ ActionType.UnFollowUser, new ExecuteUnfollowUserActionFactory() },
 				{ ActionType.LikeComment, new ExecuteLikeCommentActionFactory() },
-				{ ActionType.SendDirectMessage, new ExecuteDirectMessageActionFactory() }
+				{ ActionType.SendDirectMessage, new ExecuteDirectMessageActionFactory() },
+				{ ActionType.WatchStory, new ExecuteWatchStoryActionFactory() }
 			};
 		}
 
 		public IActionCommit Create(ActionType action, in UserStoreDetails user)
 			=> _factories[action].Commit(user, _contentInfoBuilder, _heartbeatLogic);
-
 	}
 }

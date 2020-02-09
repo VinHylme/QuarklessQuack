@@ -1,6 +1,7 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System;
+using System.Collections.Generic;
 using Quarkless.Models.Common.Models;
 
 namespace Quarkless.Models.InstagramAccounts
@@ -15,6 +16,7 @@ namespace Quarkless.Models.InstagramAccounts
 		public string ProfilePicture { get; set; }
 		public Biography UserBiography { get; set; }
 		public Location Location { get; set; }
+		public List<BlockedAction> BlockedActions { get; set; }
 		public string Email { get; set; }
 		public string PhoneNumber { get; set; }
 		public int? AgentState { get; set; }

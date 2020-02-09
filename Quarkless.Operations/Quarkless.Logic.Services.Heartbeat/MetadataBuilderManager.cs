@@ -39,6 +39,8 @@ namespace Quarkless.Logic.Services.Heartbeat
 			var commenter = Task.Run(async () =>
 				await _metadataExtract.BuildUsersFromCommenters(takeMediaAmount: 12, takeUserMediaAmount: 400));
 
+			var stories = Task.Run(async () => await _metadataExtract.BuildUsersStoryFromTopics());
+
 			await Task.WhenAll(liker, commenter);
 
 			var mediaLiker = _metadataExtract.BuildMediaFromUsersLikers(takeMediaAmount: 12, takeUserMediaAmount: 50);
@@ -51,7 +53,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 			var commentMediaCommenter = _metadataExtract.BuildCommentsFromSpecifiedSource(MetaDataType.FetchMediaByCommenters,
 				MetaDataType.FetchCommentsViaPostCommented, limit: 2, takeMediaAmount: 7, takeUserAmount: 400);
 
-			await Task.WhenAll(commentMediaLiker, commentMediaCommenter);
+			await Task.WhenAll(commentMediaLiker, commentMediaCommenter, stories);
 			Console.WriteLine("Ended Base Extract for {0}", _customer.InstagramAccount.Username);
 		}
 
@@ -107,19 +109,20 @@ namespace Quarkless.Logic.Services.Heartbeat
 
 			var followerList = Task.Run(async () => await _metadataExtract.BuildUserFollowerList());
 
-			if (_customer.InstagramAccount.AgentState == (int) AgentState.Running)
-			{
-				var feedRefresh = await Task.Run(async () => await _metadataExtract.BuildUsersFeed())
-					.ContinueWith(async x =>
-					{
-						await _metadataExtract.BuildUsersFollowSuggestions(2);
-						await _metadataExtract.BuildUsersInbox();
-						await _metadataExtract.BuildCommentsFromSpecifiedSource(MetaDataType.FetchUsersFeed,
-							MetaDataType.FetchCommentsViaUserFeed, takeMediaAmount: 7);
-					});
-				await Task.WhenAll(feedRefresh);
-			}
-			await Task.WhenAll(profileRefresh, followerList, followingList);
+			var storyFeed = Task.Run(async () => await _metadataExtract.BuildUsersStoryFeed());
+
+			var feedRefresh = await Task.Run(async () => await _metadataExtract.BuildUsersFeed())
+				.ContinueWith(async x =>
+				{
+					await _metadataExtract.BuildUsersFollowSuggestions(2);
+					await _metadataExtract.BuildUsersInbox();
+					await _metadataExtract.BuildCommentsFromSpecifiedSource(MetaDataType.FetchUsersFeed,
+						MetaDataType.FetchCommentsViaUserFeed, takeMediaAmount: 7);
+				});
+
+			await Task.WhenAll(feedRefresh);
+			
+			await Task.WhenAll(profileRefresh, followerList, followingList, storyFeed);
 			Console.WriteLine("Ended User Info Extract for {0}", _customer.InstagramAccount.Username);
 		}
 	}

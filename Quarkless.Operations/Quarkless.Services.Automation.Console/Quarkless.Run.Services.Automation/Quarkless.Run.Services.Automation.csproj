@@ -37,7 +37,6 @@
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Base.InstagramComments\Quarkless.Base.InstagramComments.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Events\Quarkless.Events.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.Agent\Quarkless.Logic.Agent.csproj" />
-    <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.Auth\Quarkless.Logic.Auth.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.Comments\Quarkless.Logic.Comments.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.ContentInfo\Quarkless.Logic.ContentInfo.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.ContentSearch\Quarkless.Logic.ContentSearch.csproj" />

@@ -59,6 +59,8 @@ namespace Quarkless.Models.Common.Enums
 		[Description("sendmessageprofile")]
 		SendDirectMessageProfile = 26,
 		[Description("sharemessagemedia")]
-		SendDirectMessageMedia = 27
+		SendDirectMessageMedia = 27,
+		[Description("watchstory")]
+		WatchStory = 28
 	}
 }

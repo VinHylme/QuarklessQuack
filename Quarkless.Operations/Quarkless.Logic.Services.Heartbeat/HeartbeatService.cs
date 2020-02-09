@@ -37,7 +37,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 			_instagramAccountLogic = accountLogic;
 			_topicLookup = topicLookup;
 			_searchProvider = searchProvider;
-			_workerManager = new WorkerManager.WorkerManager(context, _instagramAccountLogic, responseResolver, 2, 1);
+			_workerManager = new WorkerManager.WorkerManager(context, _instagramAccountLogic, responseResolver, 2);
 		}
 
 		/// <summary>

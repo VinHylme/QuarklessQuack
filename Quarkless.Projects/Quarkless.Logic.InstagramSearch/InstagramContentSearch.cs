@@ -28,6 +28,51 @@ namespace Quarkless.Logic.InstagramSearch
 			_responseResolver = responseResolver;
 		}
 
+		public async Task<IEnumerable<UserResponse<InstaReelFeed>>> GetUserFeedStories(int limit = 1)
+		{
+			var feedResponse = await _responseResolver
+				.WithClient(_container)
+				.WithAttempts(1)
+				.WithResolverAsync(() => _container.Story.GetStoryFeedWithPostMethodAsync());
+
+			if (!feedResponse.Response.Succeeded && feedResponse.Response.Value.Items.Count<=0) return null;
+
+			return feedResponse.Response.Value.Items.Select(_ => new UserResponse<InstaReelFeed>
+			{
+				FullName = _.User.FullName,
+				IsVerified = _.User.IsVerified,
+				IsPrivate = _.User.IsPrivate,
+				ProfilePicture = _.User.ProfilePicture,
+				Username = _.User.UserName,
+				UserId = _.User.Pk,
+				Object = _
+			});
+		}
+
+		public async Task<IEnumerable<UserResponse<InstaStory>>> GetUserStoriesByTopic(CTopic topic, int limit = 1)
+		{
+			var topicSearchResponse = await _responseResolver
+				.WithClient(_container)
+				.WithAttempts(1)
+				.WithResolverAsync(() => _container.Feeds.GetTagFeedAsync(topic.Name,
+					PaginationParameters.MaxPagesToLoad(limit)));
+
+			if (!topicSearchResponse.Response.Succeeded &&
+				topicSearchResponse.Response.Value.StoriesItemsCount <= 0) return null;
+
+			return topicSearchResponse.Response.Value.Stories.Select(_ => new UserResponse<InstaStory>
+			{
+				FullName = _.User.FullName,
+				IsVerified = _.User.IsVerified,
+				IsPrivate = _.User.IsPrivate,
+				UserId = _.User.Pk,
+				Username = _.User.UserName,
+				ProfilePicture = _.User.ProfilePicture,
+				Topic = topic,
+				Object = _
+			});
+		}
+
 		public async Task<IEnumerable<UserResponse<string>>> GetUsersFollowersList(string username, int limit,
 			string query = null, bool mutualFirst = true)
 		{

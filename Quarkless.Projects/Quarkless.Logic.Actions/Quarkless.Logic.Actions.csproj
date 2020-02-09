@@ -19,6 +19,7 @@
     <ProjectReference Include="..\Quarkless.Models.Messaging\Quarkless.Models.Messaging.csproj" />
     <ProjectReference Include="..\Quarkless.Models.ResponseResolver\Quarkless.Models.ResponseResolver.csproj" />
     <ProjectReference Include="..\Quarkless.Models.Storage\Quarkless.Models.Storage.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Stories\Quarkless.Models.Stories.csproj" />
     <ProjectReference Include="..\Quarkless.Models.WorkerManager\Quarkless.Models.WorkerManager.csproj" />
   </ItemGroup>
 

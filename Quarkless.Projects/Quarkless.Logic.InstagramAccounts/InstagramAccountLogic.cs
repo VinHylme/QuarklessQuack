@@ -8,6 +8,7 @@ using Quarkless.Models.InstagramAccounts.Interfaces;
 using System.Threading.Tasks;
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Android.DeviceInfo;
+using Quarkless.Models.Common.Enums;
 using Quarkless.Models.InstagramAccounts.Enums;
 using Quarkless.Models.ReportHandler.Interfaces;
 
@@ -87,7 +88,8 @@ namespace Quarkless.Logic.InstagramAccounts
 					UserLimits = null,
 					Location = null,
 					ChallengeInfo = null,
-					UserId = null
+					UserId = null,
+					BlockedActions = new List<BlockedAction>()
 				};
 
 				var result = await _instagramAccountRepository.AddInstagramAccount(instagramAccountModel);
@@ -171,7 +173,8 @@ namespace Quarkless.Logic.InstagramAccounts
 					Location = res.Location,
 					Type = res.Type,
 					ChallengeInfo = res.ChallengeInfo,
-					UserId = res.UserId
+					UserId = res.UserId,
+					BlockedActions = res.BlockedActions,
 				};
 				//await _instagramAccountRedis.SetInstagramAccountDetail(accountId, instagramAccountId, shortInst);
 				return shortInst;
@@ -241,7 +244,8 @@ namespace Quarkless.Logic.InstagramAccounts
 					Location = res.Location,
 					ChallengeInfo = res.ChallengeInfo,
 					UserId = res.UserId,
-					Type = res.Type
+					Type = res.Type,
+					BlockedActions = res.BlockedActions
 				});
 			}
 			catch (Exception ee)
@@ -306,6 +310,13 @@ namespace Quarkless.Logic.InstagramAccounts
 			#endregion
 			return await _instagramAccountRepository.PartialUpdateInstagramAccount(instagramAccountId, instagramAccountModel);
 		}
+
+		public async Task<bool> AddBlockedAction(string instagramAccountId, ActionType actionType)
+			=> await _instagramAccountRepository.AddBlockedAction(instagramAccountId, actionType);
+		
+		public async Task<bool> RemoveBlockedAction(string instagramAccountId, ActionType actionType)
+			=> await _instagramAccountRepository.RemoveBlockedAction(instagramAccountId, actionType);
+		
 		public async Task<IEnumerable<ShortInstagramAccountModel>> GetActiveAgentInstagramAccounts(int actionExType = -1)
 		{
 			try
@@ -359,7 +370,6 @@ namespace Quarkless.Logic.InstagramAccounts
 				InstagramAccountId = instagramAccountId
 			});
 			return true;
-
 		}
 	}
 }

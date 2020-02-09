@@ -97,7 +97,8 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> GetUserTimelineFeed(int limit = 1)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
-			var results = await _responseResolver.WithAttempts(1)
+			var results = await _responseResolver
+				.WithAttempts(1)
 				.WithResolverAsync(()=> _discoverLogic.GetUserTimelineFeed(limit), ActionType.None, "");
 			return ResolverResponse(results);
 		}
