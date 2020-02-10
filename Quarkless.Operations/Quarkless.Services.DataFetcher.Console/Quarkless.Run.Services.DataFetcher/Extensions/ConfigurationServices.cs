@@ -6,6 +6,7 @@ using MongoDB.Bson.Serialization.Serializers;
 using Quarkless.Base.ContentSearch;
 using Quarkless.Events;
 using Quarkless.Events.Interfaces;
+using Quarkless.Geolocation;
 using Quarkless.Logic.Comments;
 using Quarkless.Logic.ContentSearch;
 using Quarkless.Logic.Hashtag;
@@ -124,7 +125,19 @@ namespace Quarkless.Run.Services.DataFetcher.Extensions
 			services.AddSingleton<ITimelineEventLogLogic, TimelineEventLogLogic>();
 			services.AddSingleton<ITimelineLoggingRepository, TimelineLoggingRepository>();
 			services.AddSingleton<ISearchingCache, SearchingCache>();
-			services.AddTransient<IProxyRequest, ProxyRequest>();
+
+			services.AddSingleton<IGeoLocationHandler, GeoLocationHandler>(s =>
+				new GeoLocationHandler(new GeoLocationOptions
+				{
+					IpGeolocationToken = accessors.IpGeoLocationApiKey,
+					GeonamesToken = accessors.GeonamesApiKey,
+					GoogleGeocodeToken = accessors.GoogleGeocodeApiKey
+				}));
+
+			services.AddTransient<IProxyRequest, ProxyRequest>(s => new ProxyRequest(
+				new ProxyRequestOptions(accessors.ProxyHandlerApiEndPoint),
+				s.GetService<IGeoLocationHandler>(),
+				s.GetService<IProxyAssignmentsRepository>()));
 
 			services.Configure<GoogleSearchOptions>(options => { options.Endpoint = accessors.ImageSearchEndpoint; });
 			services.AddTransient<IEventPublisher, EventPublisher>(

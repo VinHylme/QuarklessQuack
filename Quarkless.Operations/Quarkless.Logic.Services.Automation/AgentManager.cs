@@ -407,7 +407,7 @@ namespace Quarkless.Logic.Services.Automation
 					#endregion
 
 					#region Agent State Handler
-
+					
 					if (account.AgentState == (int) AgentState.NotStarted)
 					{
 						account.AgentState = (int) AgentState.Running;
@@ -573,13 +573,9 @@ namespace Quarkless.Logic.Services.Automation
 				{
 					Console.WriteLine(err);
 				}
-				finally
-				{
-					Console.WriteLine($"Ended Agent Automation for {accountId}/{instagramAccountId}");
-				}
-
-				await Task.Delay(TimeSpan.FromSeconds(SecureRandom.Next(1,65)));
+				await Task.Delay(TimeSpan.FromSeconds(SecureRandom.Next(1,6)));
 			}
+			Console.WriteLine($"Ended Agent Automation for {accountId}/{instagramAccountId}");
 		}
 	}
 }

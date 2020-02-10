@@ -371,7 +371,7 @@ namespace Quarkless.Run.Services.Delegator
 
 			Console.WriteLine("Finished Heartbeat containers, now starting automator");
 
-			await Task.Delay(TimeSpan.FromMinutes(3)); // wait around 2.5 minutes before starting automation (populate data first)
+			await Task.Delay(TimeSpan.FromMinutes(1)); // wait around 2.5 minutes before starting automation (populate data first)
 			await CreateAndRunAutomatorContainers(customers);
 			Console.WriteLine("Finished creating containers for automator");
 		}

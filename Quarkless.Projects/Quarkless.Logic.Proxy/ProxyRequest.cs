@@ -33,7 +33,8 @@ namespace Quarkless.Logic.Proxy
 		public async Task<ProxyModel> AssignProxy(string accountId, string instagramAccountId, string locationQuery)
 		{
 			using var httpClient = new HttpClient();
-			var requestUrl = _baseUrl + string.Format(_assignEndpoint,accountId, instagramAccountId, locationQuery);
+			var requestUrl = _baseUrl + string.Format(_assignEndpoint, accountId, instagramAccountId,
+				System.Web.HttpUtility.UrlEncode(locationQuery));
 			var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, requestUrl);
 			var results = await httpClient.SendAsync(httpRequestMessage);
 			return results.Content == null 

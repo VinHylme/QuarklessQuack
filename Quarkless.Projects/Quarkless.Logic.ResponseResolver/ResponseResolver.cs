@@ -256,6 +256,8 @@ namespace Quarkless.Logic.ResponseResolver
 			{
 				case ActionType.CreatePost:
 					return "New Post Created";
+				case ActionType.WatchStory:
+					return "Watched story of a user who matches your interests";
 				case ActionType.CreateCommentMedia:
 					return "Comment Made";
 				case ActionType.CreateBiography:
@@ -756,7 +758,7 @@ namespace Quarkless.Logic.ResponseResolver
 
 				await Task.Delay(_intervalBetweenRequests);
 				currentAttempts++;
-			} while (currentAttempts < _attempts);
+			} while (currentAttempts <= _attempts);
 
 			return results;
 		}
@@ -773,7 +775,7 @@ namespace Quarkless.Logic.ResponseResolver
 
 				await Task.Delay(_intervalBetweenRequests);
 				currentAttempts++;
-			} while (currentAttempts < _attempts);
+			} while (currentAttempts <= _attempts);
 
 			return results;
 		}
@@ -794,6 +796,7 @@ namespace Quarkless.Logic.ResponseResolver
 			{
 				await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
 				{
+					_id = Guid.NewGuid().ToString(),
 					AccountID = account.AccountId,
 					InstagramAccountID = account.Id,
 					ActionType = actionType,
@@ -802,7 +805,7 @@ namespace Quarkless.Logic.ResponseResolver
 					Request = request,
 					Response = JsonConvert.SerializeObject(response),
 					Status = TimelineEventStatus.ServerError,
-					Message = "Something is not exactly happy dappy right now, we're sorry"
+					Message = "Something is not going as expected right now, we're sorry"
 				});
 				return resolverResponse;
 			};
@@ -827,6 +830,7 @@ namespace Quarkless.Logic.ResponseResolver
 			{
 				await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
 				{
+					_id = Guid.NewGuid().ToString(),
 					AccountID = account.AccountId,
 					InstagramAccountID = account.Id,
 					ActionType = actionType,

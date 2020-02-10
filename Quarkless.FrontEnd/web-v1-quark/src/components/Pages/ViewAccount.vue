@@ -84,14 +84,23 @@ export default {
       }).catch(err=>{
           this.isLoading = false;
       });
-      this.$store.dispatch('GetAllEventLogsForUser', {instagramAccountId: this.$route.params.id, limit:100}).then(resp=>{
-          this.timelineLogs = this.$store.getters.UserTimelineLogForUser(this.$route.params.id);
-          this.isLoadingLogs = false;
-        }).catch(err=>{
-          this.isLoadingLogs = false;
-      });
-      this.timer = setInterval(this.loadData, 10000);
-	  this.timerLog = setInterval(this.loadLogs, 5000);
+      const id = this.$route.params.id;
+      if(id !== undefined || id !== null){
+        this.$store.dispatch('GetAllEventLogsForUser', {instagramAccountId: id, limit:100})
+        .then(resp=>{
+            this.timelineLogs = this.$store.getters.UserTimelineLogForUser(this.$route.params.id);
+            this.isLoadingLogs = false;
+          }).catch(err=>{
+            this.isLoadingLogs = false;
+        });
+      }
+
+    this.timer = setInterval(this.loadData, 10000);
+    this.timerLog = setInterval(this.loadLogs, 5000);
+  },
+  destroyed(){
+    clearInterval(this.timer)
+    clearInterval(this.timerLog)
   },
   mounted(){
 
@@ -103,15 +112,15 @@ export default {
      return moment(date).format('llll');
   },
     OnCreatePost(event){
-	  this.isLoading = true;
+    this.isLoading = true;
       this.$store.dispatch('CreatePost', event).then(resp=>{
-		  this.isLoading = false;
+     this.isLoading = false;
          Vue.prototype.$toast.open({
             message: 'Post Successfuly Scheduled',
             type: 'is-success'
-		  })
+      })
       }).catch(err=>{
-		  this.isLoading = false;
+      this.isLoading = false;
         Vue.prototype.$toast.open({
             message: 'Oops looks like something went wrong: ' + err.message,
             type: 'is-danger'
@@ -131,12 +140,16 @@ export default {
     },
     loadLogs(){
       this.isLoadingLogs = true;
-      this.$store.dispatch('GetAllEventLogsForUser', {instagramAccountId: this.$route.params.id, limit:100}).then(resp=>{
-          this.timelineLogs = this.$store.getters.UserTimelineLogForUser(this.$route.params.id);
-          this.isLoadingLogs = false;
-        }).catch(err=>{
-          this.isLoadingLogs = false;
-      });
+      const id = this.$route.params.id;
+      if(id !== undefined){
+        this.$store.dispatch('GetAllEventLogsForUser', {instagramAccountId: id, limit:100})
+        .then(resp=>{
+            this.timelineLogs = this.$store.getters.UserTimelineLogForUser(this.$route.params.id);
+            this.isLoadingLogs = false;
+          }).catch(err=>{
+            this.isLoadingLogs = false;
+        });
+      }
     },
     eventDisplay(event) {
 		if(event.actionObject.actionType === "Image"){

@@ -540,6 +540,9 @@ export default {
     },
     GetUsersTimeline({commit},id){
       return new Promise((resolve, reject)=>{
+        if(id === undefined || id === null){
+          resolve('no id')
+        }
         TimelineServices.GetUserTimeline(id).then(resp=>{
           commit('retrieved_timeline_data_for_user',resp.data);
           resolve(resp)
