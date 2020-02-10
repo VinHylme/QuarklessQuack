@@ -3,10 +3,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using InstagramApiSharp.Classes;
 using MoreLinq.Extensions;
-using Newtonsoft.Json;
-using Quarkless.Logic.InstagramClient;
 using Quarkless.Models.InstagramAccounts;
 using Quarkless.Models.InstagramAccounts.Enums;
 using Quarkless.Models.InstagramAccounts.Interfaces;
@@ -28,8 +25,8 @@ namespace Quarkless.Logic.WorkerManager
 		private readonly IApiClientContext _context;
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
 		private readonly IResponseResolver _responseResolver;
-		private int _batchSize;
-		private int _workerAccountType;
+		private readonly int _batchSize;
+		private readonly int _workerAccountType;
 		private int _accountWorkersFetched;
 		#endregion
 
@@ -48,6 +45,7 @@ namespace Quarkless.Logic.WorkerManager
 			_batchWorkers = SetBatchWorkers();
 			_timer = SetWorkerPoolTimer();
 		}
+
 		#endregion
 
 		#region Worker & Timer Setters

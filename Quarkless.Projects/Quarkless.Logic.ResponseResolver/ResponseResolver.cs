@@ -367,6 +367,35 @@ namespace Quarkless.Logic.ResponseResolver
 			=> _client?.GetContext?.Container;
 		#endregion
 
+
+		#region Static Functions
+
+		public async Task CheckBlockStates(ShortInstagramAccountModel account)
+		{
+			if (account.BlockedActions != null && account.BlockedActions.Any())
+			{
+				foreach (var blockedAction in account.BlockedActions)
+				{
+					if (DateTime.UtcNow > blockedAction.DateBlocked)
+					{
+						await _instagramAccountLogic.RemoveBlockedAction(account.Id, blockedAction.ActionType);
+					}
+				}
+			}
+
+			if (account.AgentState == (int)AgentState.Blocked)
+			{
+				await UpdateAccountState(new InstagramAccountModel
+				{
+					AgentState = (int)AgentState.DeepSleep,
+					SleepTimeRemaining = DateTime.UtcNow.AddHours(2)
+				});
+			}
+		}
+
+		#endregion
+
+
 		private async Task<ResponseHandlerResults> ResponseHandler(ResultInfo info,
 			ActionType actionType = ActionType.None, string request = null)
 		{
@@ -378,26 +407,8 @@ namespace Quarkless.Logic.ResponseResolver
 			{
 				ResponseType = info.ResponseType
 			};
-			
-			if (context.BlockedActions != null && context.BlockedActions.Any())
-			{
-				foreach (var blockedAction in context.BlockedActions)
-				{
-					if (DateTime.UtcNow > blockedAction.DateBlocked)
-					{
-						await RemoveBlockedAction(blockedAction.ActionType);
-					}
-				}
-			}
 
-			if (context.AgentState == (int) AgentState.Blocked)
-			{
-				await UpdateAccountState(new InstagramAccountModel
-				{
-					AgentState = (int) AgentState.DeepSleep,
-					SleepTimeRemaining = DateTime.UtcNow.AddHours(2)
-				});
-			}
+			await CheckBlockStates(context);
 
 			switch (info.ResponseType)
 			{

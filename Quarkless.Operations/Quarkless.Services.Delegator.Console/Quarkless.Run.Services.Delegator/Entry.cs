@@ -12,6 +12,7 @@ using Quarkless.Models.Services.Heartbeat.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.InstagramAccounts.Enums;
+using Quarkless.Models.InstagramAccounts.Interfaces;
 using Quarkless.Run.Services.Delegator.Extensions;
 using SharedConfig = Quarkless.Models.Shared.Extensions.Config;
 
@@ -23,6 +24,10 @@ namespace Quarkless.Run.Services.Delegator
 		#region Declerations
 
 		#region Constants
+
+		private const int HEART_BEAT_WORKER_TYPE = 1;
+		private const int AUTOMATOR_WORKER_TYPE = 2;
+
 		#region Docker Constants
 
 		private const string DOCKER_URL = "npipe://./pipe/docker_engine";
@@ -64,6 +69,7 @@ namespace Quarkless.Run.Services.Delegator
 		#endregion
 
 		private static IAgentLogic _agentLogic;
+		private static IInstagramAccountLogic _instagramAccountLogic;
 		private static DockerClient Client;
 
 		private static bool _useDockerContainer;
@@ -189,7 +195,8 @@ namespace Quarkless.Run.Services.Delegator
 						$"USER_INSTAGRAM_ACCOUNT={customer.Id}",
 						$"OPERATION_TYPE={((int)type).ToString()}",
 						$"DOTNET_ENV_RELEASE={new SharedConfig().EnvironmentType.GetDescription()}",
-						$"DOTNET_RUNNING_IN_CONTAINER={true}"
+						$"DOTNET_RUNNING_IN_CONTAINER={true}",
+						$"USER_WORKER_ACCOUNT_TYPE={HEART_BEAT_WORKER_TYPE}"
 					},
 					AttachStderr = true,
 					AttachStdout = true
@@ -251,7 +258,8 @@ namespace Quarkless.Run.Services.Delegator
 						$"USER_ID={customer.AccountId}",
 						$"USER_INSTAGRAM_ACCOUNT={customer.Id}",
 						$"DOTNET_ENV_RELEASE={new SharedConfig().EnvironmentType.GetDescription()}",
-						$"DOTNET_RUNNING_IN_CONTAINER={true}"
+						$"DOTNET_RUNNING_IN_CONTAINER={true}",
+						$"USER_WORKER_ACCOUNT_TYPE={AUTOMATOR_WORKER_TYPE}"
 					},
 					AttachStderr = true,
 					AttachStdout = true
@@ -374,7 +382,8 @@ namespace Quarkless.Run.Services.Delegator
 		private static bool IsRunning(string name) => Processes(name).Length > 0;
 		private static Process[] Processes(string name) => Process.GetProcessesByName(name);
 		private static void RunProcess(string file, string accountId, string instagramId, 
-			ExtractOperationType type = ExtractOperationType.None, string env = "local")
+			ExtractOperationType type = ExtractOperationType.None, string env = "local",
+			int workerType = HEART_BEAT_WORKER_TYPE)
 		{
 			try
 			{
@@ -400,8 +409,9 @@ namespace Quarkless.Run.Services.Delegator
 				
 				process.StartInfo.EnvironmentVariables.Add("USER_ID", accountId);
 				process.StartInfo.EnvironmentVariables.Add("USER_INSTAGRAM_ACCOUNT", instagramId);
+				process.StartInfo.EnvironmentVariables.Add("USER_WORKER_ACCOUNT_TYPE", workerType.ToString());
 
-				if(type!= ExtractOperationType.None)
+				if (type!= ExtractOperationType.None)
 					process.StartInfo.EnvironmentVariables.Add("OPERATION_TYPE", ((int)type).ToString());
 
 				process.ErrorDataReceived += (o, e) =>
@@ -524,7 +534,8 @@ namespace Quarkless.Run.Services.Delegator
 			{
 				foreach (var customer in customers)
 				{
-					RunProcess(heartbeatExe, customer.AccountId, customer.Id, operationType, env.GetDescription());
+					RunProcess(heartbeatExe, customer.AccountId, customer.Id, operationType,
+						env.GetDescription(), HEART_BEAT_WORKER_TYPE);
 					await Task.Delay(TimeSpan.FromSeconds(1));
 				}
 			}
@@ -536,7 +547,8 @@ namespace Quarkless.Run.Services.Delegator
 			await Task.Delay(TimeSpan.FromSeconds(45));
 			foreach (var customer in customers)
 			{
-				RunProcess(automationExe, customer.AccountId, customer.Id, ExtractOperationType.None, env.GetDescription());
+				RunProcess(automationExe, customer.AccountId, customer.Id, ExtractOperationType.None,
+					env.GetDescription(), AUTOMATOR_WORKER_TYPE);
 			}
 		}
 		#endregion
@@ -552,9 +564,12 @@ namespace Quarkless.Run.Services.Delegator
 
 			using var scope = services.BuildServiceProvider().CreateScope();
 			_agentLogic = scope.ServiceProvider.GetService<IAgentLogic>();
-
+			_instagramAccountLogic = scope.ServiceProvider.GetService<IInstagramAccountLogic>();
 			bool.TryParse(runInDocker, out var useDocker);
 			_useDockerContainer = useDocker;
+
+			await _instagramAccountLogic.UpdateAgentStates(AgentState.NotStarted, HEART_BEAT_WORKER_TYPE);
+			await _instagramAccountLogic.UpdateAgentStates(AgentState.NotStarted, AUTOMATOR_WORKER_TYPE);
 
 			if (_useDockerContainer)
 				Client = new DockerClientConfiguration(new Uri(DOCKER_URL)).CreateClient();

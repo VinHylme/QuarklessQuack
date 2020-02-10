@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Quarkless.Analyser;
@@ -22,7 +21,9 @@ using Quarkless.Models.InstagramAccounts.Enums;
 using Quarkless.Models.InstagramAccounts.Interfaces;
 using Quarkless.Models.Library.Interfaces;
 using Quarkless.Models.Profile.Interfaces;
+using Quarkless.Models.ResponseResolver.Interfaces;
 using Quarkless.Models.Services.Automation.Interfaces;
+using Quarkless.Models.Shared.Extensions;
 using Quarkless.Models.Storage.Interfaces;
 using Quarkless.Models.Timeline;
 using Quarkless.Models.Timeline.Enums;
@@ -47,10 +48,11 @@ namespace Quarkless.Logic.Services.Automation
 		private readonly IAgentLogic _agentLogic;
 		private readonly IActionCommitFactory _actionCommitFactory;
 		private readonly IAccountRepository _accountRepository;
+		private readonly IResponseResolver _responseResolver;
 		public AgentManager(IInstagramAccountLogic instagramAccountLogic, IProfileLogic profileLogic,
 			ITimelineLogic timelineLogic, ITimelineEventLogLogic eventLogLogic, ILibraryLogic libraryLogic,
 			IS3BucketLogic s3Bucket, IPostAnalyser postAnalyser, IActionCommitFactory actionCommitFactory,
-			IAccountRepository accountRepository)
+			IAccountRepository accountRepository, IResponseResolver responseResolver)
 		{
 			_timelineLogic = timelineLogic;
 			_timelineEventLogs = eventLogLogic;
@@ -62,6 +64,7 @@ namespace Quarkless.Logic.Services.Automation
 			_actionCommitFactory = actionCommitFactory;
 			_accountRepository = accountRepository;
 			_agentLogic = new AgentLogic(instagramAccountLogic);
+			_responseResolver = responseResolver;
 		}
 		#endregion
 
@@ -80,6 +83,22 @@ namespace Quarkless.Logic.Services.Automation
 
 				switch ((ActionType)@event.ActionType)
 				{
+					case ActionType.WatchStory when completedActionsDaily >= limits.DailyLimits.WatchStoryLimit:
+						return new AddEventResponse
+						{
+							Event = @event,
+							ContainsErrors = false,
+							HasCompleted = false,
+							DailyLimitReached = true
+						};
+					case ActionType.WatchStory when completedActionsHourly >= limits.HourlyLimits.WatchStoryLimit:
+						return new AddEventResponse
+						{
+							Event = @event,
+							ContainsErrors = false,
+							HasCompleted = false,
+							HourlyLimitReached = true
+						};
 					case ActionType.CreatePost when completedActionsDaily >= limits.DailyLimits.CreatePostLimit:
 						return new AddEventResponse
 						{
@@ -94,7 +113,7 @@ namespace Quarkless.Logic.Services.Automation
 							Event = @event,
 							ContainsErrors = false,
 							HasCompleted = false,
-							DailyLimitReached = true
+							HourlyLimitReached = true
 						};
 					case ActionType.SendDirectMessage when completedActionsDaily >= limits.DailyLimits.SendMessageLimit:
 						return new AddEventResponse
@@ -110,7 +129,7 @@ namespace Quarkless.Logic.Services.Automation
 							Event = @event,
 							ContainsErrors = false,
 							HasCompleted = false,
-							DailyLimitReached = true
+							HourlyLimitReached = true
 						};
 					case ActionType.CreateCommentMedia when completedActionsDaily >= limits.DailyLimits.CreateCommentLimit:
 						return new AddEventResponse
@@ -223,16 +242,17 @@ namespace Quarkless.Logic.Services.Automation
 		// TODO: BASE THEIR POSTING ON WHICH HOUR WAS MOST POPULAR
 		public async Task Start(string accountId, string instagramAccountId)
 		{
-			var iteration = 0;
-			while (true)
+			Console.WriteLine($"Started Agent Automation for {accountId}/{instagramAccountId}");
+			while (!ShutDownInstance.IsShutDown)
 			{
-				Console.WriteLine($"Started Agent Automation for {accountId}/{instagramAccountId}");
 				try
 				{
 					#region Initialise Account Details
 					var account = await _agentLogic.GetAccount(accountId, instagramAccountId);
 					if (account == null) return;
-					
+
+					await _responseResolver.CheckBlockStates(account);
+
 					var accAuthDetails = await _accountRepository.GetAccountByUsername(accountId);
 					if (accAuthDetails == null) return;
 					
@@ -413,13 +433,13 @@ namespace Quarkless.Logic.Services.Automation
 						{
 							if (scheduledForUser != -1)
 							{
-								if (scheduledForUser > 100)
+								if (scheduledForUser > 80)
 								{
 									account.AgentState = (int) AgentState.Sleeping;
+
 									await _instagramAccountLogic.PartialUpdateInstagramAccount(
 										userStoreDetails.AccountId,
-										userStoreDetails.InstagramAccountUser, new InstagramAccountModel
-										{
+										userStoreDetails.InstagramAccountUser, new InstagramAccountModel {
 											AgentState = account.AgentState,
 										});
 								}
@@ -430,10 +450,9 @@ namespace Quarkless.Logic.Services.Automation
 							await actionsContainerManager.RunAction();
 
 							var actionFinished = actionsContainerManager.GetFinishedAction();
+
 							if (actionFinished == null)
-							{
 								break;
-							}
 
 							foreach (var eventBody in actionFinished.DataObjects)
 							{
@@ -444,9 +463,9 @@ namespace Quarkless.Logic.Services.Automation
 
 								actionsContainerManager.HasMetTimeLimit();
 
-								var availaDate = nextAvailableDate ?? DateTime.UtcNow;
+								var getDate = nextAvailableDate ?? DateTime.UtcNow;
 
-								eventBody.ExecutionTime = availaDate.AddSeconds(timeSett.Max);
+								eventBody.ExecutionTime = getDate.AddSeconds(timeSett.Max);
 
 								var res = await AddToTimeline(new EventActionOptions
 								{
@@ -466,42 +485,36 @@ namespace Quarkless.Logic.Services.Automation
 									}
 								}, account.UserLimits);
 
-								if (res.HasCompleted)
-								{
-
-								}
-
 								if (res.DailyLimitReached)
-								{
-									actionsContainerManager.TriggerAction(actionFinished.ActionType,
-										DateTime.UtcNow.AddDays(1));
-								}
+									await _instagramAccountLogic.AddBlockedAction(account.Id, actionFinished.ActionType, DateTime.UtcNow.AddHours(12));
+								
 								else if (res.HourlyLimitReached)
-								{
-									actionsContainerManager.TriggerAction(actionFinished.ActionType,
-										DateTime.UtcNow.AddHours(1));
-								}
+									await _instagramAccountLogic.AddBlockedAction(account.Id, actionFinished.ActionType, DateTime.Now.AddHours(1));
 							}
 
 							break;
 						}
 						case (int) AgentState.Sleeping when scheduledForUser == -1:
-							account.SleepTimeRemaining =
-								DateTime.UtcNow.AddMinutes(SecureRandom.Next(25, 35) + SecureRandom.NextDouble());
+							account.SleepTimeRemaining = DateTime.UtcNow
+								.AddMinutes(SecureRandom.Next(60, 350) + (SecureRandom.NextDouble() * 2));
+
 							account.AgentState = (int) AgentState.DeepSleep;
+
 							await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.AccountId,
 								userStoreDetails.InstagramAccountUser, new InstagramAccountModel
 								{
 									SleepTimeRemaining = account.SleepTimeRemaining,
 									AgentState = account.AgentState
 								});
+
 							break;
 						case (int) AgentState.Sleeping:
 						{
 							if (scheduledForUser <= 10)
 							{
-								account.SleepTimeRemaining =
-									DateTime.UtcNow.AddMinutes(SecureRandom.Next(25, 35) + SecureRandom.NextDouble());
+								account.SleepTimeRemaining = DateTime.UtcNow
+									.AddMinutes(SecureRandom.Next(60, 350) + (SecureRandom.NextDouble() * 2));
+
 								account.AgentState = (int) AgentState.DeepSleep;
 
 								await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.AccountId,
@@ -565,8 +578,7 @@ namespace Quarkless.Logic.Services.Automation
 					Console.WriteLine($"Ended Agent Automation for {accountId}/{instagramAccountId}");
 				}
 
-				await Task.Delay(TimeSpan.FromSeconds(1));
-				Console.WriteLine($"Finished Iteration {iteration++}");
+				await Task.Delay(TimeSpan.FromSeconds(SecureRandom.Next(1,65)));
 			}
 		}
 	}

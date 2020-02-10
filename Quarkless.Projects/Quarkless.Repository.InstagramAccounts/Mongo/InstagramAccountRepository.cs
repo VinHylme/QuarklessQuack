@@ -103,10 +103,13 @@ namespace Quarkless.Repository.InstagramAccounts.Mongo
 				return false;
 			}
 		}
-		public async Task<bool> AddBlockedAction(string instagramAccountId, ActionType actionType)
+		public async Task<bool> AddBlockedAction(string instagramAccountId, ActionType actionType, DateTime? blockFor = null)
 		{
 			try
 			{
+				if(!blockFor.HasValue)
+					blockFor = DateTime.UtcNow.AddMinutes(30);
+
 				var exists = await _ctx.FindAsync(item=>item._id == instagramAccountId 
 					&& item.BlockedActions.Any(_=>_.ActionType == actionType));
 
@@ -118,7 +121,7 @@ namespace Quarkless.Repository.InstagramAccounts.Mongo
 						Builders<InstagramAccountModel>.Update.Set(s => s.BlockedActions[-1], new BlockedAction
 						{
 							ActionType = actionType,
-							DateBlocked = DateTime.UtcNow.AddMinutes(30)
+							DateBlocked = blockFor.Value
 						}));
 					return updated.IsAcknowledged;
 				}
@@ -128,7 +131,7 @@ namespace Quarkless.Repository.InstagramAccounts.Mongo
 					Builders<InstagramAccountModel>.Update.Push(_ => _.BlockedActions, new BlockedAction
 					{
 						ActionType = actionType,
-						DateBlocked = DateTime.UtcNow.AddMinutes(30)
+						DateBlocked = blockFor.Value
 					}));
 				return push.IsAcknowledged;
 			}
@@ -266,6 +269,20 @@ namespace Quarkless.Repository.InstagramAccounts.Mongo
 			var filter = builders.Eq(_ => _.Type, type);
 			var res = await _ctx.FindAsync(filter);
 			return res.ToList();
+		}
+
+		public async Task UpdateMultipleUserAgentStates(AgentState state,
+			int accountType = 1, AgentState targetedStates = AgentState.Working)
+		{
+			try
+			{
+				await _ctx.UpdateManyAsync(_ => _.AgentState == (int) targetedStates && _.Type == accountType,
+					Builders<InstagramAccountModel>.Update.Set(_ => _.AgentState, (int) state));
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err);
+			}
 		}
 
 		public async Task<bool> RemoveInstagramAccount(string id)

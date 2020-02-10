@@ -268,7 +268,6 @@ namespace Quarkless.Run.Services.Automation.Extensions
 			services.AddSingleton<ITextGenerator, TextGenerator>();
 			services.AddSingleton<IHashtagGenerator, HashtagGenerator>();
 			services.AddSingleton<IContentInfoBuilder, ContentInfoBuilder>();
-			services.AddSingleton<IWorkerManager, WorkerManager>();
 		}
 		public static void IncludeContexts(this IServiceCollection services)
 		{

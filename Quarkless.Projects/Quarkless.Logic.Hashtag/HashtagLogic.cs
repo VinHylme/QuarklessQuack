@@ -14,14 +14,15 @@ namespace Quarkless.Logic.Hashtag
 {
 	public class HashtagLogic : IHashtagLogic
 	{
-		private IReportHandler _reportHandler { get; set; }
-		private readonly IApiClientContainer Client;
+		private readonly IReportHandler _reportHandler;
+		private readonly IApiClientContainer _client;
 		private readonly IHashtagsRepository _hashtagsRepository;
 		public HashtagLogic(IReportHandler reportHandler, IApiClientContainer clientContext,
 			IHashtagsRepository hashtagsRepository)
 		{
-			Client = clientContext;
+			_client = clientContext;
 			_reportHandler = reportHandler;
+			_reportHandler.SetupReportHandler(nameof(HashtagLogic));
 			_hashtagsRepository = hashtagsRepository;
 		}
 
@@ -54,7 +55,7 @@ namespace Quarkless.Logic.Hashtag
 		{
 			try
 			{
-				return await Client.Hashtag.GetTopHashtagMediaListAsync(topic, PaginationParameters.MaxPagesToLoad(limit));
+				return await _client.Hashtag.GetTopHashtagMediaListAsync(topic, PaginationParameters.MaxPagesToLoad(limit));
 			}
 			catch (Exception ee)
 			{
@@ -66,7 +67,7 @@ namespace Quarkless.Logic.Hashtag
 		{
 			try
 			{
-				return await Client.Hashtag.SearchHashtagAsync(query, excludeList);
+				return await _client.Hashtag.SearchHashtagAsync(query, excludeList);
 			}
 			catch (Exception ee)
 			{
@@ -78,7 +79,7 @@ namespace Quarkless.Logic.Hashtag
 		{
 			try
 			{
-				return await Client.Hashtag.GetHashtagsSectionsAsync(query, PaginationParameters.MaxPagesToLoad(limit));
+				return await _client.Hashtag.GetHashtagsSectionsAsync(query, PaginationParameters.MaxPagesToLoad(limit));
 			}
 			catch (Exception ee)
 			{

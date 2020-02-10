@@ -109,15 +109,7 @@ namespace Quarkless.Logic.Actions.AccountContainer
 			var rollAction = SecureRandom.ProbabilityRoll(_actions);
 			return rollAction;
 		}
-		public void TriggerAction(ActionType action, DateTime time)
-		{
-			var first = _actions.FirstOrDefault(ac => ac.Object.ActionType == action);
 
-			if (first != null)
-			{
-				var lm = first.Object.Remaining = time;
-			}
-		}
 		public EventActionModel GetFinishedAction()
 		{
 			return _finishedActions.Count > 0 ? _finishedActions.Dequeue() : null;

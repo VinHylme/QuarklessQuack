@@ -28,8 +28,8 @@ namespace Quarkless.Logic.Services.Heartbeat
 		private readonly IWorkerManager _workerManager;
 		public HeartbeatService(IProfileLogic profileLogic,
 			IProxyLogic proxyLogic, IHeartbeatLogic heartbeatLogic,
-			ISearchProvider searchProvider, IApiClientContext context,
-			IInstagramAccountLogic accountLogic, ITopicLookupLogic topicLookup, IResponseResolver responseResolver)
+			ISearchProvider searchProvider, IInstagramAccountLogic accountLogic,
+			ITopicLookupLogic topicLookup, IWorkerManager workerManager)
 		{
 			_profileLogic = profileLogic;
 			_proxyLogic = proxyLogic;
@@ -37,7 +37,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 			_instagramAccountLogic = accountLogic;
 			_topicLookup = topicLookup;
 			_searchProvider = searchProvider;
-			_workerManager = new WorkerManager.WorkerManager(context, _instagramAccountLogic, responseResolver, 2);
+			_workerManager = workerManager;
 		}
 
 		/// <summary>

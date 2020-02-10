@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
@@ -155,7 +154,6 @@ namespace Quarkless.Run.Services.Heartbeat.Extensions
 			services.AddTransient<IClientContextProvider, ClientContextProvider>();
 			services.AddTransient<IApiClientContext, ApiClientContext>();
 			services.AddTransient<IApiClientContainer, ApiClientContainer>();
-			services.AddSingleton<IWorkerManager, WorkerManager>();
 		}
 		public static void IncludeContexts(this IServiceCollection services)
 		{

@@ -311,8 +311,8 @@ namespace Quarkless.Logic.InstagramAccounts
 			return await _instagramAccountRepository.PartialUpdateInstagramAccount(instagramAccountId, instagramAccountModel);
 		}
 
-		public async Task<bool> AddBlockedAction(string instagramAccountId, ActionType actionType)
-			=> await _instagramAccountRepository.AddBlockedAction(instagramAccountId, actionType);
+		public async Task<bool> AddBlockedAction(string instagramAccountId, ActionType actionType, DateTime? blockFor = null)
+			=> await _instagramAccountRepository.AddBlockedAction(instagramAccountId, actionType, blockFor);
 		
 		public async Task<bool> RemoveBlockedAction(string instagramAccountId, ActionType actionType)
 			=> await _instagramAccountRepository.RemoveBlockedAction(instagramAccountId, actionType);
@@ -370,6 +370,13 @@ namespace Quarkless.Logic.InstagramAccounts
 				InstagramAccountId = instagramAccountId
 			});
 			return true;
+		}
+
+		public async Task UpdateAgentStates(AgentState state, int accountType = 1, AgentState targetedStates = AgentState.Working)
+		{
+			if (accountType == 0)
+				return;
+			await _instagramAccountRepository.UpdateMultipleUserAgentStates(state, accountType, targetedStates);
 		}
 	}
 }
