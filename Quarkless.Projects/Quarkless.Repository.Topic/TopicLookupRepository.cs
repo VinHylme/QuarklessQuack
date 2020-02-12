@@ -28,6 +28,14 @@ namespace Quarkless.Repository.Topic
 				{
 					response.Exists = true;
 					response.Id = searchTopic._id;
+					response.SubTopicsAmount = 0;
+					var subTopics = await GetTopicsByParentId(searchTopic._id);
+
+					if (subTopics.Count > 2)
+					{
+						response.SubTopicsAmount = subTopics.Count;
+					}
+
 					return response;
 				}
 				topic._id = ObjectId.GenerateNewId((int)DateTime.UtcNow.Ticks).ToString();

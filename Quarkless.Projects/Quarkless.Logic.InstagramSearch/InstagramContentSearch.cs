@@ -272,37 +272,39 @@ namespace Quarkless.Logic.InstagramSearch
 							HasLikedBefore = s.HasLiked,
 							HasAudio = s.HasAudio,
 							IsCommentsDisabled = s.IsCommentsDisabled,
-							Location = s?.Location,
+							Location = s.Location,
 							ViewCount = s.ViewCount,
-							Caption = s?.Caption?.Text,
-							Explore = s?.Explore,
+							Caption = s.Caption?.Text,
+							Explore = s.Explore,
 							FilterType = s.FilterType,
 							HasSeen = s.IsSeen,
 							NumberOfQualities = s.NumberOfQualities,
 							PhotosOfI = s.PhotoOfYou,
-							PreviewComments = s?.PreviewComments,
-							ProductTags = s?.ProductTags,
+							PreviewComments = s.PreviewComments,
+							ProductTags = s.ProductTags,
 							ProductType = s.ProductType,
-							TopLikers = s?.TopLikers,
+							TopLikers = s.TopLikers,
 							TakenAt = s.TakenAt,
-							UserTags = s?.UserTags,
-							IsFollowing = s?.User?.FriendshipStatus?.Following,
+							UserTags = s.UserTags,
+							IsFollowing = s.User?.FriendshipStatus?.Following,
 							CommentCount = s.CommentsCount,
 							Topic = topic,
 							MediaFrom = MediaFrom.Instagram,
 							MediaType = s.MediaType,
 							User = new UserResponse
 							{
-								FullName = s.User.FullName,
-								IsPrivate = s.User.IsPrivate,
-								IsVerified = s.User.IsVerified,
-								ProfilePicture = s.User.ProfilePicture,
+								FullName = s.User?.FullName,
+								IsPrivate = s.User?.IsPrivate ?? false,
+								IsVerified = s.User?.IsVerified ?? false,
+								ProfilePicture = s.User?.ProfilePicture,
 								Topic = topic,
-								UserId = s.User.Pk,
-								Username = s.User.UserName
+								UserId = s.User?.Pk ?? 0,
+								Username = s.User?.UserName
 							}
 						};
+
 						var mediaDetailMediaUrl = new List<string>();
+
 						switch (s.MediaType)
 						{
 							case InstaMediaType.Image:
@@ -325,12 +327,14 @@ namespace Quarkless.Logic.InstagramSearch
 									var videos = x.Videos.FirstOrDefault()?.Uri;
 									if (videos != null)
 										mediaDetailMediaUrl.Add(videos);
+
 									var images = x.Images.FirstOrDefault()?.Uri;
 									if (images != null)
 										mediaDetailMediaUrl.Add(images);
 								});
 								break;
 						}
+
 						mediaDetail.MediaUrl = mediaDetailMediaUrl;
 						return mediaDetail;
 					}));
@@ -376,12 +380,12 @@ namespace Quarkless.Logic.InstagramSearch
 							MediaType = s.MediaType,
 							User = new UserResponse
 							{
-								FullName = s.User.FullName,
-								IsPrivate = s.User.IsPrivate,
-								IsVerified = s.User.IsVerified,
-								ProfilePicture = s.User.ProfilePicture,
-								UserId = s.User.Pk,
-								Username = s.User.UserName
+								FullName = s.User?.FullName,
+								IsPrivate = s.User?.IsPrivate ?? false,
+								IsVerified = s.User?.IsVerified ?? false,
+								ProfilePicture = s.User?.ProfilePicture,
+								UserId = s.User?.Pk ?? 0,
+								Username = s.User?.UserName
 							}
 						};
 						var mediaDetailMediaUrl = new List<string>();
@@ -461,12 +465,13 @@ namespace Quarkless.Logic.InstagramSearch
 							Topic = topic,
 							User = new UserResponse
 							{
-								FullName = s.User.FullName,
-								IsPrivate = s.User.IsPrivate,
-								IsVerified = s.User.IsVerified,
-								ProfilePicture = s.User.ProfilePicture,
-								UserId = s.User.Pk,
-								Username = s.User.UserName
+								FullName = s.User?.FullName,
+								IsPrivate = s.User?.IsPrivate ?? false,
+								IsVerified = s.User?.IsVerified ?? false,
+								ProfilePicture = s.User?.ProfilePicture,
+								Topic = topic,
+								UserId = s.User?.Pk ?? 0,
+								Username = s.User?.UserName
 							}
 						};
 						var totals = new List<string>();
@@ -548,12 +553,12 @@ namespace Quarkless.Logic.InstagramSearch
 							MediaType = s.MediaType,
 							User = new UserResponse
 							{
-								FullName = s.User.FullName,
-								IsPrivate = s.User.IsPrivate,
-								IsVerified = s.User.IsVerified,
-								ProfilePicture = s.User.ProfilePicture,
-								UserId = s.User.Pk,
-								Username = s.User.UserName
+								FullName = s.User?.FullName,
+								IsPrivate = s.User?.IsPrivate ?? false,
+								IsVerified = s.User?.IsVerified ?? false,
+								ProfilePicture = s.User?.ProfilePicture,
+								UserId = s.User?.Pk ?? 0,
+								Username = s.User?.UserName
 							}
 						};
 						var mediaDetailMediaUrl = new List<string>();

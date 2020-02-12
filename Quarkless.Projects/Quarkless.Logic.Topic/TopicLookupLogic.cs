@@ -65,7 +65,7 @@ namespace Quarkless.Logic.Topic
 		public async Task<List<string>> BuildRelatedTopics(CTopic topic, bool saveToDb, bool includeGoogleSuggest = true)
 		{
 			var responseResults = new List<string>();
-			const int instagramTopicTakeAmount = 50;
+			const int instagramTopicTakeAmount = 25;
 
 			var cacheResults = await _searchingCache.GetSearchData<string>(topic.Name);
 			if (cacheResults.Any())
@@ -115,7 +115,7 @@ namespace Quarkless.Logic.Topic
 								var name = _.RemoveLargeSpacesInText(1, "");
 								return new CTopic
 								{
-									Name = name,
+									Name = topic.Name + " " + name,
 									ParentTopicId = topic._id
 								};
 							}).ToList());
@@ -143,7 +143,7 @@ namespace Quarkless.Logic.Topic
 				Topic = topic
 			};
 
-			if (response.Exists)
+			if (response.Exists && response.SubTopicsAmount > 0)
 				return results;
 
 			var related = await BuildRelatedTopics(topic, saveTopicsSuggested, includeGoogleSuggest);
@@ -264,7 +264,7 @@ namespace Quarkless.Logic.Topic
 				if(string.IsNullOrEmpty(topic.Name) || topic.Name.Length <=2)
 					continue;
 
-				var results = await AddTopic(topic, saveTopicsSuggested:true);
+				var results = await AddTopic(topic, includeGoogleSuggest:false, saveTopicsSuggested:true);
 				if (string.IsNullOrEmpty(results.Topic._id)) continue;
 				topic._id = results.Topic._id;
 				profileTopicsUpdate.Add(topic);

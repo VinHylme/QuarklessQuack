@@ -1,4 +1,5 @@
 ﻿using System;
+using Hangfire;
 using Quarkless.Models.Actions;
 using Quarkless.Models.Actions.Interfaces;
 using Quarkless.Models.Common.Enums;
@@ -9,35 +10,35 @@ using Quarkless.Models.Timeline.TaskScheduler;
 
 namespace Quarkless.Logic.Timeline.TaskScheduler
 {
+	[AutomaticRetry(Attempts = 1)]
 	public class EventActionJob : IJob<EventActionOptions>
 	{
 		private readonly IActionExecuteFactory _actionExecuteFactory;
+		
 		public EventActionJob(IActionExecuteFactory executeFactory)
 		{
 			_actionExecuteFactory = executeFactory;
 		}
+
 		public void Perform(EventActionOptions jobOptions)
 		{
 			if (jobOptions == null)
 				return;
-			try
-			{
-				var result = _actionExecuteFactory.Create((ActionType) jobOptions.ActionType, new UserStore
-					{
-						AccountId = jobOptions.User.AccountId,
-						InstagramAccountUsername = jobOptions.User.InstagramAccountUsername,
-						InstagramAccountUser = jobOptions.User.InstagramAccountUser
-					}).ExecuteAsync(new EventExecuteBody(jobOptions.DataObject.Body, jobOptions.DataObject.BodyType))
-					.Result;
 
-				if (!result.IsSuccessful)
+			var result = _actionExecuteFactory.Create((ActionType) jobOptions.ActionType, new UserStore
 				{
-					throw new Exception("Action Failed");
-				}
-			}
-			catch (Exception err)
+					AccountId = jobOptions.User.AccountId,
+					InstagramAccountUsername = jobOptions.User.InstagramAccountUsername,
+					InstagramAccountUser = jobOptions.User.InstagramAccountUser
+				}).ExecuteAsync(new EventExecuteBody(jobOptions.DataObject.Body, jobOptions.DataObject.BodyType)
+				{
+					ActionType = (ActionType)jobOptions.ActionType
+				})
+				.Result;
+
+			if (!result.IsSuccessful)
 			{
-				Console.WriteLine(err);
+				throw new InvalidOperationException($"{((ActionType)jobOptions.ActionType).ToString()} Has failed for user {jobOptions.User.AccountId}/{jobOptions.User.InstagramAccountUsername}");
 			}
 		}
 	}

@@ -22,7 +22,7 @@ namespace Quarkless.Logic.Actions.Limits
 		public const int MAX_HOURLY_FOLLOW_ACTION = 40;
 
 		public const int MAX_DAILY_POST_MEDIA_ACTION = 24;
-		public const int MAX_HOURLY_POST_MEDIA_ACTION = 2;
+		public const int MAX_HOURLY_POST_MEDIA_ACTION = 3;
 
 		public const int MAX_DAILY_COMMENT_ACTION = 500;
 		public const int MAX_HOURLY_COMMENT_ACTION = 55;
@@ -129,14 +129,14 @@ namespace Quarkless.Logic.Actions.Limits
 
 			var daysPast = (int) Math.Abs((accountCreationDate - DateTime.UtcNow).TotalDays);
 
-			if (daysPast <= DAYS_CONSIDERED_WARMING_UP)
+			if (daysPast < DAYS_CONSIDERED_WARMING_UP)
 			{
 				isWarmingUp = true;
 				scaleFactor = (double) daysPast / DAYS_CONSIDERED_WARMING_UP;
 
 				if (scaleFactor <= 0)
 				{
-					scaleFactor = 0.05;
+					scaleFactor = 0.125;
 				}
 			}
 
@@ -160,8 +160,8 @@ namespace Quarkless.Logic.Actions.Limits
 					},
 					HourlyLimits = new HourlyActions
 					{
-						SendMessageLimit = (int) (scaleFactor * maxLimitsForUser.HourlyLimits.SendMessageLimit / MIN_HOURLY_DM_ACTION * MIN_HOURLY_DM_ACTION),
-						CreatePostLimit = (int) (scaleFactor * maxLimitsForUser.HourlyLimits.CreatePostLimit / MIN_HOURLY_POST_MEDIA_ACTION * MIN_HOURLY_POST_MEDIA_ACTION),
+						SendMessageLimit = MIN_HOURLY_DM_ACTION,
+						CreatePostLimit = MIN_HOURLY_POST_MEDIA_ACTION,
 						CreateCommentLimit = (int) (scaleFactor * maxLimitsForUser.HourlyLimits.CreateCommentLimit / MIN_HOURLY_COMMENT_ACTION * MIN_HOURLY_COMMENT_ACTION),
 						FollowPeopleLimit = (int) (scaleFactor * maxLimitsForUser.HourlyLimits.FollowPeopleLimit / MIN_HOURLY_FOLLOW_ACTION * MIN_HOURLY_FOLLOW_ACTION),
 						FollowTopicLimit = (int) (scaleFactor * maxLimitsForUser.HourlyLimits.FollowTopicLimit / MIN_HOURLY_FOLLOW_ACTION * MIN_HOURLY_FOLLOW_ACTION),
@@ -191,19 +191,19 @@ namespace Quarkless.Logic.Actions.Limits
 							CreatePostLimit = 4,
 							FollowPeopleLimit = 40,
 							FollowTopicLimit = 40,
-							LikeCommentLimit = 100,
-							LikePostLimit = 100,
+							LikeCommentLimit = 250,
+							LikePostLimit = 250,
 							WatchStoryLimit = 5000
 						},
 						HourlyLimits = new HourlyActions
 						{
 							SendMessageLimit = 1,
 							CreatePostLimit = 1,
-							CreateCommentLimit = 15,
+							CreateCommentLimit = 10,
 							FollowPeopleLimit = 15,
 							FollowTopicLimit = 15,
-							LikeCommentLimit = 15,
-							LikePostLimit = 15,
+							LikeCommentLimit = 40,
+							LikePostLimit = 40,
 							WatchStoryLimit = 150
 						}
 					};
@@ -217,19 +217,19 @@ namespace Quarkless.Logic.Actions.Limits
 							CreatePostLimit = 8,
 							FollowPeopleLimit = 80,
 							FollowTopicLimit = 80,
-							LikeCommentLimit = 200,
-							LikePostLimit = 200,
+							LikeCommentLimit = 500,
+							LikePostLimit = 500,
 							WatchStoryLimit = 75000
 						},
 						HourlyLimits = new HourlyActions
 						{
 							SendMessageLimit = 3,
 							CreatePostLimit = 2,
-							CreateCommentLimit = 30,
-							FollowPeopleLimit = 30,
-							FollowTopicLimit = 30,
-							LikeCommentLimit = 30,
-							LikePostLimit = 30,
+							CreateCommentLimit = 15,
+							FollowPeopleLimit = 25,
+							FollowTopicLimit = 25,
+							LikeCommentLimit = 80,
+							LikePostLimit = 80,
 							WatchStoryLimit = 300
 						}
 					};
@@ -243,8 +243,8 @@ namespace Quarkless.Logic.Actions.Limits
 							CreatePostLimit = 15,
 							FollowPeopleLimit = 125,
 							FollowTopicLimit = 125,
-							LikeCommentLimit = 600,
-							LikePostLimit = 600,
+							LikeCommentLimit = 650,
+							LikePostLimit = 650,
 							WatchStoryLimit = 100000
 						},
 						HourlyLimits = new HourlyActions
@@ -254,8 +254,8 @@ namespace Quarkless.Logic.Actions.Limits
 							CreateCommentLimit = 42,
 							FollowPeopleLimit = 42,
 							FollowTopicLimit = 42,
-							LikeCommentLimit = 42,
-							LikePostLimit = 42,
+							LikeCommentLimit = 90,
+							LikePostLimit = 90,
 							WatchStoryLimit = 400
 						}
 					};

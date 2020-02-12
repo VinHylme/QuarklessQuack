@@ -53,11 +53,14 @@ namespace Quarkless.Logic.Services.Heartbeat
 			var watch = System.Diagnostics.Stopwatch.StartNew();
 			try
 			{
-				var topicTotal = new List<CTopic>();
 				if (!_customer.Profile.ProfileTopic.Topics.Any())
 					return;
 
+				var topicTotal = new List<CTopic>();
+
 				var profileSubTopic = _customer.Profile.ProfileTopic.Topics.Shuffle().First();
+
+				topicTotal.Add(profileSubTopic);
 				topicTotal.AddRange(_topicLookup.GetTopicsByParentId(profileSubTopic._id, true).Result);
 
 				if (!topicTotal.Any())
@@ -164,6 +167,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 				if (userTargetList != null && userTargetList.Count > 0)
 				{
 					var profileSubTopic = _customer.Profile.ProfileTopic.Topics.Shuffle().First();
+
 					var randomTopic = (await _topicLookup.GetTopicsByParentId(profileSubTopic._id,true)).Shuffle()
 						.FirstOrDefault();
 

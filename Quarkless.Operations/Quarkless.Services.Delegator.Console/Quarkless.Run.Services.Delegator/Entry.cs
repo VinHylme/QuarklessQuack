@@ -400,7 +400,8 @@ namespace Quarkless.Run.Services.Delegator
 					}
 				};
 
-				process.StartInfo.EnvironmentVariables.Add("DOTNET_RUNNING_IN_CONTAINER","false");
+				if(process.StartInfo.EnvironmentVariables.ContainsKey("DOTNET_RUNNING_IN_CONTAINER"))
+					process.StartInfo.EnvironmentVariables["DOTNET_RUNNING_IN_CONTAINER"] = "false";
 
 				if(process.StartInfo.EnvironmentVariables.ContainsKey("DOTNET_ENV_RELEASE"))
 					process.StartInfo.EnvironmentVariables["DOTNET_ENV_RELEASE"] = env;
@@ -445,15 +446,17 @@ namespace Quarkless.Run.Services.Delegator
 					StartInfo =
 					{
 						UseShellExecute = false,
-						CreateNoWindow = false,
+						CreateNoWindow = true,
 						RedirectStandardOutput = true,
 						RedirectStandardError = true,
 						RedirectStandardInput = true,
-						FileName = file
+						FileName = file,
+						WindowStyle = ProcessWindowStyle.Hidden
 					}
 				};
 
-				process.StartInfo.EnvironmentVariables.Add("DOTNET_RUNNING_IN_CONTAINER", "false");
+				if (!process.StartInfo.EnvironmentVariables.ContainsKey("DOTNET_RUNNING_IN_CONTAINER"))
+					process.StartInfo.EnvironmentVariables.Add("DOTNET_RUNNING_IN_CONTAINER", "false");
 
 				if (process.StartInfo.EnvironmentVariables.ContainsKey("DOTNET_ENV_RELEASE"))
 					process.StartInfo.EnvironmentVariables["DOTNET_ENV_RELEASE"] = env;
@@ -464,18 +467,23 @@ namespace Quarkless.Run.Services.Delegator
 				{
 					Console.WriteLine(e.Data);
 				};
+
 				process.OutputDataReceived += (o, e) =>
 				{
 					Console.WriteLine(e.Data);
 				};
+
 				process.Exited += (o, e) =>
 				{
-
+					Console.WriteLine(e);
 				};
+
 				process.Start();
 				process.BeginOutputReadLine();
 				process.BeginErrorReadLine();
+
 				process.WaitForExit((int)TimeSpan.FromMinutes(3.5).TotalMilliseconds);
+
 			}
 			catch (Exception ee)
 			{
@@ -530,13 +538,13 @@ namespace Quarkless.Run.Services.Delegator
 
 			var opsTypes = Enum.GetValues(typeof(ExtractOperationType)).Cast<ExtractOperationType>();
 
-			foreach (var operationType in opsTypes)
+			foreach (var operationType in opsTypes.Where(_=>_ != ExtractOperationType.None))
 			{
-				foreach (var customer in customers)
+				foreach (var customer in customers.Where(_=>_.Id == "5e427e6a85182a6978e884e3"))
 				{
 					RunProcess(heartbeatExe, customer.AccountId, customer.Id, operationType,
 						env.GetDescription(), HEART_BEAT_WORKER_TYPE);
-					await Task.Delay(TimeSpan.FromSeconds(1));
+					await Task.Delay(TimeSpan.FromSeconds(4));
 				}
 			}
 
@@ -545,7 +553,7 @@ namespace Quarkless.Run.Services.Delegator
 			//RunProcess(dataFetcherExe);
 
 			await Task.Delay(TimeSpan.FromSeconds(45));
-			foreach (var customer in customers)
+			foreach (var customer in customers.Where(_ => _.Id == "5e427e6a85182a6978e884e3"))
 			{
 				RunProcess(automationExe, customer.AccountId, customer.Id, ExtractOperationType.None,
 					env.GetDescription(), AUTOMATOR_WORKER_TYPE);

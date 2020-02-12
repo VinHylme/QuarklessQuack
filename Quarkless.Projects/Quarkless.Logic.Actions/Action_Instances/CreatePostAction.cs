@@ -8,6 +8,7 @@ using InstagramApiSharp.Classes.Models;
 using MoreLinq.Extensions;
 using Quarkless.Analyser.Extensions;
 using Quarkless.Models.Actions;
+using Quarkless.Models.Actions.Enums.ActionTypes;
 using Quarkless.Models.Actions.Factory.Action_Options;
 using Quarkless.Models.Actions.Interfaces;
 using Quarkless.Models.Actions.Models;
@@ -21,6 +22,7 @@ using Quarkless.Models.Heartbeat.Interfaces;
 using Quarkless.Models.Media;
 using Quarkless.Models.Profile.Enums;
 using Quarkless.Models.SearchResponse;
+using Quarkless.Models.SearchResponse.Enums;
 
 namespace Quarkless.Logic.Actions.Action_Instances
 {
@@ -56,7 +58,6 @@ namespace Quarkless.Logic.Actions.Action_Instances
 			await using var mediaStream = new MemoryStream(media);
 			return await _actionOptions.S3BucketLogic.UploadStreamFile(mediaStream, keyName);
 		}
-
 		private async Task<MediaData> ProcessImage(string mediaUrl, Size size)
 		{
 			if (string.IsNullOrEmpty(mediaUrl))
@@ -74,6 +75,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 					IncorrectFormat = true
 				};
 			}
+
 			if (!_actionOptions.PostAnalyser.Manipulation.ImageEditor.IsImageGood(imageBytes,
 				_user.Profile.Theme.Colors.Select(s => Color.FromArgb(s.Red, s.Green, s.Blue)),
 				_user.Profile.Theme.Percentage, size)) return null;
@@ -111,6 +113,308 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				Url = s3UrlLink
 			};
 		}
+		private async Task<(List<Meta<Media>>, MetaDataType)> GetMediaFromSearchType(SearchType searchTypeSelected)
+		{
+			switch (searchTypeSelected)
+			{
+				case SearchType.Google:
+					{
+						var googleResults = await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
+						{
+							MetaDataType = MetaDataType.FetchMediaForSpecificUserGoogle,
+							ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
+							InstagramId = _user.Profile.InstagramAccountId
+						});
+
+						return (googleResults != null ? googleResults.ToList() : new List<Meta<Media>>(),
+							MetaDataType.FetchMediaForSpecificUserGoogle);
+					}
+				case SearchType.Instagram:
+					{
+						var optionPick = new List<Chance<MetaDataType>>
+						{
+							new Chance<MetaDataType>
+							{
+								Object = MetaDataType.FetchMediaByTopic,
+								Probability = 0.50
+							}
+						};
+
+						if (_user.Profile.UserTargetList != null && _user.Profile.UserTargetList.Any())
+						{
+							optionPick.Add(new Chance<MetaDataType>
+							{
+								Object = MetaDataType.FetchMediaByUserTargetList,
+								Probability = 0.50
+							});
+						}
+						if (_user.Profile.LocationTargetList != null && _user.Profile.LocationTargetList.Any())
+						{
+							optionPick.Add(new Chance<MetaDataType>
+							{
+								Object = MetaDataType.FetchMediaByUserLocationTargetList,
+								Probability = 0.50
+							});
+						}
+
+						var selectedMetaDataType = SecureRandom.ProbabilityRoll(optionPick);
+
+						var resultsFromMetaData = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
+						{
+							MetaDataType = selectedMetaDataType,
+							ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
+							InstagramId = _user.ShortInstagram.Id
+						}))?.ToList();
+
+						if (resultsFromMetaData == null || !resultsFromMetaData.Any() 
+							&& selectedMetaDataType != MetaDataType.FetchMediaByTopic)
+						{
+							resultsFromMetaData = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
+							{
+								MetaDataType = MetaDataType.FetchMediaByTopic,
+								ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
+								InstagramId = _user.ShortInstagram.Id
+							}))?.ToList();
+						}
+
+						return (resultsFromMetaData ?? new List<Meta<Media>>(), selectedMetaDataType);
+					}
+				case SearchType.Yandex:
+					{
+						var yandexResults = await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
+						{
+							MetaDataType = MetaDataType.FetchMediaForSpecificUserYandex,
+							ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
+							InstagramId = _user.ShortInstagram.Id
+						});
+						return (yandexResults != null ? yandexResults.ToList() : new List<Meta<Media>>(),
+							MetaDataType.FetchMediaForSpecificUserYandex);
+					}
+				default: throw new Exception("Search type was invalid");
+			}
+		}
+
+		private TempSelect FindImageFromList(in List<Meta<Media>> mediaItems, MetaDataType selectedAction)
+		{
+			var selectedMedia = new TempSelect();
+			var filterMediaSize = new Size(850, 850);
+
+			var by = new By
+			{
+				ActionType = (int)ActionType.CreatePost,
+				User = _user.Profile.InstagramAccountId
+			};
+
+			foreach (var mediaItem in mediaItems)
+			{
+				mediaItem.SeenBy.Add(by);
+
+				_heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
+				{
+					AccountId = _user.AccountId,
+					InstagramId = _user.InstagramAccountUser,
+					ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
+					MetaDataType = selectedAction,
+					Data = mediaItem
+				}).GetAwaiter().GetResult();
+
+				var media = mediaItem.ObjectItem?.Medias.FirstOrDefault();
+				if (media == null) continue;
+
+				var imageUrl = media.MediaUrl.FirstOrDefault();
+
+				var resultImage = ProcessImage(imageUrl, filterMediaSize).Result;
+				if (resultImage == null)
+					continue;
+
+				selectedMedia.MediaType = InstaMediaType.Image;
+				resultImage.SelectedMedia = mediaItem;
+				selectedMedia.MediaData.Add(resultImage);
+				break;
+			}
+
+			return selectedMedia;
+		}
+		private TempSelect FindVideoFromList(in List<Meta<Media>> mediaItems, MetaDataType selectedAction)
+		{
+			var selectedMedia = new TempSelect();
+
+			var by = new By
+			{
+				ActionType = (int)ActionType.CreatePost,
+				User = _user.Profile.InstagramAccountId
+			};
+
+			foreach (var mediaItem in mediaItems)
+			{
+				mediaItem.SeenBy.Add(by);
+
+				_heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
+				{
+					AccountId = _user.AccountId,
+					InstagramId = _user.InstagramAccountUser,
+					ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
+					MetaDataType = selectedAction,
+					Data = mediaItem
+				}).GetAwaiter().GetResult();
+
+				var media = mediaItem.ObjectItem?.Medias.FirstOrDefault();
+				if (media == null) continue;
+
+				var videoUrl = media.MediaUrl.FirstOrDefault();
+				var resultVideo = ProcessVideo(videoUrl).Result;
+				if (resultVideo == null)
+					continue;
+
+				selectedMedia.MediaType = InstaMediaType.Video;
+				resultVideo.SelectedMedia = mediaItem;
+				selectedMedia.MediaData.Add(resultVideo);
+				break;
+			}
+
+			return selectedMedia;
+		}
+
+		private TempSelect FindCarouselFromList(in List<Meta<Media>> mediaItems, MetaDataType selectedAction)
+		{
+			var selectedMedia = new TempSelect();
+			var filterMediaSize = new Size(850, 850);
+			var carouselAmount = SecureRandom.Next(2, 4);
+			var currentAmount = 0;
+			const int howManyMediasToTakeFromInstagramCarousel = 2;
+			var by = new By
+			{
+				ActionType = (int)ActionType.CreatePost,
+				User = _user.Profile.InstagramAccountId
+			};
+
+			foreach (var mediaItem in mediaItems)
+			{
+				if (currentAmount > carouselAmount)
+					break;
+
+				mediaItem.SeenBy.Add(by);
+				_heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
+				{
+					AccountId = _user.AccountId,
+					InstagramId = _user.InstagramAccountUser,
+					ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
+					MetaDataType = selectedAction,
+					Data = mediaItem
+				}).GetAwaiter().GetResult();
+
+				foreach (var objectItemMedia in mediaItem.ObjectItem.Medias)
+				{
+					if(objectItemMedia == null)
+						continue;
+
+					var fromInsta = objectItemMedia.MediaFrom == MediaFrom.Instagram;
+					
+					switch (objectItemMedia.MediaType)
+					{
+						case InstaMediaType.Image:
+						{
+							var imageResponse = ProcessImage(objectItemMedia.MediaUrl.First(), filterMediaSize).Result;
+							if (imageResponse == null)
+								continue;
+
+							//if there are already images in the list (make sure they are the same ratio)
+							if (selectedMedia.MediaData.Count > 0) 
+							{
+								var oas = _actionOptions.PostAnalyser.Manipulation.ImageEditor
+									.GetClosestAspectRatio(selectedMedia.MediaData[0].MediaBytes);
+
+								var cas = _actionOptions.PostAnalyser.Manipulation.ImageEditor
+									.GetClosestAspectRatio(imageResponse.MediaBytes);
+
+								if (Math.Abs(oas - cas) > 0.5) continue;
+
+								selectedMedia.MediaType = InstaMediaType.Carousel;
+								imageResponse.SelectedMedia = mediaItem;
+								selectedMedia.MediaData.Add(imageResponse);
+							}
+							else
+							{
+								selectedMedia.MediaType = InstaMediaType.Carousel;
+								imageResponse.SelectedMedia = mediaItem;
+								selectedMedia.MediaData.Add(imageResponse);
+							}
+
+							currentAmount++;
+							continue;
+						}
+						case InstaMediaType.Video when fromInsta:
+						{
+							var resultCarouselVideo = ProcessVideo(objectItemMedia.MediaUrl.First()).Result;
+							if (resultCarouselVideo == null)
+								continue;
+
+							selectedMedia.MediaType = InstaMediaType.Carousel;
+							resultCarouselVideo.SelectedMedia = mediaItem;
+							selectedMedia.MediaData.Add(resultCarouselVideo);
+
+							carouselAmount++;
+							break;
+						}
+						case InstaMediaType.Video:
+							continue;
+						case InstaMediaType.Carousel:
+						{
+							if(!objectItemMedia.MediaUrl.Any()) continue;
+
+							foreach (var mediaUrl in objectItemMedia.MediaUrl.Take(howManyMediasToTakeFromInstagramCarousel))
+							{
+								var imageResponse = ProcessImage(mediaUrl, filterMediaSize).Result;
+								if (imageResponse == null)
+									continue;
+
+								if (imageResponse.IncorrectFormat) //is video
+								{
+									var resultCarouselVideo = ProcessVideo(mediaUrl).Result;
+									if (resultCarouselVideo == null)
+										continue;
+
+									selectedMedia.MediaType = InstaMediaType.Carousel;
+									resultCarouselVideo.SelectedMedia = mediaItem;
+									selectedMedia.MediaData.Add(resultCarouselVideo);
+
+									carouselAmount++;
+								}
+								else
+								{
+									if (selectedMedia.MediaData.Count > 0)
+									{
+										var oas = _actionOptions.PostAnalyser.Manipulation.ImageEditor
+											.GetClosestAspectRatio(selectedMedia.MediaData[0].MediaBytes);
+
+										var cas = _actionOptions.PostAnalyser.Manipulation.ImageEditor
+											.GetClosestAspectRatio(imageResponse.MediaBytes);
+
+										if (Math.Abs(oas - cas) > 0.5) continue;
+
+										selectedMedia.MediaType = InstaMediaType.Carousel;
+										imageResponse.SelectedMedia = mediaItem;
+										selectedMedia.MediaData.Add(imageResponse);
+									}
+									else
+									{
+										selectedMedia.MediaType = InstaMediaType.Carousel;
+										imageResponse.SelectedMedia = mediaItem;
+										selectedMedia.MediaData.Add(imageResponse);
+									}
+
+									currentAmount++;
+								}
+							}
+
+							break;
+						}
+					}
+				}
+			}
+
+			return selectedMedia;
+		}
 
 		public async Task<ResultCarrier<EventActionModel>> PushAsync(DateTimeOffset executionTime)
 		{
@@ -118,6 +422,11 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				throw new Exception("Action Option cannot be null");
 			Console.WriteLine($"Create Media Action Started: {_user.AccountId}, {_user.InstagramAccountUsername}, {_user.InstagramAccountUser}");
 			
+			//todo: first select the action type
+			//if image then select from all search types
+			//if video then select from instagram only
+			//if carousel then either instagram carousel types (or all search types and create carousel)
+
 			var results = new ResultCarrier<EventActionModel>();
 			if (!_user.Profile.AdditionalConfigurations.EnableAutoPosting)
 			{
@@ -142,87 +451,38 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 			try
 			{
-				var totalResults = new List<Meta<Media>>();
-				var selectedAction = MetaDataType.None;
-				var allowedSearchTypes = GetValidSearchTypes();
-
-				var searchTypeSelected = allowedSearchTypes[SecureRandom.Next(allowedSearchTypes.Count)];
-
-				switch (searchTypeSelected)
+				PostMediaActionType actionType;
+				if (_actionOptions.PostMediaActionType == PostMediaActionType.Any)
 				{
-					case SearchType.Google:
+					var likeActionsChances = new List<Chance<PostMediaActionType>>
 					{
-						var googleResults = await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
-						{
-							MetaDataType = MetaDataType.FetchMediaForSpecificUserGoogle,
-							ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-							InstagramId = _user.Profile.InstagramAccountId
-						});
-						selectedAction = MetaDataType.FetchMediaForSpecificUserGoogle;
-						if (googleResults != null)
-							totalResults = googleResults.ToList();
-						break;
-					}
-					case SearchType.Instagram:
-					{
-						if (_user.Profile.UserTargetList != null && _user.Profile.UserTargetList.Any())
-						{
-							var action = new[] {0, 1};
-							var pickedRandom = action.ElementAt(SecureRandom.Next(action.Length - 1));
-							var userId = _user.ShortInstagram.Id;
-							var selected = MetaDataType.FetchMediaByUserTargetList;
-
-							if (pickedRandom == 1)
-							{
-								userId = null;
-								selected = MetaDataType.FetchMediaByTopic;
-							}
-
-							totalResults = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
-							{
-								MetaDataType = selected,
-								ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-								InstagramId = userId
-							}))?.ToList();
-
-							selectedAction = selected;
-						}
-						else
-						{
-							totalResults = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
-							{
-								MetaDataType = MetaDataType.FetchMediaByTopic,
-								ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-								InstagramId = _user.ShortInstagram.Id
-							}))?.ToList();
-
-							selectedAction = MetaDataType.FetchMediaByTopic;
-						}
-
-						break;
-					}
-					case SearchType.Yandex:
-					{
-						if (_user.Profile.Theme.ImagesLike != null && _user.Profile.Theme.ImagesLike.Count > 0)
-						{
-							var yandexResults = await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
-							{
-								MetaDataType = MetaDataType.FetchMediaForSpecificUserYandex,
-								ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-								InstagramId = _user.ShortInstagram.Id
-							});
-
-							selectedAction = MetaDataType.FetchMediaForSpecificUserYandex;
-							if (yandexResults != null)
-								totalResults = yandexResults.ToList();
-						}
-
-						break;
-					}
-					default: throw new Exception("Search type was invalid");
+						new Chance<PostMediaActionType> {Object = PostMediaActionType.Image, Probability = 0.35},
+						new Chance<PostMediaActionType> {Object = PostMediaActionType.Video, Probability = 0.30},
+						new Chance<PostMediaActionType> {Object = PostMediaActionType.Carousel, Probability = 0.35},
+					};
+					actionType = SecureRandom.ProbabilityRoll(likeActionsChances);
+				}
+				else
+				{
+					actionType = _actionOptions.PostMediaActionType;
 				}
 
-				if (selectedAction == MetaDataType.None || totalResults.Count <= 0)
+				var allowedSearchTypes = GetValidSearchTypes(); // to not include based on user
+
+				switch (actionType)	//to not include based on post type
+				{
+					case PostMediaActionType.Image: //all/any search types allowed
+					case PostMediaActionType.Carousel: //all/any search types (but instagram only if video included too)
+						break;
+					case PostMediaActionType.Video: //only instagram
+						allowedSearchTypes.RemoveAll(_ => _ == SearchType.Google || _ == SearchType.Yandex);
+						break;
+				}
+
+				var searchTypeSelected = allowedSearchTypes[SecureRandom.Next(allowedSearchTypes.Count - 1)];
+				var totalResults = await GetMediaFromSearchType(searchTypeSelected);
+
+				if(!totalResults.Item1.Any())
 				{
 					results.IsSuccessful = false;
 					results.Info = new ErrorResponse
@@ -231,7 +491,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 						StatusCode = System.Net.HttpStatusCode.NotFound
 					};
 					return results;
-				};
+				}
 
 				var by = new By
 				{
@@ -239,130 +499,72 @@ namespace Quarkless.Logic.Actions.Action_Instances
 					User = _user.Profile.InstagramAccountId
 				};
 
-				var filteredResults = totalResults.Where(mediaData => !mediaData.SeenBy.Any(e => e.User == by.User
-					&& e.ActionType == by.ActionType)).ToList();
+				// remove any duplicates (not reliable will need to make sure they are not refreshed)
+				var filteredResults = totalResults.Item1
+					.Where(mediaData => !mediaData.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
+					.ToList();
 
-				var selectedMedia = new TempSelect();
-				var filterMediaSize = new Size(850, 850);
-				var carouselAmount = SecureRandom.Next(2, 4);
-				var currentAmount = 0;
-				var enteredType = InstaMediaType.All;
+				//get meta medias by the action type selected (e.g. video, image or carousel)
+				var filterByMediaType = filteredResults.Select(meta =>
+					new Meta<Media>(new 
+						Media
+						{
+							Errors = meta.ObjectItem?.Errors ?? 0,
+							Medias = meta.ObjectItem?.Medias
+								?.Where(a=>a.MediaType == (InstaMediaType)((int)actionType))?.ToList() 
+								?? new List<MediaResponse>()
+						})).Shuffle().ToList();
 
-				foreach (var mediaData in filteredResults.Shuffle())
+				
+				if ((!filterByMediaType.Any() || !filterByMediaType.All(s=>s.ObjectItem.Medias.Any())))
 				{
-					var media = mediaData.ObjectItem?.Medias.FirstOrDefault();
-					if (media == null) continue;
-
-					if (enteredType != InstaMediaType.All)
+					//if no carousel post was found
+					if (actionType == PostMediaActionType.Carousel)
 					{
-						if (media.MediaType != enteredType)
-						{
-							continue;
-						}
+						// create carousel from images
+						filterByMediaType = filteredResults.Select(meta =>
+							new Meta<Media>(new
+								Media
+								{
+									Errors = meta.ObjectItem.Errors,
+									Medias = meta.ObjectItem?.Medias
+										         ?.Where(a => a.MediaType == InstaMediaType.Image)?.ToList()
+									         ?? new List<MediaResponse>()
+								})).Shuffle().ToList();
 					}
-
-					mediaData.SeenBy.Add(by);
-					await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
+					else
 					{
-						AccountId = _user.AccountId,
-						InstagramId = _user.InstagramAccountUser,
-						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-						MetaDataType = selectedAction,
-						Data = mediaData
-					});
-
-					switch (media.MediaType)
-					{
-						case InstaMediaType.Image:
+						results.IsSuccessful = false;
+						results.Info = new ErrorResponse
 						{
-							enteredType = InstaMediaType.Image;
-							var imageUrl = media.MediaUrl.FirstOrDefault();
-							var resultImage = await ProcessImage(imageUrl, filterMediaSize);
-							if (resultImage == null)
-								continue;
-
-							selectedMedia.MediaType = InstaMediaType.Image;
-							resultImage.SelectedMedia = mediaData;
-							selectedMedia.MediaData.Add(resultImage);
-							goto Finished;
-						}
-						case InstaMediaType.Video:
-						{
-							enteredType = InstaMediaType.Video;
-							var videoUrl = media.MediaUrl.FirstOrDefault();
-							var resultVideo = await ProcessVideo(videoUrl);
-							if (resultVideo == null)
-								continue;
-
-							selectedMedia.MediaType = InstaMediaType.Video;
-							resultVideo.SelectedMedia = mediaData;
-							selectedMedia.MediaData.Add(resultVideo);
-							goto Finished;
-						}
-						case InstaMediaType.Carousel when currentAmount < carouselAmount:
-						{
-							foreach (var mediaUrl in media.MediaUrl)
-							{
-								var resultCarousel = await ProcessImage(mediaUrl, filterMediaSize);
-								if (resultCarousel == null)
-									continue;
-
-								if (!resultCarousel.IncorrectFormat)
-								{
-									if (selectedMedia.MediaData.Count > 0)
-									{
-										var oas = _actionOptions.PostAnalyser.Manipulation.ImageEditor
-											.GetClosestAspectRatio(selectedMedia.MediaData[0].MediaBytes);
-
-										var cas = _actionOptions.PostAnalyser.Manipulation.ImageEditor
-											.GetClosestAspectRatio(resultCarousel.MediaBytes);
-
-										if (Math.Abs(oas - cas) > 0.5) continue;
-
-										selectedMedia.MediaType = InstaMediaType.Carousel;
-										resultCarousel.SelectedMedia = mediaData;
-										selectedMedia.MediaData.Add(resultCarousel);
-									}
-									else
-									{
-										selectedMedia.MediaType = InstaMediaType.Carousel;
-										resultCarousel.SelectedMedia = mediaData;
-										selectedMedia.MediaData.Add(resultCarousel);
-									}
-
-									carouselAmount++;
-								}
-								else
-								{
-									var resultCarouselVideo = await ProcessVideo(mediaUrl);
-									if (resultCarouselVideo == null)
-										continue;
-
-									selectedMedia.MediaType = InstaMediaType.Carousel;
-									resultCarouselVideo.SelectedMedia = mediaData;
-									selectedMedia.MediaData.Add(resultCarouselVideo);
-									carouselAmount++;
-								}
-							}
-
-							break;
-						}
-						case InstaMediaType.Carousel when currentAmount > carouselAmount:
-						{
-							goto Finished;
-						}
-						default: continue;
+							Message = $"could not find any good {actionType.GetDescription()} to post, user: {_user.AccountId}, instaId: {_user.InstagramAccountUsername}",
+							StatusCode = System.Net.HttpStatusCode.NotFound
+						};
+						return results;
 					}
 				}
 
-				Finished:
+				var selectedMedia = new TempSelect();
+
+				switch (actionType)
+				{
+					case PostMediaActionType.Image:
+						selectedMedia = FindImageFromList(filterByMediaType, totalResults.Item2);
+						break;
+					case PostMediaActionType.Video:
+						selectedMedia = FindVideoFromList(filterByMediaType, totalResults.Item2);
+						break;
+					case PostMediaActionType.Carousel:
+						selectedMedia = FindCarouselFromList(filterByMediaType, totalResults.Item2);
+						break;
+				}
 
 				if (selectedMedia.MediaData == null || selectedMedia.MediaData.Count <= 0)
 				{
 					results.IsSuccessful = false;
 					results.Info = new ErrorResponse
 					{
-						Message = $"could not find any good image to post, user: {_user.AccountId}, instaId: {_user.InstagramAccountUsername}",
+						Message = $"could not find any good {actionType.GetDescription()} to post, user: {_user.AccountId}, instaId: {_user.InstagramAccountUsername}",
 						StatusCode = System.Net.HttpStatusCode.NotFound
 					};
 					return results;
@@ -383,31 +585,34 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				{
 					case InstaMediaType.Image:
 					{
-						var imageData = selectedMedia.MediaData.FirstOrDefault();
+						var imageData = selectedMedia.MediaData.First();
 						
 						var imageUpload = new InstaImageUpload
 						{
 							Uri = imageData.Url
-							// ImageBytes = _actionOptions.PostAnalyser.Manipulation.ImageEditor
-							// 	.ResizeToClosestAspectRatio(_actionOptions.PostAnalyser.Manager
-							// 		.DownloadMedia(imageData.Url))
+							#region Commented out because slows down when storing
+							/* ImageBytes = _actionOptions.PostAnalyser.Manipulation.ImageEditor
+								.ResizeToClosestAspectRatio(_actionOptions.PostAnalyser.Manager
+									.DownloadMedia(imageData.Url))
+							*/
+							#endregion
 						};
 
-						var selectedImageMedia = imageData.SelectedMedia.ObjectItem.Medias.FirstOrDefault();
+						var selectedImageMedia = imageData.SelectedMedia.ObjectItem.Medias.First();
 
 						var credit = selectedImageMedia.User?.Username;
 						MediaInfo mediaInfo;
 
 						if (selectedImageMedia.Topic == null)
 							mediaInfo = await _contentInfoBuilder.GenerateMediaInfoBytes(_user.Profile.ProfileTopic, null,
-								credit, SecureRandom.Next(20, 28), new[]
+								credit, SecureRandom.Next(24, 28), new[]
 								{
 									_actionOptions.PostAnalyser.Manager
 										.DownloadMedia(imageData.Url)
 								});
 						else
 							mediaInfo = await _contentInfoBuilder.GenerateMediaInfo(_user.Profile.ProfileTopic,
-								selectedImageMedia.Topic, credit, SecureRandom.Next(20, 28));
+								selectedImageMedia.Topic, credit, SecureRandom.Next(24, 28));
 
 						if (!_user.Profile.AdditionalConfigurations.AutoGenerateCaption)
 							mediaInfo.Caption = string.Empty;
@@ -433,8 +638,8 @@ namespace Quarkless.Logic.Actions.Action_Instances
 					}
 					case InstaMediaType.Video:
 					{
-						var selectedMediaData = selectedMedia.MediaData.FirstOrDefault();
-						var selectedVideoMedia = selectedMediaData.SelectedMedia.ObjectItem.Medias.FirstOrDefault();
+						var selectedMediaData = selectedMedia.MediaData.First();
+						var selectedVideoMedia = selectedMediaData.SelectedMedia.ObjectItem.Medias.First();
 						var credit = selectedVideoMedia.User?.Username;
 
 						var mediaInfo = await _contentInfoBuilder.GenerateMediaInfo(_user.Profile.ProfileTopic,
@@ -443,7 +648,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 						if (!_user.Profile.AdditionalConfigurations.AutoGenerateCaption)
 							mediaInfo.Caption = string.Empty;
 
-						var video = selectedMedia.MediaData.FirstOrDefault();
+						var video = selectedMedia.MediaData.First();
 
 						var videoThumb =
 							_actionOptions.PostAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(video.MediaBytes);
@@ -481,17 +686,16 @@ namespace Quarkless.Logic.Actions.Action_Instances
 					case InstaMediaType.Carousel:
 					{
 							var selectedMediaData = selectedMedia.MediaData.First();
-							var selectedCarouselMedia = selectedMediaData.SelectedMedia.ObjectItem.Medias.FirstOrDefault();
+							var selectedCarouselMedia = selectedMediaData.SelectedMedia.ObjectItem.Medias.First();
 
 							var credit = selectedCarouselMedia.User?.Username;
 							MediaInfo mediaInfo;
 
-							var isImage = _actionOptions.PostAnalyser.Manager.DownloadMedia(selectedMediaData.Url)
-								.IsValidImage();
+							var downloaded = _actionOptions.PostAnalyser.Manager.DownloadMedia(selectedMediaData.Url);
 
-							if (selectedCarouselMedia.Topic == null && isImage)
-								mediaInfo = _contentInfoBuilder.GenerateMediaInfo(_user.Profile.ProfileTopic, null,
-									credit, SecureRandom.Next(20, 28), new[] { selectedMediaData.Url }).Result;
+							if (selectedCarouselMedia.Topic == null && downloaded.IsValidImage())
+								mediaInfo = _contentInfoBuilder.GenerateMediaInfoBytes(_user.Profile.ProfileTopic, null,
+									credit, SecureRandom.Next(20, 28), new[] { downloaded }).Result;
 							else
 								mediaInfo = _contentInfoBuilder.GenerateMediaInfo(_user.Profile.ProfileTopic, 
 									selectedCarouselMedia.Topic, credit, SecureRandom.Next(20, 28)).Result;

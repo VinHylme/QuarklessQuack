@@ -176,15 +176,16 @@ namespace Quarkless.Analyser.Extensions
 		}
 		public static Dictionary<Color, int> GetColorPercentage(this Bitmap bmp)
 		{
-			if (bmp == null) throw new ArgumentNullException("null is not allowed");
-			var srcData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), ImageLockMode.ReadOnly, bmp.PixelFormat);
+			if (bmp == null) throw new ArgumentNullException();
+
+			var srcData = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), 
+				ImageLockMode.ReadOnly, bmp.PixelFormat);
+
 			var frequency = new Dictionary<Color, int>();
 			var bytesPerPixel = Image.GetPixelFormatSize(srcData.PixelFormat) / 8;
 
 			var stride = srcData.Stride;
-
 			var scan0 = srcData.Scan0;
-
 			var totals = new long[] { 0, 0, 0 };
 
 			var width = bmp.Width * bytesPerPixel;
@@ -201,7 +202,9 @@ namespace Quarkless.Analyser.Extensions
 						totals[0] += p[x + 0];
 						totals[1] += p[x + 1];
 						totals[2] += p[x + 2];
+
 						var color = Color.FromArgb(p[x + 0], p[x + 1], p[x + 2]);
+
 						if (frequency.ContainsKey(color))
 						{
 							frequency[color]++;
@@ -217,13 +220,16 @@ namespace Quarkless.Analyser.Extensions
 			}
 			return frequency;
 		}
+
 		public static bool SimilarColors(this IEnumerable<Color> freq, IEnumerable<Color> profileColors, 
 			double threshHold = 0)
 		{
 			var contains = 0;
+
 			foreach (var profileColor in profileColors)
 			{
 				var diffMin = freq.Select(x => ColorDiff(x, profileColor)).Min(s => s);
+
 				var tcR = profileColor.R + profileColor.G + profileColor.B;
 				var targetPercentage = Math.Abs((tcR * threshHold) - tcR);
 
@@ -232,6 +238,7 @@ namespace Quarkless.Analyser.Extensions
 					contains++;
 				}
 			}
+
 			return contains > 0;
 		}
 

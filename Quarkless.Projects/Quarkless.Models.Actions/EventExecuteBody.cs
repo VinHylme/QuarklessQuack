@@ -1,4 +1,5 @@
 ﻿using System;
+using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Interfaces;
 
 namespace Quarkless.Models.Actions
@@ -7,7 +8,7 @@ namespace Quarkless.Models.Actions
 	{
 		public Type BodyType { get; set; }
 		public object Body { get; set; }
-
+		public ActionType ActionType { get; set; }
 		public EventExecuteBody(object body, Type bodyType)
 		{
 			this.Body = body;

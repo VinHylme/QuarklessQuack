@@ -31,8 +31,16 @@ namespace Quarkless.Logic.Actions.Action_Executes
 			try
 			{
 				Console.WriteLine($"Started to execute {GetType().Name} for {_worker.WorkerAccountId}/{_worker.WorkerUsername}");
-				var watchRequest =
-					JsonConvert.DeserializeObject<WatchStoryRequest>(eventAction.Body.ToJsonString());
+				
+				if (_worker.Client.GetContext.Container.InstagramAccount
+					.BlockedActions.Exists(_ => _.ActionType == eventAction.ActionType))
+				{
+					result.IsSuccessful = false;
+					result.Info = new ErrorResponse { Message = "Limit reached for this action" };
+					return result;
+				}
+
+				var watchRequest = JsonConvert.DeserializeObject<WatchStoryRequest>(eventAction.Body.ToJsonString());
 
 				if (watchRequest.ContainsItems)
 				{

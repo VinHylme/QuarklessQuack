@@ -32,7 +32,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 		public async Task BaseExtract()
 		{
 			Console.WriteLine("Began Base Extract for {0}", _customer.InstagramAccount.Username);
-			await _metadataExtract.BuildBase(3);
+			await _metadataExtract.BuildBase(2, takeTopicAmount:2);
 
 			var liker = Task.Run(async () =>
 				await _metadataExtract.BuildUserFromLikers(takeMediaAmount: 12, takeUserMediaAmount: 400));

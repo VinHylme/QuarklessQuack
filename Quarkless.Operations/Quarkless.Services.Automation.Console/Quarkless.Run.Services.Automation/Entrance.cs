@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Hangfire;
 using Microsoft.Extensions.DependencyInjection;
+using Quarkless.Logic.Services.Automation;
 using Quarkless.Logic.WorkerManager;
 using Quarkless.Models.InstagramAccounts.Interfaces;
 using Quarkless.Models.InstagramClient.Interfaces;
@@ -33,7 +34,7 @@ namespace Quarkless.Run.Services.Automation
 			services.IncludeHandlers();
 			services.IncludeContexts();
 			services.IncludeEventServices();
-
+			services.AddSingleton<IAgentTests, AgentTests>();
 			services.AddSingleton<IWorkerManager, WorkerManager>
 			(s => new WorkerManager(s.GetService<IApiClientContext>(),
 				s.GetService<IInstagramAccountLogic>(),
@@ -62,6 +63,7 @@ namespace Quarkless.Run.Services.Automation
 			{
 				using var scope = services.BuildServiceProvider().CreateScope();
 				await scope.ServiceProvider.GetService<IAgentManager>().Start(userId, instagramId);
+				//await scope.ServiceProvider.GetService<IAgentTests>().StartTests();
 			});
 
 			Task.WaitAll(results);

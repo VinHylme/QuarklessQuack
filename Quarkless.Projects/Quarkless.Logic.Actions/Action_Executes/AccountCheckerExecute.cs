@@ -36,6 +36,14 @@ namespace Quarkless.Logic.Actions.Action_Executes
 					return result;
 				}
 
+				if (_worker.Client.GetContext.Container.InstagramAccount
+					.BlockedActions.Exists(_ => _.ActionType == eventAction.ActionType))
+				{
+					result.IsSuccessful = false;
+					result.Info = new ErrorResponse {Message = "Limit reached for this action"};
+					return result;
+				}
+
 				var response = await _responseResolver
 					.WithClient(_worker.Client)
 					.WithAttempts(1)

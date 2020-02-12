@@ -5,6 +5,7 @@
         <p class="title">Activity</p>
       <div v-for="(timelineLog,index) in timelineLogs" :key="timelineLog+'_'+index" class="card-acticity-log">
         <div class="card-activity-header">
+          <b-icon v-if="timelineLog.actionType === 16" icon="sign-in-alt" pack="fas" type="is-info" size="is-default"/>
           <b-icon v-if="timelineLog.actionType === 8" icon="user-plus" pack="fas" type="is-success" size="is-default"/>
           <b-icon v-if="timelineLog.actionType === 9" icon="user-minus" pack="fas" type="is-warning" size="is-default"/>
           <b-icon v-if="timelineLog.actionType === 10" icon="heart" pack="fas" type="is-danger" size="is-default"/>
