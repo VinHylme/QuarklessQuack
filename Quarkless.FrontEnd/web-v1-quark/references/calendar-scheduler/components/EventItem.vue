@@ -70,24 +70,23 @@
         computed: {
             displayUrl(){
                 const item = this.event.actionObject;
-                console.log(item)
                 if(item === undefined || item == null)
                     return ''
                 else
                 {
                     let url = '';
-                    switch(item.actionType){
+                    switch(item.body.MediaInfo.MediaType){
                         case 1:
                             url = item.body.Image.Uri
                             break;
                         case 2:
                             url = item.body.Video.VideoThumbnail.Uri
                             break;
-                        case 3:
-                            url = item.body.Album[0].ImageToUpload.Uri;
-                            break;
+                        case 8: 
+                            url = item.body.Album[0].ImageToUpload.Uri
+                            break
                     }
-                    return url
+                    return url;
                 }
             },
             displayHeight() {

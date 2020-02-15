@@ -54,6 +54,7 @@ COPY ["Quarkless.Projects/Quarkless.Models.RequestBuilder/Quarkless.Models.Reque
 COPY ["Quarkless.Projects/Quarkless.Analyser/Quarkless.Analyser.csproj", "Quarkless.Projects/Quarkless.Analyser/"]
 COPY ["Quarkless.Projects/Quarkless.Models.Actions/Quarkless.Models.Actions.csproj", "Quarkless.Projects/Quarkless.Models.Actions/"]
 COPY ["Quarkless.Projects/Quarkless.Models.ContentInfo/Quarkless.Models.ContentInfo.csproj", "Quarkless.Projects/Quarkless.Models.ContentInfo/"]
+COPY ["Quarkless.Projects/Quarkless.Models.TextGenerator/Quarkless.Models.TextGenerator.csproj", "Quarkless.Projects/Quarkless.Models.TextGenerator/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.ReportHandler/Quarkless.Logic.ReportHandler.csproj", "Quarkless.Projects/Quarkless.Logic.ReportHandler/"]
 COPY ["Quarkless.Projects/Quarkless.Repository.Profile/Quarkless.Repository.Profile.csproj", "Quarkless.Projects/Quarkless.Repository.Profile/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.RestSharpClientManager/Quarkless.Logic.RestSharpClientManager.csproj", "Quarkless.Projects/Quarkless.Logic.RestSharpClientManager/"]

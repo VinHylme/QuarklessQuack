@@ -1,5 +1,9 @@
 module.exports.Calling = {
   "base_path": process.env.VUE_APP_API,
+  "proxy_get": process.env.VUE_APP_PROXY_GET,
+  "proxy_test" : process.env.VUE_APP_PROXY_TEST,
+  "proxy_reassign": process.env.VUE_APP_PROXY_REASSIGN,
+  "proxy_update": process.env.VUE_APP_PROXY_UPDATE,
   "account_login": process.env.VUE_APP_ACCOUNT_LOGIN,
   "account_register": process.env.VUE_APP_ACCOUNT_REGISTER,
   "account_confirm": process.env.VUE_APP_ACCOUNT_CONFIRM,

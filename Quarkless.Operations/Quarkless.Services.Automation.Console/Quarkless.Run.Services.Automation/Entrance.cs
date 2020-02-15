@@ -4,8 +4,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Hangfire;
 using Microsoft.Extensions.DependencyInjection;
+using Quarkless.Logic.Actions.Factory.ActionExecute.Manager;
 using Quarkless.Logic.Services.Automation;
 using Quarkless.Logic.WorkerManager;
+using Quarkless.Models.Actions.Factory;
+using Quarkless.Models.Actions.Interfaces;
 using Quarkless.Models.InstagramAccounts.Interfaces;
 using Quarkless.Models.InstagramClient.Interfaces;
 using Quarkless.Models.ResponseResolver.Interfaces;
@@ -21,6 +24,8 @@ namespace Quarkless.Run.Services.Automation
 	{
 		static void Main(string[] args)
 		{
+			var shouldTest = false;
+
 			var environmentVariables = Environment.GetEnvironmentVariables();
 			var userId = environmentVariables["USER_ID"].ToString();
 			var instagramId = environmentVariables["USER_INSTAGRAM_ACCOUNT"].ToString();
@@ -34,9 +39,8 @@ namespace Quarkless.Run.Services.Automation
 			services.IncludeHandlers();
 			services.IncludeContexts();
 			services.IncludeEventServices();
-			services.AddSingleton<IAgentTests, AgentTests>();
-			services.AddSingleton<IWorkerManager, WorkerManager>
-			(s => new WorkerManager(s.GetService<IApiClientContext>(),
+
+			services.AddSingleton<IWorkerManager, WorkerManager>(s => new WorkerManager(s.GetService<IApiClientContext>(),
 				s.GetService<IInstagramAccountLogic>(),
 				s.GetService<IResponseResolver>(), 1, workerType));
 
@@ -59,11 +63,20 @@ namespace Quarkless.Run.Services.Automation
 				ShutDownInstance.ShutDown();
 			};
 
+			if (shouldTest)
+			{
+				services.AddSingleton<IAgentTests, AgentTests>();
+				services.AddTransient<IActionExecuteFactory, ActionExecuteFactoryManager>();
+			}
+
 			var results = WithExceptionLogAsync(async () =>
 			{
 				using var scope = services.BuildServiceProvider().CreateScope();
-				await scope.ServiceProvider.GetService<IAgentManager>().Start(userId, instagramId);
-				//await scope.ServiceProvider.GetService<IAgentTests>().StartTests();
+
+				if(shouldTest)
+					await scope.ServiceProvider.GetService<IAgentTests>().StartTests();
+				else
+					await scope.ServiceProvider.GetService<IAgentManager>().Start(userId, instagramId);
 			});
 
 			Task.WaitAll(results);

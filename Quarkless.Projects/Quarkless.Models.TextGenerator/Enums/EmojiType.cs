@@ -4,6 +4,8 @@ namespace Quarkless.Models.TextGenerator.Enums
 {
 	public enum EmojiType
 	{
+		[Description("Positive")]
+		Positive,
 		[Description("Smileys")]
 		Smileys,
 		[Description("People and Fantasy")]

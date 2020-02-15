@@ -28,5 +28,8 @@ namespace Quarkless.Models.InstagramAccounts
 
 		[BsonRepresentation(BsonType.Int32)]
 		public long WatchStoryLimit { get; set; }
+
+		[BsonRepresentation(BsonType.Int32)]
+		public long ReactStoryLimit { get; set; }
 	}
 }

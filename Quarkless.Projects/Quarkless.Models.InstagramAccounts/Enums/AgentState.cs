@@ -11,6 +11,6 @@
 		Challenge = 6,
 		AwaitingActionFromUser = 7,
 		Working = 8,
-		WarmingUp = 9
+		BadProxy = 9
 	}
 }

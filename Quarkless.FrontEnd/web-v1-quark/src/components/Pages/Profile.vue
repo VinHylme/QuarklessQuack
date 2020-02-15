@@ -2,7 +2,7 @@
   <div class="whole_container" style="padding:3em; background:#232323;">
     <div class="columns is-variable is-4-mobile is-0-tablet is-8-desktop is-5-widescreen is-5-fullhd">
       <div class="column is-12 profile_container">
-        <b-steps type="is-success" size="is-medium" v-model="activeStep" :animated="true" :has-navigation="false">
+        <b-steps @input="saveStep" type="is-success" size="is-medium" v-model="activeStep" :animated="true" :has-navigation="false">
           <b-step-item label="Profile" :clickable="true" icon="account-plus">
             <section class="box container is-profile">
                <b-field grouped>
@@ -320,35 +320,173 @@
                     </b-taginput>
                 </b-field>
                 <br>
-                <b-field label="What type of images would you like? e.g. face (for images which only contain a face inside)" class="is-dark is-small">
-                  <b-select placeholder="Image Type" icon="camera" v-model="profile.additionalConfigurations.imageType" expanded>
-                      <option v-for="(type,index) in config.imageTypes" :key="index" :value="index">{{type}}</option>
-                  </b-select>
-                </b-field>
+                <div class="box box-style is-darker-bg">
+                  <p class="subtitle is-light">Schedule Times</p>
+                  <b-field grouped>
+                    <TimePicker :time="new Date(profile.additionalConfigurations.wakeTime)" v-model="profile.additionalConfigurations.wakeTime" label="Select Wake Time" :isAmPm="true"/>
+                    <TimePicker :time="new Date(profile.additionalConfigurations.sleepTime)" v-model="profile.additionalConfigurations.sleepTime" label="Select Sleep Time" :isAmPm="true"/>
+                  </b-field>
+                </div>
                 <br>
                 <div class="box box-style is-darker-bg">
                   <p class="subtitle is-light">Post Settings</p>
+                   <b-field label="What type of images would you like? e.g. face (for images which only contain a face inside)" class="is-dark is-small">
+                      <b-select placeholder="Image Type" icon="camera" class="is-light" v-model="profile.additionalConfigurations.imageType" expanded>
+                        <option v-for="(type,index) in config.imageTypes" :key="index" :value="index">{{photoType(index)}}</option>
+                      </b-select>
+                    </b-field>
+                    <hr style="height:.1rem; opacity:0.25;">
+                    <b-field grouped>
+                      <b-tooltip multilined type="is-twitter" label="Enabling this will allow the agent to post on your behalf.">
+                        <b-switch class="is-light" style="padding-left:2em;" :outlined="true" type="is-info" v-model="profile.additionalConfigurations.enableAutoPosting">Auto Post Media</b-switch>
+                      </b-tooltip>
+                      <b-tooltip multilined type="is-twitter" label="Enabling this feature will allow the agent to repost from other instagram accounts (based on your profile)">
+                        <b-switch v-if="profile.additionalConfigurations.enableAutoPosting" style="padding-left:2em;" class="is-light" :outlined="true" type="is-info" v-model="profile.additionalConfigurations.allowRepost">Allow Reposting</b-switch>
+                      </b-tooltip>
+                      <b-tooltip multilined type="is-twitter" label="Enabling this feature will allow the agent to repost only from the users whom you've set to target">
+                        <b-switch @input="checkIfValidRepostOption" v-if="profile.additionalConfigurations.allowRepost" style="padding-left:2em;" class="is-light" :outlined="true" type="is-info" v-model="profile.additionalConfigurations.enableOnlyAutoRepostFromUserTargetList">Repost Only From Targeted Users</b-switch>
+                      </b-tooltip>
+                      <b-tooltip multilined type="is-twitter" label="Enabling this feature will let the agent create their own caption based on your profile, alternatively you can turn this off and write your own captions">
+                        <b-switch v-if="profile.additionalConfigurations.enableAutoPosting" style="padding-left:2em;" class="is-light" :outlined="true" type="is-info" v-model="profile.additionalConfigurations.autoGenerateCaption">Generate Captions</b-switch>
+                      </b-tooltip>
+                    </b-field>
+                    <hr style="height:.1rem; opacity:0.25;">
+                    <b-field label="Default Caption" class="is-dark is-small">
+                      <textarea placeholder="None set (will default to using emojies)" rows="3" v-if="profile.additionalConfigurations.enableAutoPosting"  class="textarea has-fixed-size is-light" :outlined="true" v-model="profile.additionalConfigurations.defaultCaption"/>
+                    </b-field>
+                </div>
+                <br>
+                <div class="box box-style is-darker-bg">
+                  <p class="subtitle is-light">Story Settings</p>
+                      <b-field grouped position="is-centered">
+                        <b-tooltip multilined type="is-twitter" label="Enabling this will allow the agent to watch stories of user's (who share your interests)">
+                          <b-switch class="is-light" style="padding-left:2em;" :outlined="true" type="is-warning" v-model="profile.additionalConfigurations.enableAutoWatchStories">Auto Watch Stories</b-switch>
+                        </b-tooltip>
+                        <b-tooltip multilined type="is-twitter" label="Enabling this feature will allow the agent to react to user's stories (who share your interests)">
+                          <b-switch style="padding-left:2em;" class="is-light" :outlined="true" type="is-warning" v-model="profile.additionalConfigurations.enableAutoReactStories">Auto React To Stories</b-switch>
+                        </b-tooltip>
+                      </b-field>
+                </div>
+                <br>
+                <div class="box box-style is-darker-bg">
+                  <p class="subtitle is-light">Actions Settings</p>
                       <b-field grouped>
-                        <b-tooltip multilined type="is-twitter" label="Enabling this will allow the agent to post on your behalf.">
-                          <b-switch class="is-light" style="padding-left:2em;" :outlined="true" type="is-info" v-model="profile.additionalConfigurations.enableAutoPosting">Enable Auto Posting</b-switch>
+                        <b-tooltip multilined type="is-twitter" label="Enabling this will allow the agent to follow users who share your interests">
+                          <b-switch class="is-light" style="padding-left:2em;" :outlined="true" type="is-danger" v-model="profile.additionalConfigurations.enableAutoFollow">Auto Follow</b-switch>
                         </b-tooltip>
-                        <b-tooltip multilined type="is-twitter" label="Enabling this feature will allow the agent to repost from other instagram accounts (based on your profile)">
-                          <b-switch v-if="profile.additionalConfigurations.enableAutoPosting" style="padding-left:2em;" class="is-light" :outlined="true" type="is-info" v-model="profile.additionalConfigurations.allowRepost">Allow Reposting</b-switch>
+                        <b-tooltip multilined type="is-twitter" label="Enabling this feature will allow the agent to auto like posts of similar to your niche">
+                          <b-switch style="padding-left:2em;" class="is-light" :outlined="true" type="is-danger" v-model="profile.additionalConfigurations.enableAutoLikePost">Auto Like Posts</b-switch>
                         </b-tooltip>
-                        <b-tooltip multilined type="is-twitter" label="Enabling this feature will let the agent create their own caption based on your profile, alternatively you can turn this off and write your own captions">
-                          <b-switch v-if="profile.additionalConfigurations.enableAutoPosting" style="padding-left:2em;" class="is-light" :outlined="true" type="is-info" v-model="profile.additionalConfigurations.autoGenerateCaption">Auto generate caption based on profile</b-switch>
+                        <b-tooltip multilined type="is-twitter" label="Enabling this feature will allow the agent to react to auto like comments of similar to your niche">
+                          <b-switch style="padding-left:2em;" class="is-light" :outlined="true" type="is-danger" v-model="profile.additionalConfigurations.enableAutoLikeComment">Auto Like Comments</b-switch>
+                        </b-tooltip>
+                        <b-tooltip multilined type="is-twitter" label="Enabling this feature will allow the agent to react to create comments on posts that match your interests">
+                          <b-switch style="padding-left:2em;" class="is-light" :outlined="true" type="is-danger" v-model="profile.additionalConfigurations.enableAutoComment">Auto Create Comments</b-switch>
                         </b-tooltip>
                       </b-field>
                 </div>
             </div>
           </b-step-item>
+           <b-step-item label="Connectivity" :clickable="true" icon="wifi">
+              <div class="box box-style is-darker-bg" v-if="proxyDetail.fromUser!==undefined">
+                <p class="subtitle is-light">Proxy Settings</p>
+                <p v-if="proxyDetail.location.locationQuery === ''" class="subtitle is-light">No Proxies set on this account</p>
+                <div v-if="proxyDetail.fromUser">
+                <b-field grouped>
+                  <b-field>
+                  <p class="control" style="margin-top:0.2em;">
+                    <b-radio-button size="is-medium" v-model="proxyDetail.proxyType" @input="askForLocation"
+                            :native-value="0"
+                            type="is-info">
+                            <b-icon pack="fas" icon="chess"></b-icon>
+                            <span>Http Proxy</span>
+                    </b-radio-button>
+                  </p>
+                  <p class="control" style="margin-top:0.2em;">
+                    <b-radio-button size="is-medium" v-model="proxyDetail.proxyType"
+                            :native-value="1"
+                            type="is-info">
+                            <b-icon pack="fas" icon="chess-knight"></b-icon>
+                            <span>SOCKS5</span>
+                    </b-radio-button>
+                  </p>
+                  </b-field>
+                  <b-field label-position="inside" custom-class="is-light" label="Proxy Address" expanded>
+                      <b-input v-model="proxyDetail.hostAddress" custom-class="is-light"></b-input>
+                  </b-field>
+                  <b-field label-position="inside" custom-class="is-light" label="Proxy Port">
+                      <b-input type="number" v-model="proxyDetail.port" custom-class="is-light"></b-input>
+                  </b-field>
+                  <b-field label-position="inside" custom-class="is-light" label="Proxy Username" expanded>
+                      <b-input v-model="proxyDetail.username" custom-class="is-light"></b-input>
+                  </b-field>
+                  <b-field label-position="inside" custom-class="is-light" label="Proxy Password" expanded>
+                      <b-input v-model="proxyDetail.password" type="password" custom-class="is-light" password-reveal></b-input>
+                  </b-field>
+                </b-field>
+                <b-field position="is-centered">
+                  <p class="control" style="margin-top:0.1em;">
+                    <b-tooltip type="is-dark" label="Test if the proxy is working">
+                        <b-button @click="testProxyConnectivity" class="button is-dark is-medium">Test Connectivity</b-button>
+                    </b-tooltip>
+                  </p>
+                  <p class="control" style="margin-top:0.1em;">
+                    <b-tooltip type="is-dark" label="Get's a different proxy using the location">
+                      <b-button @click="updateFromUserProxy" class="button is-success is-medium">Update Changes</b-button>
+                    </b-tooltip>
+                  </p>
+                  <p class="control" style="margin-top:0.1em;">
+                    <b-tooltip type="is-dark" label="use our proxies">
+                      <b-button @click="proxyDetail.fromUser = false" class="button is-dark is-medium">User Our Proxies</b-button>
+                    </b-tooltip>
+                  </p>
+                </b-field>
+                </div>
+                <div v-else>
+                  <b-field grouped>
+                    <b-field label-position="inside" custom-class="is-light" label="Proxy Location" expanded>
+                       <b-autocomplete
+                          custom-class="is-light"
+                          size="is-dafault"
+                          type="is-dark"
+                          v-model="proxyDetail.location.locationQuery"
+                          :data="searchItems"
+                          autocomplete
+                          :allow-new="false"
+                          field="address"
+                          icon="map-marker"
+                          placeholder="Add a location"
+                          @typing="performAutoCompletePlacesSearch">
+                        </b-autocomplete>
+                    </b-field>
+                  </b-field>
+                  <b-field position="is-centered">
+                      <p class="control" style="margin-top:0.1em;">
+                        <b-tooltip type="is-dark" label="Test if the proxy is working">
+                            <b-button :disabled="canTest === false" @click="testProxyConnectivity" class="button is-dark is-medium">Test Connectivity</b-button>
+                        </b-tooltip>
+                      </p>
+                      <p class="control" style="margin-top:0.1em;">
+                        <b-tooltip type="is-dark" label="Get's a different proxy using the location">
+                          <b-button @click="reassignProxy" class="button is-info is-medium">{{canTest ?'Get Different Proxy' : 'Assign Proxy'}}</b-button>
+                        </b-tooltip>
+                      </p>
+                      <p class="control" style="margin-top:0.1em;">
+                        <b-tooltip type="is-dark" label="Provide your own proxy">
+                          <b-button @click="proxyDetail.fromUser = true" class="button is-dark is-medium">User My Own Proxy</b-button>
+                        </b-tooltip>
+                      </p>
+                    </b-field>
+                </div>
+              </div>
+           </b-step-item>
       </b-steps>
         
       </div>
     </div>   
-    <p class="control" style="float:right;">
-            <b-button type="is-success" @click="saveProfile" :disabled="savingProfile" :loading="savingProfile">Save Changes</b-button>
-        </p>
+    <p v-if="this.activeStep!==4" class="control" style="float:right;">
+      <b-button type="is-success" @click="saveProfile" :disabled="savingProfile" :loading="savingProfile">Save Changes</b-button>
+    </p>
   </div>
 </template>
 <script>
@@ -357,11 +495,15 @@ import ColorCard from '../Objects/ColorCard';
 import Color from '../Objects/Colors';
 import DropZone from '../Objects/DropZone';
 import ImageItem from '../Objects/ImageItem';
+import TimePicker from '../Objects/TimePicker';
 import draggable from 'vuedraggable'
+import {GetUserLocation} from '../../localHelpers'
+
 import Vue from 'vue';
 
 export default {
   components:{
+    TimePicker,
     ImageItem,
     ColorCard,
     'c-color':Color,
@@ -403,12 +545,20 @@ export default {
       displayableList:[],
       isMoreAccurate:false,
       isLoadingTopics:false,
-      relatedTopicsParent:[]
+      relatedTopicsParent:[],
+      proxyDetail:{},
+      canTest:true
     }
   },
   created(){
     this.profile = this.$store.getters.UserProfiles[this.$store.getters.UserProfiles.findIndex(_=>_._id == this.$route.params.id)];
     this.profile.profileTopic.category.name = this.profile.profileTopic.category.name.replace(/^\w/, c => c.toUpperCase());
+    if(this.$store.getters.ProfileActiveStep(this.profile._id) !== null){
+      this.activeStep = parseInt(this.$store.getters.ProfileActiveStep(this.profile._id));
+    }
+    if(this.activeStep === 4){
+       this.getProxy();
+    }
   },
   mounted(){
     this.isLoadingTopics = true;
@@ -467,6 +617,126 @@ export default {
     }
   },
   methods:{
+     askForLocation(){
+      GetUserLocation().then().catch(err=>{
+        Vue.prototype.$toast.open({
+                message: "Oops, looks like you've turned off location sharing for our site, please enable it in order to use this feature",
+                type: 'is-info',
+                position:'is-bottom',
+                duration:8000
+        })
+        this.linkData.useMyLocation = 'false'
+      })
+    },
+    updateFromUserProxy(){
+      this.proxyDetail.fromUser = true;
+      this.proxyDetail.port = parseInt(this.proxyDetail.port)
+
+      this.$store.dispatch('UpdateUserProxy', this.proxyDetail).then(resp=>{
+        Vue.prototype.$toast.open({
+          message: 'New Proxy assigned for this account',
+          type: 'is-success'
+        })
+      }).catch(err => {
+        Vue.prototype.$toast.open({
+          message: err.message,
+          type: 'is-danger'
+        })
+      })
+    },
+    reassignProxy(){
+      this.$store.dispatch('ReAssignUserProxy', this.proxyDetail).then(resp=>{
+        Vue.prototype.$toast.open({
+            message: 'New Proxy assigned for this account',
+            type: 'is-success'
+        })
+        window.location.reload();
+      }).catch(err=>{
+        Vue.prototype.$toast.open({
+          message: err.message,
+          type: 'is-danger'
+        })
+      })
+    },
+    testProxyConnectivity(){
+      this.proxyDetail.port = parseInt(this.proxyDetail.port)
+      this.$store.dispatch('TestProxyConnectivity', this.proxyDetail).then(resp=>{
+        if(resp.data === true){
+          Vue.prototype.$toast.open({
+              message: 'Your Proxy Is Working',
+              type: 'is-success'
+          })
+        }
+        if(resp.data === false){
+           Vue.prototype.$toast.open({
+            message: 'Could not connect to the internet with this proxy',
+            type: 'is-danger'
+        })
+        }
+      }).catch(err=>{
+
+      })
+    },
+    getProxy(){
+      this.$store.dispatch('GetUserProxy', {
+        instagramAccountId: this.profile.instagramAccountId
+      }).then(res=>{
+        this.proxyDetail = res.data
+    }).catch(err=>{
+      if(this.proxyDetail.fromUser === undefined){
+          this.canTest = false;
+          this.proxyDetail = {
+            instagramId : this.profile.instagramAccountId,
+            accountId : this.profile.account_Id,
+            hostAddress : '',
+            port : 0,
+            username: '',
+            password: '',
+            fromUser:false,
+            location:{
+              locationQuery:'',
+              latitude:0,
+              longitude:0,
+              countryCode:0,
+              postalCode:'',
+              fullAddress:'',
+              city:'',
+              state:'',
+              proxyType:1
+            }
+          }
+        }
+    })
+    },
+    saveStep(){
+      this.$store.dispatch('SaveProfileStepSection', 
+      {
+        step:this.activeStep,
+        profile: this.profile._id
+      })
+      if(this.activeStep === 4){
+       this.getProxy();
+      }
+    },
+    checkIfValidRepostOption(e){
+      if(this.profile.userTargetList.length <=0){
+        this.profile.additionalConfigurations.enableOnlyAutoRepostFromUserTargetList = false
+        Vue.prototype.$toast.open({
+            message: 'Please first add at least one user to target in the Target Section',
+            type: 'is-info'
+        })
+      }
+    },
+    photoType(index){
+      switch(index){
+        case 0: return "Any";
+        case 1: return "Photo";
+        case 2: return "Clip Art";
+        case 3: return "Drawnings";
+        case 4: return "People";
+        default: return "Any";
+      }
+    },
     getRelatedTopicsByParent(){
       this.$store.dispatch('ReleatedTopicByParent', this.config.categories[this.currentTopicSelected]._id).then(resp=>{
         this.relatedTopicsParent = resp.data;
@@ -960,6 +1230,11 @@ export default {
 			text-align: center !important;
 		}
 	}
+  .is-setup{
+    border-radius: 0;
+		background:#1f1f1f;
+		padding:3em;
+  }
 	.is-profile{
 		border-radius: 0;
 		background:#1f1f1f;
@@ -978,25 +1253,27 @@ export default {
 		}
 	}
 	.dropdown-menu{
-		opacity: 1;
-		border-radius: 1em;
-		border:none;
-		margin-top:.5em;
-		background:#323232 !important;
-		color:white !important;
-		.dropdown-content{
-			.dropdown-item{
-				color:#d9d9d9 !important;
-				&:hover{
-					background:#232323;
-					opacity: 1;
-				}
-				&.is-hovered{
-					background:#232323;
-					opacity: 1;
-				}
-			}
-		}
+    &.is-dark-menu{
+      opacity: 1;
+      border-radius: 1em;
+      border:none;
+      margin-top:.5em;
+      background:#323232 !important;
+      color:white !important;
+      .dropdown-content{
+        .dropdown-item{
+          color:#d9d9d9 !important;
+          &:hover{
+            background:#232323;
+            opacity: 1;
+          }
+          &.is-hovered{
+            background:#232323;
+            opacity: 1;
+          }
+        }
+      }
+    }
 	}
 	.step_size{
 		border:none;
@@ -1043,6 +1320,9 @@ export default {
 	}
 	input{
 		background:#121212 !important;
+    .is-light{
+      background:#444 !important;
+    }
 		border:none !important;
 		color:#d9d9d9 !important;
 		transition: background 0.5s ease;
@@ -1061,6 +1341,9 @@ export default {
 	}
 	.input{
 		background:#121212 !important;
+    &.is-light{
+      background:#232323 !important;
+    }
 		border:none !important;
 		color:#d9d9d9 !important;
 		transition: background 0.5s ease;
@@ -1081,8 +1364,12 @@ export default {
 			background:#212121 !important;
 		}
 	}
+
 	select{
 		background:#121212 !important;
+    &.is-light{
+      background:#232323 !important;
+    }
 		border:none !important;
 		color:#d9d9d9 !important;
 		transition: background 0.5s ease;
@@ -1118,6 +1405,9 @@ export default {
 	}
 	.input, .taginput .taginput-container.is-focusable, .textarea{
 		background:#121212!important;;
+    &.is-light{
+      background: #232323 !important;
+    }
 		border:none;
 		transition: background 0.5s ease;
 		color:#d9d9d9;
@@ -1126,6 +1416,7 @@ export default {
 			background:#282828 !important;
 		}
 	}
+  
 	$bg: #292929;
 	$barsize: 25px;
 	.hr {   

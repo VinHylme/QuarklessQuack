@@ -30,22 +30,25 @@ export default {
         const hashtags = bodyResp.MediaInfo.Hashtags;
         const credit = bodyResp.MediaInfo.Credit;
         const location = bodyResp.Location;
-
+        const mediaType = bodyResp.MediaInfo.MediaType;
         var medias = [];
-        switch(params.actionObject.actionType){
-            case 0: 
-                medias.push(bodyResp.Image.ImageBytes);
-                break;
+        switch(mediaType){
             case 1:
-                medias.push(bodyResp.Video.Video.VideoBytes);
+                medias.push({type:1,url:bodyResp.Image.Uri});
                 break;
             case 2:
+                medias.push({type:1, url:bodyResp.Video.Video.Uri});
+                break;
+            case 8: 
                 for(var i = 0; i < bodyResp.Album.length; i++){
-                    if(bodyResp.Album[i].ImageToUpload.ImageBytes!==undefined){
-                        medias.push(bodyResp.Album[i].ImageToUpload.ImageBytes);
+                    if(bodyResp.Album[i].ImageToUpload!==undefined && bodyResp.Album[i].ImageToUpload!==null){
+                        medias.push({type:1, url:bodyResp.Album[i].ImageToUpload.Uri});
+                    }
+                    else if(bodyResp.Album[i].VideoToUpload!==undefined && bodyResp.Album[i].VideoToUpload!== null ){
+                        medias.push({type:2, url:bodyResp.Album[i].VideoToUpload.Video.Uri});
                     }
                 }
-                break;
+                break
         }
         const propData = {
             id:params.id,
@@ -56,7 +59,7 @@ export default {
             location:location,
             medias:medias,
             startTime: params.startTime,
-            type: params.actionObject.actionType
+            type: mediaType
         }
         return miniViewDialog(propData);
     },
@@ -66,25 +69,25 @@ export default {
         const hashtags = bodyResp.MediaInfo.Hashtags;
         const credit = bodyResp.MediaInfo.Credit;
         const location = bodyResp.Location;
-
+        const mediaType = bodyResp.MediaInfo.MediaType;
         var medias = [];
-        switch(params.actionObject.actionType){
-            case 1: 
+        switch(mediaType){
+            case 1:
                 medias.push({type:1,url:bodyResp.Image.Uri});
                 break;
             case 2:
                 medias.push({type:1, url:bodyResp.Video.Video.Uri});
                 break;
-            case 3:
+            case 8: 
                 for(var i = 0; i < bodyResp.Album.length; i++){
                     if(bodyResp.Album[i].ImageToUpload!==undefined && bodyResp.Album[i].ImageToUpload!==null){
                         medias.push({type:1, url:bodyResp.Album[i].ImageToUpload.Uri});
-					}
-					else if(bodyResp.Album[i].VideoToUpload!==undefined && bodyResp.Album[i].VideoToUpload!== null ){
+                    }
+                    else if(bodyResp.Album[i].VideoToUpload!==undefined && bodyResp.Album[i].VideoToUpload!== null ){
                         medias.push({type:2, url:bodyResp.Album[i].VideoToUpload.Video.Uri});
                     }
                 }
-                break;
+                break
         }
         const propData = {
             id:params.id,
@@ -96,12 +99,11 @@ export default {
             medias:medias,
             mediaTopic:bodyResp.mediaTopic,
             startTime: params.startTime,
-            type: params.actionObject.actionType
+            type: mediaType
         }
         return viewDialog(propData);
     },
     show(params, extraFields) {
-        console.log(params)
         const defaultParam = {
             title: 'Create Post',
             inputClass: null,

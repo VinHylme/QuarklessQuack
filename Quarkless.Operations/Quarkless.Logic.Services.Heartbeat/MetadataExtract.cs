@@ -46,6 +46,18 @@ namespace Quarkless.Logic.Services.Heartbeat
 			_workerManager = workerManager;
 		}
 
+		#region Filters
+
+		private bool CanInteract(MediaResponse media, string instagramUsername = null)
+		{
+			if (string.IsNullOrEmpty(instagramUsername))
+				return !media.HasLikedBefore || !media.HasSeen;
+
+			return !media.HasLikedBefore || !media.HasSeen || media.User.Username != instagramUsername;
+		}
+		#endregion
+
+
 		#region Instagram Stuff
 		public async Task BuildBase(int limit = 2, int cutBy = 1, int takeTopicAmount = 1)
 		{
@@ -91,8 +103,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 
 							meta.ToList().ForEach(async z =>
 							{
-								z.Medias = z.Medias.Where(t => !t.HasLikedBefore && !t.HasSeen 
-									&& t.User.Username != _customer.InstagramAccount.Username).ToList();
+								z.Medias = z.Medias.Where(t => CanInteract(t, _customer.InstagramAccount.Username)).ToList();
 
 								await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<Media>
 								{
@@ -126,8 +137,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 
 							meta.ToList().ForEach(async z =>
 							{
-								z.Medias = z.Medias.Where(t => !t.HasLikedBefore && !t.HasSeen
-									&& t.User.Username != _customer.InstagramAccount.Username).ToList();
+								z.Medias = z.Medias.Where(t => CanInteract(t,_customer.InstagramAccount.Username)).ToList();
 
 								await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<Media>
 								{
@@ -197,7 +207,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 
 							foreach (var s in results.CutObjects(cutBy))
 							{
-								s.Medias = s.Medias.Where(t => !t.HasLikedBefore && !t.HasSeen).ToList();
+								s.Medias = s.Medias.Where(t => CanInteract(t)).ToList();
 
 								await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<Media>
 								{
@@ -268,8 +278,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 
 							foreach (var s in results.CutObjects(cutBy))
 							{
-								s.Medias = s.Medias.Where(t => !t.HasLikedBefore && !t.HasSeen &&
-									t.User.Username != _customer.InstagramAccount.Username).ToList();
+								s.Medias = s.Medias.Where(t => CanInteract(t, user.Username)).ToList();
 
 								await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<Media>
 								{
@@ -453,8 +462,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 
 							foreach (var s in results.CutObjects(cutBy))
 							{
-								s.Medias = s.Medias.Where(_ => !_.HasLikedBefore && !_.HasSeen
-									&& _.User.Username != user.Username).ToList();
+								s.Medias = s.Medias.Where(_ => CanInteract(_, user.Username)).ToList();
 
 								await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<Media>
 								{

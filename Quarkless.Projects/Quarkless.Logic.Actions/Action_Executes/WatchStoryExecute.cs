@@ -40,7 +40,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 					return result;
 				}
 
-				var watchRequest = JsonConvert.DeserializeObject<WatchStoryRequest>(eventAction.Body.ToJsonString());
+				var watchRequest = JsonConvert.DeserializeObject<StoryRequest>(eventAction.Body.ToJsonString());
 
 				if (watchRequest.ContainsItems)
 				{

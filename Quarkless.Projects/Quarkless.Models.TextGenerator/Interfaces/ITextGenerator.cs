@@ -6,6 +6,7 @@ namespace Quarkless.Models.TextGenerator.Interfaces
 {
 	public interface ITextGenerator
 	{
+		string GenerateSingleEmoji(EmojiType set);
 		string GenerateNRandomEmojies(EmojiType set, int iterationMax);
 		Task<string> GenerateCaptionByMarkovChain(CTopic mediaTopic, int limit,
 			EmojiType fallback = EmojiType.Smileys);

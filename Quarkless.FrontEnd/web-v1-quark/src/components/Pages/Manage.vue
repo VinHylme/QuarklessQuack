@@ -6,6 +6,7 @@
                                 <InstaCard @onChangeBiography="onChangeBiography" @onChangeProfilePicture="onChangeProfilePic" 
                                 @ChangeState="StateChanged" @RefreshState="NotifyRefresh" @ViewLibrary="GetLibrary" 
                                 @ViewProfile="GetProfile" @DeleteAccount="DeleteInstagramAccount" @HandleVerify="onHandleVerify"
+                                @HandleProxy="onHandleProxy"
                                 :id="acc.id" :username="acc.username" :agentState="acc.agentState" 
                                 :name="acc.fullName" :profilePicture="acc.profilePicture" :biography="acc.userBiography"
                                 :userFollowers="acc.followersCount" :userFollowing="acc.followingCount" :totalPost="acc.totalPostsCount" :IsProfileButtonDisabled="IsProfileButtonDisabled"/>
@@ -59,8 +60,37 @@
                                                 <span>Manually enter location</span>
                                         </b-radio-button>
                                 </p>
+                                <p class="control">
+                                        <b-radio-button v-model="linkData.useMyLocation"
+                                                native-value="proxy"
+                                                type="is-warning">
+                                                <b-icon icon="pen"></b-icon>
+                                                <span>Use My Own Proxy</span>
+                                        </b-radio-button>
+                                </p>
                         </b-field>
-                        
+                        <b-field v-if="linkData.useMyLocation === 'proxy'">
+                                 <p class="control">
+                                        <b-radio-button v-model="linkData.proxy.proxyType" @input="askForLocation"
+                                                :native-value="0"
+                                                type="is-info">
+                                                <b-icon icon="check"></b-icon>
+                                                <span>Http Proxy</span>
+                                        </b-radio-button>
+                                </p>
+                                <p class="control">
+                                        <b-radio-button v-model="linkData.proxy.proxyType"
+                                                :native-value="1"
+                                                type="is-info">
+                                                <b-icon icon="close"></b-icon>
+                                                <span>SOCKS5</span>
+                                        </b-radio-button>
+                                </p>
+                                <b-input v-model="linkData.proxy.address" placeholder="Proxy Address"></b-input>
+                                <b-input v-model="linkData.proxy.port" placeholder="Proxy Port"></b-input>
+                                <b-input v-model="linkData.proxy.username" placeholder="Proxy Username"></b-input>
+                                <b-input v-model="linkData.proxy.password" placeholder="Proxy Password"></b-input>
+                        </b-field>
                         <b-field v-if="linkData.useMyLocation === 'false'">
                                 <b-autocomplete
                                         size="is-medium"
@@ -120,6 +150,13 @@ export default {
                 isAccountLinkModalOpened:false,
                 isLinkingAccount:false,
                 linkData:{
+                        proxy:{
+                              username:'',
+                              password:'',
+                              proxyType:0,
+                              address:'',
+                              port:'',
+                        },
                         username:'',
                         password:'',
                         useMyLocation:'true',
@@ -146,6 +183,16 @@ export default {
                 this.InstagramAccounts = this.$store.getters.GetInstagramAccounts;
                 if(this.linkData.useMyLocation === 'true'){
                         this.askForLocation();
+                }
+                if(this.linkData.useMyLocation === 'proxy'){
+                        if(!this.linkData.proxy.address)
+                        {
+                                return;
+                        }
+                        if(!this.linkData.proxy.port)
+                        {
+                                return;
+                        }
                 }
 		if(this.$store.getters.UserProfiles!==undefined)
 			this.IsProfileButtonDisabled=false;       
@@ -184,6 +231,15 @@ export default {
                 },500),
                 clickOutside(){
                         this.$bus.$emit('clickedOutside')
+                },
+                onHandleProxy(id){
+                        let profile = this.$store.getters.UserProfile(id)._id;
+                         this.$store.dispatch('SaveProfileStepSection', 
+                        {
+                                step: 4,
+                                profile: profile
+                        })
+                        this.$router.push('/profile/'+ profile)
                 },
                 onHandleVerify(id){
                         this.verifyDetails.instagramAccountId = id
@@ -279,7 +335,6 @@ export default {
                                                                 this.$router.push('/profile/'+ profileId)
                                                         }
                                                 }).catch(err=>console.log(err.response));
-                                
                                         }
                                         this.isLinkingAccount = false;
                                 }).catch(err=>{      

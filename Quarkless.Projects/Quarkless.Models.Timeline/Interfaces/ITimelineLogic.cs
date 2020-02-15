@@ -16,7 +16,8 @@ namespace Quarkless.Models.Timeline.Interfaces
 		Task<TimelineScheduleResponse<IEnumerable<IDirectMessageModel>>> ScheduleMessage(UserStoreDetails userStoreDetails,
 			IEnumerable<IDirectMessageModel> messages);
 		
-		DateTime? PickAGoodTime(string accountId, string instagramAccountId, ActionType? actionName = null);
+		DateTime? PickAGoodTime(string accountId, string instagramAccountId,
+			ActionType actionName = ActionType.All);
 
 		IEnumerable<TimelineItemShort> GetScheduledPosts(string username, string instagramId, int limit = 1000);
 		

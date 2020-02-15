@@ -9,6 +9,46 @@ import Axios from 'axios';
 import decoder from 'jwt-decode';
 
 export default {
+  UpdateUserProxy({commit}, proxyData){
+    return new Promise((resolve,reject)=>
+    {
+      AccountServices.UpdateUserProxy(proxyData).then(resp=>{
+        resolve(resp)
+      }).catch(err=>{
+        reject(err)
+      })
+    })
+  },
+  ReAssignUserProxy({commit}, proxyData){
+    return new Promise((resolve,reject)=>
+    {
+      AccountServices.ReAssignUserProxy(proxyData).then(resp=>{
+        resolve(resp)
+      }).catch(err=>{
+        reject(err)
+      })
+    })
+  },
+  TestProxyConnectivity({commit}, proxyData){
+    return new Promise((resolve,reject)=>
+    {
+      AccountServices.TestProxyConnectivity(proxyData).then(resp=>{
+        resolve(resp)
+      }).catch(err=>{
+        reject(err)
+      })
+    })
+  },
+  GetUserProxy({commit}, data){
+    return new Promise((resolve,reject)=>{
+      AccountServices.GetUserProxy(data.instagramAccountId).then(resp=>{
+        resolve(resp)
+      }).catch(err=>reject(err))
+    })
+  },
+  SaveProfileStepSection({commit}, data){
+    localStorage.setItem('profile-active-step-'+ data.profile, data.step)
+  },
 	DeleteComment({commit}, data){
 		return new Promise((resolve, reject) =>{
 			MessagingServices.DeleteComment(data.instagramAccountId, data.media, data.comment).then(resp=>{

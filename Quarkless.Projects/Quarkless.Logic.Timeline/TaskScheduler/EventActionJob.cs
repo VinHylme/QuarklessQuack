@@ -10,7 +10,7 @@ using Quarkless.Models.Timeline.TaskScheduler;
 
 namespace Quarkless.Logic.Timeline.TaskScheduler
 {
-	[AutomaticRetry(Attempts = 1)]
+	[AutomaticRetry(Attempts = 0)]
 	public class EventActionJob : IJob<EventActionOptions>
 	{
 		private readonly IActionExecuteFactory _actionExecuteFactory;

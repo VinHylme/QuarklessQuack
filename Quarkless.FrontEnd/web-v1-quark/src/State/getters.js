@@ -41,6 +41,9 @@ export default {
       if(profile!==undefined)
         return profile; 
     },
+    ProfileActiveStep : state=> (profileId) => {
+      return localStorage.getItem('profile-active-step-'+profileId)
+    },
     InstagramProfilePicture: state => id => {
       var elment = state.AccountData.InstagramAccounts[state.AccountData.InstagramAccounts.findIndex(_=>_.id==id)];
       if(elment !== undefined){

@@ -38,5 +38,6 @@ namespace Quarkless.Models.Proxy
 
 		[BsonRepresentation(BsonType.Int32)]
 		public ProxyType ProxyType { get; set; }
+		public bool FromUser { get; set; }
 	}
 }

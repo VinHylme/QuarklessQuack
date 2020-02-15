@@ -2,8 +2,8 @@
 {
 	public enum ProxyType
 	{
-		Http,
-		Socks5
+		Http = 0,
+		Socks5 = 1
 	}
 	public enum CountryCode
 	{

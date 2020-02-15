@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Quarkless.Events\Quarkless.Events.csproj" />
+    <ProjectReference Include="..\Quarkless.Logic.Proxy\Quarkless.Logic.Proxy.csproj" />
     <ProjectReference Include="..\Quarkless.Models.InstagramAccounts\Quarkless.Models.InstagramAccounts.csproj" />
     <ProjectReference Include="..\Quarkless.Models.ReportHandler\Quarkless.Models.ReportHandler.csproj" />
   </ItemGroup>

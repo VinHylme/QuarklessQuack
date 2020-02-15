@@ -11,6 +11,9 @@ using InstagramApiSharp.Classes.Android.DeviceInfo;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.InstagramAccounts.Enums;
 using Quarkless.Models.ReportHandler.Interfaces;
+using Quarkless.Logic.Proxy;
+using Quarkless.Models.Proxy;
+using Quarkless.Models.Proxy.Enums;
 
 namespace Quarkless.Logic.InstagramAccounts
 {
@@ -49,14 +52,8 @@ namespace Quarkless.Logic.InstagramAccounts
 			AddInstagramAccountRequest addInstagram)
 		{
 			var resultCarrier = new ResultCarrier<AddInstagramAccountResponse>();
-			if (addInstagram.Location == null || (!addInstagram.EnableAutoLocate && addInstagram.Location?.Address == null))
-			{
-				resultCarrier.IsSuccessful = false;
-				resultCarrier.Info = new ErrorResponse
-				{
-					Message = "Location needs to be provided"
-				};
-			}
+			ProxyModelShort useProxyFromUser = null;
+
 			if (string.IsNullOrEmpty(addInstagram.Username) || string.IsNullOrEmpty(addInstagram.Password))
 			{
 				resultCarrier.IsSuccessful = false;
@@ -64,6 +61,65 @@ namespace Quarkless.Logic.InstagramAccounts
 				{
 					Message = "Username or password must be provided"
 				};
+				return resultCarrier;
+			}
+
+			if (addInstagram.ProxyDetail == null)
+			{
+				if (addInstagram.Location == null
+					|| (!addInstagram.EnableAutoLocate && addInstagram.Location?.Address == null))
+				{
+					resultCarrier.IsSuccessful = false;
+					resultCarrier.Info = new ErrorResponse
+					{
+						Message = "Location needs to be provided"
+					};
+					return resultCarrier;
+				}
+			}
+			else //use user's proxy specified
+			{
+				if (string.IsNullOrEmpty(addInstagram.ProxyDetail.HostAddress))
+				{
+					resultCarrier.IsSuccessful = false;
+					resultCarrier.Info = new ErrorResponse
+					{
+						Message = "Proxy address needs to be provided"
+					};
+					return resultCarrier;
+				}
+
+				if (int.TryParse(addInstagram.ProxyDetail.Port, out var port) && (port <= 0 || port > 65535))
+				{
+					resultCarrier.IsSuccessful = false;
+					resultCarrier.Info = new ErrorResponse
+					{
+						Message = "Please enter a valid port"
+					};
+					return resultCarrier;
+				}
+
+				//test proxy connectivity
+				useProxyFromUser = new ProxyModelShort
+				{
+					HostAddress = addInstagram.ProxyDetail.HostAddress,
+					Port = port,
+					NeedServerAuth = !string.IsNullOrEmpty(addInstagram.ProxyDetail.Username),
+					Username = addInstagram.ProxyDetail.Username,
+					Password = addInstagram.ProxyDetail.Password,
+					ProxyType = (ProxyType) addInstagram.ProxyDetail.proxyType
+				};
+				var result = await ProxyLogic.TestConnectivity(useProxyFromUser);
+
+				if (string.IsNullOrEmpty(result))
+				{
+					resultCarrier.IsSuccessful = false;
+					resultCarrier.Info = new ErrorResponse
+					{
+						Message = "Failed to connect to proxy"
+					};
+					return resultCarrier;
+				}
 			}
 
 			try
@@ -100,7 +156,8 @@ namespace Quarkless.Logic.InstagramAccounts
 					{
 						InstagramAccount = result,
 						IpAddress = addInstagram.IpAddress,
-						Location = addInstagram.Location
+						Location = addInstagram.Location,
+						UserProxy = useProxyFromUser
 					});
 
 					resultCarrier.IsSuccessful = true;

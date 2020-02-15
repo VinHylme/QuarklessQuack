@@ -11,7 +11,7 @@ namespace Quarkless.Models.ContentSearch.Enums
 		[Description("clipart")]
 		WithWhiteBackground,
 		[Description("lineart")]
-		Drawinings,
+		Drawings,
 		[Description("face")]
 		People
 	}

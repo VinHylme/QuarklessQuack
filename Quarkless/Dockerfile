@@ -1,13 +1,11 @@
-FROM mcr.microsoft.com/dotnet/core/aspnet:3.1.1-buster-slim AS base
-
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-buster-slim AS base
 RUN apt-get update && apt-get install -y libgdiplus
 RUN apt-get update && apt-get install libfontconfig1 nano -y
 
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/core/sdk:3.1.101-buster AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1-buster AS build
 WORKDIR /src
-
 COPY ["Quarkless/Quarkless.csproj", "Quarkless/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.Details/Quarkless.Logic.Details.csproj", "Quarkless.Projects/Quarkless.Logic.Details/"]
 COPY ["Quarkless.Projects/Quarkless.Models.Auth/Quarkless.Models.Auth.csproj", "Quarkless.Projects/Quarkless.Models.Auth/"]

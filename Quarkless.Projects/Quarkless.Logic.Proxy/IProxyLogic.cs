@@ -14,6 +14,7 @@ namespace Quarkless.Logic.Proxy
 		Task<bool> AssignProxy(ProxyModel proxy);
 		Task<ProxyModel> ReassignProxy(string proxyId, ProxyModel newModel);
 		Task<bool> DeleteProxyAssigned(string proxyId);
+		Task<ProxyResponse> GetProxyAssignedShort(string accountId, string instagramAccountId);
 		Task<ProxyModel> GetProxyAssigned(string accountId, string instagramAccountId);
 		Task<ProxyModel> GetProxyAssigned(string instagramAccountId);
 		Task<List<ProxyModel>> GetAllProxyAssigned();

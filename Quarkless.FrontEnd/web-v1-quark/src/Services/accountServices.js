@@ -82,5 +82,17 @@ export default {
 			currency: curr,
 			accountId: accid
 		});
+  },
+  GetUserProxy(instagramAccountId){
+    return Api(true).get(Calling['proxy_get'] + instagramAccountId);
+  },
+  TestProxyConnectivity(proxyData){
+    return Api(true).post(Calling['proxy_test'], proxyData)
+  },
+  ReAssignUserProxy(proxyData){
+    return Api(true).post(Calling['proxy_reassign'], proxyData)
+  },
+  UpdateUserProxy(proxyData){
+    return Api(true).post(Calling['proxy_update'], proxyData)
   }
 }

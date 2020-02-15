@@ -36,7 +36,11 @@ namespace Quarkless.Logic.Proxy
 						Proxy = new WebProxy($"{proxy.HostAddress}:{proxy.Port}", false),
 					};
 					if (!string.IsNullOrEmpty(proxy.Username) && !string.IsNullOrEmpty(proxy.Password))
+					{
+						handler.Proxy.Credentials = new NetworkCredential(proxy.Username, proxy.Password);
 						handler.Credentials = new NetworkCredential(proxy.Username, proxy.Password);
+						handler.UseDefaultCredentials = true;
+					}
 					client = new HttpClient(handler);
 					break;
 				}
@@ -51,12 +55,95 @@ namespace Quarkless.Logic.Proxy
 					{
 						Proxy = proxySettings
 					};
+					if (!string.IsNullOrEmpty(proxy.Username) && !string.IsNullOrEmpty(proxy.Password))
+					{
+						handler.UseDefaultCredentials = true;
+					}
 					client = new HttpClient(handler);
 					break;
 				}
 			}
 
 			return client;
+		}
+
+		public static async Task<string> TestConnectivity(ProxyModelShort proxy)
+		{
+			try
+			{
+				if (string.IsNullOrEmpty(proxy.HostAddress))
+				{
+					return string.Empty;
+				}
+
+				if (proxy.Port <= 0 || proxy.Port > 65535)
+				{
+					return string.Empty;
+				}
+
+				var client = new HttpClient();
+				var myActualIpResponse = await client.GetStringAsync(MY_IP_URL);
+				if (string.IsNullOrEmpty(myActualIpResponse)) return null;
+				var myActualIp = (string)JObject.Parse(myActualIpResponse)["query"];
+				if (string.IsNullOrEmpty(myActualIp)) return null;
+
+				switch (proxy.ProxyType)
+				{
+					case ProxyType.Http:
+					{
+						var handler = new HttpClientHandler
+						{
+							Proxy = new WebProxy($"{proxy.HostAddress}:{proxy.Port}", false),
+						};
+
+						if (!string.IsNullOrEmpty(proxy.Username) && !string.IsNullOrEmpty(proxy.Password))
+						{
+							handler.Proxy.Credentials = new NetworkCredential(proxy.Username, proxy.Password);
+							handler.Credentials = new NetworkCredential(proxy.Username, proxy.Password);
+							handler.UseDefaultCredentials = true;
+						}
+
+						client = new HttpClient(handler);
+						break;
+					}
+					case ProxyType.Socks5:
+					{
+						var proxySettings = new HttpToSocks5Proxy(proxy.HostAddress, proxy.Port);
+
+						if (!string.IsNullOrEmpty(proxy.Username) && !string.IsNullOrEmpty(proxy.Password))
+						{
+							proxySettings.Credentials = new NetworkCredential(proxy.Username, proxy.Password);
+						}
+
+						var handler = new HttpClientHandler
+						{
+							Proxy = proxySettings
+						};
+						if (!string.IsNullOrEmpty(proxy.Username) && !string.IsNullOrEmpty(proxy.Password))
+						{
+							handler.UseDefaultCredentials = true;
+						}
+						client = new HttpClient(handler);
+						break;
+					}
+				}
+
+				client.Timeout = TimeSpan.FromSeconds(4.5);
+
+				var ipResponse = await client.GetStringAsync(MY_IP_URL);
+
+				if (string.IsNullOrEmpty(ipResponse))
+					return null;
+
+				var myIpNow = (string)JObject.Parse(ipResponse)["query"];
+
+				return myIpNow != myActualIp ? myIpNow : null;
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err.Message);
+				return null;
+			}
 		}
 		public async Task<string> TestProxyConnectivity(ProxyModel proxy)
 		{
@@ -116,6 +203,25 @@ namespace Quarkless.Logic.Proxy
 			=> _proxyAssignmentsRepository.DeleteProxyAssigned(proxyId);
 		public Task<ProxyModel> GetProxyAssigned(string accountId, string instagramAccountId)
 			=> _proxyAssignmentsRepository.GetProxyAssigned(accountId, instagramAccountId);
+
+		public async Task<ProxyResponse> GetProxyAssignedShort(string accountId, string instagramAccountId)
+		{
+			var proxy = await _proxyAssignmentsRepository.GetProxyAssigned(accountId, instagramAccountId);
+			if (proxy == null) return null;
+			return new ProxyResponse
+			{
+				AccountId = proxy.AccountId,
+				InstagramId = proxy.InstagramId,
+				FromUser = proxy.FromUser,
+				HostAddress = proxy.FromUser ? proxy.HostAddress : null,
+				Port = proxy.FromUser ? proxy.Port : 0,
+				Password = proxy.Password,
+				ProxyId = proxy._id,
+				Username = proxy.Username,
+				Location = proxy.Location,
+				ProxyType = (int) proxy.ProxyType
+			};
+		}
 		public Task<ProxyModel> GetProxyAssigned(string instagramAccountId)
 			=> _proxyAssignmentsRepository.GetProxyAssigned(instagramAccountId);
 		public async Task<List<ProxyModel>> GetAllProxyAssigned()

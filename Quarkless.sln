@@ -373,7 +373,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Geolocation", "Qu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Logic.Details", "Quarkless.Projects\Quarkless.Logic.Details\Quarkless.Logic.Details.csproj", "{CFE99E75-8A56-47C8-86A2-C59304F9D431}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quarkless.Models.Stories", "Quarkless.Projects\Quarkless.Models.Stories\Quarkless.Models.Stories.csproj", "{7D72FDD4-11F0-4E30-B5C8-0046E95CA939}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Models.Stories", "Quarkless.Projects\Quarkless.Models.Stories\Quarkless.Models.Stories.csproj", "{7D72FDD4-11F0-4E30-B5C8-0046E95CA939}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Quarkless.Stats", "Quarkless.Stats", "{D1974320-95F7-4ACB-B01B-C96DA786868D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quarkless.Models.Stats", "Quarkless.Projects\Quarkless.Models.Stats\Quarkless.Models.Stats.csproj", "{4A572D5E-EAB1-45CA-ADAD-B17043B74514}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -881,6 +885,10 @@ Global
 		{7D72FDD4-11F0-4E30-B5C8-0046E95CA939}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7D72FDD4-11F0-4E30-B5C8-0046E95CA939}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7D72FDD4-11F0-4E30-B5C8-0046E95CA939}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4A572D5E-EAB1-45CA-ADAD-B17043B74514}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4A572D5E-EAB1-45CA-ADAD-B17043B74514}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4A572D5E-EAB1-45CA-ADAD-B17043B74514}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4A572D5E-EAB1-45CA-ADAD-B17043B74514}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1068,6 +1076,8 @@ Global
 		{16797B3A-82EB-443F-8E62-B7A31D671755} = {FA565628-E611-4DB7-93ED-1CCEC2B38518}
 		{CFE99E75-8A56-47C8-86A2-C59304F9D431} = {9C0FAD4D-A3E9-4CF9-8AA4-42D4FD8DF367}
 		{7D72FDD4-11F0-4E30-B5C8-0046E95CA939} = {08B808B0-B1A0-4109-A09E-BB3552AC982F}
+		{D1974320-95F7-4ACB-B01B-C96DA786868D} = {FA565628-E611-4DB7-93ED-1CCEC2B38518}
+		{4A572D5E-EAB1-45CA-ADAD-B17043B74514} = {D1974320-95F7-4ACB-B01B-C96DA786868D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D3E4C3A5-ADB4-4A48-9A99-78BD4FDE9AE6}

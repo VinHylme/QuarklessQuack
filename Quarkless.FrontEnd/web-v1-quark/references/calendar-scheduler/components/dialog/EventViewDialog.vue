@@ -40,14 +40,23 @@
                           </div>
                         </section>
                       </div>
-                      <div v-else-if="type === 3">
+                      <div v-else-if="type === 8">
                          <section class="v-cal-dialog-card__body" style="overflow:hidden;">
                           <div class="body-container-view" style="overflow:hidden; padding:0">
                             <div class="media-section-view">
                             <carousel :perPage="1">
                               <slide v-for="(item,index) in medias" v-bind:key="index">
+                                <div v-if="medias.length > 2" style="margin-left:-5em;float:right; width:40px; height:25px">
+                                  <b-tooltip multilined type="is-danger" label="Delete this Image">
+                                    <button @click="DeleteImageFromCarousel(index)" class="button is-danger">
+                                      <span class="icon is-small">
+                                        <i class="fas fa-times"></i>
+                                      </span>
+                                    </button>
+                                  </b-tooltip>
+                                </div>
                                 <img v-if="item.type === 1" class="media-container" :src="item.url" alt="">
-								<video v-else-if="item.type === 2" controls="controls" preload="metadata" :src="item.url+'#t=0.5'" class="media-container"/>
+                                <video v-else-if="item.type === 2" controls="controls" preload="metadata" :src="item.url+'#t=0.5'" class="media-container"/>
                               </slide>
                             </carousel>
                             </div>
@@ -175,7 +184,8 @@ export default {
           time: Date,
           isFetchingHashtags:false,
           autoSuggest:false,
-          profile:{}
+          profile:{},
+          deleted:[]
       }
   },
   beforeMount(){
@@ -192,6 +202,10 @@ export default {
       }
   },
   methods:{
+    DeleteImageFromCarousel(index){
+      this.medias.splice(index,1);
+      this.deleted.push(index)
+    },
     getSuggestedTags(e){
         if(e===true){
           this.isFetchingHashtags = true;
@@ -234,7 +248,8 @@ export default {
         hashtags: this.hashtags,
         location: this.location,
         credit: this.credit,
-        type: this.type
+        type: this.type,
+        deleted:this.deleted
       };
       this.$emit('update-event', {object_to_update, done : ()=>{
       } })

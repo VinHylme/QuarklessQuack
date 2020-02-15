@@ -412,30 +412,47 @@ namespace Quarkless.Logic.Timeline
 			return response;
 		}
 
-		public DateTime? PickAGoodTime(string accountId, string instagramAccountId, ActionType? actionName = null)
+		public DateTime? PickAGoodTime(string accountId, string instagramAccountId,
+			ActionType actionName = ActionType.All)
 		{
 			List<TimelineItem> timelineItems;
+
 			switch (actionName)
 			{
-				case null:
-					timelineItems = GetScheduledEventsForUserByDate(accountId, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
+				case ActionType.None:
+					timelineItems = GetScheduledEventsForUserForActionByDate(accountId, ActionType.CreateCommentMedia, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward)?.ToList();
+					if (timelineItems == null)
+						break;
+					timelineItems.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.FollowUser, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward)?.ToList());
+					timelineItems.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.WatchStory, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward)?.ToList());
+					timelineItems.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.ReactStory, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward)?.ToList());
+					timelineItems.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.LikePost, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward)?.ToList());
+					timelineItems.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.LikeComment, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward)?.ToList());
+					timelineItems.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.UnFollowUser, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward)?.ToList());
+					break;
+				case ActionType.All:
+					timelineItems = GetScheduledEventsForUserByDate(accountId, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward)?.ToList();
 					break;
 				case ActionType.SendDirectMessage:
-					timelineItems = GetScheduledEventsForUserForActionByDate(accountId, actionName.Value, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
+					timelineItems = GetScheduledEventsForUserForActionByDate(accountId, actionName, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward)?.ToList();
 					break;
 				case ActionType.CreatePost:
-					timelineItems = GetScheduledEventsForUserForActionByDate(accountId, actionName.Value, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
+					timelineItems = GetScheduledEventsForUserForActionByDate(accountId, actionName, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward)?.ToList();
 					break;
 				default:
-					timelineItems = GetScheduledEventsForUserForActionByDate(accountId, ActionType.CreateCommentMedia, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList();
-					timelineItems.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.FollowUser, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList());
-					timelineItems.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.LikePost, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList());
-					timelineItems.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.LikeComment, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList());
-					timelineItems.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.UnFollowUser, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward).ToList());
+					timelineItems = GetScheduledEventsForUserForActionByDate(accountId, ActionType.CreateCommentMedia, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward)?.ToList();
+					if (timelineItems == null)
+						break;
+					timelineItems.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.FollowUser, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward)?.ToList());
+					timelineItems.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.WatchStory, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward)?.ToList());
+					timelineItems.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.ReactStory, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward)?.ToList());
+					timelineItems.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.LikePost, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward)?.ToList());
+					timelineItems.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.LikeComment, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward)?.ToList());
+					timelineItems.AddRange(GetScheduledEventsForUserForActionByDate(accountId, ActionType.UnFollowUser, DateTime.UtcNow, instaId: instagramAccountId, limit: 5000, timelineDateType: TimelineDateType.Forward)?.ToList());
 					break;
 			}
 
-			if (!timelineItems.Any())
+			if (timelineItems == null || !timelineItems.Any())
 				return null;
 
 			var datesPlanned = timelineItems.Select(_ => _.EnqueueTime);
@@ -468,7 +485,8 @@ namespace Quarkless.Logic.Timeline
 					{
 						Caption = updateTimelineMediaItemRequest.Caption,
 						Credit = updateTimelineMediaItemRequest.Credit,
-						Hashtags = updateTimelineMediaItemRequest.Hashtags
+						Hashtags = updateTimelineMediaItemRequest.Hashtags,
+						MediaType = (InstaMediaType)updateTimelineMediaItemRequest.Type
 					};
 					model.Location = updateTimelineMediaItemRequest.Location;
 					job.EventBody.Body = model;
@@ -480,7 +498,8 @@ namespace Quarkless.Logic.Timeline
 					{
 						Caption = updateTimelineMediaItemRequest.Caption,
 						Credit = updateTimelineMediaItemRequest.Credit,
-						Hashtags = updateTimelineMediaItemRequest.Hashtags
+						Hashtags = updateTimelineMediaItemRequest.Hashtags,
+						MediaType = (InstaMediaType)updateTimelineMediaItemRequest.Type
 					};
 					model.Location = updateTimelineMediaItemRequest.Location;
 					job.EventBody.Body = model;
@@ -492,8 +511,15 @@ namespace Quarkless.Logic.Timeline
 					{
 						Caption = updateTimelineMediaItemRequest.Caption,
 						Credit = updateTimelineMediaItemRequest.Credit,
-						Hashtags = updateTimelineMediaItemRequest.Hashtags
+						Hashtags = updateTimelineMediaItemRequest.Hashtags,
+						MediaType = (InstaMediaType) updateTimelineMediaItemRequest.Type
 					};
+
+					foreach (var toDeletePosition in updateTimelineMediaItemRequest.Deleted)
+					{
+						model.Album = model.Album.RemoveAt(toDeletePosition);
+					}
+
 					model.Location = updateTimelineMediaItemRequest.Location;
 					job.EventBody.Body = model;
 				}

@@ -126,6 +126,7 @@ namespace Quarkless.Logic.Actions.AccountContainer
 				ActionType.LikeComment => LikeCommentActionOptions.TimeFrameSeconds,
 				ActionType.SendDirectMessage => SendDirectMessageActionOptions.TimeFrameSeconds,
 				ActionType.WatchStory => WatchStoryOptions.TimeFrameSeconds,
+				ActionType.ReactStory => ReactStoryOptions.TimeFrameSeconds,
 				_ => throw new NotImplementedException()
 			};
 		}
@@ -140,6 +141,7 @@ namespace Quarkless.Logic.Actions.AccountContainer
 				ActionType.LikeComment => LikeCommentActionOptions.TimeFrameSeconds,
 				ActionType.SendDirectMessage => SendDirectMessageActionOptions.TimeFrameSeconds,
 				ActionType.WatchStory => WatchStoryOptions.TimeFrameSeconds,
+				ActionType.ReactStory => ReactStoryOptions.TimeFrameSeconds,
 				_ => throw new NotImplementedException()
 			};
 		}

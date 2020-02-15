@@ -1,6 +1,6 @@
 ﻿namespace Quarkless.Models.Actions.Enums.ActionTypes
 {
-	public enum WatchStoryActionType
+	public enum StoryActionType
 	{
 		Any = 0,
 		WatchByTopic = 1,

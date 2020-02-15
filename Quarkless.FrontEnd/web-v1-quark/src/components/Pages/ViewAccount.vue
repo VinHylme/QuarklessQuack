@@ -2,7 +2,13 @@
 <div class="timeline_layout">
   <div class="columns is-mobile is-gapless">
     <div :class="$store.state.showingLogs ?'column is-4':'column is-0'" class="activity-log-container">
-        <p class="title">Activity</p>
+      <p class="title">Activity</p>
+      <button style="float:right; margin-right:1em; margin-top:-3.5em;" class="button is-danger is-light is-rounded">
+        <span class="icon">
+          <i class="fas fa-info"></i>
+        </span>
+        <span>More Details</span>
+      </button>
       <div v-for="(timelineLog,index) in timelineLogs" :key="timelineLog+'_'+index" class="card-acticity-log">
         <div class="card-activity-header">
           <b-icon v-if="timelineLog.actionType === 16" icon="sign-in-alt" pack="fas" type="is-info" size="is-default"/>
@@ -20,6 +26,8 @@
           <b-icon v-if="timelineLog.actionType === 24" icon="inbox" pack="fas" class="is-success" size="is-default"></b-icon>
           <b-icon v-if="timelineLog.actionType === 25" icon="inbox" pack="fas" class="is-success" size="is-default"></b-icon>
           <b-icon v-if="timelineLog.actionType === 28" icon="tv" pack="fas" class="is-success" size="is-default"></b-icon>
+          <b-icon v-if="timelineLog.actionType === 29" icon="smile-wink" pack="fas" class="is-cyan" size="is-default"></b-icon>
+
         </div>
         <div class="card-activity-content">
           {{timelineLog.message}}
@@ -306,6 +314,9 @@ html,body{
 }
 .is-purple{
   color:#ff74dc;
+}
+.is-cyan{
+  color:#2decfd;
 }
 .is-gold{
   color:gold;

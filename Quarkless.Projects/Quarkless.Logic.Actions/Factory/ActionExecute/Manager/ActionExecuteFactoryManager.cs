@@ -38,7 +38,8 @@ namespace Quarkless.Logic.Actions.Factory.ActionExecute.Manager
 				{ ActionType.UnFollowUser, new ExecuteUnfollowUserActionFactory() },
 				{ ActionType.LikeComment, new ExecuteLikeCommentActionFactory() },
 				{ ActionType.SendDirectMessage, new ExecuteDirectMessageActionFactory() },
-				{ ActionType.WatchStory, new ExecuteWatchStoryActionFactory() }
+				{ ActionType.WatchStory, new ExecuteWatchStoryActionFactory() },
+				{ ActionType.ReactStory, new ExecuteReactStoryActionFactory() }
 			};
 		}
 

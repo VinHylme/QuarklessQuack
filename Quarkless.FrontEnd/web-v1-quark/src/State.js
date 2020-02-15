@@ -9,7 +9,7 @@ Vue.use(Vuex);
 
 export default new Vuex.Store({
   state:{
-    showingLogs:false,
+    showingLogs:true,
     AccountData:{
       InstagramAccounts:[],
       Information:{},
@@ -22,12 +22,12 @@ export default new Vuex.Store({
       },
       TimelineData:[],
       TimelineLogData:[],
-      ProfileConfg:{}
+      ProfileConfg:{},
     },
     status:'',
     token: localStorage.getItem('token') || '',
     user: localStorage.getItem('user') || '',
-    role: localStorage.getItem('role') || ''
+    role: localStorage.getItem('role') || '',
   },
   mutations,
   getters,

@@ -17,7 +17,8 @@ namespace Quarkless.Logic.Proxy
 		private readonly string _assignEndpoint = "assign-by-location/{0}/{1}/{2}";
 		private readonly string _unassignEndpoint = "unassign/{0}";
 		private readonly IGeoLocationHandler _geoLocationHandler;
-		public ProxyRequest(ProxyRequestOptions options, IGeoLocationHandler geoLocationHandler, IProxyAssignmentsRepository repo) : base(repo)
+		public ProxyRequest(ProxyRequestOptions options, IGeoLocationHandler geoLocationHandler,
+			IProxyAssignmentsRepository repo) : base(repo)
 		{
 			if (options == null || string.IsNullOrEmpty(options.Url))
 				throw new NullReferenceException();
@@ -41,9 +42,16 @@ namespace Quarkless.Logic.Proxy
 				? null 
 				: JsonConvert.DeserializeObject<ProxyModel>(await results.Content.ReadAsStringAsync());
 		}
-
 		public async Task<bool> UnAssignProxy(string instagramAccountId)
 		{
+			var proxyDetail = await GetProxyAssigned(instagramAccountId);
+			if (proxyDetail == null) return false;
+			
+			if (proxyDetail.FromUser)
+			{
+				await DeleteProxyAssigned(proxyDetail._id);
+			}
+
 			using var httpClient = new HttpClient();
 			var requestUrl = _baseUrl + string.Format(_unassignEndpoint, instagramAccountId);
 			var httpRequestMessage = new HttpRequestMessage(HttpMethod.Delete, requestUrl);
@@ -56,10 +64,29 @@ namespace Quarkless.Logic.Proxy
 			if (@event.Equals(null))
 				return;
 
-			//location is from js returning the lat and lon
+			if (@event.UserProxy != null)	// assign from user's proxy
+			{
+				await AssignProxy(new ProxyModel
+				{
+					AccountId = @event.Profile.Account_Id,
+					InstagramId = @event.Profile.InstagramAccountId,
+					AssignedDate = DateTime.UtcNow,
+					HostAddress = @event.UserProxy.HostAddress,
+					Port = @event.UserProxy.Port,
+					Username = @event.UserProxy.Username,
+					Password = @event.UserProxy.Password,
+					ProxyType = @event.UserProxy.ProxyType,
+					FromUser = true
+				});
+
+				return;
+			}
 
 			if (@event.Location == null)
 			{
+				if (string.IsNullOrEmpty(@event.IpAddress)) return;
+				var location = await _geoLocationHandler.IpGeolocation.GetUserLocationFromIp(@event.IpAddress);
+				await AssignProxy(@event.Profile.Account_Id, @event.Profile.InstagramAccountId, location.City);
 				return;
 			}
 
@@ -69,6 +96,7 @@ namespace Quarkless.Logic.Proxy
 				return;
 			}
 
+			//location is from js returning the lat and lon
 			if (@event.Location.Coordinates.Latitude > 0 || @event.Location.Coordinates.Latitude < 0)
 			{
 				var toLocal = await _geoLocationHandler.GeoNames
@@ -76,14 +104,6 @@ namespace Quarkless.Logic.Proxy
 
 				if (toLocal.Geonames.Any())
 					await AssignProxy(@event.Profile.Account_Id, @event.Profile.InstagramAccountId, toLocal.Geonames.First().Name);
-
-				return;
-			}
-
-			if (!string.IsNullOrEmpty(@event.IpAddress))
-			{
-				var location = await _geoLocationHandler.IpGeolocation.GetUserLocationFromIp(@event.IpAddress);
-				await AssignProxy(@event.Profile.Account_Id, @event.Profile.InstagramAccountId, location.City);
 			}
 		}
 

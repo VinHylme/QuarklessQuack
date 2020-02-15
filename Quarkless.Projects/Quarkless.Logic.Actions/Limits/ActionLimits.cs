@@ -12,6 +12,9 @@ namespace Quarkless.Logic.Actions.Limits
 		public const int MAX_DAILY_WATCH_STORY_ACTION = 150000;
 		public const int MAX_HOURLY_WATCH_STORY_ACTION = 500;
 
+		public const int MAX_DAILY_REACT_STORY_ACTION = 150;
+		public const int MAX_HOURLY_REACT_STORY_ACTION = 25;
+
 		public const int MAX_DAILY_DM_ACTION = 200;
 		public const int MAX_HOURLY_DM_ACTION = 12;
 
@@ -44,6 +47,10 @@ namespace Quarkless.Logic.Actions.Limits
 
 		public const int MIN_DAILY_WATCH_STORY_ACTION = 1000;
 		public const int MIN_HOURLY_WATCH_STORY_ACTION = 100;
+
+		public const int MIN_DAILY_REACT_STORY_ACTION = 12;
+		public const int MIN_HOURLY_REACT_STORY_ACTION = 1;
+
 		#endregion
 
 		public static Models.InstagramAccounts.Limits Empty => new Models.InstagramAccounts.Limits
@@ -57,7 +64,8 @@ namespace Quarkless.Logic.Actions.Limits
 				FollowTopicLimit = 0,
 				LikeCommentLimit = 0,
 				LikePostLimit = 0,
-				WatchStoryLimit = 0
+				WatchStoryLimit = 0,
+				ReactStoryLimit = 0
 			},
 			HourlyLimits = new HourlyActions
 			{
@@ -68,7 +76,8 @@ namespace Quarkless.Logic.Actions.Limits
 				FollowTopicLimit = 0,
 				LikeCommentLimit = 0,
 				LikePostLimit = 0,
-				WatchStoryLimit = 0
+				WatchStoryLimit = 0,
+				ReactStoryLimit = 0
 			}
 		};
 		public static Models.InstagramAccounts.Limits FullAuth(int minusFromEach = 0) => new Models.InstagramAccounts.Limits
@@ -82,7 +91,8 @@ namespace Quarkless.Logic.Actions.Limits
 				FollowTopicLimit = MAX_DAILY_FOLLOW_ACTION - minusFromEach,
 				LikeCommentLimit = MAX_DAILY_LIKE_ACTION - minusFromEach,
 				LikePostLimit = MAX_DAILY_LIKE_ACTION - minusFromEach,
-				WatchStoryLimit = MAX_DAILY_WATCH_STORY_ACTION - (minusFromEach * 10)
+				WatchStoryLimit = MAX_DAILY_WATCH_STORY_ACTION - (minusFromEach * 10),
+				ReactStoryLimit = MAX_DAILY_REACT_STORY_ACTION - minusFromEach
 			},
 			HourlyLimits = new HourlyActions
 			{
@@ -93,7 +103,8 @@ namespace Quarkless.Logic.Actions.Limits
 				FollowTopicLimit = MAX_HOURLY_FOLLOW_ACTION,
 				LikeCommentLimit = MAX_HOURLY_LIKE_ACTION,
 				LikePostLimit = MAX_HOURLY_LIKE_ACTION,
-				WatchStoryLimit = MAX_HOURLY_WATCH_STORY_ACTION
+				WatchStoryLimit = MAX_HOURLY_WATCH_STORY_ACTION,
+				ReactStoryLimit = MAX_HOURLY_REACT_STORY_ACTION
 			}
 		};
 		public static Models.InstagramAccounts.Limits Min => new Models.InstagramAccounts.Limits
@@ -107,7 +118,8 @@ namespace Quarkless.Logic.Actions.Limits
 				FollowTopicLimit = MIN_DAILY_FOLLOW_ACTION,
 				LikeCommentLimit = MIN_DAILY_LIKE_ACTION,
 				LikePostLimit = MIN_DAILY_LIKE_ACTION,
-				WatchStoryLimit = MIN_DAILY_WATCH_STORY_ACTION
+				WatchStoryLimit = MIN_DAILY_WATCH_STORY_ACTION,
+				ReactStoryLimit = MIN_DAILY_REACT_STORY_ACTION
 			},
 			HourlyLimits = new HourlyActions
 			{
@@ -118,7 +130,8 @@ namespace Quarkless.Logic.Actions.Limits
 				FollowTopicLimit = MIN_HOURLY_FOLLOW_ACTION,
 				LikeCommentLimit = MIN_HOURLY_LIKE_ACTION,
 				LikePostLimit = MIN_HOURLY_LIKE_ACTION,
-				WatchStoryLimit = MIN_HOURLY_WATCH_STORY_ACTION
+				WatchStoryLimit = MIN_HOURLY_WATCH_STORY_ACTION,
+				ReactStoryLimit = MIN_HOURLY_REACT_STORY_ACTION
 			}
 		};
 		public static Models.InstagramAccounts.Limits SetLimits(AuthTypes authType, DateTime accountCreationDate)
@@ -155,8 +168,8 @@ namespace Quarkless.Logic.Actions.Limits
 						FollowTopicLimit = (int) (scaleFactor * maxLimitsForUser.DailyLimits.FollowTopicLimit / MIN_DAILY_FOLLOW_ACTION * MIN_DAILY_FOLLOW_ACTION),
 						LikeCommentLimit = (int) (scaleFactor * maxLimitsForUser.DailyLimits.LikeCommentLimit / MIN_DAILY_LIKE_ACTION * MIN_DAILY_LIKE_ACTION),
 						LikePostLimit = (int) (scaleFactor * maxLimitsForUser.DailyLimits.LikePostLimit / MIN_DAILY_LIKE_ACTION * MIN_DAILY_LIKE_ACTION),
-						WatchStoryLimit = (int) (scaleFactor * maxLimitsForUser.DailyLimits.WatchStoryLimit / MIN_DAILY_WATCH_STORY_ACTION * MIN_DAILY_WATCH_STORY_ACTION)
-
+						WatchStoryLimit = (int) (scaleFactor * maxLimitsForUser.DailyLimits.WatchStoryLimit / MIN_DAILY_WATCH_STORY_ACTION * MIN_DAILY_WATCH_STORY_ACTION),
+						ReactStoryLimit = (int)(scaleFactor * maxLimitsForUser.DailyLimits.ReactStoryLimit / MIN_DAILY_REACT_STORY_ACTION * MIN_DAILY_REACT_STORY_ACTION),
 					},
 					HourlyLimits = new HourlyActions
 					{
@@ -167,7 +180,8 @@ namespace Quarkless.Logic.Actions.Limits
 						FollowTopicLimit = (int) (scaleFactor * maxLimitsForUser.HourlyLimits.FollowTopicLimit / MIN_HOURLY_FOLLOW_ACTION * MIN_HOURLY_FOLLOW_ACTION),
 						LikeCommentLimit = (int) (scaleFactor * maxLimitsForUser.HourlyLimits.LikeCommentLimit / MIN_HOURLY_LIKE_ACTION * MIN_HOURLY_LIKE_ACTION),
 						LikePostLimit = (int) (scaleFactor * maxLimitsForUser.HourlyLimits.LikePostLimit / MIN_HOURLY_LIKE_ACTION * MIN_HOURLY_LIKE_ACTION),
-						WatchStoryLimit = (int) (scaleFactor * maxLimitsForUser.HourlyLimits.WatchStoryLimit / MIN_HOURLY_WATCH_STORY_ACTION * MIN_HOURLY_WATCH_STORY_ACTION)
+						WatchStoryLimit = (int) (scaleFactor * maxLimitsForUser.HourlyLimits.WatchStoryLimit / MIN_HOURLY_WATCH_STORY_ACTION * MIN_HOURLY_WATCH_STORY_ACTION),
+						ReactStoryLimit = MIN_DAILY_REACT_STORY_ACTION
 					}
 				};
 			}
@@ -193,7 +207,8 @@ namespace Quarkless.Logic.Actions.Limits
 							FollowTopicLimit = 40,
 							LikeCommentLimit = 250,
 							LikePostLimit = 250,
-							WatchStoryLimit = 5000
+							WatchStoryLimit = 5000,
+							ReactStoryLimit = 25
 						},
 						HourlyLimits = new HourlyActions
 						{
@@ -204,7 +219,8 @@ namespace Quarkless.Logic.Actions.Limits
 							FollowTopicLimit = 15,
 							LikeCommentLimit = 40,
 							LikePostLimit = 40,
-							WatchStoryLimit = 150
+							WatchStoryLimit = 150,
+							ReactStoryLimit = 1
 						}
 					};
 				case AuthTypes.BasicUsers:
@@ -219,7 +235,8 @@ namespace Quarkless.Logic.Actions.Limits
 							FollowTopicLimit = 80,
 							LikeCommentLimit = 500,
 							LikePostLimit = 500,
-							WatchStoryLimit = 75000
+							WatchStoryLimit = 75000,
+							ReactStoryLimit = 35
 						},
 						HourlyLimits = new HourlyActions
 						{
@@ -230,7 +247,8 @@ namespace Quarkless.Logic.Actions.Limits
 							FollowTopicLimit = 25,
 							LikeCommentLimit = 80,
 							LikePostLimit = 80,
-							WatchStoryLimit = 300
+							WatchStoryLimit = 300,
+							ReactStoryLimit = 5
 						}
 					};
 				case AuthTypes.PremiumUsers:
@@ -245,7 +263,8 @@ namespace Quarkless.Logic.Actions.Limits
 							FollowTopicLimit = 125,
 							LikeCommentLimit = 650,
 							LikePostLimit = 650,
-							WatchStoryLimit = 100000
+							WatchStoryLimit = 100000,
+							ReactStoryLimit = 90
 						},
 						HourlyLimits = new HourlyActions
 						{
@@ -256,7 +275,8 @@ namespace Quarkless.Logic.Actions.Limits
 							FollowTopicLimit = 42,
 							LikeCommentLimit = 90,
 							LikePostLimit = 90,
-							WatchStoryLimit = 400
+							WatchStoryLimit = 400,
+							ReactStoryLimit = 10
 						}
 					};
 				case AuthTypes.EnterpriseUsers:

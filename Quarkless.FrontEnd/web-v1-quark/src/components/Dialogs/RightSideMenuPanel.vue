@@ -473,7 +473,7 @@ export default {
       max-height:750px;
       //height:750px;
       overflow: auto;
-      margin-left:4em;
+      margin-left:1em;
     }
     .post-footer{
       margin-top:2em;

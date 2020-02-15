@@ -4,6 +4,8 @@ namespace Quarkless.Models.Common.Enums
 {
 	public enum ActionType
 	{
+		[Description("all")]
+		All = -2,
 		[Description("none")]
 		None = -1,
 		[Description("createpost")]
@@ -61,6 +63,8 @@ namespace Quarkless.Models.Common.Enums
 		[Description("sharemessagemedia")]
 		SendDirectMessageMedia = 27,
 		[Description("watchstory")]
-		WatchStory = 28
+		WatchStory = 28,
+		[Description("reactstory")]
+		ReactStory = 29
 	}
 }

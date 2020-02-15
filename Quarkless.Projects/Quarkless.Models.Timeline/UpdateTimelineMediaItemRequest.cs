@@ -27,5 +27,8 @@ namespace Quarkless.Models.Timeline
 
 		[JsonProperty("type")]
 		public int Type { get; set; }
+
+		[JsonProperty("deleted")]
+		public List<int> Deleted { get; set; }
 	}
 }

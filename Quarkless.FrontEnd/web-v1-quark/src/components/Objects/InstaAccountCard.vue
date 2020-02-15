@@ -39,6 +39,14 @@
             <div class="content">
                 <div id="user_info" style="margin-left:-.7em">
                     <div class="field is-grouped">
+                    <div v-if="agentState === 9" class="control">
+                         <b-tooltip multilined label="Account needs attention, Proxy cannot connect to the server,
+                         Please go in your profile settings to resolve the issue" type="is-light" position="is-top">
+                            <a @click="HandleProxy" class="button is-danger">
+                                <b-icon pack="fas" icon="exclamation-circle"></b-icon>
+                            </a>
+                        </b-tooltip>
+                    </div>
                     <div v-if="agentState === 7 || agentState === 6" class="control">
                         <b-tooltip label="Account needs attention" type="is-dark" position="is-top">
                             <a @click="HandleVerify" class="button is-warning">
@@ -162,11 +170,13 @@ props: {
             {name:"Sleeping",index:4},
             {name:"Blocked by instagram",index:5},
             {name:"Challange required",index:6},
-            {name:"Awaiting from user",index:7}
+            {name:"Awaiting from user",index:7},
+            {name: "Proxy Connectivity Issue", index:9}
         ]
       }
   },
   mounted(){
+      //this.agentState = 9;
       this.IsAdmin = this.$store.getters.UserRole == 'Admin';
       let _self = this;
       this.$bus.$on('doneUpdatingBiography',()=>{
@@ -205,8 +215,11 @@ props: {
       DeleteAccount(){
           this.$emit("DeleteAccount", this.id);
       },
+      HandleProxy(){
+        this.$emit("HandleProxy", this.id);
+      },
       HandleVerify(){
-          this.$emit("HandleVerify", this.id);
+        this.$emit("HandleVerify", this.id);
       },
       ViewLibrary(){
         this.$emit("ViewLibrary", this.id);
@@ -258,7 +271,9 @@ props: {
               case 6:
                   return "Challange required";
               case 7:
-                  return "Awaiting from user"
+                  return "Awaiting from user";
+              case 9:
+                  return "Proxy Issue";
           }
       }
   }

@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Quarkless.Events.Interfaces;
-using Quarkless.Models.Common.Models;
 using Quarkless.Models.InstagramAccounts;
 using Quarkless.Models.Profile;
 using Quarkless.Models.Profile.Interfaces;
+using Quarkless.Models.Proxy;
 using Quarkless.Models.SearchResponse;
 using Quarkless.Models.Topic;
+using Location = Quarkless.Models.Common.Models.Location;
 
 namespace Quarkless.Logic.Profile
 {
@@ -28,7 +29,8 @@ namespace Quarkless.Logic.Profile
 		}
 
 		public async Task<ProfileModel> AddProfile(ProfileModel profile,
-			bool assignProxy = false, string ipAddress = null, Location location = null)
+			bool assignProxy = false, string ipAddress = null, Location location = null,
+			ProxyModelShort userProxy = null)
 		{
 			var results = await _profileRepository.AddProfile(profile);
 			if (results == null) return null;
@@ -38,7 +40,8 @@ namespace Quarkless.Logic.Profile
 				{
 					Profile = results,
 					IpAddress = ipAddress,
-					Location = location
+					Location = location,
+					UserProxy = userProxy
 				});
 
 			return results;
@@ -105,7 +108,19 @@ namespace Quarkless.Logic.Profile
 					SearchTypes = new List<int> { 0, 1, 2 },
 					EnableAutoPosting = true,
 					AutoGenerateCaption = true,
-					AllowRepost = true
+					AllowRepost = true,
+					EnableAutoReactStories = true,
+					EnableOnlyAutoRepostFromUserTargetList = true,
+					EnableAutoLikePost = true,
+					EnableAutoComment = true,
+					EnableAutoLikeComment = true,
+					EnableAutoFollow = true,
+					EnableAutoDirectMessaging = true,
+					EnableAutoWatchStories = true,
+					DefaultCaption = string.Empty,
+					FocusLocalMore = false,
+					WakeTime = DateTime.UtcNow,
+					SleepTime = DateTime.UtcNow.AddHours(8)
 				},
 				AutoGenerateTopics = false,
 				Language = "English",
@@ -118,7 +133,7 @@ namespace Quarkless.Logic.Profile
 				},
 				LocationTargetList = new List<Location>(),
 				UserTargetList = new List<string>(),
-			}, true, @event.IpAddress, @event.Location);
+			}, true, @event.IpAddress, @event.Location, @event.UserProxy);
 		}
 
 		public async Task Handle(InstagramAccountDeletePublishEvent @event)

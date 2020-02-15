@@ -16,6 +16,7 @@ using Quarkless.Models.Lookup;
 using Quarkless.Models.Lookup.Enums;
 using System.Linq;
 using InstagramApiSharp.Classes.Models;
+using Newtonsoft.Json.Linq;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.InstagramClient;
@@ -254,10 +255,14 @@ namespace Quarkless.Logic.ResponseResolver
 		{
 			switch (actionType)
 			{
+				case ActionType.RefreshLogin:
+					return "Refreshed Account and cleared cookies";
 				case ActionType.CreatePost:
 					return "New Post Created";
 				case ActionType.WatchStory:
 					return "Watched story of a user who matches your interests";
+				case ActionType.ReactStory:
+					return "Sent a reaction to a user's story";
 				case ActionType.CreateCommentMedia:
 					return "Comment Made";
 				case ActionType.CreateBiography:
@@ -576,13 +581,44 @@ namespace Quarkless.Logic.ResponseResolver
 					break;
 				case ResponseType.UnExpectedResponse:
 				{
-					await TestUserProxy();
+					var resultFromProxy = await TestUserProxy();
+
+					if (!resultFromProxy.IsSuccessful)
+					{
+						var events = await _timelineEventLogLogic
+							.OccurrencesByResponseType(context.AccountId, context.Id, 10,
+								ResponseType.UnExpectedResponse,
+								ResponseType.NetworkProblem);
+
+						if (events > 3)
+						{
+							await UpdateAccountState(new InstagramAccountModel
+							{
+								AgentState = (int)AgentState.BadProxy
+							});
+						}
+					}
 					response.Resolved = true;
 					break;
 				}
 				case ResponseType.NetworkProblem:
 				{
-					await TestUserProxy();
+					var resultFromProxy = await TestUserProxy();
+					if (!resultFromProxy.IsSuccessful)
+					{
+						var events = await _timelineEventLogLogic
+							.OccurrencesByResponseType(context.AccountId, context.Id, 150,
+								ResponseType.UnExpectedResponse,
+								ResponseType.NetworkProblem);
+
+						if (events > 3)
+						{
+							await UpdateAccountState(new InstagramAccountModel
+							{
+								AgentState = (int)AgentState.BadProxy
+							});
+						}
+					}
 					response.Resolved = true;
 					break;
 				}
@@ -873,25 +909,65 @@ namespace Quarkless.Logic.ResponseResolver
 
 		#region Other Functionality
 
-		private async Task TestUserProxy()
+		private async Task<ProxyTestResponse> TestUserProxy()
 		{
+			var response = new ProxyTestResponse();
+
 			var account = Context?.InstagramAccount;
+
 			if (account == null)
-				return;
+			{
+				response.Reason = "Failed to retrieve Account";
+				return response;
+			}
 			if (Context.Proxy == null)
-				return;
+			{
+				response.Reason = "Failed to retrieve user proxy";
+				return response;
+			}
+
 			try
 			{
 				var testProxyConnectivity = await _proxyRequest.TestConnectivity(Context.Proxy);
 				if (!testProxyConnectivity)
 				{
-					await _proxyRequest.AssignProxy(account.AccountId, account.Id,
+					if (Context.Proxy.FromUser)
+					{
+						response.IsSuccessful = false;
+						response.AttemptedToReAssign = false;
+						response.ProxyIsFromUser = true;
+						response.Reason = "User's Proxy Failed to Connect";
+						return response;
+					}
+
+					var assignedResult = await _proxyRequest.AssignProxy(account.AccountId, account.Id,
 						Context.Proxy.Location.LocationQuery);
+
+					if (assignedResult == null)
+					{
+						response.IsSuccessful = false;
+						response.AttemptedToReAssign = true;
+						response.Reason = "Failed to assign proxy";
+						response.ProxyIsFromUser = false;
+						return response;
+					}
+
+					response.IsSuccessful = true;
+					response.AttemptedToReAssign = true;
+					response.ProxyIsFromUser = false;
+					return response;
 				}
+
+				response.IsSuccessful = true;
+				response.AttemptedToReAssign = false;
+				response.Reason = "Connectivity Good";
+				return response;
 			}
 			catch (Exception err)
 			{
 				Console.WriteLine(err);
+				response.Reason = err.Message;
+				return response;
 			}
 		}
 		private async Task MarkAsComplete(ActionType actionType, params string[] ids)

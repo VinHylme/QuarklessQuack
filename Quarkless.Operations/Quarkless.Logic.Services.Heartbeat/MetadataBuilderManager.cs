@@ -64,6 +64,14 @@ namespace Quarkless.Logic.Services.Heartbeat
 		public async Task ExternalExtract()
 		{
 			Console.WriteLine("Began External Extract for {0}", _customer.InstagramAccount.Username);
+
+			if (!_customer.Profile.AdditionalConfigurations.EnableAutoPosting)
+			{
+				Console.WriteLine("Ended External Extract for {0} as user has disabled this feature",
+					_customer.InstagramAccount.Username);
+				return;
+			}
+
 			var googleImages = Task.Run(async () => await _metadataExtract.BuildGoogleImages(20));
 			var yandexImages = Task.Run(async () => await _metadataExtract.BuildYandexImages(takeTopicAmount: 1));
 			await Task.WhenAll(googleImages, yandexImages);
@@ -109,7 +117,12 @@ namespace Quarkless.Logic.Services.Heartbeat
 
 			var followerList = Task.Run(async () => await _metadataExtract.BuildUserFollowerList());
 
-			var storyFeed = Task.Run(async () => await _metadataExtract.BuildUsersStoryFeed());
+			var storyFeed = Task.Run(async () =>
+			{
+				if(_customer.Profile.AdditionalConfigurations.EnableAutoWatchStories 
+					|| _customer.Profile.AdditionalConfigurations.EnableAutoReactStories)
+					await _metadataExtract.BuildUsersStoryFeed();
+			});
 
 			var feedRefresh = await Task.Run(async () => await _metadataExtract.BuildUsersFeed())
 				.ContinueWith(async x =>

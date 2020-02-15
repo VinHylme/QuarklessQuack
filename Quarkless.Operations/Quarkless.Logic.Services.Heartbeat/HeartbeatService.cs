@@ -87,12 +87,12 @@ namespace Quarkless.Logic.Services.Heartbeat
 				case ExtractOperationType.Base:
 					await metaBuilder.BaseExtract();
 					Console.WriteLine("Waiting before next cycle...");
-					await Task.Delay(TimeSpan.FromMinutes(4));
+					await Task.Delay(TimeSpan.FromMinutes(10));
 					break;
 				case ExtractOperationType.External:
 					await metaBuilder.ExternalExtract();
 					Console.WriteLine("Waiting before next cycle...");
-					await Task.Delay(TimeSpan.FromMinutes(3));
+					await Task.Delay(TimeSpan.FromMinutes(8));
 					break;
 				case ExtractOperationType.UserInfo:
 					await metaBuilder.UserInformationExtract();
@@ -102,7 +102,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 				case ExtractOperationType.TargetListing:
 					await metaBuilder.TargetListingExtract();
 					Console.WriteLine("Waiting before next cycle...");
-					await Task.Delay(TimeSpan.FromMinutes(5));
+					await Task.Delay(TimeSpan.FromMinutes(10));
 					break;
 			}
 			Console.WriteLine("Finished action {0} with customer {1}", operation.ToString(), customer.InstagramAccount.Username);

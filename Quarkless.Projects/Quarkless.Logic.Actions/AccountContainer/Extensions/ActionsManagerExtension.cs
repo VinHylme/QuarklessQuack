@@ -19,6 +19,7 @@ namespace Quarkless.Logic.Actions.AccountContainer.Extensions
 				nameof(LikeCommentAction) => ActionType.LikeComment,
 				nameof(DirectMessagingAction) => ActionType.SendDirectMessage,
 				nameof(WatchStoryAction) => ActionType.WatchStory,
+				nameof(ReactStoryAction) => ActionType.ReactStory,
 
 				_ => throw new NotImplementedException()
 			};

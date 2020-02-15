@@ -83,6 +83,22 @@ namespace Quarkless.Logic.Services.Automation
 
 				switch ((ActionType)@event.ActionType)
 				{
+					case ActionType.ReactStory when completedActionsDaily >= limits.DailyLimits.ReactStoryLimit:
+						return new AddEventResponse
+						{
+							Event = @event,
+							ContainsErrors = false,
+							HasCompleted = false,
+							DailyLimitReached = true
+						};
+					case ActionType.ReactStory when completedActionsHourly >= limits.HourlyLimits.ReactStoryLimit:
+						return new AddEventResponse
+						{
+							Event = @event,
+							ContainsErrors = false,
+							HasCompleted = false,
+							HourlyLimitReached = true
+						};
 					case ActionType.WatchStory when completedActionsDaily >= limits.DailyLimits.WatchStoryLimit:
 						return new AddEventResponse
 						{
@@ -222,7 +238,6 @@ namespace Quarkless.Logic.Services.Automation
 		private async Task<int> SuccessfulActionCount(ActionType actionName, string accountId, string instagramAccountId, 
 		int limit = 6000, bool isHourly = false)
 		{
-			
 			var logs = await _timelineEventLogs.GetLogsForUser(accountId, instagramAccountId, limit);
 			var startDate = DateTime.UtcNow;
 			var endDate = !isHourly ? startDate.AddDays(-1).AddTicks(1) : startDate.AddHours(-1).AddTicks(1);
@@ -232,9 +247,20 @@ namespace Quarkless.Logic.Services.Automation
 			);
 		}
 
+		private TimelineItem LastAddedAction(string accountId, string instagramAccountId, int limit = 150)
+		{
+			var scheduled = _timelineLogic.GetScheduledEventsForUser(accountId, instagramAccountId, limit)?.ToList();
+			
+			if (scheduled == null || !scheduled.Any())
+				return null;
+
+			var highest = scheduled.Max(s => s.StartTime.Value);
+			return scheduled.Last(_=>_.StartTime.Value == highest);
+		}
+
 		private int ScheduledCount(string accountId, string instagramId)
 		{
-			var scheduled = _timelineLogic.GetScheduledEventsForUser(accountId, instagramId,150);
+			var scheduled = _timelineLogic.GetScheduledEventsForUser(accountId, instagramId, 150);
 			return scheduled?.Count() ?? -1;
 		}
 
@@ -251,6 +277,9 @@ namespace Quarkless.Logic.Services.Automation
 					var account = await _agentLogic.GetAccount(accountId, instagramAccountId);
 					if (account == null) return;
 
+					if (account.AgentState == (int) AgentState.BadProxy)
+						return;
+
 					await _responseResolver.CheckBlockStates(account);
 
 					var accAuthDetails = await _accountRepository.GetAccountByUsername(accountId);
@@ -264,7 +293,17 @@ namespace Quarkless.Logic.Services.Automation
 
 					await _instagramAccountLogic.PartialUpdateInstagramAccount(account.AccountId, account.Id,
 						new InstagramAccountModel {UserLimits = account.UserLimits});
-					
+
+					if (profile.AdditionalConfigurations.WakeTime.ToUniversalTime() > DateTime.UtcNow)
+					{
+						return;
+					}
+
+					if (profile.AdditionalConfigurations.SleepTime.ToUniversalTime() > DateTime.UtcNow)
+					{
+						return;
+					}
+
 					var userStoreDetails = new UserStoreDetails
 					{
 						AccountId = account.AccountId,
@@ -279,9 +318,10 @@ namespace Quarkless.Logic.Services.Automation
 						_timelineLogic.PickAGoodTime(userStoreDetails.AccountId, userStoreDetails.InstagramAccountUser);
 
 					var availableDate = nextAvailableDate ?? DateTime.UtcNow;
+					// var lastAddedItemSuccess =
+					// 	LastAddedAction(userStoreDetails.AccountId, userStoreDetails.InstagramAccountUser);
+					// // var scheduledForUser = ScheduledCount(userStoreDetails.AccountId, userStoreDetails.InstagramAccountUser);
 
-					var scheduledForUser =
-						ScheduledCount(userStoreDetails.AccountId, userStoreDetails.InstagramAccountUser);
 					#endregion
 					
 					#region Unfollow Purge Cycle
@@ -358,39 +398,45 @@ namespace Quarkless.Logic.Services.Automation
 					const double followUserChance = 0.20;
 					const double createCommentChance = 0.10;
 					const double createPostChance = 0.05;
-					const double watchStoryChance = 0.20;
+					const double watchStoryChance = 0.15;
+					const double reactStoryChance = 0.05;
 
 					var actionsContainerManager = new ActionsContainerManager();
 
-					if (account.BlockedActions.All(_ => _.ActionType != ActionType.LikePost))
+					if (account.BlockedActions.All(_ => _.ActionType != ActionType.LikePost)
+						&& profile.AdditionalConfigurations.EnableAutoLikePost)
 					{
 						actionsContainerManager.RegisterAction(_actionCommitFactory
 								.Create(ActionType.LikePost, userStoreDetails),
 							availableDate.AddMinutes(SecureRandom.Next(1, 4)), likePostChance);
 					}
 
-					if (account.BlockedActions.All(_ => _.ActionType != ActionType.LikeComment))
+					if (account.BlockedActions.All(_ => _.ActionType != ActionType.LikeComment)
+						&& profile.AdditionalConfigurations.EnableAutoLikeComment)
 					{
 						actionsContainerManager.RegisterAction(
 							_actionCommitFactory.Create(ActionType.LikeComment, userStoreDetails),
 							availableDate.AddMinutes(SecureRandom.Next(4)), likeCommentChance);
 					}
 
-					if (account.BlockedActions.All(_ => _.ActionType != ActionType.FollowUser))
+					if (account.BlockedActions.All(_ => _.ActionType != ActionType.FollowUser)
+						&& profile.AdditionalConfigurations.EnableAutoFollow)
 					{
 						actionsContainerManager.RegisterAction(
 							_actionCommitFactory.Create(ActionType.FollowUser, userStoreDetails),
 							availableDate.AddMinutes(SecureRandom.Next(1, 4)), followUserChance);
 					}
 
-					if (account.BlockedActions.All(_ => _.ActionType != ActionType.CreateCommentMedia))
+					if (account.BlockedActions.All(_ => _.ActionType != ActionType.CreateCommentMedia)
+						&& profile.AdditionalConfigurations.EnableAutoComment)
 					{
 						actionsContainerManager.RegisterAction(
 							_actionCommitFactory.Create(ActionType.CreateCommentMedia, userStoreDetails),
 							availableDate.AddMinutes(SecureRandom.Next(1, 4)), createCommentChance);
 					}
 
-					if (account.BlockedActions.All(_ => _.ActionType != ActionType.CreatePost))
+					if (account.BlockedActions.All(_ => _.ActionType != ActionType.CreatePost) 
+						&& profile.AdditionalConfigurations.EnableAutoPosting)
 					{
 						actionsContainerManager.RegisterAction(
 							_actionCommitFactory.Create(ActionType.CreatePost, userStoreDetails)
@@ -398,16 +444,24 @@ namespace Quarkless.Logic.Services.Automation
 							availableDate.AddMinutes(SecureRandom.Next(1, 5)), createPostChance);
 					}
 
-					if (account.BlockedActions.All(_ => _.ActionType != ActionType.WatchStory))
+					if (account.BlockedActions.All(_ => _.ActionType != ActionType.WatchStory)
+						&& profile.AdditionalConfigurations.EnableAutoWatchStories)
 					{
 						actionsContainerManager.RegisterAction(_actionCommitFactory.Create(ActionType.WatchStory,
 								userStoreDetails), availableDate.AddMinutes(SecureRandom.Next(1, 2)), watchStoryChance);
 					}
 
+					if (account.BlockedActions.All(_ => _.ActionType != ActionType.ReactStory)
+						&& profile.AdditionalConfigurations.EnableAutoReactStories)
+					{
+						actionsContainerManager.RegisterAction(_actionCommitFactory.Create(ActionType.ReactStory,
+								userStoreDetails), availableDate.AddMinutes(SecureRandom.Next(1, 4)), reactStoryChance);
+					}
+
 					#endregion
 
 					#region Agent State Handler
-					
+
 					if (account.AgentState == (int) AgentState.NotStarted)
 					{
 						account.AgentState = (int) AgentState.Running;
@@ -431,18 +485,45 @@ namespace Quarkless.Logic.Services.Automation
 					{
 						case (int) AgentState.Running:
 						{
-							if (scheduledForUser != -1)
-							{
-								if (scheduledForUser > 80)
-								{
-									account.AgentState = (int) AgentState.Sleeping;
+							var otherActionsAddedTotalTime =
+								_timelineLogic.PickAGoodTime(accountId, instagramAccountId, ActionType.None) ?? DateTime.UtcNow;
 
-									await _instagramAccountLogic.PartialUpdateInstagramAccount(
-										userStoreDetails.AccountId,
-										userStoreDetails.InstagramAccountUser, new InstagramAccountModel {
-											AgentState = account.AgentState,
-										});
+							if (otherActionsAddedTotalTime.Subtract(DateTime.UtcNow) > TimeSpan.FromMinutes(59))
+							{
+								account.AgentState = (int)AgentState.DeepSleep;
+
+								var difference = profile.AdditionalConfigurations.WakeTime.ToUniversalTime()
+									.Subtract(DateTime.UtcNow);
+
+								TimeSpan sleepTime;
+
+								if (difference > TimeSpan.FromMinutes(35))
+								{
+									sleepTime = TimeSpan.FromMinutes(15 + (SecureRandom.NextDouble() * SecureRandom.Next(5)));
 								}
+								else if (difference > TimeSpan.FromMinutes(60))
+								{
+									sleepTime = TimeSpan.FromMinutes(25 + (SecureRandom.NextDouble() * SecureRandom.Next(5)));
+								}
+								else if (difference > TimeSpan.FromMinutes(180))
+								{
+									sleepTime = TimeSpan.FromMinutes(50 + (SecureRandom.NextDouble() * SecureRandom.Next(5)));
+								}
+								else
+								{
+									sleepTime = TimeSpan.FromMinutes(
+										SecureRandom.Next(25, 45) + (SecureRandom.NextDouble() * 2));
+								}
+
+								account.SleepTimeRemaining = DateTime.UtcNow.AddMinutes(sleepTime.TotalMinutes);
+
+								await _instagramAccountLogic.PartialUpdateInstagramAccount(
+									userStoreDetails.AccountId,
+									userStoreDetails.InstagramAccountUser, new InstagramAccountModel
+									{
+										SleepTimeRemaining = account.SleepTimeRemaining,
+										AgentState = account.AgentState
+									});
 							}
 
 							var nominatedAction = actionsContainerManager.GetRandomAction();
@@ -490,39 +571,6 @@ namespace Quarkless.Logic.Services.Automation
 								
 								else if (res.HourlyLimitReached)
 									await _instagramAccountLogic.AddBlockedAction(account.Id, actionFinished.ActionType, DateTime.Now.AddHours(1));
-							}
-
-							break;
-						}
-						case (int) AgentState.Sleeping when scheduledForUser == -1:
-							account.SleepTimeRemaining = DateTime.UtcNow
-								.AddMinutes(SecureRandom.Next(60, 350) + (SecureRandom.NextDouble() * 2));
-
-							account.AgentState = (int) AgentState.DeepSleep;
-
-							await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.AccountId,
-								userStoreDetails.InstagramAccountUser, new InstagramAccountModel
-								{
-									SleepTimeRemaining = account.SleepTimeRemaining,
-									AgentState = account.AgentState
-								});
-
-							break;
-						case (int) AgentState.Sleeping:
-						{
-							if (scheduledForUser <= 10)
-							{
-								account.SleepTimeRemaining = DateTime.UtcNow
-									.AddMinutes(SecureRandom.Next(60, 350) + (SecureRandom.NextDouble() * 2));
-
-								account.AgentState = (int) AgentState.DeepSleep;
-
-								await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.AccountId,
-									userStoreDetails.InstagramAccountUser, new InstagramAccountModel
-									{
-										SleepTimeRemaining = account.SleepTimeRemaining,
-										AgentState = account.AgentState
-									});
 							}
 
 							break;

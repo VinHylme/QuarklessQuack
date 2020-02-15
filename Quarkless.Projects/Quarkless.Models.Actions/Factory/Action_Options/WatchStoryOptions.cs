@@ -7,14 +7,14 @@ namespace Quarkless.Models.Actions.Factory.Action_Options
 {
 	public class WatchStoryOptions : IActionOptions
 	{
-		public WatchStoryActionType WatchStoryActionType { get; set; }
+		public StoryActionType storyActionType { get; set; }
 		public static XRange TimeFrameSeconds { get; set; } = new XRange(25, 45);
 		public WatchStoryStrategySettings StrategySettings { get; set; } = new WatchStoryStrategySettings();
 
-		public WatchStoryOptions(WatchStoryActionType watchStoryActionType = WatchStoryActionType.Any,
+		public WatchStoryOptions(StoryActionType storyActionType = StoryActionType.Any,
 			WatchStoryStrategySettings strategySettings = null, XRange? timeFrame = null)
 		{
-			WatchStoryActionType = watchStoryActionType;
+			this.storyActionType = storyActionType;
 			if (strategySettings != null)
 				StrategySettings = strategySettings;
 			if (timeFrame.HasValue)

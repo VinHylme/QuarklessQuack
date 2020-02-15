@@ -131,16 +131,9 @@ namespace Quarkless.Logic.Actions.Action_Instances
 					}
 				case SearchType.Instagram:
 					{
-						var optionPick = new List<Chance<MetaDataType>>
-						{
-							new Chance<MetaDataType>
-							{
-								Object = MetaDataType.FetchMediaByTopic,
-								Probability = 0.50
-							}
-						};
+						var optionPick = new List<Chance<MetaDataType>>();
 
-						if (_user.Profile.UserTargetList != null && _user.Profile.UserTargetList.Any())
+						if (_user.Profile.AdditionalConfigurations.EnableOnlyAutoRepostFromUserTargetList)
 						{
 							optionPick.Add(new Chance<MetaDataType>
 							{
@@ -148,13 +141,29 @@ namespace Quarkless.Logic.Actions.Action_Instances
 								Probability = 0.50
 							});
 						}
-						if (_user.Profile.LocationTargetList != null && _user.Profile.LocationTargetList.Any())
+						else
 						{
 							optionPick.Add(new Chance<MetaDataType>
 							{
-								Object = MetaDataType.FetchMediaByUserLocationTargetList,
+								Object = MetaDataType.FetchMediaByTopic,
 								Probability = 0.50
 							});
+							if (_user.Profile.UserTargetList != null && _user.Profile.UserTargetList.Any())
+							{
+								optionPick.Add(new Chance<MetaDataType>
+								{
+									Object = MetaDataType.FetchMediaByUserTargetList,
+									Probability = 0.50
+								});
+							}
+							if (_user.Profile.LocationTargetList != null && _user.Profile.LocationTargetList.Any())
+							{
+								optionPick.Add(new Chance<MetaDataType>
+								{
+									Object = MetaDataType.FetchMediaByUserLocationTargetList,
+									Probability = 0.50
+								});
+							}
 						}
 
 						var selectedMetaDataType = SecureRandom.ProbabilityRoll(optionPick);
@@ -167,7 +176,8 @@ namespace Quarkless.Logic.Actions.Action_Instances
 						}))?.ToList();
 
 						if (resultsFromMetaData == null || !resultsFromMetaData.Any() 
-							&& selectedMetaDataType != MetaDataType.FetchMediaByTopic)
+							&& selectedMetaDataType != MetaDataType.FetchMediaByTopic
+							&& !_user.Profile.AdditionalConfigurations.EnableOnlyAutoRepostFromUserTargetList)
 						{
 							resultsFromMetaData = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 							{
@@ -274,7 +284,6 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 			return selectedMedia;
 		}
-
 		private TempSelect FindCarouselFromList(in List<Meta<Media>> mediaItems, MetaDataType selectedAction)
 		{
 			var selectedMedia = new TempSelect();
@@ -327,7 +336,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 								var cas = _actionOptions.PostAnalyser.Manipulation.ImageEditor
 									.GetClosestAspectRatio(imageResponse.MediaBytes);
 
-								if (Math.Abs(oas - cas) > 0.5) continue;
+								if (Math.Abs(oas - cas) > 0.1) continue;
 
 								selectedMedia.MediaType = InstaMediaType.Carousel;
 								imageResponse.SelectedMedia = mediaItem;
@@ -390,7 +399,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 										var cas = _actionOptions.PostAnalyser.Manipulation.ImageEditor
 											.GetClosestAspectRatio(imageResponse.MediaBytes);
 
-										if (Math.Abs(oas - cas) > 0.5) continue;
+										if (Math.Abs(oas - cas) > 0.1) continue;
 
 										selectedMedia.MediaType = InstaMediaType.Carousel;
 										imageResponse.SelectedMedia = mediaItem;
@@ -609,14 +618,16 @@ namespace Quarkless.Logic.Actions.Action_Instances
 								{
 									_actionOptions.PostAnalyser.Manager
 										.DownloadMedia(imageData.Url)
-								});
+								}, defaultCaption: _user.Profile.AdditionalConfigurations.DefaultCaption,
+								generateCaption: _user.Profile.AdditionalConfigurations.AutoGenerateCaption);
 						else
 							mediaInfo = await _contentInfoBuilder.GenerateMediaInfo(_user.Profile.ProfileTopic,
-								selectedImageMedia.Topic, credit, SecureRandom.Next(24, 28));
+								selectedImageMedia.Topic, credit, SecureRandom.Next(24, 28),
+								defaultCaption: _user.Profile.AdditionalConfigurations.DefaultCaption,
+								generateCaption: _user.Profile.AdditionalConfigurations.AutoGenerateCaption);
 
-						if (!_user.Profile.AdditionalConfigurations.AutoGenerateCaption)
-							mediaInfo.Caption = string.Empty;
-
+						mediaInfo.MediaType = InstaMediaType.Image;
+						
 						var uploadPhoto = new UploadPhotoModel
 						{
 							MediaTopic = selectedImageMedia.Topic,
@@ -643,10 +654,9 @@ namespace Quarkless.Logic.Actions.Action_Instances
 						var credit = selectedVideoMedia.User?.Username;
 
 						var mediaInfo = await _contentInfoBuilder.GenerateMediaInfo(_user.Profile.ProfileTopic,
-							selectedVideoMedia.Topic, credit, SecureRandom.Next(20, 28));
-
-						if (!_user.Profile.AdditionalConfigurations.AutoGenerateCaption)
-							mediaInfo.Caption = string.Empty;
+							selectedVideoMedia.Topic, credit, SecureRandom.Next(20, 28),
+							defaultCaption: _user.Profile.AdditionalConfigurations.DefaultCaption,
+							generateCaption: _user.Profile.AdditionalConfigurations.AutoGenerateCaption);
 
 						var video = selectedMedia.MediaData.First();
 
@@ -654,6 +664,8 @@ namespace Quarkless.Logic.Actions.Action_Instances
 							_actionOptions.PostAnalyser.Manipulation.VideoEditor.GenerateVideoThumbnail(video.MediaBytes);
 
 						var videoUri = await UploadToS3(videoThumb, $"VideoThumb_{Guid.NewGuid()}");
+
+						mediaInfo.MediaType = InstaMediaType.Video;
 						var uploadVideo = new UploadVideoModel
 						{
 							MediaTopic = selectedVideoMedia.Topic,
@@ -694,15 +706,17 @@ namespace Quarkless.Logic.Actions.Action_Instances
 							var downloaded = _actionOptions.PostAnalyser.Manager.DownloadMedia(selectedMediaData.Url);
 
 							if (selectedCarouselMedia.Topic == null && downloaded.IsValidImage())
-								mediaInfo = _contentInfoBuilder.GenerateMediaInfoBytes(_user.Profile.ProfileTopic, null,
-									credit, SecureRandom.Next(20, 28), new[] { downloaded }).Result;
+								mediaInfo = await _contentInfoBuilder.GenerateMediaInfoBytes(_user.Profile.ProfileTopic, null,
+									credit, SecureRandom.Next(20, 28), new[] { downloaded },
+									defaultCaption: _user.Profile.AdditionalConfigurations.DefaultCaption,
+									generateCaption: _user.Profile.AdditionalConfigurations.AutoGenerateCaption);
 							else
-								mediaInfo = _contentInfoBuilder.GenerateMediaInfo(_user.Profile.ProfileTopic, 
-									selectedCarouselMedia.Topic, credit, SecureRandom.Next(20, 28)).Result;
-							
-							if (!_user.Profile.AdditionalConfigurations.AutoGenerateCaption)
-								mediaInfo.Caption = string.Empty;
+								mediaInfo = await _contentInfoBuilder.GenerateMediaInfo(_user.Profile.ProfileTopic,
+									selectedCarouselMedia.Topic, credit, SecureRandom.Next(20, 28),
+									defaultCaption: _user.Profile.AdditionalConfigurations.DefaultCaption,
+									generateCaption: _user.Profile.AdditionalConfigurations.AutoGenerateCaption);
 
+							mediaInfo.MediaType = InstaMediaType.Carousel;
 							var uploadAlbum = new UploadAlbumModel
 							{
 								MediaTopic = selectedCarouselMedia.Topic,
