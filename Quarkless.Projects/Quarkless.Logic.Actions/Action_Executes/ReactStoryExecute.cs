@@ -74,7 +74,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 						.WithAttempts(1)
 						.WithResolverAsync(() => _worker.Client.Story.GetUserStoryAsync(request.UserId));
 
-					if (!storyOfUser.Response.Succeeded && storyOfUser.Response.Value.Items.Count <= 0)
+					if (!storyOfUser.Response.Succeeded || storyOfUser.Response.Value.Items.Count <= 0)
 					{
 						result.IsSuccessful = false;
 						result.Info = new ErrorResponse

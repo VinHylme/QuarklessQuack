@@ -25,7 +25,7 @@ namespace Quarkless.Logic.ContentInfo
 			=> _utilProviders = utilProviders;
 
 		public string GenerateEmoji(EmojiType emojiType = EmojiType.Positive)
-			=> _utilProviders.TextGenerator.GenerateNRandomEmojies(emojiType, 3);
+			=> _utilProviders.TextGenerator.GenerateSingleEmoji(emojiType);
 
 		public string GenerateComment(CTopic mediaTopic)
 			=> _utilProviders.TextGenerator.GenerateNRandomEmojies(_selectFrom.TakeAny(1).First(),

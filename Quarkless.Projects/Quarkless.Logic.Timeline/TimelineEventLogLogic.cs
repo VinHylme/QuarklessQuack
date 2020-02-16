@@ -4,8 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using InstagramApiSharp.Classes;
 using Newtonsoft.Json.Linq;
-using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.Timeline;
+using Quarkless.Models.Timeline.Enums;
 using Quarkless.Models.Timeline.Interfaces;
 
 namespace Quarkless.Logic.Timeline
@@ -13,21 +13,23 @@ namespace Quarkless.Logic.Timeline
 	public class TimelineEventLogLogic : ITimelineEventLogLogic
 	{
 		private readonly ITimelineLoggingRepository _timelineLoggingRepository;
-		public TimelineEventLogLogic(ITimelineLoggingRepository timelineLoggingRepository) =>
+		private readonly ITimelineLoggingRepositoryMongo _timelineLoggingRepositoryMongo;
+
+		public TimelineEventLogLogic(ITimelineLoggingRepository timelineLoggingRepository, ITimelineLoggingRepositoryMongo timelineLoggingRepositoryMongo)
+		{
 			_timelineLoggingRepository = timelineLoggingRepository;
+			_timelineLoggingRepositoryMongo = timelineLoggingRepositoryMongo;
+		}
 
 		public async Task AddTimelineLogFor(TimelineEventLog timelineEvent)
 		{
-			await _timelineLoggingRepository.AddTimelineLogFor(timelineEvent);
+			await _timelineLoggingRepositoryMongo.AddTimelineLogFor(timelineEvent);
 		}
 
-		public async Task<IEnumerable<TimelineEventLog>> GetLogsForUser(string accountId, string instagramAccountId, int limit)
+		public async Task<IEnumerable<TimelineEventLog>> GetLogsForUser(string accountId, string instagramAccountId,
+			int limit, int level = 1, TimelineEventStatus? status = null)
 		{
-			var res = (await _timelineLoggingRepository.GetLogsForUser(accountId, instagramAccountId))
-				.Where(p => p.Level == 1)
-				.OrderByDescending(_ => _.DateAdded)
-				.Take(limit);
-			return res;
+			return await _timelineLoggingRepositoryMongo.GetLogsForUser(accountId, instagramAccountId, limit, level, status); ;
 		}
 
 		public async Task<int> OccurrencesByResponseType(string accountId, string instagramAccountId,

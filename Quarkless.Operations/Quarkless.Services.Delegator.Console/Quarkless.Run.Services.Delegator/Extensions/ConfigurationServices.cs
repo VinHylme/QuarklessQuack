@@ -51,7 +51,7 @@ namespace Quarkless.Run.Services.Delegator.Extensions
 					ConnectionString = accessors.ConnectionString,
 					AccountCreatorDatabase = accessors.AccountCreationDatabase,
 					AccountDatabase = accessors.MainDatabase,
-					SchedulerDatabase = accessors.SchedulerDatabase,
+					StatisticsDatabase = accessors.StatisticsDatabase,
 					ControlDatabase = accessors.ControlDatabase,
 					ContentDatabase = accessors.ContentDatabase
 				}));

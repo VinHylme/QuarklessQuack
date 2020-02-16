@@ -22,6 +22,7 @@ namespace Quarkless.Run.Services.Automation
 {
 	public class Entrance
 	{
+		private const string REDIS_DB_NAME = "Timeline";
 		static void Main(string[] args)
 		{
 			var shouldTest = false;
@@ -48,15 +49,13 @@ namespace Quarkless.Run.Services.Automation
 			GlobalConfiguration.Configuration.UseRedisStorage(redis, new Hangfire.Redis.RedisStorageOptions
 			{
 				Db = 1,
-				Prefix = "Timeline",
-				SucceededListSize = 5000,
-				DeletedListSize = 1000,
-				ExpiryCheckInterval = TimeSpan.FromHours(1),
+				Prefix = REDIS_DB_NAME,
+				SucceededListSize = 10000,
+				DeletedListSize = 10000,
 				InvisibilityTimeout = TimeSpan.FromMinutes(30),
 				FetchTimeout = TimeSpan.FromMinutes(30),
 				UseTransactions = true
-			})
-				.WithJobExpirationTimeout(TimeSpan.FromHours(12));
+			}).WithJobExpirationTimeout(TimeSpan.FromHours(12));
 
 			System.Runtime.Loader.AssemblyLoadContext.Default.Unloading += ctx =>
 			{

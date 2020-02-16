@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Quarkless.Models.Timeline\Quarkless.Models.Timeline.csproj" />
+    <ProjectReference Include="..\Quarkless.Repository.MongoContext\Quarkless.Repository.MongoContext.csproj" />
     <ProjectReference Include="..\Quarkless.Repository.RedisClientContext\Quarkless.Repository.RedisContext.csproj" />
   </ItemGroup>
 

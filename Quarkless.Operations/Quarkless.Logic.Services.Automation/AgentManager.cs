@@ -294,15 +294,15 @@ namespace Quarkless.Logic.Services.Automation
 					await _instagramAccountLogic.PartialUpdateInstagramAccount(account.AccountId, account.Id,
 						new InstagramAccountModel {UserLimits = account.UserLimits});
 
-					if (profile.AdditionalConfigurations.WakeTime.ToUniversalTime() > DateTime.UtcNow)
+					#region Check if automation can run
+					var currentTime = DateTime.UtcNow.TimeOfDay;
+					var wakeTimeToUtc = profile.AdditionalConfigurations.WakeTime.ToUniversalTime().TimeOfDay;
+					var sleepTimeToUtc = profile.AdditionalConfigurations.SleepTime.ToUniversalTime().TimeOfDay;
+					if (currentTime < wakeTimeToUtc || currentTime < sleepTimeToUtc)
 					{
 						return;
 					}
-
-					if (profile.AdditionalConfigurations.SleepTime.ToUniversalTime() > DateTime.UtcNow)
-					{
-						return;
-					}
+					#endregion
 
 					var userStoreDetails = new UserStoreDetails
 					{

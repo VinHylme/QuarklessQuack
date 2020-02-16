@@ -389,7 +389,7 @@ namespace Quarkless.Extensions
 					ConnectionString = accessors.ConnectionString,
 					AccountCreatorDatabase = accessors.AccountCreationDatabase,
 					AccountDatabase = accessors.MainDatabase,
-					SchedulerDatabase = accessors.SchedulerDatabase,
+					StatisticsDatabase = accessors.StatisticsDatabase,
 					ControlDatabase = accessors.ControlDatabase,
 					ContentDatabase = accessors.ContentDatabase
 				}));
@@ -407,7 +407,8 @@ namespace Quarkless.Extensions
 			services.AddTransient<IInstagramAccountRedis, InstagramAccountRedis>();
 			services.AddTransient<ICommentCorpusRepository, CommentCorpusRepository>();
 			services.AddTransient<IMediaCorpusRepository, MediaCorpusRepository>();
-			services.AddTransient<ITimelineJobRepository, TimelineJobRepository>();
+			services.AddTransient<ITimelineLoggingRepositoryMongo, TimelineLoggingRepositoryMongo>();
+			services.AddTransient<IActionExecuteLogsRepository, ActionExecuteLogsRepository>();
 			services.AddTransient<ILibraryRepository, LibraryRepository>();
 			services.AddTransient<ILibraryCache, LibraryCache>();
 			services.AddTransient<IApiLogCache, ApiLogCache>();

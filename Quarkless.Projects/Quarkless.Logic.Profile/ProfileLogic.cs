@@ -110,7 +110,7 @@ namespace Quarkless.Logic.Profile
 					AutoGenerateCaption = true,
 					AllowRepost = true,
 					EnableAutoReactStories = true,
-					EnableOnlyAutoRepostFromUserTargetList = true,
+					EnableOnlyAutoRepostFromUserTargetList = false,
 					EnableAutoLikePost = true,
 					EnableAutoComment = true,
 					EnableAutoLikeComment = true,

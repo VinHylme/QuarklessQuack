@@ -11,7 +11,7 @@
       </button>
       <div v-for="(timelineLog,index) in timelineLogs" :key="timelineLog+'_'+index" class="card-acticity-log">
         <div class="card-activity-header">
-          <b-icon v-if="timelineLog.actionType === 16" icon="sign-in-alt" pack="fas" type="is-info" size="is-default"/>
+          <b-icon v-if="timelineLog.actionType === 16" icon="sign-in-alt" pack="fas" class="is-pink" size="is-default"/>
           <b-icon v-if="timelineLog.actionType === 8" icon="user-plus" pack="fas" type="is-success" size="is-default"/>
           <b-icon v-if="timelineLog.actionType === 9" icon="user-minus" pack="fas" type="is-warning" size="is-default"/>
           <b-icon v-if="timelineLog.actionType === 10" icon="heart" pack="fas" type="is-danger" size="is-default"/>
@@ -97,15 +97,15 @@ export default {
       if(id !== undefined || id !== null){
         this.$store.dispatch('GetAllEventLogsForUser', {instagramAccountId: id, limit:100})
         .then(resp=>{
-            this.timelineLogs = this.$store.getters.UserTimelineLogForUser(this.$route.params.id);
-            this.isLoadingLogs = false;
+          this.timelineLogs = resp.data
+          this.isLoadingLogs = false;
           }).catch(err=>{
             this.isLoadingLogs = false;
         });
       }
 
     this.timer = setInterval(this.loadData, 10000);
-    this.timerLog = setInterval(this.loadLogs, 5000);
+    this.timerLog = setInterval(this.loadLogs, 10000);
   },
   destroyed(){
     clearInterval(this.timer)
@@ -153,7 +153,7 @@ export default {
       if(id !== undefined){
         this.$store.dispatch('GetAllEventLogsForUser', {instagramAccountId: id, limit:100})
         .then(resp=>{
-            this.timelineLogs = this.$store.getters.UserTimelineLogForUser(this.$route.params.id);
+            this.timelineLogs = resp.data
             this.isLoadingLogs = false;
           }).catch(err=>{
             this.isLoadingLogs = false;
@@ -317,6 +317,9 @@ html,body{
 }
 .is-cyan{
   color:#2decfd;
+}
+.is-pink{
+  color:#ff8178;
 }
 .is-gold{
   color:gold;

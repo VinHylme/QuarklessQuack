@@ -23,7 +23,7 @@ namespace Quarkless.Analyser
 
 			var colorFrequency = imBytes.ByteToBitmap().GetColorPercentage().OrderBy(_ => _.Value);
 
-			var color = colorFrequency.Take(5).Select(x => x.Key)
+			var color = colorFrequency.Take(3).Select(x => x.Key)
 				.SimilarColors(profileColors, threshHold / 100);
 			return color;
 		}
@@ -42,20 +42,20 @@ namespace Quarkless.Analyser
 			var width = imageBitmap.Width;
 			var height = imageBitmap.Height;
 			var ratio = (float)width / height;
-			var allowedAspectRatios = new[] { 1.0f, 1.8f, 1.9f, 0.8f };
+			var allowedAspectRatios = new[] { 1.1f, 1.8f, 1.91f, 0.8f };
 			var outdistance = allowedAspectRatios.ToList().Select(a => ratio.DistanceCalculate(a)).Min(n => n);
 			
 			var closestRatio = allowedAspectRatios.ElementAt(allowedAspectRatios.ToList()
 				.FindIndex(s => ratio.DistanceCalculate(s).IsApproximatelyEqualTo(outdistance)));
 
 			var newHeight = (int)(width / closestRatio);
-			return Filters.ResizeImage(image,ResizeMode.Stretch, new Size(width, newHeight));//.ResizeImage(imageBitmap,width,newHeightc).BitmapToByte();
+			return Filters.ResizeImage(image, ResizeMode.Stretch, new Size(width, newHeight));//.ResizeImage(imageBitmap,width,newHeightc).BitmapToByte();
 		}
 		public double GetClosestAspectRatio(byte[] image)
 		{
 			var imageBitmap = image.ByteToBitmap();
 			var aspect = (float)((double)imageBitmap.Width / (double)imageBitmap.Height);
-			var allowedAspectRatios = new float[] { 1.0f, 1.8f, 1.9f, 0.8f };
+			var allowedAspectRatios = new float[] { 1.1f, 1.8f, 1.91f, 0.8f };
 			var dist = allowedAspectRatios.Select(s => aspect.DistanceCalculate(s)).Min(x => x);
 			return allowedAspectRatios.ElementAt(allowedAspectRatios.ToList().FindIndex(s => aspect.DistanceCalculate(s).IsApproximatelyEqualTo(dist)));
 		}

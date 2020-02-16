@@ -63,7 +63,7 @@ namespace Quarkless.Models.Shared.Extensions
 				ContentDatabase = access.ContentDatabase,
 				DetectApi = access.DetectApi,
 				S3BucketName = access.S3BucketName,
-				SchedulerDatabase = access.SchedulerDatabase,
+				StatisticsDatabase = access.StatisticsDatabase,
 				NaturalLanguageApiPath = access.NaturalLanguageApiPath,
 				GeonamesApiKey = access.GeonamesApiKey,
 				GoogleGeocodeApiKey = access.GoogleGeocodeApiKey,

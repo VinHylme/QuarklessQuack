@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.InstagramAccounts.Enums;
 using Quarkless.Models.InstagramAccounts.Interfaces;
+using Quarkless.Models.Timeline.Interfaces.TaskScheduler;
 using Quarkless.Run.Services.Delegator.Extensions;
 using SharedConfig = Quarkless.Models.Shared.Extensions.Config;
 

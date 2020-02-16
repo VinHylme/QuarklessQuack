@@ -125,7 +125,7 @@ namespace Quarkless.Run.Services.Heartbeat.Extensions
 					ConnectionString = accessors.ConnectionString,
 					AccountCreatorDatabase = accessors.AccountCreationDatabase,
 					AccountDatabase = accessors.MainDatabase,
-					SchedulerDatabase = accessors.SchedulerDatabase,
+					StatisticsDatabase = accessors.StatisticsDatabase,
 					ControlDatabase = accessors.ControlDatabase,
 					ContentDatabase = accessors.ContentDatabase
 				}));
@@ -145,6 +145,8 @@ namespace Quarkless.Run.Services.Heartbeat.Extensions
 			services.AddTransient<IRedisClient, RedisClient>();
 			services.AddTransient<IReportHandlerRepository, ReportHandlerRepository>();
 			services.AddTransient<ITimelineLoggingRepository, TimelineLoggingRepository>();
+			services.AddTransient<ITimelineLoggingRepositoryMongo, TimelineLoggingRepositoryMongo>();
+
 		}
 		public static void IncludeHandlers(this IServiceCollection services)
 		{

@@ -27,14 +27,14 @@ namespace Quarkless.Repository.MongoContext
 			if(!string.IsNullOrEmpty(options.ContentDatabase))
 				ContentDatabase = client.GetDatabase(options.ContentDatabase);
 
-			if(!string.IsNullOrEmpty(options.SchedulerDatabase))
-				SchedulerDatabase = client.GetDatabase(options.SchedulerDatabase);
+			if(!string.IsNullOrEmpty(options.StatisticsDatabase))
+				StatisticsDatabase = client.GetDatabase(options.StatisticsDatabase);
 		}
 
 		public IMongoDatabase CreatorDatabase { get; }
 		public IMongoDatabase AccountDatabase { get; }
 		public IMongoDatabase ControlDatabase { get; }
 		public IMongoDatabase ContentDatabase { get; }
-		public IMongoDatabase SchedulerDatabase { get; }
+		public IMongoDatabase StatisticsDatabase { get; }
 	}
 }

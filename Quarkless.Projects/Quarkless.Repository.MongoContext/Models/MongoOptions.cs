@@ -16,8 +16,8 @@ namespace Quarkless.Repository.MongoContext.Models
 		[JsonProperty("Content")]
 		public string ContentDatabase { get; set; }
 
-		[JsonProperty("Scheduler")]
-		public string SchedulerDatabase { get; set; }
+		[JsonProperty("Statistics")]
+		public string StatisticsDatabase { get; set; }
 
 		[JsonProperty("ConnectionString")]
 		public string ConnectionString { get; set; }

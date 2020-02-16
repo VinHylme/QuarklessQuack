@@ -26,6 +26,22 @@ namespace Quarkless.Logic.Timeline.TaskScheduler
 				o.Parameters = args;
 			});
 		}
+
+		public void DeleteAllFailedJobs()
+		{
+			var failedJobs = GetTotalFailedEvents(0, 2000);
+			foreach (var timelineFailedItem in failedJobs)
+			{
+				DeleteEvent(timelineFailedItem.ItemId);
+			}
+
+			// var deletedJobs = GetTotalDeletedEvents(0, 2000);
+			// foreach (var timelineDeletedItem in deletedJobs)
+			// {
+			// 	DeleteEvent(timelineDeletedItem.ItemId);
+			// }
+		}
+
 		public string ScheduleEvent(EventActionOptions eventAction)
 		{
 			return _jobRunner.AddJob(op =>

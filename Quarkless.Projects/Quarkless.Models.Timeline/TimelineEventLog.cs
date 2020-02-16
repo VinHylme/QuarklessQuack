@@ -13,19 +13,26 @@ namespace Quarkless.Models.Timeline
 		public string _id { get; set; }
 
 		[BsonRepresentation(BsonType.ObjectId)]
-		public string InstagramAccountID { get; set; }
-		public string AccountID { get; set; }
+		public string InstagramAccountId { get; set; }
+		public string AccountId { get; set; }
 
 		[BsonRepresentation(BsonType.Int32)]
 		public TimelineEventStatus Status { get; set; }
 
 		[BsonRepresentation(BsonType.Int32)]
 		public ActionType ActionType { get; set; }
+
 		public string Message { get; set; }
 		public Exception Exception { get; set; }
 		public string Request { get; set; }
 		public string Response { get; set; }
 		public int Level { get; set; }
+
+		[BsonRepresentation(BsonType.DateTime)]
 		public DateTime DateAdded { get; set; } = DateTime.UtcNow;
+
+		[BsonRepresentation(BsonType.DateTime)]
+		[BsonElement("expiresAt")]
+		public DateTime ExpiresAt { get; set; }
 	}
 }

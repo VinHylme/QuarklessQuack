@@ -816,13 +816,12 @@ namespace Quarkless.Logic.ResponseResolver
 			return results;
 		}
 
-		private async Task<ResolverResponse<TInput>> WithResolverAsync<TInput>(IResult<TInput> response, ActionType actionType,
-			string request)
+		private async Task<ResolverResponse<TInput>> WithResolverAsync<TInput>(IResult<TInput> response,
+			ActionType actionType, string request)
 		{
 			var account = Context.InstagramAccount;
 			AccountId = account.AccountId;
 			InstagramAccountId = account.Id;
-
 			var resolverResponse = new ResolverResponse<TInput>
 			{
 				Response = response,
@@ -832,9 +831,8 @@ namespace Quarkless.Logic.ResponseResolver
 			{
 				await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
 				{
-					_id = Guid.NewGuid().ToString(),
-					AccountID = account.AccountId,
-					InstagramAccountID = account.Id,
+					AccountId = account.AccountId,
+					InstagramAccountId = account.Id,
 					ActionType = actionType,
 					DateAdded = DateTime.UtcNow,
 					Level = 3,
@@ -850,9 +848,8 @@ namespace Quarkless.Logic.ResponseResolver
 			{
 				await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
 				{
-					_id = Guid.NewGuid().ToString(),
-					AccountID = account.AccountId,
-					InstagramAccountID = account.Id,
+					AccountId = account.AccountId,
+					InstagramAccountId = account.Id,
 					ActionType = actionType,
 					DateAdded = DateTime.UtcNow,
 					Level = 1,
@@ -866,9 +863,8 @@ namespace Quarkless.Logic.ResponseResolver
 			{
 				await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
 				{
-					_id = Guid.NewGuid().ToString(),
-					AccountID = account.AccountId,
-					InstagramAccountID = account.Id,
+					AccountId = account.AccountId,
+					InstagramAccountId = account.Id,
 					ActionType = actionType,
 					DateAdded = DateTime.UtcNow,
 					Level = 2,

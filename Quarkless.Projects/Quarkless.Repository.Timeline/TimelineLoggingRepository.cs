@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Timeline;
 using Quarkless.Repository.RedisContext;
 using Quarkless.Repository.RedisContext.Models;
@@ -21,7 +22,7 @@ namespace Quarkless.Repository.Timeline
 		{
 			try
 			{
-				var userId = $"{timelineEvent.AccountID}:{timelineEvent.InstagramAccountID}";
+				var userId = $"{timelineEvent.AccountId}:{timelineEvent.InstagramAccountId}";
 				await _redisClient.SetAdd(userId, RedisKeys.HashtagGrowKeys.TimelineLog,
 					JsonConvert.SerializeObject(timelineEvent), TimeSpan.FromHours(24));
 			}

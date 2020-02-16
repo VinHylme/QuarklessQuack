@@ -32,7 +32,6 @@
                                 required>
                             </b-input>
                         </b-field>
-
                         <b-field label="Password" custom-class="has-text-white">
                             <b-input
                                 type="password"
@@ -74,7 +73,7 @@
                                         <b-radio-button v-model="linkData.proxy.proxyType" @input="askForLocation"
                                                 :native-value="0"
                                                 type="is-info">
-                                                <b-icon icon="check"></b-icon>
+                                                <b-icon pack="fas" icon="chess"></b-icon>
                                                 <span>Http Proxy</span>
                                         </b-radio-button>
                                 </p>
@@ -82,11 +81,11 @@
                                         <b-radio-button v-model="linkData.proxy.proxyType"
                                                 :native-value="1"
                                                 type="is-info">
-                                                <b-icon icon="close"></b-icon>
+                                                <b-icon pack="fas" icon="chess-knight"></b-icon>
                                                 <span>SOCKS5</span>
                                         </b-radio-button>
                                 </p>
-                                <b-input v-model="linkData.proxy.address" placeholder="Proxy Address"></b-input>
+                                <b-input v-model="linkData.proxy.hostAddress" placeholder="Proxy Address"></b-input>
                                 <b-input v-model="linkData.proxy.port" placeholder="Proxy Port"></b-input>
                                 <b-input v-model="linkData.proxy.username" placeholder="Proxy Username"></b-input>
                                 <b-input v-model="linkData.proxy.password" placeholder="Proxy Password"></b-input>
@@ -106,10 +105,13 @@
                                 </b-autocomplete>
                         </b-field>
                         <b-message title="Account Linking" type="is-danger" has-icon aria-close-label="Close message">
-                        Please enter your Instagram Credentials, your password is encrypted and not seen by anyone
+                        Your Instagram Credentials are encrypted and not seen by anyone
                         </b-message>
-                        <b-message title="For best experience" type="is-info" has-icon aria-close-label="Close message">
+                        <b-message v-if="linkData.useMyLocation !== 'proxy'" title="For best experience" type="is-info" has-icon aria-close-label="Close message">
                         Please ensure your account is at least 2 weeks old, Instagram spam detection system targets new accounts more than older ones.
+                        </b-message>
+                        <b-message v-if="linkData.useMyLocation === 'proxy'" title="Just Letting you know..." type="is-warning" has-icon aria-close-label="Close message">
+                        Please Avoid using public proxies as they have most likely been used before and therefore blacklisted by instagram.
                         </b-message>
                     </section>
                     <footer class="modal-card-foot">
@@ -154,7 +156,7 @@ export default {
                               username:'',
                               password:'',
                               proxyType:0,
-                              address:'',
+                              hostAddress:'',
                               port:'',
                         },
                         username:'',
@@ -185,7 +187,7 @@ export default {
                         this.askForLocation();
                 }
                 if(this.linkData.useMyLocation === 'proxy'){
-                        if(!this.linkData.proxy.address)
+                        if(!this.linkData.proxy.hostAddress)
                         {
                                 return;
                         }
@@ -302,15 +304,31 @@ export default {
                                                 this.linkData.useMyLocation = 'false'
                                         })
                                 }
-                                if(!this.linkData.location.address)
+                                if(this.linkData.useMyLocation === 'proxy'){
+                                        if(!this.linkData.proxy.hostAddress){
+                                                this.isLinkingAccount = false;
+                                                Vue.prototype.$toast.open({
+                                                        message: "Please enter the proxy address",
+                                                        type: 'is-danger',
+                                                        position:'is-bottom',
+                                                        duration:8000
+                                                })  
+                                                return;
+                                        }
+                                }
+                                if(!this.linkData.location.address && this.linkData.useMyLocation !== 'proxy'){
+                                        this.isLinkingAccount = false;
                                         return;
+                                }
+                                       
                                 let data = 
                                         {
                                                 username:this.linkData.username, 
                                                 password:this.linkData.password, 
                                                 type:0,
                                                 location: this.linkData.location,
-                                                enableAutoLocate: this.linkData.useMyLocation === 'true'
+                                                enableAutoLocate: this.linkData.useMyLocation === 'true',
+                                                proxyDetail : this.linkData.useMyLocation === 'proxy' ? this.linkData.proxy : null
                                         };
                                 
                                 
@@ -339,7 +357,7 @@ export default {
                                         this.isLinkingAccount = false;
                                 }).catch(err=>{      
                                         Vue.prototype.$toast.open({
-                                                message: "Oops, looks like the account details don't match the instagram servers or the account has already been registered here, please try again",
+                                                message: 'Failed to add account, please ensure the proxy and instagram account details are correct',
                                                 type: 'is-danger',
                                                 position:'is-bottom',
                                                 duration:8000

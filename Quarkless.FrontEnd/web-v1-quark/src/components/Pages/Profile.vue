@@ -344,7 +344,7 @@
                         <b-switch v-if="profile.additionalConfigurations.enableAutoPosting" style="padding-left:2em;" class="is-light" :outlined="true" type="is-info" v-model="profile.additionalConfigurations.allowRepost">Allow Reposting</b-switch>
                       </b-tooltip>
                       <b-tooltip multilined type="is-twitter" label="Enabling this feature will allow the agent to repost only from the users whom you've set to target">
-                        <b-switch @input="checkIfValidRepostOption" v-if="profile.additionalConfigurations.allowRepost" style="padding-left:2em;" class="is-light" :outlined="true" type="is-info" v-model="profile.additionalConfigurations.enableOnlyAutoRepostFromUserTargetList">Repost Only From Targeted Users</b-switch>
+                        <b-switch @input="checkIfValidRepostOption" v-if="profile.additionalConfigurations.allowRepost && profile.additionalConfigurations.enableAutoPosting" style="padding-left:2em;" class="is-light" :outlined="true" type="is-info" v-model="profile.additionalConfigurations.enableOnlyAutoRepostFromUserTargetList">Repost Only From Targeted Users</b-switch>
                       </b-tooltip>
                       <b-tooltip multilined type="is-twitter" label="Enabling this feature will let the agent create their own caption based on your profile, alternatively you can turn this off and write your own captions">
                         <b-switch v-if="profile.additionalConfigurations.enableAutoPosting" style="padding-left:2em;" class="is-light" :outlined="true" type="is-info" v-model="profile.additionalConfigurations.autoGenerateCaption">Generate Captions</b-switch>
@@ -437,7 +437,7 @@
                   </p>
                   <p class="control" style="margin-top:0.1em;">
                     <b-tooltip type="is-dark" label="use our proxies">
-                      <b-button @click="proxyDetail.fromUser = false" class="button is-dark is-medium">User Our Proxies</b-button>
+                      <b-button @click="proxyDetail.fromUser = false" class="button is-dark is-medium">Use Our Proxies</b-button>
                     </b-tooltip>
                   </p>
                 </b-field>
@@ -473,7 +473,7 @@
                       </p>
                       <p class="control" style="margin-top:0.1em;">
                         <b-tooltip type="is-dark" label="Provide your own proxy">
-                          <b-button @click="proxyDetail.fromUser = true" class="button is-dark is-medium">User My Own Proxy</b-button>
+                          <b-button @click="proxyDetail.fromUser = true" class="button is-dark is-medium">Use My Own Proxy</b-button>
                         </b-tooltip>
                       </p>
                     </b-field>

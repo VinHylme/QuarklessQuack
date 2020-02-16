@@ -26,7 +26,7 @@ namespace Quarkless.Models.Shared.Models
 		public string RedisConnectionString => _configuration["ConnectionStrings:Redis"];
 		public string ConnectionString => _configuration["ConnectionStrings:MongoClientStrings"];
 		public string MainDatabase => _configuration["ConnectionStrings:DatabaseNames:Accounts"];
-		public string SchedulerDatabase => _configuration["ConnectionStrings:DatabaseNames:Scheduler"];
+		public string StatisticsDatabase => _configuration["ConnectionStrings:DatabaseNames:Statistics"];
 		public string ControlDatabase => _configuration["ConnectionStrings:DatabaseNames:Control"];
 		public string ContentDatabase => _configuration["ConnectionStrings:DatabaseNames:Content"];
 		public string AccountCreationDatabase => _configuration["ConnectionStrings:DatabaseNames:AccountCreator"];

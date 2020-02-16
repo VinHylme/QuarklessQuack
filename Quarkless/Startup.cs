@@ -78,9 +78,8 @@ namespace Quarkless
 				{
 					Db = 1,
 					Prefix = REDIS_DB_NAME,
-					SucceededListSize = 100000,
-					DeletedListSize = 100000,
-					ExpiryCheckInterval = TimeSpan.FromHours(1),
+					SucceededListSize = 10000,
+					DeletedListSize = 10000,
 					InvisibilityTimeout = TimeSpan.FromMinutes(30),
 					FetchTimeout = TimeSpan.FromMinutes(30),
 					UseTransactions = true
@@ -94,8 +93,7 @@ namespace Quarkless
 			};
 
 			GlobalConfiguration.Configuration.UseSerializerSettings(serializerSettings);
-			GlobalJobFilters.Filters.Add(new ProlongExpirationTimeAttribute());
-        }
+		}
 
 		public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
@@ -122,10 +120,12 @@ namespace Quarkless
 
 			app.UseCors(CORS_POLICY);
 			app.UseHangfireServer(jobServerOptions);
+
 			app.UseHangfireDashboard("/configs/hang-fire", new DashboardOptions
 			{
 				Authorization = new[] { new HangfireAllowAllConnectionsFilter() }
 			});
+			app.ClearFailedHangfireJobs();
 			app.UseStaticFiles();	
 			app.UseDefaultFiles();
 			app.UseCookiePolicy();

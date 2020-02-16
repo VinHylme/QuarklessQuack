@@ -70,7 +70,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 						.WithAttempts(1)
 						.WithResolverAsync(()=> _worker.Client.Media
 								.UploadPhotoAsync(model.Image, MakeCaption(model.MediaInfo), model.Location),
-							ActionType.CreatePost, model.ToJsonString());
+							ActionType.CreatePost, model.MediaInfo.ToJsonString());
 				}
 				else if(eventAction.BodyType == typeof(UploadVideoModel))
 				{
@@ -83,7 +83,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 						.WithAttempts(1)
 						.WithResolverAsync(()=> _worker.Client.Media
 								.UploadVideoAsync(model.Video, MakeCaption(model.MediaInfo), model.Location),
-							ActionType.CreatePost, model.ToJsonString());
+							ActionType.CreatePost, model.MediaInfo.ToJsonString());
 				}
 				else if (eventAction.BodyType == typeof(UploadAlbumModel))
 				{
@@ -110,7 +110,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 						.WithAttempts(1)
 						.WithResolverAsync(()=> _worker.Client.Media
 								.UploadAlbumAsync(model.Album, MakeCaption(model.MediaInfo), model.Location),
-							ActionType.CreatePost, model.ToJsonString());
+							ActionType.CreatePost, model.MediaInfo.ToJsonString());
 				}
 				else
 				{

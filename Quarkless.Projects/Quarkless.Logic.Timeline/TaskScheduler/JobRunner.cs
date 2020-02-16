@@ -7,6 +7,7 @@ using Quarkless.Models.Timeline.TaskScheduler;
 
 namespace Quarkless.Logic.Timeline.TaskScheduler
 {
+	[ProlongExpirationTime(ExpiryInHours = 8)]
 	public class JobRunner : IJobRunner
 	{
 		private readonly IBackgroundJobClient _backgroundJobClient;

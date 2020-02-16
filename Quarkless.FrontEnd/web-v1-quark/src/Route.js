@@ -125,8 +125,15 @@ router.beforeEach((to, from, next) => {
         next()
         return
       }
-      if(router.currentRoute.fullPath !== '/login')
+      if(!store.getters.IsLoggedIn){
+        next('/login')
+        return;
+      }
+      
+      if(router.currentRoute.fullPath !== '/login'){
         next()
+        return;
+      }
     } else {
       next() 
     }
