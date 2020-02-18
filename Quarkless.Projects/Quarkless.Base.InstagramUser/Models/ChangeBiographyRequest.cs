@@ -1,6 +1,8 @@
-﻿namespace Quarkless.Base.InstagramUser.Models
+﻿using Quarkless.Models.Common.Interfaces;
+
+namespace Quarkless.Base.InstagramUser.Models
 {
-	public class ChangeBiographyRequest
+	public class ChangeBiographyRequest : IExec
 	{
 		public string Biography { get; set; }
 	}

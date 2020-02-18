@@ -49,7 +49,7 @@ namespace Quarkless.Controllers
 				var results = await _responseResolver
 					.WithAttempts(1)
 					.WithResolverAsync(()=> _instaAccountOptions.SetBiographyAsync(biographyRequest.Biography), 
-					ActionType.CreateBiography, biographyRequest.ToJsonString());
+					ActionType.CreateBiography, biographyRequest);
 				return ResolverResponse(results);
 			}
 			catch (Exception ee)
@@ -75,7 +75,10 @@ namespace Quarkless.Controllers
 				var results = await _responseResolver
 					.WithAttempts(1)
 					.WithResolverAsync(()=> _instaAccountOptions.ChangeProfilePictureAsync(bytes),
-					ActionType.ChangeProfilePicture, file.FileName);
+					ActionType.ChangeProfilePicture, new ChangeProfilePictureRequest
+					{
+						FileName = file.FileName
+					});
 				return ResolverResponse(results);
 			}
 			catch (Exception ee)
@@ -90,7 +93,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.GetRecentActivityFeedAsync(limit), ActionType.RecentActivityFeed, "");
+				.WithResolverAsync(()=> _instaUserLogic.GetRecentActivityFeedAsync(limit));
 			return ResolverResponse(results);
 		}
 
@@ -100,7 +103,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(() => _instaUserLogic.AcceptFriendshipRequestAsync(userId), ActionType.None, userId.ToString());
+				.WithResolverAsync(() => _instaUserLogic.AcceptFriendshipRequestAsync(userId));
 			return ResolverResponse(results);
 		}
 
@@ -110,7 +113,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.BlockUser(userId), ActionType.None, userId.ToString());
+				.WithResolverAsync(()=> _instaUserLogic.BlockUser(userId));
 			return ResolverResponse(results);
 		}
 
@@ -120,7 +123,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.FavoriteUser(userId), ActionType.None, userId.ToString());
+				.WithResolverAsync(()=> _instaUserLogic.FavoriteUser(userId));
 			return ResolverResponse(results);
 		}
 
@@ -130,7 +133,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.FavoriteUserStories(userId), ActionType.None, userId.ToString());
+				.WithResolverAsync(()=> _instaUserLogic.FavoriteUserStories(userId));
 			return ResolverResponse(results);
 		}
 
@@ -140,7 +143,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Request");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.FollowUser(userId), ActionType.FollowUser, userId.ToString());
+				.WithResolverAsync(()=> _instaUserLogic.FollowUser(userId));
 			return ResolverResponse(results);
 		}
 
@@ -150,7 +153,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.GetCurrentUserFollowers(limit), ActionType.None, "");
+				.WithResolverAsync(()=> _instaUserLogic.GetCurrentUserFollowers(limit));
 			return ResolverResponse(results);
 		}
 
@@ -160,7 +163,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.GetFollowingActivityFeed(limit), ActionType.None, "");
+				.WithResolverAsync(()=> _instaUserLogic.GetFollowingActivityFeed(limit));
 			return ResolverResponse(results);
 		}
 
@@ -170,7 +173,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results =await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.GetFriendshipStatuses(userIds), ActionType.None, userIds.ToJsonString());
+				.WithResolverAsync(()=> _instaUserLogic.GetFriendshipStatuses(userIds));
 			return ResolverResponse(results);
 		}
 
@@ -180,7 +183,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.GetFullUserInfo(userId), ActionType.None, userId.ToString());
+				.WithResolverAsync(()=> _instaUserLogic.GetFullUserInfo(userId));
 			return ResolverResponse(results);
 		}
 
@@ -190,7 +193,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.GetPendingFriendRequest(), ActionType.None, "");
+				.WithResolverAsync(()=> _instaUserLogic.GetPendingFriendRequest());
 			return ResolverResponse(results);
 		}
 
@@ -200,7 +203,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.GetSuggestionDetails(userId,userIds), ActionType.None, userId.ToString());
+				.WithResolverAsync(()=> _instaUserLogic.GetSuggestionDetails(userId,userIds));
 			return ResolverResponse(results);
 		}
 
@@ -210,7 +213,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.GetUser(username), ActionType.None, username);
+				.WithResolverAsync(()=> _instaUserLogic.GetUser(username));
 			return ResolverResponse(results);
 		}
 
@@ -220,7 +223,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.GetUserFollowers(username,limit, query, mutalfirst), ActionType.None, username);
+				.WithResolverAsync(()=> _instaUserLogic.GetUserFollowers(username,limit, query, mutalfirst));
 			return ResolverResponse(results);
 		}
 
@@ -230,7 +233,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.GetUserFollowing(username, limit, query), ActionType.None, username);
+				.WithResolverAsync(()=> _instaUserLogic.GetUserFollowing(username, limit, query));
 			return ResolverResponse(results);
 		}
 
@@ -240,7 +243,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.GetUserInfo(userPk), ActionType.None, userPk.ToString());
+				.WithResolverAsync(()=> _instaUserLogic.GetUserInfo(userPk));
 			return ResolverResponse(results);
 		}
 
@@ -250,7 +253,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.GetUserInfoUsername(username), ActionType.None, username);
+				.WithResolverAsync(()=> _instaUserLogic.GetUserInfoUsername(username));
 			return ResolverResponse(results);
 		}
 
@@ -260,7 +263,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.GetUserMedia(username,limit), ActionType.None, username);
+				.WithResolverAsync(()=> _instaUserLogic.GetUserMedia(username,limit));
 			return ResolverResponse(results);
 		}
 
@@ -270,7 +273,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.GetUserNametag(nametagmage), ActionType.None, nametagmage.ToJsonString());
+				.WithResolverAsync(()=> _instaUserLogic.GetUserNametag(nametagmage));
 			return ResolverResponse(results);
 		}
 
@@ -280,7 +283,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.GetUserTags(username, limit), ActionType.None, username);
+				.WithResolverAsync(()=> _instaUserLogic.GetUserTags(username, limit));
 			return ResolverResponse(results);
 		}
 
@@ -290,7 +293,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.GetUserShoppableMedia(username,limit), ActionType.None, username);
+				.WithResolverAsync(()=> _instaUserLogic.GetUserShoppableMedia(username,limit));
 			return ResolverResponse(results);
 		}
 
@@ -300,7 +303,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.GetUserSuggestions(limit), ActionType.None, "");
+				.WithResolverAsync(()=> _instaUserLogic.GetUserSuggestions(limit));
 			return ResolverResponse(results);
 		}
 
@@ -310,7 +313,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.HideStoryFromUser(userid), ActionType.None, "");
+				.WithResolverAsync(()=> _instaUserLogic.HideStoryFromUser(userid));
 			return ResolverResponse(results);
 		}
 
@@ -320,7 +323,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.IgnoreFriendship(userid), ActionType.None, "");
+				.WithResolverAsync(()=> _instaUserLogic.IgnoreFriendship(userid));
 			return ResolverResponse(results);
 		}
 
@@ -330,7 +333,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.MarkUserAsOverage(userid), ActionType.None, userid.ToString());
+				.WithResolverAsync(()=> _instaUserLogic.MarkUserAsOverage(userid));
 			return ResolverResponse(results);
 		}
 
@@ -340,7 +343,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.MuteFriendStory(userid), ActionType.None, userid.ToString());
+				.WithResolverAsync(()=> _instaUserLogic.MuteFriendStory(userid));
 			return ResolverResponse(results);
 		}
 
@@ -350,7 +353,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.MuteUserMedia(userid, (InstaMuteOption) muteOption), ActionType.None, userid.ToString());
+				.WithResolverAsync(()=> _instaUserLogic.MuteUserMedia(userid, (InstaMuteOption) muteOption));
 			return ResolverResponse(results);
 		}
 
@@ -360,7 +363,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.RemoveFollower(userid), ActionType.None, userid.ToString());
+				.WithResolverAsync(()=> _instaUserLogic.RemoveFollower(userid));
 			return ResolverResponse(results);
 		}
 
@@ -370,7 +373,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.ReportUser(userid), ActionType.None, userid.ToString());
+				.WithResolverAsync(()=> _instaUserLogic.ReportUser(userid));
 			return ResolverResponse(results);
 		}
 
@@ -380,7 +383,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.TranslateBio(userid), ActionType.None, userid.ToString());
+				.WithResolverAsync(()=> _instaUserLogic.TranslateBio(userid));
 			return ResolverResponse(results);
 		}
 
@@ -390,7 +393,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.UnBlockUser(userid), ActionType.None, userid.ToString());
+				.WithResolverAsync(()=> _instaUserLogic.UnBlockUser(userid));
 			return ResolverResponse(results);
 		}
 
@@ -400,7 +403,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.UnFavoriteUser(userid), ActionType.None, userid.ToString());
+				.WithResolverAsync(()=> _instaUserLogic.UnFavoriteUser(userid));
 			return ResolverResponse(results);
 		}
 
@@ -410,7 +413,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _instaUserLogic.UnFavoriteUserStories(userid), ActionType.None, userid.ToString());
+				.WithResolverAsync(()=> _instaUserLogic.UnFavoriteUserStories(userid));
 			return ResolverResponse(results);
 		}
 
@@ -419,8 +422,7 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> UnFollowUser(long userid)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
-			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(()=> _instaUserLogic.UnFollowUser(userid), 
-				ActionType.UnFollowUser, userid.ToString());
+			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(()=> _instaUserLogic.UnFollowUser(userid));
 			return ResolverResponse(results);
 		}
 
@@ -429,8 +431,7 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> UnHideMyStoryFromUser(long userid)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
-			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(()=> _instaUserLogic.UnHideMyStoryFromUser(userid),
-				ActionType.None, userid.ToString());
+			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(()=> _instaUserLogic.UnHideMyStoryFromUser(userid));
 			return ResolverResponse(results);
 		}
 
@@ -439,8 +440,7 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> UnMuteFriendStory(long userid)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
-			var results = await _responseResolver.WithResolverAsync(()=> _instaUserLogic.UnMuteFriendStory(userid), 
-				ActionType.None, userid.ToString());
+			var results = await _responseResolver.WithResolverAsync(()=> _instaUserLogic.UnMuteFriendStory(userid));
 			return ResolverResponse(results);
 		}
 
@@ -450,7 +450,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid Id");
 			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _instaUserLogic.UnMuteUserMedia(userid, (InstaMuteOption) muteOption), ActionType.None, userid.ToString());
+				()=> _instaUserLogic.UnMuteUserMedia(userid, (InstaMuteOption) muteOption));
 			return ResolverResponse(results);
 
 		}

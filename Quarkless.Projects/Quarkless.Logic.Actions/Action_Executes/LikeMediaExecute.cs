@@ -42,8 +42,8 @@ namespace Quarkless.Logic.Actions.Action_Executes
 				var response = await _responseResolver
 					.WithClient(_worker.Client)
 					.WithAttempts(1)
-					.WithResolverAsync(()=> _worker.Client.Media.LikeMediaAsync(requestLikeMedia.MediaId),
-						ActionType.LikePost, requestLikeMedia.ToJsonString());
+					.WithResolverAsync(()=> _worker.Client.Media.LikeMediaAsync(requestLikeMedia.Media.Id),
+						ActionType.LikePost, requestLikeMedia);
 
 				if (!response.Response.Succeeded)
 				{

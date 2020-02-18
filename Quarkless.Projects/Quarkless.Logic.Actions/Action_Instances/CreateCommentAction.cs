@@ -13,15 +13,23 @@ using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.Common.Models;
 using Quarkless.Models.Common.Models.Carriers;
+using Quarkless.Models.Common.Models.Resolver;
 using Quarkless.Models.ContentInfo.Interfaces;
 using Quarkless.Models.Heartbeat;
 using Quarkless.Models.Heartbeat.Interfaces;
 using Quarkless.Models.SearchResponse;
+using Quarkless.Models.Topic;
 
 namespace Quarkless.Logic.Actions.Action_Instances
 {
 	internal class CreateCommentAction : IActionCommit
 	{
+		public class CreateCommentContainer
+		{
+			public CTopic Topic { get; set; }
+			public CreateCommentRequest CommentRequest { get; set; }
+		}
+
 		private readonly IContentInfoBuilder _contentInfoBuilder;
 		private readonly IHeartbeatLogic _heartbeatLogic;
 		private readonly UserStoreDetails _user;
@@ -35,7 +43,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 			_heartbeatLogic = heartbeatLogic;
 			_actionOptions = new CommentingActionOptions();
 		}
-		private async Task<HolderComment> CommentingByLocation()
+		private async Task<CreateCommentContainer> CommentingByLocation()
 		{
 			var by = new By
 			{
@@ -43,9 +51,11 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				User = _user.Profile.InstagramAccountId
 			};
 
+			const MetaDataType fetchType = MetaDataType.FetchMediaByUserLocationTargetList;
+
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 			{
-				MetaDataType = MetaDataType.FetchMediaByUserLocationTargetList,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id
 			}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
@@ -57,19 +67,41 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 			await _heartbeatLogic.UpdateMetaData<Media>(new MetaDataCommitRequest<Media>
 			{
-				MetaDataType = MetaDataType.FetchMediaByUserLocationTargetList,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
 				Data = select,
 			});
 
-			return new HolderComment
+			var media = select.ObjectItem.Medias.FirstOrDefault();
+			if (media == null) return null;
+			return new CreateCommentContainer
 			{
 				Topic = _user.Profile.ProfileTopic.Category,
-				MediaId = select.ObjectItem.Medias.FirstOrDefault()?.MediaId
+				CommentRequest = new CreateCommentRequest
+				{
+					Media = new MediaShort { 
+						Id = media.MediaId,
+						MediaUrl = media.MediaUrl.First(),
+						CommentCount = int.TryParse(media.CommentCount, out var commentCount) ? commentCount : 0,
+						IncludedInMedia = media.PhotosOfI,
+						LikesCount = media.LikesCount
+					},
+					User = new UserShort
+					{
+						Id = media.User.UserId,
+						ProfilePicture = media.User.ProfilePicture,
+						Username = media.User.Username
+					},
+					DataFrom = new DataFrom
+					{
+						NominatedFrom = fetchType,
+						TopicName = media.Topic?.Name
+					}
+				}
 			};
 		}
-		private async Task<HolderComment> CommentingByTopic()
+		private async Task<CreateCommentContainer> CommentingByTopic()
 		{
 			var by = new By
 			{
@@ -77,9 +109,11 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				User = _user.Profile.InstagramAccountId
 			};
 
+			const MetaDataType fetchType = MetaDataType.FetchMediaByCommenters;
+
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 			{
-				MetaDataType = MetaDataType.FetchMediaByCommenters,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id
 			}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
@@ -93,29 +127,52 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 			await _heartbeatLogic.UpdateMetaData<Media>(new MetaDataCommitRequest<Media>
 			{
-				MetaDataType = MetaDataType.FetchMediaByCommenters,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
 				Data = select
 			});
 
-			return new HolderComment
+			var media = select.ObjectItem.Medias.FirstOrDefault();
+			if (media == null) return null;
+			return new CreateCommentContainer
 			{
-				Topic = _user.Profile.ProfileTopic.Category, 
-				MediaId = select.ObjectItem.Medias.FirstOrDefault()?.MediaId
+				Topic = _user.Profile.ProfileTopic.Category,
+				CommentRequest = new CreateCommentRequest
+				{
+					Media = new MediaShort
+					{
+						Id = media.MediaId,
+						MediaUrl = media.MediaUrl.First(),
+						CommentCount = int.TryParse(media.CommentCount, out var commentCount) ? commentCount : 0,
+						IncludedInMedia = media.PhotosOfI,
+						LikesCount = media.LikesCount
+					},
+					User = new UserShort
+					{
+						Id = media.User.UserId,
+						ProfilePicture = media.User.ProfilePicture,
+						Username = media.User.Username
+					},
+					DataFrom = new DataFrom
+					{
+						NominatedFrom = fetchType,
+						TopicName = media.Topic?.Name
+					}
+				}
 			};
 		}
-		private async Task<HolderComment> CommentingByLikers()
+		private async Task<CreateCommentContainer> CommentingByLikers()
 		{
 			var by = new By
 			{
 				ActionType = (int)ActionType.CreateCommentMedia,
 				User = _user.ShortInstagram.Id
 			};
-
+			const MetaDataType fetchType = MetaDataType.FetchMediaByLikers;
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 			{
-				MetaDataType = MetaDataType.FetchMediaByLikers,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id
 			}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
@@ -128,16 +185,39 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 			await _heartbeatLogic.UpdateMetaData<Media>(new MetaDataCommitRequest<Media>
 			{
-				MetaDataType = MetaDataType.FetchMediaByCommenters,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
 				Data = select
 			});
 
-			return new HolderComment
+			var media = select.ObjectItem.Medias.FirstOrDefault();
+			if (media == null) return null;
+			return new CreateCommentContainer
 			{
-				Topic = _user.Profile.ProfileTopic.Category, 
-				MediaId = select.ObjectItem.Medias.FirstOrDefault()?.MediaId
+				Topic = _user.Profile.ProfileTopic.Category,
+				CommentRequest = new CreateCommentRequest
+				{
+					Media = new MediaShort
+					{
+						Id = media.MediaId,
+						MediaUrl = media.MediaUrl.First(),
+						CommentCount = int.TryParse(media.CommentCount, out var commentCount) ? commentCount : 0,
+						IncludedInMedia = media.PhotosOfI,
+						LikesCount = media.LikesCount
+					},
+					User = new UserShort
+					{
+						Id = media.User.UserId,
+						ProfilePicture = media.User.ProfilePicture,
+						Username = media.User.Username
+					},
+					DataFrom = new DataFrom
+					{
+						NominatedFrom = fetchType,
+						TopicName = media.Topic?.Name
+					}
+				}
 			};
 		}
 
@@ -151,7 +231,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				switch (_actionOptions.StrategySettings.StrategyType)
 				{
 					case CommentingStrategy.Default:
-						var nominatedMedia = new HolderComment();
+						var nominatedMedia = new CreateCommentContainer();
 						CommentingActionType commentingActionSelected;
 
 						if (_actionOptions.CommentingActionType == CommentingActionType.Any)
@@ -198,7 +278,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 								break;
 						}
 
-						if (string.IsNullOrEmpty(nominatedMedia?.MediaId))
+						if (nominatedMedia == null || string.IsNullOrEmpty(nominatedMedia?.CommentRequest.Media.MediaUrl))
 						{
 							results.IsSuccessful = false;
 							results.Info = new ErrorResponse
@@ -220,13 +300,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 							}
 						};
 
-						var createComment = new CreateCommentRequest
-						{
-							MediaId = nominatedMedia.MediaId,
-							Text = _contentInfoBuilder.GenerateComment(nominatedMedia.Topic)
-						};
-
-						@event.DataObjects.Add(new EventBody(createComment, createComment.GetType(), executionTime));
+						@event.DataObjects.Add(new EventBody(nominatedMedia.CommentRequest, nominatedMedia.CommentRequest.GetType(), executionTime));
 
 						results.IsSuccessful = true;
 						results.Results = @event;

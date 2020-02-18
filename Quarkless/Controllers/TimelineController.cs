@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Quarkless.Models.Auth.Enums;
 using Quarkless.Models.Auth.Interfaces;
 using Quarkless.Models.Messaging;
-using Quarkless.Models.RequestBuilder.Interfaces;
 using Quarkless.Models.Timeline;
 using Quarkless.Models.Timeline.Interfaces;
 using Quarkless.Models.Timeline.TaskScheduler;
@@ -23,31 +22,12 @@ namespace Quarkless.Controllers
 	{
 		private readonly IUserContext _userContext;
 		private readonly ITimelineLogic _timelineLogic;
-		private readonly ITimelineEventLogLogic _timelineEventLogLogic;
-		public TimelineController(IUserContext userContext, ITimelineLogic timelineLogic,
-			ITimelineEventLogLogic timelineEventLogLogic)
+		public TimelineController(IUserContext userContext, ITimelineLogic timelineLogic)
 		{
 			_userContext = userContext;
 			_timelineLogic = timelineLogic;
-			_timelineEventLogLogic = timelineEventLogLogic;
 		}
 
-		[HttpGet]
-		[Route("api/timeline/log/{instagramAccountId}/{limit}")]
-		public async Task<IActionResult> GetTimelineEventLog(string instagramAccountId, int limit)
-		{
-			if (string.IsNullOrEmpty(_userContext.CurrentUser)) return BadRequest("Invalid Request");
-			return Ok(await _timelineEventLogLogic.GetLogsForUser(_userContext.CurrentUser, instagramAccountId, limit));
-		}
-
-		[HttpGet]
-		[Route("api/timeline/log/{limit}")]
-		public async Task<IActionResult> GetTimelineEventLog(int limit)
-		{
-			if (string.IsNullOrEmpty(_userContext.CurrentUser)) return BadRequest("Invalid Request");
-			if (string.IsNullOrEmpty(_userContext.FocusInstaAccount)) return BadRequest("Invalid user");
-			return Ok(await _timelineEventLogLogic.GetLogsForUser(_userContext.CurrentUser, _userContext.FocusInstaAccount, limit));
-		}
 
 //		[HashtagAuthorize(AuthTypes.Admin)]
 //		[HttpGet]

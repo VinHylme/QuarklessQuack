@@ -1,7 +1,7 @@
-﻿namespace Quarkless.Models.Common.Interfaces
+﻿
+namespace Quarkless.Models.Common.Interfaces
 {
 	public interface IExec
 	{
-
 	}
 }

@@ -34,7 +34,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists || uploadPhoto == null) return BadRequest("invalid");
 			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _mediaLogic.UploadPhotoAsync(uploadPhoto), ActionType.CreatePost, uploadPhoto.ToJsonString());
+				()=> _mediaLogic.UploadPhotoAsync(uploadPhoto), ActionType.CreatePost, uploadPhoto);
 			return ResolverResponse(results);
 		}
 		[HttpPost]
@@ -44,7 +44,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists || uploadAlbum == null) return BadRequest("invalid");
 			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _mediaLogic.UploadAlbumAsync(uploadAlbum), ActionType.CreatePost, uploadAlbum.ToJsonString());
+				()=> _mediaLogic.UploadAlbumAsync(uploadAlbum), ActionType.CreatePost, uploadAlbum);
 			return ResolverResponse(results);
 		}
 		[HttpPost]
@@ -53,7 +53,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists || uploadVideo == null) return BadRequest("invalid");
 			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _mediaLogic.UploadVideoAsync(uploadVideo), ActionType.CreatePost, uploadVideo.ToJsonString());
+				()=> _mediaLogic.UploadVideoAsync(uploadVideo), ActionType.CreatePost, uploadVideo);
 			return ResolverResponse(results);
 		}
 
@@ -63,7 +63,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists || mediaId == null) return BadRequest("invalid");
 			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _mediaLogic.DeleteMediaAsync(mediaId,mediaType), ActionType.None, mediaId);
+				()=> _mediaLogic.DeleteMediaAsync(mediaId,mediaType));
 			return ResolverResponse(results);
 		}
 
@@ -73,7 +73,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists || string.IsNullOrEmpty(mediaId)) return BadRequest("invalid");
 			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _mediaLogic.LikeMediaAsync(mediaId), ActionType.LikePost, mediaId);
+				()=> _mediaLogic.LikeMediaAsync(mediaId));
 			return ResolverResponse(results);
 		}
 	}

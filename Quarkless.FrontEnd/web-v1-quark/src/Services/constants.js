@@ -60,8 +60,9 @@ module.exports.Calling = {
   "timeline_update_event": process.env.VUE_APP_TIMELINE_UPDATE_EVENT,
   "timeline_create_post": process.env.VUE_APP_TIMELINE_CREATE_POST,
   "timeline_create_message" : process.env.VUE_APP_TIMELINE_CREATE_MESSAGE,
-  "timeline_get_event_logs": process.env.VUE_APP_TIMELINE_GET_EVENT_LOGS,
-  "timeline_get_event_logs_for_user": process.env.VUE_APP_TIMELINE_GET_EVENT_LOGS_FOR_USER,
+
+  "notifications_get_events": process.env.VUE_APP_NOTIFICATION_GET_EVENTS,
+  "notifications_get_event_for_user": process.env.VUE_APP_NOTIFICATION_GET_EVENTS_FOR_USER,
 
   "library_get_captions": process.env.VUE_APP_LIBRARY_GET_CAPTIONS,
   "library_get_medias": process.env.VUE_APP_LIBRARY_GET_MEDIAS,

@@ -41,6 +41,7 @@
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.InstagramClient\Quarkless.Logic.InstagramClient.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.Lookup\Quarkless.Logic.Lookup.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.Media\Quarkless.Logic.Media.csproj" />
+    <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.Notification\Quarkless.Logic.Notification.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.Profile\Quarkless.Logic.Profile.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.ReportHandler\Quarkless.Logic.ReportHandler.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.ResponseResolver\Quarkless.Logic.ResponseResolver.csproj" />
@@ -57,6 +58,7 @@
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.Heartbeat\Quarkless.Models.Heartbeat.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.Lookup\Quarkless.Models.Lookup.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.Media\Quarkless.Models.Media.csproj" />
+    <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.Notification\Quarkless.Models.Notification.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.ReportHandler\Quarkless.Models.ReportHandler.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.RestSharpClientManager\Quarkless.Models.RestSharpClientManager.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.SeleniumClient\Quarkless.Models.SeleniumClient.csproj" />
@@ -73,6 +75,7 @@
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Repository.Lookup\Quarkless.Repository.Lookup.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Repository.Media\Quarkless.Repository.Media.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Repository.MongoContext\Quarkless.Repository.MongoContext.csproj" />
+    <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Repository.Notification\Quarkless.Repository.Notification.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Repository.Profile\Quarkless.Repository.Profile.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Repository.RedisClientContext\Quarkless.Repository.RedisContext.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Repository.ReportHandler\Quarkless.Repository.ReportHandler.csproj" />

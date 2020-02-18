@@ -12,6 +12,7 @@ namespace Quarkless.Models.Common.Extensions
 			return AppDomain.CurrentDomain.GetAssemblies()
 				.SelectMany(s => s.GetTypes().Where(@interface.IsAssignableFrom));
 		}
+
 		public static object TryConvertObjectOfInterfaceType(this string jsonString, Type @interface)
 		{
 			var typesAvailable = @interface.GetNumberOfClassesDerivedFromInterface();

@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 import AccountServices from '../Services/accountServices';
 import TimelineServices from '../Services/timelineService';
+import NotificationServices from '../Services/notificationServices';
 import QueryServices from '../Services/queryServices';
 import LibraryServices from '../Services/libraryServices';
 import MessagingServices from '../Services/messagingServices';
@@ -222,7 +223,7 @@ export default {
     },
     GetEventLogs({commit}, data){
       return new Promise((resolve, reject)=>{
-        TimelineServices.GetEventLogs(data.instagramAccountId, data.limit).then(resp=>{
+        NotificationServices.GetEventLogs(data.instagramAccountId, data.limit).then(resp=>{
           commit('retrieved_event_logs_in',resp.data);
           resolve(resp);
         }).catch((err)=>{
@@ -233,7 +234,7 @@ export default {
     },
     GetAllEventLogsForUser({commit}, data){
       return new Promise((resolve, reject)=>{
-        TimelineServices.GetAllEventLogsForUser(data.instagramAccountId, data.limit).then(resp=>{
+        NotificationServices.GetAllEventLogsForUser(data.instagramAccountId, data.limit).then(resp=>{
           commit('retrieved_event_logs',resp.data);
           resolve(resp);
         }).catch((err)=>{

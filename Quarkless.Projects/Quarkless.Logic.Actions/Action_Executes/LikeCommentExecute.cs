@@ -44,7 +44,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 					.WithClient(_worker.Client)
 					.WithAttempts(1)
 					.WithResolverAsync(()=> _worker.Client.Comment.LikeCommentAsync(requestLikeCommentRequest.CommentId.ToString()),
-						ActionType.LikeComment, requestLikeCommentRequest.ToJsonString());
+						ActionType.LikeComment, requestLikeCommentRequest);
 				
 				if (!response.Response.Succeeded)
 				{

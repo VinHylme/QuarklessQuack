@@ -32,7 +32,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.9.10" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Kubernetes.Tools.Targets" Version="1.0.0" />
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\InstagramApiSharp\InstagramApiSharp.csproj" />
@@ -65,6 +65,7 @@
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Lookup\Quarkless.Logic.Lookup.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Media\Quarkless.Logic.Media.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Messaging\Quarkless.Logic.Messaging.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Notification\Quarkless.Logic.Notification.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Profile\Quarkless.Logic.Profile.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Proxy\Quarkless.Logic.Proxy.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Logic.Query\Quarkless.Logic.Query.csproj" />
@@ -121,6 +122,7 @@
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.Lookup\Quarkless.Repository.Lookup.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.Media\Quarkless.Repository.Media.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.MongoContext\Quarkless.Repository.MongoContext.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.Notification\Quarkless.Repository.Notification.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.Profile\Quarkless.Repository.Profile.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.Proxy\Quarkless.Repository.Proxy.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Repository.RedisClientContext\Quarkless.Repository.RedisContext.csproj" />

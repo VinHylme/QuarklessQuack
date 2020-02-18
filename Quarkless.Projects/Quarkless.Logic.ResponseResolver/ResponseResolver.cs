@@ -7,8 +7,6 @@ using System;
 using System.Threading.Tasks;
 using Quarkless.Models.InstagramAccounts;
 using Quarkless.Models.InstagramAccounts.Enums;
-using Quarkless.Models.Timeline;
-using Quarkless.Models.Timeline.Enums;
 using Newtonsoft.Json;
 using Quarkless.Models.ReportHandler.Interfaces;
 using Quarkless.Models.Lookup.Interfaces;
@@ -16,23 +14,42 @@ using Quarkless.Models.Lookup;
 using Quarkless.Models.Lookup.Enums;
 using System.Linq;
 using InstagramApiSharp.Classes.Models;
-using Newtonsoft.Json.Linq;
+using Quarkless.Base.InstagramUser.Models;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Extensions;
+using Quarkless.Models.Common.Interfaces;
 using Quarkless.Models.InstagramClient;
+using Quarkless.Models.Media;
 using Quarkless.Models.Messaging;
+using Quarkless.Models.Notification.Enums;
+using Quarkless.Models.Notification.Extensions;
+using Quarkless.Models.Notification.Interfaces;
 using Quarkless.Models.Proxy.Interfaces;
 using Quarkless.Models.ResponseResolver.Enums;
 using Quarkless.Models.ResponseResolver.Models;
+using Quarkless.Models.Stories;
+using Quarkless.Models.Comments;
 
 namespace Quarkless.Logic.ResponseResolver
 {
 	public class ResponseResolver : IResponseResolver
 	{
+		public struct MessageCreated
+		{
+			public string Message { get; set; }
+			public string AssetUrl { get; set; }
+
+			public MessageCreated(string message, string assetUrl = "")
+			{
+				this.Message = message;
+				this.AssetUrl = assetUrl;
+			}
+		}
+
 		#region Init
 		private readonly ILookupLogic _lookupLogic;
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
-		private readonly ITimelineEventLogLogic _timelineEventLogLogic;
+		private readonly INotificationLogic _notificationLogic;
 		private readonly IReportHandler _reportHandler;
 		private readonly IProxyRequest _proxyRequest;
 
@@ -43,17 +60,17 @@ namespace Quarkless.Logic.ResponseResolver
 		private string AccountId { get; set; }
 		private string InstagramAccountId { get; set; }
 
-		public ResponseResolver(IApiClientContainer client, IInstagramAccountLogic instagramAccountLogic,
-			ITimelineEventLogLogic timelineEventLogLogic, IReportHandler reportHandler, 
-			ILookupLogic lookup, IProxyRequest proxyRequest)
+		public ResponseResolver(IApiClientContainer client, IInstagramAccountLogic instagramAccountLogic, 
+			IReportHandler reportHandler, ILookupLogic lookup, IProxyRequest proxyRequest,
+			INotificationLogic notificationLogic)
 		{
 			_client = client;
 			_instagramAccountLogic = instagramAccountLogic;
-			_timelineEventLogLogic = timelineEventLogLogic;
 			_reportHandler = reportHandler;
 			_reportHandler.SetupReportHandler(nameof(ResponseResolver));
 			_lookupLogic = lookup;
 			_proxyRequest = proxyRequest;
+			_notificationLogic = notificationLogic;
 			_intervalBetweenRequests = TimeSpan.FromSeconds(1.25);
 		}
 		#endregion
@@ -251,49 +268,139 @@ namespace Quarkless.Logic.ResponseResolver
 
 			await _instagramAccountLogic.PartialUpdateInstagramAccount(context.AccountId, context.Id, newState);
 		}
-		private string CreateMessage(ActionType actionType)
+
+		private async Task CreateNotification(string assetUrl, string message, ResponseType responseType,
+			ActionType actionType, string responseMessage, TimelineEventItemStatus status)
+		{
+			var context = Context.InstagramAccount;
+			if (context == null)
+				return;
+
+			await _notificationLogic
+				.AddTimelineActionNotification(NotificationExtensions
+					.CreateTimelineNotificationObject(context.AccountId, context.Id, assetUrl,
+						message, actionType, (int) responseType, responseMessage, status));
+		}
+
+		private MessageCreated CreateMessage(ActionType actionType, IExec executedRequest)
 		{
 			switch (actionType)
 			{
 				case ActionType.RefreshLogin:
-					return "Refreshed Account and cleared cookies";
+				{
+					return new MessageCreated("Refreshed Account and cleared cookies");
+				}
 				case ActionType.CreatePost:
-					return "New Post Created";
+				{
+					MessageCreated messageCreated;
+					var message = "Created a new {0} post, with the caption of {1}. \n Hashtags used were: {2}";
+					switch (executedRequest)
+					{
+						case UploadPhotoModel model:
+							messageCreated = 
+								new MessageCreated(string.Format(message, "Photo", model.MediaInfo.Caption,
+									string.Join(" ", model.MediaInfo.Hashtags)), model.Image.Uri);
+							break;
+						case UploadAlbumModel model:
+							messageCreated =
+								new MessageCreated(string.Format(message, "Album", model.MediaInfo.Caption,
+										string.Join(" ", model.MediaInfo.Hashtags)),
+									model.Album[0].ImageToUpload != null
+										? model.Album[0].ImageToUpload.Uri
+										: model.Album[0].VideoToUpload.VideoThumbnail.Uri);
+							break;
+						case UploadVideoModel model:
+							messageCreated =
+								new MessageCreated(string.Format(message, "Photo", model.MediaInfo.Caption,
+									string.Join(" ", model.MediaInfo.Hashtags)), model.Video.VideoThumbnail.Uri);
+							break;
+						default: throw new ArgumentOutOfRangeException();
+					}
+
+					return messageCreated;
+				}
 				case ActionType.WatchStory:
-					return "Watched story of a user who matches your interests";
+				{
+					if(!(executedRequest is StoryRequest exec)) throw new Exception();
+					return new MessageCreated($"Watched story {exec.User.Username} who happens to matches your interests",
+						exec.User.ProfilePicture);
+				}
 				case ActionType.ReactStory:
-					return "Sent a reaction to a user's story";
+				{
+					if (!(executedRequest is StoryRequest exec)) throw new Exception();
+					return new MessageCreated($"Reacted {exec.User.Username}'s story",
+						exec.User.ProfilePicture);
+				}
 				case ActionType.CreateCommentMedia:
-					return "Comment Made";
+				{
+					if (!(executedRequest is CreateCommentRequest exec)) throw new Exception();
+					return new MessageCreated($"Posted Comment: {exec.Text} on {exec.User.Username}'s post",
+						exec.Media.MediaUrl);
+				}
 				case ActionType.CreateBiography:
-					return "Updated Biography";
+				{
+					return new MessageCreated("You have updated your biography");
+				}
 				case ActionType.CreateCommentReply:
-					return "Replied to comment";
+				{
+					if (!(executedRequest is CreateCommentRequest exec)) throw new Exception();
+					return new MessageCreated($"Replied to {exec.User.Username}'s comment",
+						exec.Media.MediaUrl);
+				}
 				case ActionType.CreateStory:
-					return "Added a new story";
+				{
+					return new MessageCreated("Added a new story");
+				}
 				case ActionType.FollowHashtag:
-					return "Followed Hashtag, based on your profile";
+				{
+					return new MessageCreated("Followed Hashtag, based on your profile");
+				}
 				case ActionType.FollowUser:
-					return "Followed User who happens to follow the similar topics as you";
+				{
+					if (!(executedRequest is FollowAndUnFollowUserRequest exec)) throw new Exception();
+					return new MessageCreated($"Followed {exec.User.Username} who matches your profile", exec.User.ProfilePicture);
+				}
 				case ActionType.UnFollowUser:
-					return "Unfollowed User who is not engaging with you";
+				{
+					if (!(executedRequest is FollowAndUnFollowUserRequest exec)) throw new Exception();
+					return new MessageCreated($"UnFollowed {exec.User.Username}", exec.User.ProfilePicture);
+				}
 				case ActionType.LikeComment:
-					return "Liked user's comment";
+				{
+					if(!(executedRequest is LikeCommentRequest exec)) throw new Exception();
+					return new MessageCreated($"Liked {exec.User.Username}'s comment", exec.User.ProfilePicture);
+				}
 				case ActionType.LikePost:
-					return "Liked a new post, based on your profile";
+				{
+					if (!(executedRequest is LikeMediaModel exec)) throw new Exception();
+					return new MessageCreated($"Liked {exec.User.Username}'s Post", exec.Media.MediaUrl);
+				}
 				case ActionType.SendDirectMessageVideo:
-					return "Sent a video to a user via direct message";
+				{
+					if (!(executedRequest is SendDirectVideoModel exec)) throw new Exception();
+					return new MessageCreated($"Sent a direct video to {string.Join(",", exec.Recipients)}");
+				}
 				case ActionType.SendDirectMessagePhoto:
-					return "Sent a video to a user via direct message";
+				{
+					if (!(executedRequest is SendDirectPhotoModel exec)) throw new Exception();
+					return new MessageCreated($"Sent a direct photo to {string.Join(",", exec.Recipients)}");
+				}
 				case ActionType.SendDirectMessageText:
-					return "Sent a text to a user via direct message";
+				{
+					if (!(executedRequest is SendDirectTextModel exec)) throw new Exception();
+					return new MessageCreated($"Sent a direct text message to {string.Join(",", exec.Recipients)}");
+				}
 				case ActionType.SendDirectMessageLink:
-					return "Sent a link to a user via direct message";
+				{
+					if (!(executedRequest is SendDirectLinkModel exec)) throw new Exception();
+					return new MessageCreated($"Sent a direct link to {string.Join(",", exec.Recipients)}");
+				}
 				case ActionType.SendDirectMessageProfile:
-					return "Shared profile with a user via direct message";
-				case ActionType.SendDirectMessageMedia:
-					return "Shared media with a user via direct message";
-				default: return $"{actionType.ToString()} Made";
+				{
+					if (!(executedRequest is SendDirectVideoModel exec)) throw new Exception();
+					return new MessageCreated($"Shared profile to {string.Join(",", exec.Recipients)}");
+				}
+				default: return new MessageCreated($"{actionType.ToString()} Made");
 			}
 		}
 		private async Task MessagingHandler(ActionType actionType, string request)
@@ -370,10 +477,8 @@ namespace Quarkless.Logic.ResponseResolver
 				await RemoveBlockedAction(actionType);
 			}
 		}
-		private ContextContainer Context
-			=> _client?.GetContext?.Container;
+		private ContextContainer Context => _client?.GetContext?.Container;
 		#endregion
-
 
 		#region Static Functions
 
@@ -401,7 +506,6 @@ namespace Quarkless.Logic.ResponseResolver
 		}
 
 		#endregion
-
 
 		private async Task<ResponseHandlerResults> ResponseHandler(ResultInfo info,
 			ActionType actionType = ActionType.None, string request = null)
@@ -585,10 +689,10 @@ namespace Quarkless.Logic.ResponseResolver
 
 					if (!resultFromProxy.IsSuccessful)
 					{
-						var events = await _timelineEventLogLogic
-							.OccurrencesByResponseType(context.AccountId, context.Id, 10,
-								ResponseType.UnExpectedResponse,
-								ResponseType.NetworkProblem);
+						var events = await _notificationLogic
+							.OccurrencesByResponseType(context.AccountId, context.Id, 15,
+								(int) ResponseType.UnExpectedResponse,
+								(int) ResponseType.NetworkProblem);
 
 						if (events > 3)
 						{
@@ -606,10 +710,10 @@ namespace Quarkless.Logic.ResponseResolver
 					var resultFromProxy = await TestUserProxy();
 					if (!resultFromProxy.IsSuccessful)
 					{
-						var events = await _timelineEventLogLogic
-							.OccurrencesByResponseType(context.AccountId, context.Id, 150,
-								ResponseType.UnExpectedResponse,
-								ResponseType.NetworkProblem);
+						var events = await _notificationLogic
+							.OccurrencesByResponseType(context.AccountId, context.Id, 15,
+								(int)ResponseType.UnExpectedResponse,
+								(int)ResponseType.NetworkProblem);
 
 						if (events > 3)
 						{
@@ -625,6 +729,7 @@ namespace Quarkless.Logic.ResponseResolver
 			}
 			return response;
 		}
+
 		private async Task<ChallengeHandleResponse> ChallengeHandle(ResultInfo info)
 		{
 			var isLoggedIn = await IsUserLoggedIn();
@@ -781,8 +886,25 @@ namespace Quarkless.Logic.ResponseResolver
 				}
 			}
 		}
-		
+
 		#region Resolver Implementation
+		public async Task<ResolverResponse<TInput>> WithResolverAsync<TInput>(Func<Task<IResult<TInput>>> func, 
+			ActionType actionType, IExec request)
+		{
+			ResolverResponse<TInput> results;
+			var currentAttempts = 0;
+			do
+			{
+				results = await WithResolverAsync(await func(), actionType, request);
+				if (results.Response.Succeeded) return results;
+
+				await Task.Delay(_intervalBetweenRequests);
+				currentAttempts++;
+			} while (currentAttempts <= _attempts);
+
+			return results;
+		}
+
 		public async Task<ResolverResponse<TInput>> WithResolverAsync<TInput>(Func<Task<IResult<TInput>>> func)
 		{
 			ResolverResponse<TInput> results;
@@ -799,25 +921,8 @@ namespace Quarkless.Logic.ResponseResolver
 			return results;
 		}
 
-		public async Task<ResolverResponse<TInput>> WithResolverAsync<TInput>(Func<Task<IResult<TInput>>> func,
-			ActionType actionType, string request)
-		{
-			ResolverResponse<TInput> results;
-			var currentAttempts = 0;
-			do
-			{
-				results = await WithResolverAsync(await func(), actionType, request);
-				if (results.Response.Succeeded) return results;
-
-				await Task.Delay(_intervalBetweenRequests);
-				currentAttempts++;
-			} while (currentAttempts <= _attempts);
-
-			return results;
-		}
-
 		private async Task<ResolverResponse<TInput>> WithResolverAsync<TInput>(IResult<TInput> response,
-			ActionType actionType, string request)
+			ActionType actionType, IExec request)
 		{
 			var account = Context.InstagramAccount;
 			AccountId = account.AccountId;
@@ -826,65 +931,36 @@ namespace Quarkless.Logic.ResponseResolver
 			{
 				Response = response,
 			};
-
+			
 			if (response?.Info == null)
 			{
-				await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
-				{
-					AccountId = account.AccountId,
-					InstagramAccountId = account.Id,
-					ActionType = actionType,
-					DateAdded = DateTime.UtcNow,
-					Level = 3,
-					Request = request,
-					Response = JsonConvert.SerializeObject(response),
-					Status = TimelineEventStatus.ServerError,
-					Message = "Something is not going as expected right now, we're sorry"
-				});
+				await CreateNotification("", "Something is not going as expected right now, we're sorry",
+					ResponseType.InternalException, actionType, "response is null",
+					TimelineEventItemStatus.ServerError);
+
 				return resolverResponse;
 			};
 
 			if (response.Succeeded)
 			{
-				await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
-				{
-					AccountId = account.AccountId,
-					InstagramAccountId = account.Id,
-					ActionType = actionType,
-					DateAdded = DateTime.UtcNow,
-					Level = 1,
-					Request = request,
-					Response = JsonConvert.SerializeObject(response),
-					Status = TimelineEventStatus.Success,
-					Message = CreateMessage(actionType)
-				});
+				var actionMessage = CreateMessage(actionType, request);
+
+				await CreateNotification(actionMessage.AssetUrl, actionMessage.Message,
+					response.Info.ResponseType, actionType, response.Info.Message,
+					TimelineEventItemStatus.Success);
 			}
 			else
 			{
-				await _timelineEventLogLogic.AddTimelineLogFor(new TimelineEventLog
-				{
-					AccountId = account.AccountId,
-					InstagramAccountId = account.Id,
-					ActionType = actionType,
-					DateAdded = DateTime.UtcNow,
-					Level = 2,
-					Request = request,
-					Response = JsonConvert.SerializeObject(response),
-					Status = TimelineEventStatus.Failed,
-					Message = $"Failed to carry out {actionType.ToString()} action"
-				});
+				await CreateNotification("", $"Failed to carry out {actionType.ToString()} action",
+					response.Info.ResponseType, actionType, response.Info.Message,
+					TimelineEventItemStatus.Failed);
 			}
-			var results = await ResponseHandler(response.Info, actionType, request);
+
+			var results = await ResponseHandler(response.Info, actionType, request.ToJsonString());
 			resolverResponse.HandlerResults = results;
 			return resolverResponse;
 		}
 
-		/// <summary>
-		/// Please use 'WithClient' before this
-		/// </summary>
-		/// <typeparam name="TInput"></typeparam>
-		/// <param name="response"></param>
-		/// <returns></returns>
 		public async Task<ResolverResponse<TInput>> WithResolverAsync<TInput>(IResult<TInput> response)
 		{
 			var account = Context.InstagramAccount;

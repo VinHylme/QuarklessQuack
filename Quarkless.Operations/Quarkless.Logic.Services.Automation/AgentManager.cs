@@ -20,6 +20,8 @@ using Quarkless.Models.InstagramAccounts;
 using Quarkless.Models.InstagramAccounts.Enums;
 using Quarkless.Models.InstagramAccounts.Interfaces;
 using Quarkless.Models.Library.Interfaces;
+using Quarkless.Models.Notification.Enums;
+using Quarkless.Models.Notification.Interfaces;
 using Quarkless.Models.Profile.Interfaces;
 using Quarkless.Models.ResponseResolver.Interfaces;
 using Quarkless.Models.Services.Automation.Interfaces;
@@ -41,7 +43,7 @@ namespace Quarkless.Logic.Services.Automation
 		private readonly IInstagramAccountLogic _instagramAccountLogic;
 		private readonly IProfileLogic _profileLogic;
 		private readonly ITimelineLogic _timelineLogic;
-		private readonly ITimelineEventLogLogic _timelineEventLogs;
+		private readonly INotificationLogic _notificationLogic;
 		private readonly ILibraryLogic _libraryLogic;
 		private readonly IS3BucketLogic _s3BucketLogic;
 		private readonly IPostAnalyser _postAnalyser;
@@ -50,12 +52,12 @@ namespace Quarkless.Logic.Services.Automation
 		private readonly IAccountRepository _accountRepository;
 		private readonly IResponseResolver _responseResolver;
 		public AgentManager(IInstagramAccountLogic instagramAccountLogic, IProfileLogic profileLogic,
-			ITimelineLogic timelineLogic, ITimelineEventLogLogic eventLogLogic, ILibraryLogic libraryLogic,
+			ITimelineLogic timelineLogic, INotificationLogic notificationLogic, ILibraryLogic libraryLogic,
 			IS3BucketLogic s3Bucket, IPostAnalyser postAnalyser, IActionCommitFactory actionCommitFactory,
 			IAccountRepository accountRepository, IResponseResolver responseResolver)
 		{
 			_timelineLogic = timelineLogic;
-			_timelineEventLogs = eventLogLogic;
+			_notificationLogic = notificationLogic;
 			_instagramAccountLogic = instagramAccountLogic;
 			_profileLogic = profileLogic;
 			_libraryLogic = libraryLogic;
@@ -235,35 +237,18 @@ namespace Quarkless.Logic.Services.Automation
 			}
 		}
 
-		private async Task<int> SuccessfulActionCount(ActionType actionName, string accountId, string instagramAccountId, 
-		int limit = 6000, bool isHourly = false)
+		private async Task<int> SuccessfulActionCount(ActionType actionName, string accountId,
+			string instagramAccountId, int limit = 6000, bool isHourly = false)
 		{
-			var logs = await _timelineEventLogs.GetLogsForUser(accountId, instagramAccountId, limit);
+			var logs = await _notificationLogic.GetTimelineActionNotifications
+				(accountId, instagramAccountId, limit, status: TimelineEventItemStatus.Success);
+
 			var startDate = DateTime.UtcNow;
 			var endDate = !isHourly ? startDate.AddDays(-1).AddTicks(1) : startDate.AddHours(-1).AddTicks(1);
 
-			return logs.Count(x => x.Status == TimelineEventStatus.Success
-				&& (x.DateAdded <= startDate && x.DateAdded >= endDate) &&  x.ActionType == actionName
-			);
+			return logs.Count(x => (x.Notification.CreatedAt <= startDate && x.Notification.CreatedAt >= endDate) &&  x.ActionType == actionName);
 		}
-
-		private TimelineItem LastAddedAction(string accountId, string instagramAccountId, int limit = 150)
-		{
-			var scheduled = _timelineLogic.GetScheduledEventsForUser(accountId, instagramAccountId, limit)?.ToList();
-			
-			if (scheduled == null || !scheduled.Any())
-				return null;
-
-			var highest = scheduled.Max(s => s.StartTime.Value);
-			return scheduled.Last(_=>_.StartTime.Value == highest);
-		}
-
-		private int ScheduledCount(string accountId, string instagramId)
-		{
-			var scheduled = _timelineLogic.GetScheduledEventsForUser(accountId, instagramId, 150);
-			return scheduled?.Count() ?? -1;
-		}
-
+		
 		// TODO: MAKE SURE ALL USERS ARE BUSINESS ACCOUNTS AND USERS OVER 100 FOLLOWERS
 		// TODO: BASE THEIR POSTING ON WHICH HOUR WAS MOST POPULAR
 		public async Task Start(string accountId, string instagramAccountId)

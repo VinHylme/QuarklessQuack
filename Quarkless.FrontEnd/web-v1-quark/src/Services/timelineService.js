@@ -18,11 +18,5 @@ export default {
   },
   CreateMessage(type, id, messages){
     return Api(true,id).post(Calling.timeline_create_message + type + '/' + id, messages)
-  },
-  GetEventLogs(instagramAccountId, limit){
-    return Api(true).get(Calling.timeline_get_event_logs + instagramAccountId + '/' + limit);
-  },
-  GetAllEventLogsForUser(instagramAccountId, limit){
-    return Api(true, instagramAccountId).get(Calling.timeline_get_event_logs_for_user + limit)
   }
 }

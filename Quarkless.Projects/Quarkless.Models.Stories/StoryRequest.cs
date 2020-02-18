@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using Quarkless.Models.Common.Interfaces;
+using Quarkless.Models.Common.Models.Resolver;
 
 namespace Quarkless.Models.Stories
 {
@@ -10,5 +11,8 @@ namespace Quarkless.Models.Stories
 		public string Reaction { get; set; }
 		public bool ContainsItems { get; set; }
 		public List<StoryItem> Items { get; set; }
+		public MediaShort Media { get; set; }
+		public UserShort User { get; set; }
+		public DataFrom DataFrom { get; set; }
 	}
 }

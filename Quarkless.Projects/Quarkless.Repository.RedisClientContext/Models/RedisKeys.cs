@@ -5,7 +5,6 @@
 		public enum HashtagGrowKeys
 		{
 			Timeline,
-			TimelineLog,
 			UserSessions,
 			MetaData,
 			MetaDataTemp,

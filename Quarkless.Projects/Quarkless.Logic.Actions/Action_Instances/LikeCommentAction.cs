@@ -15,6 +15,7 @@ using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.Common.Models;
 using Quarkless.Models.Common.Models.Carriers;
+using Quarkless.Models.Common.Models.Resolver;
 using Quarkless.Models.ContentInfo.Interfaces;
 using Quarkless.Models.Heartbeat;
 using Quarkless.Models.SearchResponse;
@@ -36,7 +37,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 			_actionOptions = new LikeCommentActionOptions();
 		}
 
-		private async Task<long?> CommentingByTopic()
+		private async Task<LikeCommentRequest> CommentingByTopic()
 		{
 			var by = new By
 			{
@@ -44,9 +45,11 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				User = _user.Profile.InstagramAccountId
 			};
 
+			const MetaDataType fetchType = MetaDataType.FetchUsersViaPostCommented;
+
 			var fetchComments = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(new MetaDataFetchRequest
 			{
-				MetaDataType = MetaDataType.FetchUsersViaPostCommented,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id
 			}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
@@ -59,27 +62,44 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<InstaComment>>>
 			{
-				MetaDataType = MetaDataType.FetchUsersViaPostCommented,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
 				Data = select
 			});
 
 			var comment = select.ObjectItem.FirstOrDefault();
-			return comment?.Object?.Pk;
+			if (comment?.Object?.Pk == null) return null;
+			return new LikeCommentRequest
+			{
+				CommentId = comment.Object.Pk,
+				CommentLiked = comment.Object.Text,
+				User = new UserShort
+				{
+					Id = comment.UserId,
+					ProfilePicture = comment.ProfilePicture,
+					Username = comment.Username
+				},
+				DataFrom = new DataFrom
+				{
+					TopicName = comment.Topic?.Name,
+					NominatedFrom = fetchType
+				}
+			};
 		}
-		private async Task<long?> CommentingByCommenters()
+		private async Task<LikeCommentRequest> CommentingByCommenters()
 		{
 			var by = new By
 			{
 				ActionType = (int)ActionType.LikeComment,
 				User = _user.Profile.InstagramAccountId
 			};
+			const MetaDataType fetchType = MetaDataType.FetchCommentsViaPostCommented;
 
 			var fetchComments = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>
 					(new MetaDataFetchRequest
 					{
-						MetaDataType = MetaDataType.FetchCommentsViaPostCommented,
+						MetaDataType = fetchType,
 						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 						InstagramId = _user.ShortInstagram.Id
 					}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
@@ -92,23 +112,39 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<InstaComment>>>
 			{
-				MetaDataType = MetaDataType.FetchCommentsViaPostCommented,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
 				Data = select
 			});
 
 			var comment = select.ObjectItem.FirstOrDefault();
-			return comment?.Object?.Pk;
+			if (comment?.Object?.Pk == null) return null;
+			return new LikeCommentRequest
+			{
+				CommentId = comment.Object.Pk,
+				CommentLiked = comment.Object.Text,
+				User = new UserShort
+				{
+					Id = comment.UserId,
+					ProfilePicture = comment.ProfilePicture,
+					Username = comment.Username
+				},
+				DataFrom = new DataFrom
+				{
+					TopicName = comment.Topic?.Name,
+					NominatedFrom = fetchType
+				}
+			};
 		}
-		private async Task<long?> CommentingByLikers()
+		private async Task<LikeCommentRequest> CommentingByLikers()
 		{
 			var by = new By
 			{
 				ActionType = (int)ActionType.LikeComment,
 				User = _user.Profile.InstagramAccountId
 			};
-
+			const MetaDataType fetchType = MetaDataType.FetchCommentsViaPostsLiked;
 			var fetchComments = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>
 					(new MetaDataFetchRequest
 					{
@@ -133,20 +169,36 @@ namespace Quarkless.Logic.Actions.Action_Instances
 			});
 
 			var comment = select.ObjectItem.FirstOrDefault();
-			return comment?.Object?.Pk;
+			if (comment?.Object?.Pk == null) return null;
+			return new LikeCommentRequest
+			{
+				CommentId = comment.Object.Pk,
+				CommentLiked = comment.Object.Text,
+				User = new UserShort
+				{
+					Id = comment.UserId,
+					ProfilePicture = comment.ProfilePicture,
+					Username = comment.Username
+				},
+				DataFrom = new DataFrom
+				{
+					TopicName = comment.Topic?.Name,
+					NominatedFrom = fetchType
+				}
+			};
 		}
-		private async Task<long?> CommentingByTarget()
+		private async Task<LikeCommentRequest> CommentingByTarget()
 		{
 			var by = new By
 			{
 				ActionType = (int)ActionType.LikeComment,
 				User = _user.Profile.InstagramAccountId
 			};
-
+			const MetaDataType fetchType = MetaDataType.FetchCommentsViaUserTargetList;
 			var fetchComments = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>
 					(new MetaDataFetchRequest
 					{
-						MetaDataType = MetaDataType.FetchCommentsViaUserTargetList,
+						MetaDataType = fetchType,
 						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 						InstagramId = _user.ShortInstagram.Id
 					}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
@@ -160,27 +212,44 @@ namespace Quarkless.Logic.Actions.Action_Instances
 			await _heartbeatLogic.UpdateMetaData(
 				new MetaDataCommitRequest<List<UserResponse<InstaComment>>>
 				{
-					MetaDataType = MetaDataType.FetchCommentsViaUserTargetList,
+					MetaDataType = fetchType,
 					ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 					InstagramId = _user.ShortInstagram.Id,
 					Data = select
 				});
 
 			var comment = select.ObjectItem.FirstOrDefault();
-			return comment?.Object?.Pk;
+			if (comment?.Object?.Pk == null) return null;
+			return new LikeCommentRequest
+			{
+				CommentId = comment.Object.Pk,
+				CommentLiked = comment.Object.Text,
+				User = new UserShort
+				{
+					Id = comment.UserId,
+					ProfilePicture = comment.ProfilePicture,
+					Username = comment.Username
+				},
+				DataFrom = new DataFrom
+				{
+					TopicName = comment.Topic?.Name,
+					NominatedFrom = fetchType
+				}
+			};
 		}
-		private async Task<long?> CommentingByLocation()
+		private async Task<LikeCommentRequest> CommentingByLocation()
 		{
 			var by = new By
 			{
 				ActionType = (int)ActionType.LikeComment,
 				User = _user.Profile.InstagramAccountId
 			};
+			const MetaDataType fetchType = MetaDataType.FetchCommentsViaLocationTargetList;
 
 			var fetchComments = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>
 					(new MetaDataFetchRequest
 					{
-						MetaDataType = MetaDataType.FetchCommentsViaLocationTargetList,
+						MetaDataType = fetchType,
 						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 						InstagramId = _user.ShortInstagram.Id
 					}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
@@ -193,26 +262,44 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<InstaComment>>>
 			{
-				MetaDataType = MetaDataType.FetchCommentsViaLocationTargetList,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
 				Data = select
 			});
 
 			var comment = select.ObjectItem.FirstOrDefault();
-			return comment?.Object?.Pk;
+			if (comment?.Object?.Pk == null) return null;
+			return new LikeCommentRequest
+			{
+				CommentId = comment.Object.Pk,
+				CommentLiked = comment.Object.Text,
+				User = new UserShort
+				{
+					Id = comment.UserId,
+					ProfilePicture = comment.ProfilePicture,
+					Username = comment.Username
+				},
+				DataFrom = new DataFrom
+				{
+					TopicName = comment.Topic?.Name,
+					NominatedFrom = fetchType
+				}
+			};
 		}
-		private async Task<long?> CommentingByUserFeed()
+		private async Task<LikeCommentRequest> CommentingByUserFeed()
 		{
 			var by = new By
 			{
 				ActionType = (int)ActionType.LikeComment,
 				User = _user.Profile.InstagramAccountId
 			};
+			const MetaDataType fetchType = MetaDataType.FetchCommentsViaUserFeed;
+
 			var fetchComments = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(
 					new MetaDataFetchRequest
 					{
-						MetaDataType = MetaDataType.FetchCommentsViaUserFeed,
+						MetaDataType = fetchType,
 						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 						InstagramId = _user.ShortInstagram.Id
 					}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
@@ -225,14 +312,30 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<InstaComment>>>
 			{
-				MetaDataType = MetaDataType.FetchCommentsViaUserFeed,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
 				Data = select
 			});
 
 			var comment = select.ObjectItem.FirstOrDefault();
-			return comment?.Object?.Pk;
+			if (comment?.Object?.Pk == null) return null;
+			return new LikeCommentRequest
+			{
+				CommentId = comment.Object.Pk,
+				CommentLiked = comment.Object.Text,
+				User = new UserShort
+				{
+					Id = comment.UserId,
+					ProfilePicture = comment.ProfilePicture,
+					Username = comment.Username
+				},
+				DataFrom = new DataFrom
+				{
+					TopicName = comment.Topic?.Name,
+					NominatedFrom = fetchType
+				}
+			};
 		}
 
 		public async Task<ResultCarrier<EventActionModel>> PushAsync(DateTimeOffset executionTime)
@@ -245,7 +348,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				switch (_actionOptions.StrategySettings.StrategyType)
 				{
 					case LikeStrategyType.Default:
-						long? nominatedComment = null;
+						LikeCommentRequest nominatedComment = null;
 						LikeCommentActionType likeActionTypeSelected;
 
 						if (_actionOptions.LikeActionType == LikeCommentActionType.Any)
@@ -337,11 +440,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 								InstagramAccountUser = _user.InstagramAccountUser
 							}
 						};
-						var request = new LikeCommentRequest
-						{
-							CommentId = nominatedComment.Value
-						};
-						@event.DataObjects.Add(new EventBody(request, request.GetType(), executionTime));
+						@event.DataObjects.Add(new EventBody(nominatedComment, nominatedComment.GetType(), executionTime));
 						results.IsSuccessful = true;
 						results.Results = @event;
 						return results;

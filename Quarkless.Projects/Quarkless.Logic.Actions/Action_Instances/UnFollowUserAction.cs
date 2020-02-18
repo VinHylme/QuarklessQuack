@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Quarkless.Base.InstagramUser.Models;
 using Quarkless.Models.Actions;
@@ -12,6 +13,7 @@ using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.Common.Models;
 using Quarkless.Models.Common.Models.Carriers;
+using Quarkless.Models.Common.Models.Resolver;
 using Quarkless.Models.ContentInfo.Interfaces;
 using Quarkless.Models.Heartbeat;
 using Quarkless.Models.Heartbeat.Interfaces;
@@ -46,10 +48,11 @@ namespace Quarkless.Logic.Actions.Action_Instances
 					ActionType = (int)ActionType.UnFollowUser,
 					User = _user.Profile.InstagramAccountId
 				};
+				const MetaDataType fetchType = MetaDataType.FetchUsersFollowingList;
 
 				var fetchedUsers = (await _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(new MetaDataFetchRequest
 				{
-					MetaDataType = MetaDataType.FetchUsersFollowingList,
+					MetaDataType = fetchType,
 					ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 					InstagramId = _user.ShortInstagram.Id
 				}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
@@ -72,8 +75,9 @@ namespace Quarkless.Logic.Actions.Action_Instances
 						var currentAttempt = 0;
 						TryAgain:
 						var nominatedUser = fetchedUsers?.ElementAt(SecureRandom.Next(fetchedUsers.Count));
-						var userId = nominatedUser?.ObjectItem?.FirstOrDefault()?.UserId;
-						if (userId == null)
+
+						var userToUnfollow = nominatedUser?.ObjectItem?.FirstOrDefault();
+						if (userToUnfollow == null || userToUnfollow?.UserId == null)
 						{
 							if (currentAttempt > maxAttempts)
 							{
@@ -94,11 +98,12 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 						await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<string>>>
 						{
-							MetaDataType = MetaDataType.FetchUsersFollowingList,
+							MetaDataType = fetchType,
 							ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 							InstagramId = _user.ShortInstagram.Id,
 							Data = nominatedUser
 						});
+
 						var @event =
 							new EventActionModel(
 								$"UnfollowUser_{_actionOptions.StrategySettings.StrategyType.ToString()}")
@@ -111,9 +116,21 @@ namespace Quarkless.Logic.Actions.Action_Instances
 									InstagramAccountUser = _user.InstagramAccountUser
 								}
 							};
+
 						var request = new FollowAndUnFollowUserRequest
 						{
-							UserId = userId.Value
+							UserId = userToUnfollow.UserId,
+							User = new UserShort
+							{
+								Id = userToUnfollow.UserId,
+								Username = userToUnfollow.Username,
+								ProfilePicture = userToUnfollow.ProfilePicture
+							},
+							DataFrom = new DataFrom
+							{
+								NominatedFrom = fetchType,
+								TopicName = userToUnfollow.Topic?.Name
+							}
 						};
 						@event.DataObjects.Add(new EventBody(request, request.GetType(), executionTime));
 						results.IsSuccessful = true;

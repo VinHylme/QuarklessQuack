@@ -35,7 +35,7 @@ namespace Quarkless.Controllers
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid ID");
 			var results = await _responseResolver
 				.WithAttempts(1)
-				.WithResolverAsync(()=> _collectionsLogic.GetCollections(limit), ActionType.None, "");
+				.WithResolverAsync(()=> _collectionsLogic.GetCollections(limit));
 			
 			return ResolverResponse(results, () => results.Response.Value.Items.Count > 0);
 		}
@@ -48,8 +48,7 @@ namespace Quarkless.Controllers
 
 			var results = await _responseResolver
 				.WithAttempts(1)
-				.WithResolverAsync(()=> _collectionsLogic.GetCollection(collectionId,limit), 
-					ActionType.None, collectionId.ToString());
+				.WithResolverAsync(()=> _collectionsLogic.GetCollection(collectionId,limit));
 
 			return ResolverResponse(results);
 		}
@@ -63,8 +62,7 @@ namespace Quarkless.Controllers
 
 			var results = await _responseResolver
 				.WithAttempts(1)
-				.WithResolverAsync(() => _collectionsLogic.CreateCollection(collectionName),
-					ActionType.None, collectionName);
+				.WithResolverAsync(() => _collectionsLogic.CreateCollection(collectionName));
 
 			return ResolverResponse(results);
 		}
@@ -79,7 +77,7 @@ namespace Quarkless.Controllers
 			var results = await _responseResolver
 				.WithAttempts(1)
 				.WithResolverAsync(()=> _collectionsLogic.AddItemsCollection(collectionId,
-				addItemsToCollectionsRequest.MediaIds.ToArray()), ActionType.None, collectionId.ToString());
+				addItemsToCollectionsRequest.MediaIds.ToArray()));
 
 			return ResolverResponse(results);
 		}
@@ -93,7 +91,7 @@ namespace Quarkless.Controllers
 			var results = await _responseResolver
 				.WithAttempts(1)
 				.WithResolverAsync(()=> _collectionsLogic.CreateCollection(collectionId,
-				editCollection.CollectionName,editCollection.PhotoCoverId), ActionType.None, collectionId.ToString());
+				editCollection.CollectionName,editCollection.PhotoCoverId));
 			
 			return ResolverResponse(results);
 		}
@@ -107,7 +105,7 @@ namespace Quarkless.Controllers
 			var results = await _responseResolver
 				.WithAttempts(1)
 				.WithResolverAsync(
-				()=> _collectionsLogic.DeleteCollection(collectionId), ActionType.None, collectionId.ToString());
+				()=> _collectionsLogic.DeleteCollection(collectionId));
 			
 			return ResolverResponse(results);
 		}

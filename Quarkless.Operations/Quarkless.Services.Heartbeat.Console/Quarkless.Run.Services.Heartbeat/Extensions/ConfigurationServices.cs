@@ -16,6 +16,7 @@ using Quarkless.Logic.Heartbeat;
 using Quarkless.Logic.InstagramAccounts;
 using Quarkless.Logic.InstagramClient;
 using Quarkless.Logic.Lookup;
+using Quarkless.Logic.Notification;
 using Quarkless.Logic.Profile;
 using Quarkless.Logic.Proxy;
 using Quarkless.Logic.ReportHandler;
@@ -36,6 +37,7 @@ using Quarkless.Models.InstagramAccounts;
 using Quarkless.Models.InstagramAccounts.Interfaces;
 using Quarkless.Models.InstagramClient.Interfaces;
 using Quarkless.Models.Lookup.Interfaces;
+using Quarkless.Models.Notification.Interfaces;
 using Quarkless.Models.Profile;
 using Quarkless.Models.Profile.Interfaces;
 using Quarkless.Models.Proxy;
@@ -59,6 +61,7 @@ using Quarkless.Repository.InstagramAccounts.Redis;
 using Quarkless.Repository.Lookup;
 using Quarkless.Repository.MongoContext;
 using Quarkless.Repository.MongoContext.Models;
+using Quarkless.Repository.Notification;
 using Quarkless.Repository.Profile;
 using Quarkless.Repository.Proxy;
 using Quarkless.Repository.RedisContext;
@@ -88,7 +91,7 @@ namespace Quarkless.Run.Services.Heartbeat.Extensions
 			services.AddSingleton<ITopicLookupLogic, TopicLookupLogic>();
 			services.AddSingleton<ISearchProvider, SearchProvider>();
 			services.AddSingleton<IHeartbeatService, HeartbeatService>();
-			services.AddTransient<ITimelineEventLogLogic, TimelineEventLogLogic>();
+			services.AddTransient<INotificationLogic, NotificationLogic>();
 		}
 		internal static void IncludeConfigurators(this IServiceCollection services)
 		{
@@ -144,9 +147,7 @@ namespace Quarkless.Run.Services.Heartbeat.Extensions
 			services.AddTransient<ITopicLookupRepository, TopicLookupRepository>();
 			services.AddTransient<IRedisClient, RedisClient>();
 			services.AddTransient<IReportHandlerRepository, ReportHandlerRepository>();
-			services.AddTransient<ITimelineLoggingRepository, TimelineLoggingRepository>();
-			services.AddTransient<ITimelineLoggingRepositoryMongo, TimelineLoggingRepositoryMongo>();
-
+			services.AddTransient<INotificationRepository, NotificationRepository>();
 		}
 		public static void IncludeHandlers(this IServiceCollection services)
 		{

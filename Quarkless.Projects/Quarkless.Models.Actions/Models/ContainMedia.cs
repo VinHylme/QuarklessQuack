@@ -1,4 +1,6 @@
-﻿namespace Quarkless.Models.Actions.Models
+﻿using Quarkless.Models.Topic;
+
+namespace Quarkless.Models.Actions.Models
 {
 	public class ContainMedia
 	{

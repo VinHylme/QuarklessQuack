@@ -44,7 +44,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 					.WithClient(_worker.Client)
 					.WithAttempts(1)
 					.WithResolverAsync(()=> _worker.Client.User.FollowUserAsync(followRequest.UserId),
-						ActionType.FollowUser, followRequest.ToJsonString());
+						ActionType.FollowUser, followRequest);
 
 				if (!response.Response.Succeeded)
 				{

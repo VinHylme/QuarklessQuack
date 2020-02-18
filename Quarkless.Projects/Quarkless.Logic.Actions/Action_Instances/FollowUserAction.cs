@@ -12,6 +12,7 @@ using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.Common.Models;
 using Quarkless.Models.Common.Models.Carriers;
+using Quarkless.Models.Common.Models.Resolver;
 using Quarkless.Models.ContentInfo.Interfaces;
 using Quarkless.Models.Heartbeat;
 using Quarkless.Models.Heartbeat.Interfaces;
@@ -35,48 +36,68 @@ namespace Quarkless.Logic.Actions.Action_Instances
 			_actionOptions = new FollowActionOptions();
 		}
 
-		private async Task<long> FollowBasedOnLikers()
+		private async Task<FollowAndUnFollowUserRequest> FollowBasedOnLikers()
 		{
 			var by = new By
 			{
 				ActionType = (int)ActionType.FollowUser,
 				User = _user.Profile.InstagramAccountId
 			};
+			const MetaDataType fetchType = MetaDataType.FetchUsersViaPostLiked;
+
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<List<UserResponse<string>>>
 					(new MetaDataFetchRequest
 					{
-						MetaDataType = MetaDataType.FetchUsersViaPostLiked,
+						MetaDataType = fetchType,
 						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 						InstagramId = _user.ShortInstagram.Id
 					}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Count > 0).ToList();
 
 			var select = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count));
-			if (select == null) return 0;
+			if (select == null) return null;
 
 			select.SeenBy.Add(by);
 
 			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<string>>>
 			{
-				MetaDataType = MetaDataType.FetchUsersViaPostLiked,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
 				Data = select
 			});
 
-			return @select.ObjectItem?.ElementAtOrDefault(@select.ObjectItem.Count)?.UserId ?? 0;
+			var item = select.ObjectItem?.ElementAtOrDefault(@select.ObjectItem.Count);
+			if (item == null) return null;
+
+			return new FollowAndUnFollowUserRequest
+			{
+				UserId = item.UserId,
+				User = new UserShort
+				{
+					Id = item.UserId,
+					ProfilePicture = item.ProfilePicture,
+					Username = item.Username
+				},
+				DataFrom = new DataFrom
+				{
+					NominatedFrom = fetchType,
+					TopicName = item.Topic?.Name
+				}
+			};
 		}
-		private async Task<long> FollowBasedOnTopic()
+		private async Task<FollowAndUnFollowUserRequest> FollowBasedOnTopic()
 		{
 			var by = new By
 			{
 				ActionType = (int)ActionType.FollowUser,
 				User = _user.Profile.InstagramAccountId
 			};
+			const MetaDataType fetchType = MetaDataType.FetchMediaByTopic;
 
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 			{
-				MetaDataType = MetaDataType.FetchMediaByTopic,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id
 			}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
@@ -84,20 +105,37 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 			var select = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count));
 
-			if (select == null) return 0;
+			if (select == null) return null;
 			select.SeenBy.Add(by);
 
 			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
 			{
-				MetaDataType = MetaDataType.FetchMediaByTopic,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
 				Data = select
 			});
 
-			return select.ObjectItem?.Medias.FirstOrDefault()?.User.UserId ?? 0;
+			var item = select.ObjectItem?.Medias.FirstOrDefault();
+			if (item == null) return null;
+
+			return new FollowAndUnFollowUserRequest
+			{
+				UserId = item.User.UserId,
+				User = new UserShort
+				{
+					Id = item.User.UserId,
+					ProfilePicture = item.User.ProfilePicture,
+					Username = item.User.Username
+				},
+				DataFrom = new DataFrom
+				{
+					NominatedFrom = fetchType,
+					TopicName = item.Topic?.Name
+				}
+			};
 		}
-		private async Task<long> FollowBasedOnLocation()
+		private async Task<FollowAndUnFollowUserRequest> FollowBasedOnLocation()
 		{
 			var by = new By
 			{
@@ -105,9 +143,11 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				User = _user.Profile.InstagramAccountId
 			};
 
+			const MetaDataType fetchType = MetaDataType.FetchMediaByUserLocationTargetList;
+
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 			{
-				MetaDataType = MetaDataType.FetchMediaByUserLocationTargetList,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id
 			}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
@@ -115,31 +155,49 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 			var select = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count));
 
-			if (select == null) return 0;
+			if (select == null) return null;
 			select.SeenBy.Add(by);
 
 			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
 			{
-				MetaDataType = MetaDataType.FetchMediaByUserLocationTargetList,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
 				Data = select
 
 			});
 
-			return select.ObjectItem?.Medias?.FirstOrDefault()?.User.UserId ?? 0;
+			var item = select.ObjectItem?.Medias?.FirstOrDefault();
+			if (item == null) return null;
+			return new FollowAndUnFollowUserRequest
+			{
+				UserId = item.User.UserId,
+				User = new UserShort
+				{
+					Id = item.User.UserId,
+					ProfilePicture = item.User.ProfilePicture,
+					Username = item.User.Username
+				},
+				DataFrom = new DataFrom
+				{
+					NominatedFrom = fetchType,
+					TopicName = item.Topic?.Name
+				}
+			};
 		}
-		private async Task<long> FollowBasedOnCommenters()
+		private async Task<FollowAndUnFollowUserRequest> FollowBasedOnCommenters()
 		{
 			var by = new By
 			{
 				ActionType = (int)ActionType.FollowUser,
 				User = _user.Profile.InstagramAccountId
 			};
+
+			const MetaDataType fetchType = MetaDataType.FetchUsersViaPostCommented;
 
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<List<UserResponse<CommentResponse>>>(new MetaDataFetchRequest
 			{
-				MetaDataType = MetaDataType.FetchUsersViaPostCommented,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id
 			}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
@@ -147,47 +205,82 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 			var select = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count));
 
-			if (select == null) return 0;
+			if (select == null) return null;
 			select.SeenBy.Add(by);
 
 			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<CommentResponse>>>
 			{
-				MetaDataType = MetaDataType.FetchUsersViaPostCommented,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
 				Data = select
 			});
 
-			return select.ObjectItem?.ElementAtOrDefault(@select.ObjectItem.Count)?.UserId ?? 0;
+			var item = select.ObjectItem?.ElementAtOrDefault(@select.ObjectItem.Count);
+			if (item == null) return null;
+			return new FollowAndUnFollowUserRequest
+			{
+				UserId = item.UserId,
+				User = new UserShort
+				{
+					Id = item.UserId,
+					ProfilePicture = item.ProfilePicture,
+					Username = item.Username
+				},
+				DataFrom = new DataFrom
+				{
+					NominatedFrom = fetchType,
+					TopicName = item.Topic?.Name
+				}
+			};
 		}
-		private async Task<long> FollowBasedOnSuggestions()
+		private async Task<FollowAndUnFollowUserRequest> FollowBasedOnSuggestions()
 		{
 			var by = new By
 			{
 				ActionType = (int)ActionType.FollowUser,
 				User = _user.Profile.InstagramAccountId
 			};
+
+			const MetaDataType fetchType = MetaDataType.FetchUsersFollowSuggestions;
+
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<List<UserResponse<UserSuggestionDetails>>>(new MetaDataFetchRequest
 			{
-				MetaDataType = MetaDataType.FetchUsersFollowSuggestions,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id
 			}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
 				.Where(s => s.ObjectItem.Count > 0).ToList();
 
 			var select = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count));
-			if (select == null) return 0;
+			if (select == null) return null;
 			select.SeenBy.Add(by);
 
 			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<UserSuggestionDetails>>>
 			{
-				MetaDataType = MetaDataType.FetchUsersFollowSuggestions,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
 				Data = select
 			});
 
-			return select.ObjectItem?.ElementAtOrDefault(select.ObjectItem.Count)?.UserId ?? 0;
+			var item = select.ObjectItem?.ElementAtOrDefault(@select.ObjectItem.Count);
+			if (item == null) return null;
+			return new FollowAndUnFollowUserRequest
+			{
+				UserId = item.UserId,
+				User = new UserShort
+				{
+					Id = item.UserId,
+					ProfilePicture = item.ProfilePicture,
+					Username = item.Username
+				},
+				DataFrom = new DataFrom
+				{
+					NominatedFrom = fetchType,
+					TopicName = item.Topic?.Name
+				}
+			};
 		}
 
 		public async Task<ResultCarrier<EventActionModel>> PushAsync(DateTimeOffset executionTime)
@@ -197,7 +290,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 			try
 			{
 				var followActionTypeSelected = FollowActionType.FollowBasedOnTopic;
-				long nominatedFollower = 0;
+				FollowAndUnFollowUserRequest nominatedFollower = null;
 				//todo add Location?
 				var followActionsChances = new List<Chance<FollowActionType>>();
 				if (_actionOptions.FollowActionType == FollowActionType.Any)
@@ -284,7 +377,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 						nominatedFollower = await FollowBasedOnSuggestions();
 						break;
 				}
-				if (nominatedFollower == 0)
+				if (nominatedFollower == null || nominatedFollower.UserId == 0)
 				{
 					results.IsSuccessful = false;
 					results.Info = new ErrorResponse
@@ -305,11 +398,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 						InstagramAccountUser = _user.InstagramAccountUser
 					}
 				};
-				var request = new FollowAndUnFollowUserRequest
-				{
-					UserId = nominatedFollower
-				};
-				@event.DataObjects.Add(new EventBody(request, request.GetType(), executionTime));
+				@event.DataObjects.Add(new EventBody(nominatedFollower, nominatedFollower.GetType(), executionTime));
 				results.Results = @event;
 				results.IsSuccessful = true;
 				return results;

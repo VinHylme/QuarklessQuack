@@ -37,7 +37,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _discoverLogic.GetFollowingRecentActivityFeed(limit), ActionType.None, "");
+				.WithResolverAsync(()=> _discoverLogic.GetFollowingRecentActivityFeed(limit));
 			return ResolverResponse(results);
 		}
 		[HttpGet]
@@ -46,7 +46,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid, empty id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _hashtagLogic.GetTopHashtagMediaListAsync(topic,limit), ActionType.None, topic);
+				.WithResolverAsync(()=> _hashtagLogic.GetTopHashtagMediaListAsync(topic,limit));
 			return ResolverResponse(results);
 		}
 
@@ -56,7 +56,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid, empty id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _discoverLogic.GetExploreFeedAsync(limit), ActionType.None, "");
+				.WithResolverAsync(()=> _discoverLogic.GetExploreFeedAsync(limit));
 			return ResolverResponse(results);
 		}
 
@@ -66,7 +66,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _discoverLogic.GetRecentActivityFeedAsync(limit), ActionType.None, "");
+				.WithResolverAsync(()=> _discoverLogic.GetRecentActivityFeedAsync(limit));
 			
 			return ResolverResponse(results);
 		}
@@ -77,7 +77,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _discoverLogic.GetLikedFeed(limit), ActionType.None, "");
+				.WithResolverAsync(()=> _discoverLogic.GetLikedFeed(limit));
 			
 			return ResolverResponse(results);
 		}
@@ -88,7 +88,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _discoverLogic.GetTagFeed(searchTag,limit), ActionType.None, searchTag);
+				.WithResolverAsync(()=> _discoverLogic.GetTagFeed(searchTag,limit));
 			return ResolverResponse(results);
 		}
 
@@ -99,7 +99,7 @@ namespace Quarkless.Controllers
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
 			var results = await _responseResolver
 				.WithAttempts(1)
-				.WithResolverAsync(()=> _discoverLogic.GetUserTimelineFeed(limit), ActionType.None, "");
+				.WithResolverAsync(()=> _discoverLogic.GetUserTimelineFeed(limit));
 			return ResolverResponse(results);
 		}
 
@@ -109,7 +109,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _discoverLogic.GetChainingUser(), ActionType.None, "");
+				.WithResolverAsync(()=> _discoverLogic.GetChainingUser());
 			return ResolverResponse(results);
 		}
 
@@ -118,7 +118,7 @@ namespace Quarkless.Controllers
 		public async Task<IActionResult> SyncContacts(InstaContact[] contacts)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
-			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(()=> _discoverLogic.SyncContacts(contacts), ActionType.None, "");
+			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(()=> _discoverLogic.SyncContacts(contacts));
 			return ResolverResponse(results);
 		}
 
@@ -128,7 +128,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _discoverLogic.RecentSearches(), ActionType.None, "");
+				.WithResolverAsync(()=> _discoverLogic.RecentSearches());
 			return ResolverResponse(results);
 		}
 		
@@ -138,7 +138,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _discoverLogic.ClearRecentSearches(), ActionType.None, string.Empty);
+				.WithResolverAsync(()=> _discoverLogic.ClearRecentSearches());
 			return ResolverResponse(results);
 		}
 		
@@ -149,8 +149,7 @@ namespace Quarkless.Controllers
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty id");
 			var results = await _responseResolver.WithAttempts(1)
 				.WithResolverAsync(
-					()=> _discoverLogic.SuggestedSearches((InstagramApiSharp.Enums.InstaDiscoverSearchType) discoverySearchType), 
-					ActionType.None, "");
+					()=> _discoverLogic.SuggestedSearches((InstagramApiSharp.Enums.InstaDiscoverSearchType) discoverySearchType));
 			return ResolverResponse(results);
 		}
 
@@ -160,7 +159,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _discoverLogic.GetAllMediaByUsername(searchUsername), ActionType.None, searchUsername);
+				.WithResolverAsync(()=> _discoverLogic.GetAllMediaByUsername(searchUsername));
 			return ResolverResponse(results);
 		}
 
@@ -171,7 +170,7 @@ namespace Quarkless.Controllers
 			if (string.IsNullOrEmpty(username) || !_userContext.UserAccountExists)
 				return BadRequest("Invalid, empty Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _discoverLogic.SearchUser(username, limit), ActionType.None, "");
+				.WithResolverAsync(()=> _discoverLogic.SearchUser(username, limit));
 			return ResolverResponse(results);
 		}
 
@@ -181,7 +180,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _discoverLogic.GetRecentLocationFeed(locationId, limit), ActionType.None, locationId.ToString());
+				.WithResolverAsync(()=> _discoverLogic.GetRecentLocationFeed(locationId, limit));
 			return ResolverResponse(results);
 		}
 		[HttpGet]
@@ -190,7 +189,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _discoverLogic.GetTopicalExploreFeed(limit,clusterId), ActionType.None, clusterId);
+				.WithResolverAsync(()=> _discoverLogic.GetTopicalExploreFeed(limit,clusterId));
 			return ResolverResponse(results);
 		}
 		[HttpGet]
@@ -199,7 +198,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _discoverLogic.GetTopLocationFeedsAsync(locationId, limit), ActionType.None, locationId.ToString());
+				.WithResolverAsync(()=> _discoverLogic.GetTopLocationFeedsAsync(locationId, limit));
 			return ResolverResponse(results);
 		}
 		[HttpGet]
@@ -208,7 +207,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _discoverLogic.SearchLocation(lat, lon, query), ActionType.None, query);
+				.WithResolverAsync(()=> _discoverLogic.SearchLocation(lat, lon, query));
 			return ResolverResponse(results);
 		}
 
@@ -218,7 +217,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _discoverLogic.SearchPlaces(lat, lon, query,limit), ActionType.None, query);
+				.WithResolverAsync(()=> _discoverLogic.SearchPlaces(lat, lon, query,limit));
 			return ResolverResponse(results);
 		}
 		[HttpGet]
@@ -227,7 +226,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _discoverLogic.SearchUserByLocation(lat, lon, username, limit), ActionType.None, username);
+				.WithResolverAsync(()=> _discoverLogic.SearchUserByLocation(lat, lon, username, limit));
 			return ResolverResponse(results);
 		}
 
@@ -237,7 +236,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _discoverLogic.GetLocationInfoAsync(externalIdOrFacebookPlacesId), ActionType.None, externalIdOrFacebookPlacesId);
+				.WithResolverAsync(()=> _discoverLogic.GetLocationInfoAsync(externalIdOrFacebookPlacesId));
 			return ResolverResponse(results);
 		}
 
@@ -247,7 +246,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("Invalid, empty Id");
 			var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _discoverLogic.GetLocationStoriesAsync(locationId), ActionType.None, locationId.ToString());
+				.WithResolverAsync(()=> _discoverLogic.GetLocationStoriesAsync(locationId));
 			return ResolverResponse(results);
 		}
 

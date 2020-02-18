@@ -16,6 +16,7 @@ using Quarkless.Logic.InstagramAccounts;
 using Quarkless.Logic.InstagramClient;
 using Quarkless.Logic.Lookup;
 using Quarkless.Logic.Media;
+using Quarkless.Logic.Notification;
 using Quarkless.Logic.Profile;
 using Quarkless.Logic.Proxy;
 using Quarkless.Logic.ReportHandler;
@@ -42,6 +43,7 @@ using Quarkless.Models.InstagramAccounts.Interfaces;
 using Quarkless.Models.InstagramClient.Interfaces;
 using Quarkless.Models.Lookup.Interfaces;
 using Quarkless.Models.Media.Interfaces;
+using Quarkless.Models.Notification.Interfaces;
 using Quarkless.Models.Profile;
 using Quarkless.Models.Profile.Interfaces;
 using Quarkless.Models.Proxy;
@@ -67,6 +69,7 @@ using Quarkless.Repository.Lookup;
 using Quarkless.Repository.Media;
 using Quarkless.Repository.MongoContext;
 using Quarkless.Repository.MongoContext.Models;
+using Quarkless.Repository.Notification;
 using Quarkless.Repository.Profile;
 using Quarkless.Repository.Proxy;
 using Quarkless.Repository.RedisContext;
@@ -122,8 +125,8 @@ namespace Quarkless.Run.Services.DataFetcher.Extensions
 			services.AddScoped<IResponseResolver, ResponseResolver>();
 			services.AddSingleton<ILookupLogic, LookupLogic>();
 			services.AddSingleton<ILookupCache, LookupCache>();
-			services.AddSingleton<ITimelineEventLogLogic, TimelineEventLogLogic>();
-			services.AddSingleton<ITimelineLoggingRepository, TimelineLoggingRepository>();
+			services.AddSingleton<INotificationLogic, NotificationLogic>();
+			services.AddSingleton<INotificationRepository, NotificationRepository>();
 			services.AddSingleton<ISearchingCache, SearchingCache>();
 
 			services.AddSingleton<IGeoLocationHandler, GeoLocationHandler>(s =>

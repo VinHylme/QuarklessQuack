@@ -12,7 +12,6 @@ using Quarkless.Models.Common.Models.Carriers;
 using Quarkless.Models.ContentInfo.Interfaces;
 using Quarkless.Models.Heartbeat.Interfaces;
 using Quarkless.Models.Stories;
-using Quarkless.Models.TextGenerator.Enums;
 
 namespace Quarkless.Logic.Actions.Action_Instances
 {

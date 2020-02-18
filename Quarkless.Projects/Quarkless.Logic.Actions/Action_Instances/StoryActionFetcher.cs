@@ -7,6 +7,7 @@ using Quarkless.Models.Actions.Models;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.Common.Models;
+using Quarkless.Models.Common.Models.Resolver;
 using Quarkless.Models.Heartbeat;
 using Quarkless.Models.Heartbeat.Interfaces;
 using Quarkless.Models.InstagramSearch;
@@ -35,10 +36,12 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				User = _user.Profile.InstagramAccountId
 			};
 
+			const MetaDataType fetchType = MetaDataType.FetchMediaByUserLocationTargetList;
+
 			var fetchUsers = (await _heartbeatLogic.GetMetaData<Media>(
 					new MetaDataFetchRequest
 					{
-						MetaDataType = MetaDataType.FetchMediaByUserLocationTargetList,
+						MetaDataType = fetchType,
 						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 						InstagramId = _user.ShortInstagram.Id
 					}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
@@ -50,7 +53,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
 			{
-				MetaDataType = MetaDataType.FetchMediaByUserLocationTargetList,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
 				Data = select
@@ -68,7 +71,26 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				UserId = userResponse.User.UserId,
 				StoryId = null,
 				ContainsItems = false,
-				Items = null
+				Items = null,
+				Media = new MediaShort
+				{
+					Id = userResponse.MediaId,
+					MediaUrl = userResponse.MediaUrl.First(),
+					CommentCount = int.TryParse(userResponse.CommentCount, out var count) ? count : 0,
+					LikesCount = userResponse.LikesCount,
+					IncludedInMedia = userResponse.PhotosOfI
+				},
+				User = new UserShort
+				{
+					Id = userResponse.User.UserId,
+					Username = userResponse.User.Username,
+					ProfilePicture = userResponse.User.ProfilePicture
+				},
+				DataFrom = new DataFrom
+				{
+					NominatedFrom = fetchType,
+					TopicName = userResponse.Topic?.Name
+				}
 			};
 		}
 		internal async Task<StoryRequest> GetStoryFromSuggestions()
@@ -78,11 +100,12 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				ActionType = (int)ActionType.WatchStory,
 				User = _user.Profile.InstagramAccountId
 			};
+			const MetaDataType fetchType = MetaDataType.FetchUsersFollowSuggestions;
 
 			var fetchUsers = (await _heartbeatLogic.GetMetaData<List<UserResponse<UserSuggestionDetails>>>(
 					new MetaDataFetchRequest
 					{
-						MetaDataType = MetaDataType.FetchUsersFollowSuggestions,
+						MetaDataType = fetchType,
 						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 						InstagramId = _user.ShortInstagram.Id
 					}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
@@ -95,7 +118,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<UserSuggestionDetails>>>
 			{
-				MetaDataType = MetaDataType.FetchUsersFollowSuggestions,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
 				Data = select
@@ -113,7 +136,18 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				UserId = user.UserId,
 				StoryId = null,
 				ContainsItems = false,
-				Items = null
+				Items = null,
+				User = new UserShort
+				{
+					Id = user.UserId,
+					Username = user.Username,
+					ProfilePicture = user.ProfilePicture
+				},
+				DataFrom = new DataFrom
+				{
+					NominatedFrom = fetchType,
+					TopicName = user.Topic?.Name
+				}
 			};
 		}
 		internal async Task<StoryRequest> GetStoryFromFollowers()
@@ -123,11 +157,12 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				ActionType = (int)ActionType.WatchStory,
 				User = _user.Profile.InstagramAccountId
 			};
+			const MetaDataType fetchType = MetaDataType.FetchUsersFollowerList;
 
 			var fetchUsers = (await _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(
 					new MetaDataFetchRequest
 					{
-						MetaDataType = MetaDataType.FetchUsersFollowerList,
+						MetaDataType = fetchType,
 						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 						InstagramId = _user.ShortInstagram.Id
 					}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
@@ -140,7 +175,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<string>>>
 			{
-				MetaDataType = MetaDataType.FetchUsersFollowerList,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
 				Data = select
@@ -158,7 +193,18 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				UserId = user.UserId,
 				StoryId = null,
 				ContainsItems = false,
-				Items = null
+				Items = null,
+				User = new UserShort
+				{
+					Id = user.UserId,
+					Username = user.Username,
+					ProfilePicture = user.ProfilePicture
+				},
+				DataFrom = new DataFrom
+				{
+					NominatedFrom = fetchType,
+					TopicName = user.Topic?.Name
+				}
 			};
 		}
 		internal async Task<StoryRequest> GetStoryFromLikers()
@@ -168,11 +214,11 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				ActionType = (int)ActionType.WatchStory,
 				User = _user.Profile.InstagramAccountId
 			};
-
+			const MetaDataType fetchType = MetaDataType.FetchUsersViaPostLiked;
 			var fetchUsers = (await _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(
 					new MetaDataFetchRequest
 					{
-						MetaDataType = MetaDataType.FetchUsersViaPostLiked,
+						MetaDataType = fetchType,
 						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 						InstagramId = _user.ShortInstagram.Id
 					}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
@@ -185,7 +231,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<string>>>
 			{
-				MetaDataType = MetaDataType.FetchUsersViaPostLiked,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
 				Data = select
@@ -203,7 +249,18 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				UserId = user.UserId,
 				StoryId = null,
 				ContainsItems = false,
-				Items = null
+				Items = null,
+				User = new UserShort
+				{
+					Id = user.UserId,
+					Username = user.Username,
+					ProfilePicture = user.ProfilePicture
+				},
+				DataFrom = new DataFrom
+				{
+					NominatedFrom = fetchType,
+					TopicName = user.Topic?.Name
+				}
 			};
 		}
 		internal async Task<StoryRequest> GetStoryFromCommenters()
@@ -213,11 +270,12 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				ActionType = (int)ActionType.WatchStory,
 				User = _user.Profile.InstagramAccountId
 			};
+			const MetaDataType fetchType = MetaDataType.FetchUsersViaPostCommented;
 
 			var fetchUsers = (await _heartbeatLogic.GetMetaData<List<UserResponse<CommentResponse>>>(
 					new MetaDataFetchRequest
 					{
-						MetaDataType = MetaDataType.FetchUsersViaPostCommented,
+						MetaDataType = fetchType,
 						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 						InstagramId = _user.ShortInstagram.Id
 					}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
@@ -230,7 +288,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<CommentResponse>>>
 			{
-				MetaDataType = MetaDataType.FetchUsersViaPostCommented,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
 				Data = select
@@ -248,7 +306,18 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				UserId = user.UserId,
 				StoryId = null,
 				ContainsItems = false,
-				Items = null
+				Items = null,
+				User = new UserShort
+				{
+					Id = user.UserId,
+					Username = user.Username,
+					ProfilePicture = user.ProfilePicture
+				},
+				DataFrom = new DataFrom
+				{
+					NominatedFrom = fetchType,
+					TopicName = user.Topic?.Name
+				}
 			};
 		}
 		internal async Task<StoryRequest> GetStoryFromFeed()
@@ -258,11 +327,12 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				ActionType = (int)ActionType.WatchStory,
 				User = _user.Profile.InstagramAccountId
 			};
+			const MetaDataType fetchType = MetaDataType.FetchUsersStoryFeed;
 
 			var fetchUsers = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaReelFeed>>>(
 					new MetaDataFetchRequest
 					{
-						MetaDataType = MetaDataType.FetchUsersStoryFeed,
+						MetaDataType = fetchType,
 						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 						InstagramId = _user.ShortInstagram.Id
 					}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
@@ -275,7 +345,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<InstaReelFeed>>>
 			{
-				MetaDataType = MetaDataType.FetchUsersStoryFeed,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
 				Data = select
@@ -298,7 +368,18 @@ namespace Quarkless.Logic.Actions.Action_Instances
 					{
 						StoryMediaId = _.Id,
 						TakenAt = _.TakenAt
-					}).ToList() : null
+					}).ToList() : null,
+				User = new UserShort
+				{
+					Id = user.UserId,
+					Username = user.Username,
+					ProfilePicture = user.ProfilePicture
+				},
+				DataFrom = new DataFrom
+				{
+					NominatedFrom = fetchType,
+					TopicName = user.Topic?.Name
+				}
 			};
 		}
 		internal async Task<StoryRequest> GetStoryFromTopic()
@@ -308,11 +389,11 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				ActionType = (int)ActionType.WatchStory,
 				User = _user.Profile.InstagramAccountId
 			};
-
+			const MetaDataType fetchType = MetaDataType.FetchUsersStoryViaTopics;
 			var fetchUsers = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaStory>>>(
 					new MetaDataFetchRequest
 					{
-						MetaDataType = MetaDataType.FetchUsersStoryViaTopics,
+						MetaDataType = fetchType,
 						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 						InstagramId = _user.ShortInstagram.Id
 					}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
@@ -325,7 +406,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<InstaStory>>>
 			{
-				MetaDataType = MetaDataType.FetchUsersStoryViaTopics,
+				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
 				Data = select
@@ -349,7 +430,18 @@ namespace Quarkless.Logic.Actions.Action_Instances
 					{
 						StoryMediaId = _.Id,
 						TakenAt = _.TakenAt
-					}).ToList() : null
+					}).ToList() : null,
+				User = new UserShort
+				{
+					Id = user.UserId,
+					Username = user.Username,
+					ProfilePicture = user.ProfilePicture
+				},
+				DataFrom = new DataFrom
+				{
+					NominatedFrom = fetchType,
+					TopicName = user.Topic?.Name
+				}
 			};
 		}
 		#endregion

@@ -8,6 +8,7 @@ using Quarkless.Models.Auth.Interfaces;
 using Quarkless.Models.Comments;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Extensions;
+using Quarkless.Models.Common.Models.Resolver;
 using Quarkless.Models.ResponseResolver.Interfaces;
 
 namespace Quarkless.Controllers
@@ -36,7 +37,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists || userIds == null) return BadRequest("invalid");
 			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _commentLogic.BlockUserCommentingAsync(userIds.ToArray()), ActionType.None, userIds.ToJsonString());
+				()=> _commentLogic.BlockUserCommentingAsync(userIds.ToArray()));
 
 			return ResolverResponse(results);
 		}
@@ -47,8 +48,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists || string.IsNullOrEmpty(comment.Text)) return BadRequest("invalid");
 			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _commentLogic.CommentMediaAsync(mediaId,comment.Text), ActionType.CreateCommentMedia, 
-				JsonConvert.SerializeObject(new { MediaId = mediaId, Comment = comment }));
+				()=> _commentLogic.CommentMediaAsync(mediaId,comment.Text), ActionType.CreateCommentMedia, comment);
 
 			return ResolverResponse(results);
 		}
@@ -60,7 +60,7 @@ namespace Quarkless.Controllers
 			if (!_userContext.UserAccountExists || string.IsNullOrEmpty(mediaId) || string.IsNullOrEmpty(commentId))
 				return BadRequest("invalid");
 			var results = await  _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _commentLogic.DeleteCommentAsync(mediaId, commentId),ActionType.None, commentId);
+				()=> _commentLogic.DeleteCommentAsync(mediaId, commentId));
 
 			return ResolverResponse(results);
 		}
@@ -72,7 +72,7 @@ namespace Quarkless.Controllers
 			if (!_userContext.UserAccountExists || commentIds == null || string.IsNullOrEmpty(mediaId))
 				return BadRequest("invalid");
 			var results = await  _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _commentLogic.DeleteMultipleCommentsAsync(mediaId, commentIds.ToArray()),ActionType.None,commentIds.ToJsonString());
+				()=> _commentLogic.DeleteMultipleCommentsAsync(mediaId, commentIds.ToArray()));
 			
 			return ResolverResponse(results);
 		}
@@ -83,7 +83,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
 			var results = await  _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _commentLogic.DisableMediaCommentAsync(mediaId),ActionType.None, mediaId);
+				()=> _commentLogic.DisableMediaCommentAsync(mediaId));
 			
 			return ResolverResponse(results);
 		}
@@ -93,7 +93,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
 			var results = await  _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _commentLogic.EnableMediaCommentAsync(mediaId),ActionType.None, mediaId);
+				()=> _commentLogic.EnableMediaCommentAsync(mediaId));
 			
 			return ResolverResponse(results);
 		}
@@ -104,7 +104,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
 			var results = await  _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _commentLogic.GetBlockedCommentersAsync(),ActionType.None, "");
+				()=> _commentLogic.GetBlockedCommentersAsync());
 
 			return ResolverResponse(results);
 		}
@@ -115,7 +115,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
 			var results = await  _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _commentLogic.GetMediaCommentLikersAsync(mediaId), ActionType.None, mediaId);
+				()=> _commentLogic.GetMediaCommentLikersAsync(mediaId));
 
 			return ResolverResponse(results);
 		}
@@ -126,7 +126,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
 			var results = await  _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _commentLogic.GetMediaCommentsAsync(mediaId,limit),ActionType.None, mediaId);
+				()=> _commentLogic.GetMediaCommentsAsync(mediaId,limit));
 			
 			return ResolverResponse(results);
 		}
@@ -137,18 +137,18 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
 			var results = await  _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _commentLogic.GetMediaRepliesCommentsAsync(mediaId,targetCommentId, limit), ActionType.None, mediaId);
+				()=> _commentLogic.GetMediaRepliesCommentsAsync(mediaId,targetCommentId, limit));
 			
 			return ResolverResponse(results);
 		}
 
 		[HttpPost]
 		[Route("api/comments/like/{commentId}")]
-		public async Task<IActionResult> LikeComment(string commentId)
+		public async Task<IActionResult> LikeComment(LikeCommentRequest comment)
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
 			var results = await  _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _commentLogic.LikeCommentAsync(commentId),ActionType.LikeComment, commentId);
+				()=> _commentLogic.LikeCommentAsync(comment.CommentId.ToString()), ActionType.LikeComment, comment);
 			
 			return ResolverResponse(results);
 		}
@@ -159,7 +159,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
 			var results = await  _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _commentLogic.ReplyCommentMediaAsync(mediaId, targetCommentId, text.Text), ActionType.CreateCommentMedia, targetCommentId);
+				()=> _commentLogic.ReplyCommentMediaAsync(mediaId, targetCommentId, text.Text), ActionType.CreateCommentMedia, text);
 			
 			return ResolverResponse(results);
 		}
@@ -170,7 +170,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
 			var results = await  _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _commentLogic.ReportCommentAsync(mediaId,commentId), ActionType.None, commentId);
+				()=> _commentLogic.ReportCommentAsync(mediaId,commentId));
 			return ResolverResponse(results);
 		}
 		
@@ -180,7 +180,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
 			var results = await  _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _commentLogic.TranslateCommentsAsync(commentIds.ToArray()), ActionType.None,commentIds.ToJsonString());
+				()=> _commentLogic.TranslateCommentsAsync(commentIds.ToArray()));
 			return ResolverResponse(results);
 		}
 		
@@ -190,7 +190,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
 			var results = await _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _commentLogic.UnblockUserCommentingAsync(userIds.ToArray()),ActionType.None, userIds.ToJsonString());
+				()=> _commentLogic.UnblockUserCommentingAsync(userIds.ToArray()));
 			return ResolverResponse(results);
 		}
 		
@@ -200,7 +200,7 @@ namespace Quarkless.Controllers
 		{
 			if (!_userContext.UserAccountExists) return BadRequest("invalid");
 			var results = await  _responseResolver.WithAttempts(1).WithResolverAsync(
-				()=> _commentLogic.UnlikeCommentAsync(commentId), ActionType.UnlikeComment, commentId);
+				()=> _commentLogic.UnlikeCommentAsync(commentId));
 			return ResolverResponse(results);
 		}
 	}

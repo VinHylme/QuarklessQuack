@@ -50,7 +50,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 								.SendReactionToStoryAsync(request.UserId,
 									request.Items.Shuffle().First().StoryMediaId,
 									request.Reaction),
-							ActionType.ReactStory, request.ToJsonString());
+							ActionType.ReactStory, request);
 
 					if (!response.Response.Succeeded)
 					{
@@ -91,7 +91,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 						.WithResolverAsync(() => _worker.Client.Story
 								.SendReactionToStoryAsync(request.UserId,
 									storyOfUser.Response.Value.Items.Shuffle().First().Id, request.Reaction),
-							ActionType.ReactStory, request.ToJsonString());
+							ActionType.ReactStory, request);
 
 					if (!response.Response.Succeeded)
 					{

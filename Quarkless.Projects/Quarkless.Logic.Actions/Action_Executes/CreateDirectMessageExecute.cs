@@ -55,7 +55,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 						.WithAttempts(1)
 						.WithResolverAsync(()=>_worker.Client.Messaging.SendDirectTextAsync(recipients, threads,
 								model.TextMessage), ActionType.SendDirectMessageText,
-							model.ToJsonString());
+							model);
 
 					if (!response.Response.Succeeded)
 					{
@@ -82,7 +82,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 								model.Link,
 								model.Threads.ToArray(), model.Recipients.ToArray()),
 							ActionType.SendDirectMessageLink,
-							model.ToJsonString());
+							model);
 					if (!response.Response.Succeeded)
 					{
 						result.IsSuccessful = false;
@@ -108,7 +108,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 						.WithClient(_worker.Client)
 						.WithAttempts(1)
 						.WithResolverAsync(()=>_worker.Client.Messaging.SendDirectProfileToRecipientsAsync(model.userId,
-								recipients), ActionType.SendDirectMessageProfile, model.ToJsonString());
+								recipients), ActionType.SendDirectMessageProfile, model);
 
 					if (!response.Response.Succeeded)
 					{
@@ -132,7 +132,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 						.WithClient(_worker.Client)
 						.WithAttempts(1)
 						.WithResolverAsync(()=>_worker.Client.Messaging.SendDirectPhotoToRecipientsAsync(model.Image,
-								model.Recipients.ToArray()), ActionType.SendDirectMessagePhoto, model.ToJsonString());
+								model.Recipients.ToArray()), ActionType.SendDirectMessagePhoto, model);
 
 					if (!response.Response.Succeeded)
 					{
@@ -156,7 +156,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 						.WithClient(_worker.Client)
 						.WithAttempts(1)
 						.WithResolverAsync(()=>_worker.Client.Messaging.SendDirectVideoToRecipientsAsync(model.Video,
-								model.Recipients.ToArray()), ActionType.SendDirectMessageVideo, model.ToJsonString());
+								model.Recipients.ToArray()), ActionType.SendDirectMessageVideo, model);
 
 					if (!response.Response.Succeeded)
 					{

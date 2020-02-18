@@ -58,7 +58,9 @@ namespace Quarkless.Logic.Actions.Action_Executes
 				if (eventAction.BodyType == typeof(UploadPhotoModel))
 				{
 					var model = JsonConvert.DeserializeObject<UploadPhotoModel>(eventAction.Body.ToJsonString());
-					
+
+					var originalModel = model;
+
 					model.Image.ImageBytes = _postAnalyser.Manipulation.ImageEditor
 						.ResizeToClosestAspectRatio(_postAnalyser.Manager
 							.DownloadMedia(model.Image.Uri));
@@ -70,11 +72,12 @@ namespace Quarkless.Logic.Actions.Action_Executes
 						.WithAttempts(1)
 						.WithResolverAsync(()=> _worker.Client.Media
 								.UploadPhotoAsync(model.Image, MakeCaption(model.MediaInfo), model.Location),
-							ActionType.CreatePost, model.MediaInfo.ToJsonString());
+							ActionType.CreatePost, originalModel);
 				}
 				else if(eventAction.BodyType == typeof(UploadVideoModel))
 				{
 					var model = JsonConvert.DeserializeObject<UploadVideoModel>(eventAction.Body.ToJsonString());
+					var originalModel = model;
 					model.Video.Video.VideoBytes = _postAnalyser.Manager.DownloadMedia(model.Video.Video.Uri);
 					model.Video.Video.Uri = string.Empty;
 
@@ -83,11 +86,12 @@ namespace Quarkless.Logic.Actions.Action_Executes
 						.WithAttempts(1)
 						.WithResolverAsync(()=> _worker.Client.Media
 								.UploadVideoAsync(model.Video, MakeCaption(model.MediaInfo), model.Location),
-							ActionType.CreatePost, model.MediaInfo.ToJsonString());
+							ActionType.CreatePost, originalModel);
 				}
 				else if (eventAction.BodyType == typeof(UploadAlbumModel))
 				{
 					var model = JsonConvert.DeserializeObject<UploadAlbumModel>(eventAction.Body.ToJsonString());
+					var originalModel = model;
 					foreach (var instaAlbumUpload in model.Album)
 					{
 						if (instaAlbumUpload.VideoToUpload != null)
@@ -110,7 +114,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 						.WithAttempts(1)
 						.WithResolverAsync(()=> _worker.Client.Media
 								.UploadAlbumAsync(model.Album, MakeCaption(model.MediaInfo), model.Location),
-							ActionType.CreatePost, model.MediaInfo.ToJsonString());
+							ActionType.CreatePost, originalModel);
 				}
 				else
 				{

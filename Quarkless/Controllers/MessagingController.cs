@@ -34,7 +34,7 @@ namespace Quarkless.Controllers
 	    {
 		    if (!_userContext.UserAccountExists) return BadRequest("Invalid Request");
 		    var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _messagingLogic.GetDirectInboxAsync(limit), ActionType.GetInbox, limit.ToString());
+				.WithResolverAsync(()=> _messagingLogic.GetDirectInboxAsync(limit));
 			return ResolverResponse(results);
 		}
 
@@ -44,8 +44,7 @@ namespace Quarkless.Controllers
 	    {
 		    if (!_userContext.UserAccountExists) return BadRequest("Invalid Request");
 		    var results = await _responseResolver.WithAttempts(1)
-				.WithResolverAsync(()=> _messagingLogic.GetDirectInboxThreadAsync(threadId,limit), ActionType.GetThread,
-				    limit.ToString());
+				.WithResolverAsync(()=> _messagingLogic.GetDirectInboxThreadAsync(threadId,limit));
 			return ResolverResponse(results);
 		}
 
@@ -65,7 +64,7 @@ namespace Quarkless.Controllers
 
 			var results = await _responseResolver.WithAttempts(1)
 				.WithResolverAsync(()=>_messagingLogic.SendDirectTextAsync(recipients, threads, sendDirectText.TextMessage), 
-					ActionType.SendDirectMessageText, sendDirectText.ToJsonString());
+					ActionType.SendDirectMessageText, sendDirectText);
 			return ResolverResponse(results);
 		}
 
@@ -80,7 +79,7 @@ namespace Quarkless.Controllers
 				.WithResolverAsync(()=> _messagingLogic.SendDirectLinkAsync(sendDirectLink.TextMessage, sendDirectLink.Link,
 						sendDirectLink.Threads.ToArray(), sendDirectLink.Recipients.ToArray()), 
 					ActionType.SendDirectMessageLink,
-					sendDirectLink.ToJsonString());
+					sendDirectLink);
 			return ResolverResponse(results);
 		}
 
@@ -94,7 +93,7 @@ namespace Quarkless.Controllers
 				.WithAttempts(1)
 				.WithResolverAsync(()=>_messagingLogic.SendDirectPhotoToRecipientsAsync(sendDirectPhoto.Image, sendDirectPhoto.Recipients.ToArray()), 
 					ActionType.SendDirectMessagePhoto,
-					sendDirectPhoto.ToJsonString());
+					sendDirectPhoto);
 			return ResolverResponse(results);
 		}
 
@@ -108,7 +107,7 @@ namespace Quarkless.Controllers
 				.WithAttempts(1)
 				.WithResolverAsync(()=> _messagingLogic.ShareMediaToUserAsync(shareDirectMedia.MediaId, shareDirectMedia.MediaType, shareDirectMedia.Text, shareDirectMedia.Recipients.Select(long.Parse).ToArray()), 
 					ActionType.SendDirectMessageMedia,
-					shareDirectMedia.ToJsonString());
+					shareDirectMedia);
 			return ResolverResponse(results);
 		}
 
@@ -122,7 +121,7 @@ namespace Quarkless.Controllers
 				.WithAttempts(1)
 				.WithResolverAsync(()=>_messagingLogic.ShareMediaToThreadAsync(shareDirectMedia.MediaId, shareDirectMedia.MediaType, shareDirectMedia.Text, shareDirectMedia.ThreadIds.ToArray()), 
 					ActionType.SendDirectMessageMedia,
-					shareDirectMedia.ToJsonString());
+					shareDirectMedia);
 			return ResolverResponse(results);
 		}
 
@@ -136,7 +135,7 @@ namespace Quarkless.Controllers
 				.WithAttempts(1)
 				.WithResolverAsync(()=>_messagingLogic.SendDirectVideoToRecipientsAsync(sendDirectVideo.Video, sendDirectVideo.Recipients.ToArray()), 
 					ActionType.SendDirectMessageVideo,
-					sendDirectVideo.ToJsonString());
+					sendDirectVideo);
 			return ResolverResponse(results);
 		}
 
@@ -154,7 +153,7 @@ namespace Quarkless.Controllers
 			var results = await _responseResolver
 				.WithResolverAsync(()=> _messagingLogic.SendDirectProfileToRecipientsAsync(sendDirectProfile.userId, recipients), 
 					ActionType.SendDirectMessageProfile,
-					sendDirectProfile.ToJsonString());
+					sendDirectProfile);
 			return ResolverResponse(results);
 		}
     }

@@ -36,7 +36,7 @@ namespace Quarkless.Controllers
 
 			var results = await _responseResolver
 				.WithAttempts(1)
-				.WithResolverAsync(()=> _businessLogic.GetStatisticsAsync(), ActionType.None, "");
+				.WithResolverAsync(()=> _businessLogic.GetStatisticsAsync());
 
 			return ResolverResponse(results);
 		}

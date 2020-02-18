@@ -214,8 +214,9 @@ namespace Quarkless.Logic.InstagramClient
 			}
 			else
 			{
-				var instance = CreateApiClient(instagramAccount.InstagramAccount.State.UserSession,
+				var instance = CreateApiClient(instagramAccount.InstagramAccount.State.UserSession, 
 					instagramAccount.Proxy);
+
 				instance.SetDevice(instagramAccount.InstagramAccount.State.DeviceInfo);
 				instance.LoadStateDataFromString(JsonConvert.SerializeObject(instagramAccount.InstagramAccount.State));
 

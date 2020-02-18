@@ -43,8 +43,8 @@ namespace Quarkless.Logic.Actions.Action_Executes
 					.WithClient(_worker.Client)
 					.WithAttempts(1)
 					.WithResolverAsync(()=> _worker.Client.Comment
-						.CommentMediaAsync(createCommentRequest.MediaId, createCommentRequest.Text), 
-						ActionType.CreateCommentMedia, createCommentRequest.ToJsonString());
+						.CommentMediaAsync(createCommentRequest.Media.Id, createCommentRequest.Text), 
+						ActionType.CreateCommentMedia, createCommentRequest);
 
 				if (!response.Response.Succeeded)
 				{

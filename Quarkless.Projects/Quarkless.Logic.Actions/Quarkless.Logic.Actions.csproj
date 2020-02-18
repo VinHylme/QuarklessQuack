@@ -23,4 +23,8 @@
     <ProjectReference Include="..\Quarkless.Models.WorkerManager\Quarkless.Models.WorkerManager.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Converters\" />
+  </ItemGroup>
+
 </Project>

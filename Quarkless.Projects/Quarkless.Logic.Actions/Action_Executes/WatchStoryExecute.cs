@@ -51,7 +51,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 						.WithClient(_worker.Client)
 						.WithAttempts(1)
 						.WithResolverAsync(() => _worker.Client.Story.MarkMultipleStoriesAsSeenAsync(dict),
-							ActionType.WatchStory, watchRequest.ToJsonString());
+							ActionType.WatchStory, watchRequest);
 
 					if (!response.Response.Succeeded)
 					{
@@ -96,7 +96,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 						.WithClient(_worker.Client)
 						.WithAttempts(1)
 						.WithResolverAsync(() => _worker.Client.Story.MarkMultipleStoriesAsSeenAsync(dict),
-							ActionType.WatchStory, watchRequest.ToJsonString());
+							ActionType.WatchStory, watchRequest);
 
 					if (!response.Response.Succeeded)
 					{

@@ -3,6 +3,7 @@ using InstagramApiSharp.Classes;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.InstagramClient.Interfaces;
 using System.Threading.Tasks;
+using Quarkless.Models.Common.Interfaces;
 using Quarkless.Models.InstagramAccounts;
 using Quarkless.Models.ResponseResolver.Models;
 
@@ -12,8 +13,11 @@ namespace Quarkless.Models.ResponseResolver.Interfaces
 	{
 		Task CheckBlockStates(ShortInstagramAccountModel account);
 		Task<ResolverResponse<TInput>> WithResolverAsync<TInput>(Func<Task<IResult<TInput>>> func);
+		// Task<ResolverResponse<TInput>> WithResolverAsync<TInput>(Func<Task<IResult<TInput>>> func,
+		// 	ActionType actionType, string request);
 		Task<ResolverResponse<TInput>> WithResolverAsync<TInput>(Func<Task<IResult<TInput>>> func,
-			ActionType actionType, string request);
+			ActionType actionType, IExec request);
+
 
 		/// <summary>
 		/// You should not be using with attempts on this function

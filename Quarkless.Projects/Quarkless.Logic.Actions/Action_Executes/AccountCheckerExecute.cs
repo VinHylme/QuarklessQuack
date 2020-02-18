@@ -50,7 +50,7 @@ namespace Quarkless.Logic.Actions.Action_Executes
 					.WithResolverAsync(()=> _worker.Client
 						.Media.DeleteMediaAsync(deleteMediaRequest.MediaId,
 							(InstaMediaType) deleteMediaRequest.MediaType),
-					ActionType.MaintainAccount, deleteMediaRequest.ToJsonString());
+					ActionType.MaintainAccount, deleteMediaRequest);
 
 				if (!response.Response.Succeeded)
 				{

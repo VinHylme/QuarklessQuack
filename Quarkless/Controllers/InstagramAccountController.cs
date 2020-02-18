@@ -2,19 +2,16 @@
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using InstagramApiSharp.Classes;
-using InstagramApiSharp.Classes.Android.DeviceInfo;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Quarkless.Base.InstagramUser;
 using Quarkless.Logic.InstagramClient;
 using Quarkless.Models.Auth.Enums;
 using Quarkless.Models.Auth.Interfaces;
-using Quarkless.Models.Common.Enums;
 using Quarkless.Models.InstagramAccounts;
 using Quarkless.Models.InstagramAccounts.Enums;
 using Quarkless.Models.InstagramAccounts.Interfaces;
 using Quarkless.Models.InstagramClient.Interfaces;
-using Quarkless.Models.ResponseResolver.Enums;
 using Quarkless.Models.ResponseResolver.Interfaces;
 
 namespace Quarkless.Controllers
@@ -191,8 +188,8 @@ namespace Quarkless.Controllers
 					.WithClient(clientContainer)
 					.WithAttempts(1)
 					.WithResolverAsync(() => clientContainer.GetContext.Container.InstaClient
-							.TryLogin(instaDetails.Username, instaDetails.Password, instaDetails?.State?.DeviceInfo),
-						ActionType.RefreshLogin, instagramAccountId);
+							.TryLogin(instaDetails.Username, instaDetails.Password, instaDetails?.State?.DeviceInfo,
+								clientContainer.GetContext.Container.Proxy));
 				
 				if (loginRes == null) return Ok(false);
 

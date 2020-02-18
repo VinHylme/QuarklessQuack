@@ -36,6 +36,7 @@
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.Heartbeat\Quarkless.Logic.Heartbeat.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.InstagramAccounts\Quarkless.Logic.InstagramAccounts.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.Lookup\Quarkless.Logic.Lookup.csproj" />
+    <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.Notification\Quarkless.Logic.Notification.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.Profile\Quarkless.Logic.Profile.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.ReportHandler\Quarkless.Logic.ReportHandler.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.ResponseResolver\Quarkless.Logic.ResponseResolver.csproj" />
@@ -54,6 +55,7 @@
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Repository.Heartbeat\Quarkless.Repository.Heartbeat.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Repository.InstagramAccounts\Quarkless.Repository.InstagramAccounts.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Repository.Lookup\Quarkless.Repository.Lookup.csproj" />
+    <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Repository.Notification\Quarkless.Repository.Notification.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Repository.Profile\Quarkless.Repository.Profile.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Repository.RedisClientContext\Quarkless.Repository.RedisContext.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Repository.ReportHandler\Quarkless.Repository.ReportHandler.csproj" />
