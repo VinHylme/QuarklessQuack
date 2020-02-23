@@ -185,7 +185,7 @@ namespace Quarkless.Repository.Notification
 		}
 
 		public async Task<List<NotificationTimelineAction>> GetTimelineActionNotifications(string accountId, string instagramAccountId, int limit = 250,
-			ActionType actionType = ActionType.All, TimelineEventItemStatus? status = null)
+			ActionType actionType = ActionType.All, TimelineEventItemStatus? status = null, bool includeSeen = false)
 		{
 			try
 			{
@@ -195,29 +195,63 @@ namespace Quarkless.Repository.Notification
 					Sort = Builders<NotificationTimelineAction>.Sort.Descending(_ => _.Notification.CreatedAt)
 				};
 
+				var filterBuilder = Builders<NotificationTimelineAction>.Filter;
+
+				var filter = filterBuilder.Eq(_ => _.Notification.AccountId, accountId) &
+							 filterBuilder.Eq(_ => _.Notification.InstagramAccountId, instagramAccountId);
+
+				if (!includeSeen)
+					filter &= filterBuilder.Eq(_ => _.Notification.Status, NotificationStatus.Pending);
+
+				if (status.HasValue)
+					filter &= filterBuilder.Eq(_ => _.TimelineStatus, status.Value);
+
+				if (actionType != ActionType.All)
+					filter &= filterBuilder.Eq(_ => _.ActionType, actionType);
+
+				return (await _ctx.FindAsync(filter, findOptions)).ToList();
+
+				/* mainly did this shit because wanted to try out the switch pattern matching
 				var results = status switch
 				{
-					null when actionType == ActionType.All => (await _ctx.FindAsync(_ => 
-						_.Notification.Status == NotificationStatus.Pending && _.Notification.AccountId == accountId 
+					null when actionType == ActionType.All && !includeSeen => (await _ctx.FindAsync(_ =>
+						_.Notification.Status == NotificationStatus.Pending  && _.Notification.AccountId == accountId 
 						&& _.Notification.InstagramAccountId == instagramAccountId, findOptions)).ToList(),
 
-					null when actionType != ActionType.All => (await _ctx.FindAsync(_ => 
+					null when actionType != ActionType.All && !includeSeen => (await _ctx.FindAsync(_ =>
 						_.Notification.Status == NotificationStatus.Pending && _.Notification.AccountId == accountId
 						&& _.Notification.InstagramAccountId == instagramAccountId &&  _.ActionType == actionType,
 						findOptions)).ToList(),
 
-					{ } when actionType == ActionType.All => (await _ctx.FindAsync(_ => 
+					{ } when actionType == ActionType.All && !includeSeen => (await _ctx.FindAsync(_ =>
 						_.Notification.Status == NotificationStatus.Pending && _.Notification.AccountId == accountId
 						&& _.Notification.InstagramAccountId == instagramAccountId && _.TimelineStatus == status.Value,
 						findOptions)).ToList(),
 
-					{ } when actionType != ActionType.All => (await _ctx.FindAsync(_ =>
+					{ } when actionType != ActionType.All && !includeSeen => (await _ctx.FindAsync(_ =>
 						_.Notification.Status == NotificationStatus.Pending &&
+						_.Notification.AccountId == accountId && _.Notification.InstagramAccountId == instagramAccountId &&
+						_.TimelineStatus == status.Value && _.ActionType == actionType)).ToList(),
+					
+					null when actionType == ActionType.All && includeSeen => (await _ctx.FindAsync(_ =>
+						_.Notification.AccountId == accountId
+						&& _.Notification.InstagramAccountId == instagramAccountId, findOptions)).ToList(),
+					null when actionType != ActionType.All && includeSeen => (await _ctx.FindAsync(_ =>
+							_.Notification.AccountId == accountId
+						&& _.Notification.InstagramAccountId == instagramAccountId && _.ActionType == actionType,
+						findOptions)).ToList(),
+
+					{ } when actionType == ActionType.All && includeSeen => (await _ctx.FindAsync(_ =>
+							_.Notification.AccountId == accountId
+						&& _.Notification.InstagramAccountId == instagramAccountId && _.TimelineStatus == status.Value,
+						findOptions)).ToList(),
+
+					{ } when actionType != ActionType.All && includeSeen => (await _ctx.FindAsync(_ =>
 						_.Notification.AccountId == accountId && _.Notification.InstagramAccountId == instagramAccountId &&
 						_.TimelineStatus == status.Value && _.ActionType == actionType)).ToList(),
 					_ => new List<NotificationTimelineAction>()
 				};
-				return results;
+				return results;*/
 			}
 			catch (Exception err)
 			{

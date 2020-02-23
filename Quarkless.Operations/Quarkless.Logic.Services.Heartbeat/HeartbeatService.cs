@@ -12,8 +12,6 @@ using Quarkless.Models.Services.Heartbeat.Enums;
 using Quarkless.Models.Topic.Interfaces;
 using Quarkless.Base.ContentSearch;
 using Quarkless.Models.WorkerManager.Interfaces;
-using Quarkless.Models.InstagramClient.Interfaces;
-using Quarkless.Models.ResponseResolver.Interfaces;
 
 namespace Quarkless.Logic.Services.Heartbeat
 {

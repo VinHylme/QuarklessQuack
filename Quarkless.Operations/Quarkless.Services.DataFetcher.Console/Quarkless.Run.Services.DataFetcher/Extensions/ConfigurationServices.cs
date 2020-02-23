@@ -100,7 +100,7 @@ namespace Quarkless.Run.Services.DataFetcher.Extensions
 			services.AddSingleton<IUtilProviders, UtilProviders>();
 			services.AddSingleton<ITextGenerator, TextGenerator>();
 			services.AddSingleton<IHashtagGenerator, HashtagGenerator>();
-			services.AddSingleton<ITranslateService, TranslateService>();
+			//services.AddSingleton<ITranslateService, TranslateService>();
 			services.AddSingleton<ISearchProvider, SearchProvider>();
 			services.AddSingleton<ITopicLookupLogic, TopicLookupLogic>();
 			services.AddTransient<IEventSubscriber<ProfileTopicAddRequest>, TopicLookupLogic>();

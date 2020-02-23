@@ -18,18 +18,20 @@ using Quarkless.Models.Common.Models.Carriers;
 using Quarkless.Models.Common.Models.Resolver;
 using Quarkless.Models.ContentInfo.Interfaces;
 using Quarkless.Models.Heartbeat;
+using Quarkless.Models.Lookup.Interfaces;
 using Quarkless.Models.SearchResponse;
 
 namespace Quarkless.Logic.Actions.Action_Instances
 {
-	internal class LikeCommentAction : IActionCommit
+	internal class LikeCommentAction : BaseAction, IActionCommit
 	{
 		private readonly IContentInfoBuilder _contentInfoBuilder;
 		private readonly IHeartbeatLogic _heartbeatLogic;
 		private readonly UserStoreDetails _user;
 		private LikeCommentActionOptions _actionOptions;
 		internal LikeCommentAction(UserStoreDetails userStoreDetails, IContentInfoBuilder contentInfoBuilder,
-			IHeartbeatLogic heartbeatLogic)
+			IHeartbeatLogic heartbeatLogic, ILookupLogic lookupLogic)
+			: base(lookupLogic, ActionType.LikeComment, userStoreDetails)
 		{
 			_user = userStoreDetails;
 			_contentInfoBuilder = contentInfoBuilder;
@@ -39,37 +41,25 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 		private async Task<LikeCommentRequest> CommentingByTopic()
 		{
-			var by = new By
-			{
-				ActionType = (int)ActionType.LikeComment,
-				User = _user.Profile.InstagramAccountId
-			};
-
 			const MetaDataType fetchType = MetaDataType.FetchUsersViaPostCommented;
-
+			var lookups = await GetLookupItems();
 			var fetchComments = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(new MetaDataFetchRequest
 			{
 				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-				InstagramId = _user.ShortInstagram.Id
-			}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-				.Where(s => s.ObjectItem.Count > 0).ToList();
-
-			var select = fetchComments?.ElementAtOrDefault(SecureRandom.Next(fetchComments.Count));
-			
-			if (select == null) return null;
-			select.SeenBy.Add(by);
-
-			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<InstaComment>>>
-			{
-				MetaDataType = fetchType,
-				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
-				Data = select
-			});
+				AccountId = _user.AccountId
+			}))?.Where(s => s.ObjectItem.Count > 0)
+				.SelectMany(_=>_.ObjectItem)
+				.Where(_=> !lookups.Exists(l => l.ObjectId == _.UserId.ToString()))
+				.ToList();
 
-			var comment = select.ObjectItem.FirstOrDefault();
+			var comment = fetchComments?.ElementAtOrDefault(SecureRandom.Next(fetchComments.Count - 1));
+
 			if (comment?.Object?.Pk == null) return null;
+
+			await AddObjectToLookup(comment.UserId.ToString());
+
 			return new LikeCommentRequest
 			{
 				CommentId = comment.Object.Pk,
@@ -89,37 +79,24 @@ namespace Quarkless.Logic.Actions.Action_Instances
 		}
 		private async Task<LikeCommentRequest> CommentingByCommenters()
 		{
-			var by = new By
-			{
-				ActionType = (int)ActionType.LikeComment,
-				User = _user.Profile.InstagramAccountId
-			};
 			const MetaDataType fetchType = MetaDataType.FetchCommentsViaPostCommented;
-
-			var fetchComments = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>
-					(new MetaDataFetchRequest
-					{
-						MetaDataType = fetchType,
-						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-						InstagramId = _user.ShortInstagram.Id
-					}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-				.Where(s => s.ObjectItem.Count > 0).ToList();
-
-			var select = fetchComments?.ElementAtOrDefault(SecureRandom.Next(fetchComments.Count));
-			
-			if (select == null) return null;
-			select.SeenBy.Add(by);
-
-			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<InstaComment>>>
+			var lookups = await GetLookupItems();
+			var fetchComments = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(
+				new MetaDataFetchRequest
 			{
 				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
-				Data = select
-			});
+				AccountId = _user.AccountId
+			}))?.Where(s => s.ObjectItem.Count > 0)
+				.SelectMany(_ => _.ObjectItem)
+				.Where(_ => !lookups.Exists(l => l.ObjectId == _.UserId.ToString()))
+				.ToList();
 
-			var comment = select.ObjectItem.FirstOrDefault();
+			var comment = fetchComments?.ElementAtOrDefault(SecureRandom.Next(fetchComments.Count - 1));
+
 			if (comment?.Object?.Pk == null) return null;
+			await AddObjectToLookup(comment.UserId.ToString());
 			return new LikeCommentRequest
 			{
 				CommentId = comment.Object.Pk,
@@ -139,37 +116,24 @@ namespace Quarkless.Logic.Actions.Action_Instances
 		}
 		private async Task<LikeCommentRequest> CommentingByLikers()
 		{
-			var by = new By
-			{
-				ActionType = (int)ActionType.LikeComment,
-				User = _user.Profile.InstagramAccountId
-			};
 			const MetaDataType fetchType = MetaDataType.FetchCommentsViaPostsLiked;
-			var fetchComments = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>
-					(new MetaDataFetchRequest
-					{
-						MetaDataType = MetaDataType.FetchCommentsViaPostsLiked,
-						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-						InstagramId = _user.ShortInstagram.Id
-					}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-				.Where(s => s.ObjectItem.Count > 0).ToList();
+			var lookups = await GetLookupItems();
+			var fetchComments = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(
+			new MetaDataFetchRequest
+				{
+					MetaDataType = MetaDataType.FetchCommentsViaPostsLiked,
+					ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
+					InstagramId = _user.ShortInstagram.Id,
+					AccountId = _user.AccountId
+				}))?.Where(s => s.ObjectItem.Count > 0)
+				.SelectMany(_ => _.ObjectItem)
+				.Where(_ => !lookups.Exists(l => l.ObjectId == _.UserId.ToString()))
+				.ToList();
 
-			var select = fetchComments?.ElementAtOrDefault(SecureRandom.Next(fetchComments.Count));
-			
-			if (select == null) return null;
+			var comment = fetchComments?.ElementAtOrDefault(SecureRandom.Next(fetchComments.Count - 1));
 
-			select.SeenBy.Add(by);
-
-			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<InstaComment>>>()
-			{
-				MetaDataType = MetaDataType.FetchCommentsViaPostsLiked,
-				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-				InstagramId = _user.ShortInstagram.Id,
-				Data = select
-			});
-
-			var comment = select.ObjectItem.FirstOrDefault();
 			if (comment?.Object?.Pk == null) return null;
+			await AddObjectToLookup(comment.UserId.ToString());
 			return new LikeCommentRequest
 			{
 				CommentId = comment.Object.Pk,
@@ -189,37 +153,24 @@ namespace Quarkless.Logic.Actions.Action_Instances
 		}
 		private async Task<LikeCommentRequest> CommentingByTarget()
 		{
-			var by = new By
-			{
-				ActionType = (int)ActionType.LikeComment,
-				User = _user.Profile.InstagramAccountId
-			};
 			const MetaDataType fetchType = MetaDataType.FetchCommentsViaUserTargetList;
-			var fetchComments = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>
-					(new MetaDataFetchRequest
-					{
-						MetaDataType = fetchType,
-						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-						InstagramId = _user.ShortInstagram.Id
-					}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-				.Where(s => s.ObjectItem.Count > 0).ToList();
+			var lookups = await GetLookupItems();
+			var fetchComments = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(
+				new MetaDataFetchRequest
+			{
+				MetaDataType = fetchType,
+				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
+				InstagramId = _user.ShortInstagram.Id,
+				AccountId = _user.AccountId
+			}))?.Where(s => s.ObjectItem.Count > 0)
+				.SelectMany(_ => _.ObjectItem)
+				.Where(_ => !lookups.Exists(l => l.ObjectId == _.UserId.ToString()))
+				.ToList();
 
-			var select = fetchComments?.ElementAtOrDefault(SecureRandom.Next(fetchComments.Count));
+			var comment = fetchComments?.ElementAtOrDefault(SecureRandom.Next(fetchComments.Count - 1));
 
-			if (select == null) return null;
-			select.SeenBy.Add(by);
-
-			await _heartbeatLogic.UpdateMetaData(
-				new MetaDataCommitRequest<List<UserResponse<InstaComment>>>
-				{
-					MetaDataType = fetchType,
-					ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-					InstagramId = _user.ShortInstagram.Id,
-					Data = select
-				});
-
-			var comment = select.ObjectItem.FirstOrDefault();
 			if (comment?.Object?.Pk == null) return null;
+			await AddObjectToLookup(comment.UserId.ToString());
 			return new LikeCommentRequest
 			{
 				CommentId = comment.Object.Pk,
@@ -239,37 +190,24 @@ namespace Quarkless.Logic.Actions.Action_Instances
 		}
 		private async Task<LikeCommentRequest> CommentingByLocation()
 		{
-			var by = new By
-			{
-				ActionType = (int)ActionType.LikeComment,
-				User = _user.Profile.InstagramAccountId
-			};
 			const MetaDataType fetchType = MetaDataType.FetchCommentsViaLocationTargetList;
-
-			var fetchComments = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>
-					(new MetaDataFetchRequest
-					{
-						MetaDataType = fetchType,
-						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-						InstagramId = _user.ShortInstagram.Id
-					}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-				.Where(s => s.ObjectItem.Count > 0).ToList();
-
-			var select = fetchComments?.ElementAtOrDefault(SecureRandom.Next(fetchComments.Count));
-
-			if (select == null) return null;
-			select.SeenBy.Add(by);
-
-			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<InstaComment>>>
+			var lookups = await GetLookupItems();
+			var fetchComments = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(
+				new MetaDataFetchRequest
 			{
 				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
-				Data = select
-			});
+				AccountId = _user.AccountId
+			}))?.Where(s => s.ObjectItem.Count > 0)
+				.SelectMany(_ => _.ObjectItem)
+				.Where(_ => !lookups.Exists(l => l.ObjectId == _.UserId.ToString()))
+				.ToList();
 
-			var comment = select.ObjectItem.FirstOrDefault();
+			var comment = fetchComments?.ElementAtOrDefault(SecureRandom.Next(fetchComments.Count - 1));
+
 			if (comment?.Object?.Pk == null) return null;
+			await AddObjectToLookup(comment.UserId.ToString());
 			return new LikeCommentRequest
 			{
 				CommentId = comment.Object.Pk,
@@ -289,37 +227,25 @@ namespace Quarkless.Logic.Actions.Action_Instances
 		}
 		private async Task<LikeCommentRequest> CommentingByUserFeed()
 		{
-			var by = new By
-			{
-				ActionType = (int)ActionType.LikeComment,
-				User = _user.Profile.InstagramAccountId
-			};
 			const MetaDataType fetchType = MetaDataType.FetchCommentsViaUserFeed;
-
+			var lookups = await GetLookupItems();
 			var fetchComments = (await _heartbeatLogic.GetMetaData<List<UserResponse<InstaComment>>>(
-					new MetaDataFetchRequest
-					{
-						MetaDataType = fetchType,
-						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-						InstagramId = _user.ShortInstagram.Id
-					}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-				.Where(s => s.ObjectItem.Count > 0).ToList();
-
-			var select = fetchComments?.ElementAtOrDefault(SecureRandom.Next(fetchComments.Count));
-
-			if (select == null) return null;
-			select.SeenBy.Add(by);
-
-			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<InstaComment>>>
+			new MetaDataFetchRequest
 			{
 				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
-				Data = select
-			});
+				AccountId = _user.AccountId
+			}))?.Where(s => s.ObjectItem.Count > 0)
+				.SelectMany(_ => _.ObjectItem)
+				.Where(_ => !lookups.Exists(l => l.ObjectId == _.UserId.ToString()))
+				.ToList();
 
-			var comment = select.ObjectItem.FirstOrDefault();
+			var comment = fetchComments?.ElementAtOrDefault(SecureRandom.Next(fetchComments.Count - 1));
+
 			if (comment?.Object?.Pk == null) return null;
+			await AddObjectToLookup(comment.UserId.ToString());
+
 			return new LikeCommentRequest
 			{
 				CommentId = comment.Object.Pk,

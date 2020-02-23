@@ -17,12 +17,13 @@ using Quarkless.Models.Common.Models.Resolver;
 using Quarkless.Models.ContentInfo.Interfaces;
 using Quarkless.Models.Heartbeat;
 using Quarkless.Models.Heartbeat.Interfaces;
+using Quarkless.Models.Lookup.Interfaces;
 using Quarkless.Models.SearchResponse;
 using Quarkless.Models.Topic;
 
 namespace Quarkless.Logic.Actions.Action_Instances
 {
-	internal class CreateCommentAction : IActionCommit
+	internal class CreateCommentAction : BaseAction, IActionCommit
 	{
 		public class CreateCommentContainer
 		{
@@ -36,7 +37,8 @@ namespace Quarkless.Logic.Actions.Action_Instances
 		private CommentingActionOptions _actionOptions;
 
 		internal CreateCommentAction(UserStoreDetails userStoreDetails, IContentInfoBuilder contentInfoBuilder,
-			IHeartbeatLogic heartbeatLogic)
+			IHeartbeatLogic heartbeatLogic, ILookupLogic lookupLogic)
+			: base(lookupLogic, ActionType.CreateCommentMedia, userStoreDetails)
 		{
 			_user = userStoreDetails;
 			_contentInfoBuilder = contentInfoBuilder;
@@ -45,36 +47,27 @@ namespace Quarkless.Logic.Actions.Action_Instances
 		}
 		private async Task<CreateCommentContainer> CommentingByLocation()
 		{
-			var by = new By
-			{
-				ActionType = (int)ActionType.CreateCommentMedia,
-				User = _user.Profile.InstagramAccountId
-			};
-
 			const MetaDataType fetchType = MetaDataType.FetchMediaByUserLocationTargetList;
+
+			var lookups = await GetLookupItems();
 
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 			{
 				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-				InstagramId = _user.ShortInstagram.Id
-			}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-				.Where(s => s.ObjectItem.Medias.Count > 0).ToList();
-
-			var select = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count));
-			if (select == null) return null;
-			select.SeenBy.Add(by);
-
-			await _heartbeatLogic.UpdateMetaData<Media>(new MetaDataCommitRequest<Media>
-			{
-				MetaDataType = fetchType,
-				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
-				Data = select,
-			});
+				AccountId = _user.AccountId
+			}))?.Where(s => s.ObjectItem.Medias.Count > 0)
+				.SelectMany(_=>_.ObjectItem.Medias)
+				.Where(_=> !lookups.Exists(l => l.ObjectId == _.MediaId))
+				.ToList();
 
-			var media = select.ObjectItem.Medias.FirstOrDefault();
+			var media = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count - 1));
+
 			if (media == null) return null;
+
+			await AddObjectToLookup(media.MediaId);
+
 			return new CreateCommentContainer
 			{
 				Topic = _user.Profile.ProfileTopic.Category,
@@ -103,38 +96,27 @@ namespace Quarkless.Logic.Actions.Action_Instances
 		}
 		private async Task<CreateCommentContainer> CommentingByTopic()
 		{
-			var by = new By
-			{
-				ActionType = (int)ActionType.CreateCommentMedia,
-				User = _user.Profile.InstagramAccountId
-			};
-
 			const MetaDataType fetchType = MetaDataType.FetchMediaByCommenters;
+
+			var lookups = await GetLookupItems();
 
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 			{
 				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-				InstagramId = _user.ShortInstagram.Id
-			}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-				.Where(s => s.ObjectItem.Medias.Count > 0).ToList();
-
-			var select = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count));
-
-			if (select == null) return null;
-
-			select.SeenBy.Add(by);
-
-			await _heartbeatLogic.UpdateMetaData<Media>(new MetaDataCommitRequest<Media>
-			{
-				MetaDataType = fetchType,
-				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
-				Data = select
-			});
+				AccountId = _user.AccountId
+			}))?.Where(s => s.ObjectItem.Medias.Count > 0)
+				.SelectMany(_=>_.ObjectItem.Medias)
+				.Where(_=> !lookups.Exists(l => l.ObjectId == _.MediaId))
+				.ToList();
 
-			var media = select.ObjectItem.Medias.FirstOrDefault();
+			var media = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count - 1));
+
 			if (media == null) return null;
+
+			await AddObjectToLookup(media.MediaId);
+
 			return new CreateCommentContainer
 			{
 				Topic = _user.Profile.ProfileTopic.Category,
@@ -164,35 +146,27 @@ namespace Quarkless.Logic.Actions.Action_Instances
 		}
 		private async Task<CreateCommentContainer> CommentingByLikers()
 		{
-			var by = new By
-			{
-				ActionType = (int)ActionType.CreateCommentMedia,
-				User = _user.ShortInstagram.Id
-			};
 			const MetaDataType fetchType = MetaDataType.FetchMediaByLikers;
+			
+			var lookups = await GetLookupItems();
+
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 			{
 				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-				InstagramId = _user.ShortInstagram.Id
-			}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-				.Where(s => s.ObjectItem.Medias.Count > 0).ToList();
-
-			var select = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count));
-			if (select == null) return null;
-
-			select.SeenBy.Add(by);
-
-			await _heartbeatLogic.UpdateMetaData<Media>(new MetaDataCommitRequest<Media>
-			{
-				MetaDataType = fetchType,
-				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
-				Data = select
-			});
+				AccountId = _user.AccountId
+			}))?.Where(s => s.ObjectItem.Medias.Count > 0)
+				.SelectMany(_=>_.ObjectItem.Medias)
+				.Where(_=> !lookups.Exists(l => l.ObjectId == _.MediaId))
+				.ToList();
 
-			var media = select.ObjectItem.Medias.FirstOrDefault();
+			var media = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count - 1));
+
 			if (media == null) return null;
+
+			await AddObjectToLookup(media.MediaId);
+
 			return new CreateCommentContainer
 			{
 				Topic = _user.Profile.ProfileTopic.Category,
@@ -300,6 +274,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 							}
 						};
 
+						nominatedMedia.CommentRequest.Text = _contentInfoBuilder.GenerateComment(nominatedMedia.Topic);
 						@event.DataObjects.Add(new EventBody(nominatedMedia.CommentRequest, nominatedMedia.CommentRequest.GetType(), executionTime));
 
 						results.IsSuccessful = true;

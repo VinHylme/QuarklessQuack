@@ -9,6 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Quarkless.Models.Common.Models;
+using Quarkless.Models.HashtagGenerator;
 
 namespace Quarkless.Logic.ContentInfo
 {
@@ -21,6 +23,7 @@ namespace Quarkless.Logic.ContentInfo
 			EmojiType.Symbols,
 			EmojiType.AnimalsNature
 		};
+
 		public ContentInfoBuilder(IUtilProviders utilProviders)
 			=> _utilProviders = utilProviders;
 
@@ -31,6 +34,12 @@ namespace Quarkless.Logic.ContentInfo
 			=> _utilProviders.TextGenerator.GenerateNRandomEmojies(_selectFrom.TakeAny(1).First(),
 				SecureRandom.Next(2, 4)); //await _utilProviders.TextGenerator.GenerateCommentByMarkovChain(mediaTopic, SecureRandom.Next(1, 2));
 
+		public async Task<List<HashtagResponse>> SuggestHashtags(Source source, bool deepDive = false,
+			bool includeMediaExamples = true)
+		{
+			var results = await _utilProviders.HashtagGenerator.SuggestHashtags(source, deepDive, includeMediaExamples);
+			return results.Results;
+		}
 
 		private string CreateCaption(string defaultCaption, bool generateCaption)
 		{
@@ -52,12 +61,11 @@ namespace Quarkless.Logic.ContentInfo
 			return caption;
 		}
 
-		public async Task<MediaInfo> GenerateMediaInfo(Topic profileTopic, CTopic mediaTopic,
-			string credit = null, int hashtagPickAmount = 20, IEnumerable<string> medias = null,
+		public async Task<MediaInfo> GenerateMediaInfo(Source source, string credit = null,
+			bool includeMediaExamples = true, bool deepDive = false, int hashtagPickAmount = 20,
 			string defaultCaption = null, bool generateCaption = false)
 		{
-			var hashtagsToUse = await _utilProviders.HashtagGenerator.SuggestHashtags(profileTopic, mediaTopic,
-				pickAmount: hashtagPickAmount, images: medias);
+			var hashtagsToUse = await SuggestHashtags(source, deepDive, includeMediaExamples);
 
 			if (!hashtagsToUse.Any())
 				throw new Exception("Failed to find hashtags for image");
@@ -66,25 +74,7 @@ namespace Quarkless.Logic.ContentInfo
 			{
 				Caption = CreateCaption(defaultCaption, generateCaption),
 				Credit = credit,
-				Hashtags = hashtagsToUse
-			};
-		}
-
-		public async Task<MediaInfo> GenerateMediaInfoBytes(Topic profileTopic, CTopic mediaTopic,
-			string credit = null, int hashtagPickAmount = 20, IEnumerable<byte[]> medias = null,
-			string defaultCaption = null, bool generateCaption = false)
-		{
-			var hashtagsToUse = await _utilProviders.HashtagGenerator.SuggestHashtags(profileTopic, mediaTopic,
-				pickAmount: hashtagPickAmount, images: medias);
-
-			if (!hashtagsToUse.Any())
-				throw new Exception("Failed to find hashtags for image");
-
-			return new MediaInfo
-			{
-				Caption = CreateCaption(defaultCaption, generateCaption),
-				Credit = credit,
-				Hashtags = hashtagsToUse
+				Hashtags = hashtagsToUse.Select(_=>_.Name).Take(hashtagPickAmount).ToList()
 			};
 		}
 	}

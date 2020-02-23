@@ -6,7 +6,7 @@ namespace Quarkless.Models.Timeline.Interfaces.TaskScheduler
 {
 	public interface ITaskService
 	{
-		void DeleteAllFailedJobs();
+		void ResetJobs();
 		string ScheduleEvent(EventActionOptions eventAction);
 		//string ScheduleEvent(string actionName, RestModel restModel, DateTimeOffset timeOffset);
 		void ActionTask(Delegate @delegate, DateTimeOffset executeTime, params object[] args);

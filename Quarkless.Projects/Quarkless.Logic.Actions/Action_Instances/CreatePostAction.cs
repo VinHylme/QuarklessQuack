@@ -17,8 +17,10 @@ using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.Common.Models;
 using Quarkless.Models.Common.Models.Carriers;
 using Quarkless.Models.ContentInfo.Interfaces;
+using Quarkless.Models.HashtagGenerator;
 using Quarkless.Models.Heartbeat;
 using Quarkless.Models.Heartbeat.Interfaces;
+using Quarkless.Models.Lookup.Interfaces;
 using Quarkless.Models.Media;
 using Quarkless.Models.Profile.Enums;
 using Quarkless.Models.SearchResponse;
@@ -26,14 +28,16 @@ using Quarkless.Models.SearchResponse.Enums;
 
 namespace Quarkless.Logic.Actions.Action_Instances
 {
-	internal class CreatePostAction : IActionCommit
+	internal class CreatePostAction : BaseAction, IActionCommit
 	{
 		private readonly IContentInfoBuilder _contentInfoBuilder;
 		private readonly IHeartbeatLogic _heartbeatLogic;
 		private readonly UserStoreDetails _user;
 		private PostActionOptions _actionOptions;
 
-		internal CreatePostAction(UserStoreDetails userStoreDetails, IContentInfoBuilder contentInfoBuilder, IHeartbeatLogic heartbeatLogic)
+		internal CreatePostAction(UserStoreDetails userStoreDetails, IContentInfoBuilder contentInfoBuilder,
+			IHeartbeatLogic heartbeatLogic, ILookupLogic lookupLogic)
+			: base(lookupLogic, ActionType.CreatePost, userStoreDetails)
 		{
 			_contentInfoBuilder = contentInfoBuilder;
 			_heartbeatLogic = heartbeatLogic;
@@ -123,7 +127,8 @@ namespace Quarkless.Logic.Actions.Action_Instances
 						{
 							MetaDataType = MetaDataType.FetchMediaForSpecificUserGoogle,
 							ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-							InstagramId = _user.Profile.InstagramAccountId
+							InstagramId = _user.Profile.InstagramAccountId,
+							AccountId = _user.AccountId
 						});
 
 						return (googleResults != null ? googleResults.ToList() : new List<Meta<Media>>(),
@@ -172,7 +177,8 @@ namespace Quarkless.Logic.Actions.Action_Instances
 						{
 							MetaDataType = selectedMetaDataType,
 							ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-							InstagramId = _user.ShortInstagram.Id
+							InstagramId = _user.ShortInstagram.Id,
+							AccountId = _user.AccountId
 						}))?.ToList();
 
 						if (resultsFromMetaData == null || !resultsFromMetaData.Any() 
@@ -195,7 +201,8 @@ namespace Quarkless.Logic.Actions.Action_Instances
 						{
 							MetaDataType = MetaDataType.FetchMediaForSpecificUserYandex,
 							ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-							InstagramId = _user.ShortInstagram.Id
+							InstagramId = _user.ShortInstagram.Id,
+							AccountId = _user.AccountId
 						});
 						return (yandexResults != null ? yandexResults.ToList() : new List<Meta<Media>>(),
 							MetaDataType.FetchMediaForSpecificUserYandex);
@@ -209,27 +216,12 @@ namespace Quarkless.Logic.Actions.Action_Instances
 			var selectedMedia = new TempSelect();
 			var filterMediaSize = new Size(850, 850);
 
-			var by = new By
-			{
-				ActionType = (int)ActionType.CreatePost,
-				User = _user.Profile.InstagramAccountId
-			};
-
 			foreach (var mediaItem in mediaItems)
 			{
-				mediaItem.SeenBy.Add(by);
-
-				_heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
-				{
-					AccountId = _user.AccountId,
-					InstagramId = _user.InstagramAccountUser,
-					ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-					MetaDataType = selectedAction,
-					Data = mediaItem
-				}).GetAwaiter().GetResult();
-
 				var media = mediaItem.ObjectItem?.Medias.FirstOrDefault();
 				if (media == null) continue;
+
+				AddObjectToLookup(media.MediaId).GetAwaiter().GetResult();
 
 				var imageUrl = media.MediaUrl.FirstOrDefault();
 
@@ -249,27 +241,12 @@ namespace Quarkless.Logic.Actions.Action_Instances
 		{
 			var selectedMedia = new TempSelect();
 
-			var by = new By
-			{
-				ActionType = (int)ActionType.CreatePost,
-				User = _user.Profile.InstagramAccountId
-			};
-
 			foreach (var mediaItem in mediaItems)
 			{
-				mediaItem.SeenBy.Add(by);
-
-				_heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
-				{
-					AccountId = _user.AccountId,
-					InstagramId = _user.InstagramAccountUser,
-					ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-					MetaDataType = selectedAction,
-					Data = mediaItem
-				}).GetAwaiter().GetResult();
-
 				var media = mediaItem.ObjectItem?.Medias.FirstOrDefault();
 				if (media == null) continue;
+
+				AddObjectToLookup(media.MediaId).GetAwaiter().GetResult();
 
 				var videoUrl = media.MediaUrl.FirstOrDefault();
 				var resultVideo = ProcessVideo(videoUrl).Result;
@@ -291,31 +268,18 @@ namespace Quarkless.Logic.Actions.Action_Instances
 			var carouselAmount = SecureRandom.Next(2, 4);
 			var currentAmount = 0;
 			const int howManyMediasToTakeFromInstagramCarousel = 2;
-			var by = new By
-			{
-				ActionType = (int)ActionType.CreatePost,
-				User = _user.Profile.InstagramAccountId
-			};
 
 			foreach (var mediaItem in mediaItems)
 			{
 				if (currentAmount > carouselAmount)
 					break;
 
-				mediaItem.SeenBy.Add(by);
-				_heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
-				{
-					AccountId = _user.AccountId,
-					InstagramId = _user.InstagramAccountUser,
-					ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-					MetaDataType = selectedAction,
-					Data = mediaItem
-				}).GetAwaiter().GetResult();
-
 				foreach (var objectItemMedia in mediaItem.ObjectItem.Medias)
 				{
 					if(objectItemMedia == null)
 						continue;
+
+					AddObjectToLookup(objectItemMedia.MediaId).GetAwaiter().GetResult();
 
 					var fromInsta = objectItemMedia.MediaFrom == MediaFrom.Instagram;
 					
@@ -336,7 +300,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 								var cas = _actionOptions.PostAnalyser.Manipulation.ImageEditor
 									.GetClosestAspectRatio(imageResponse.MediaBytes);
 
-								if (Math.Abs(oas - cas) > 0.1) continue;
+								if (Math.Abs(oas - cas) > 0.06) continue;
 
 								selectedMedia.MediaType = InstaMediaType.Carousel;
 								imageResponse.SelectedMedia = mediaItem;
@@ -465,9 +429,9 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				{
 					var likeActionsChances = new List<Chance<PostMediaActionType>>
 					{
-						new Chance<PostMediaActionType> {Object = PostMediaActionType.Image, Probability = 0.35},
-						new Chance<PostMediaActionType> {Object = PostMediaActionType.Video, Probability = 0.30},
-						new Chance<PostMediaActionType> {Object = PostMediaActionType.Carousel, Probability = 0.35},
+						new Chance<PostMediaActionType> {Object = PostMediaActionType.Image, Probability = 0.55},
+						new Chance<PostMediaActionType> {Object = PostMediaActionType.Video, Probability = 0.20},
+						new Chance<PostMediaActionType> {Object = PostMediaActionType.Carousel, Probability = 0.25},
 					};
 					actionType = SecureRandom.ProbabilityRoll(likeActionsChances);
 				}
@@ -502,25 +466,19 @@ namespace Quarkless.Logic.Actions.Action_Instances
 					return results;
 				}
 
-				var by = new By
-				{
-					ActionType = (int)ActionType.CreatePost,
-					User = _user.Profile.InstagramAccountId
-				};
+				var lookups = await GetLookupItems();
 
 				// remove any duplicates (not reliable will need to make sure they are not refreshed)
-				var filteredResults = totalResults.Item1
-					.Where(mediaData => !mediaData.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-					.ToList();
+				var filteredResults = totalResults.Item1;
 
 				//get meta medias by the action type selected (e.g. video, image or carousel)
 				var filterByMediaType = filteredResults.Select(meta =>
-					new Meta<Media>(new 
-						Media
+					new Meta<Media>(new Media
 						{
 							Errors = meta.ObjectItem?.Errors ?? 0,
 							Medias = meta.ObjectItem?.Medias
-								?.Where(a=>a.MediaType == (InstaMediaType)((int)actionType))?.ToList() 
+								?.Where(a=>a.MediaType == (InstaMediaType)((int)actionType)
+										&& !lookups.Exists(_=>_.ObjectId == a.MediaId)).ToList() 
 								?? new List<MediaResponse>()
 						})).Shuffle().ToList();
 
@@ -537,9 +495,8 @@ namespace Quarkless.Logic.Actions.Action_Instances
 								{
 									Errors = meta.ObjectItem.Errors,
 									Medias = meta.ObjectItem?.Medias
-										         ?.Where(a => a.MediaType == InstaMediaType.Image)?.ToList()
-									         ?? new List<MediaResponse>()
-								})).Shuffle().ToList();
+									?.Where(a => a.MediaType == InstaMediaType.Image)?.ToList()
+									?? new List<MediaResponse>()})).Shuffle().ToList();
 					}
 					else
 					{
@@ -589,6 +546,14 @@ namespace Quarkless.Logic.Actions.Action_Instances
 						InstagramAccountUsername = _user.InstagramAccountUsername
 					}
 				};
+				
+				//if carousel was picked and we only have one media (change their type)
+				if (selectedMedia.MediaType == InstaMediaType.Carousel && selectedMedia.MediaData.Count <= 1)
+				{
+					var selectedMediaData = selectedMedia.MediaData.First();
+					var downloaded = _actionOptions.PostAnalyser.Manager.DownloadMedia(selectedMediaData.Url);
+					selectedMedia.MediaType = downloaded.IsValidImage() ? InstaMediaType.Image : InstaMediaType.Video;
+				}
 
 				switch (selectedMedia.MediaType)
 				{
@@ -610,21 +575,21 @@ namespace Quarkless.Logic.Actions.Action_Instances
 						var selectedImageMedia = imageData.SelectedMedia.ObjectItem.Medias.First();
 
 						var credit = selectedImageMedia.User?.Username;
-						MediaInfo mediaInfo;
-
-						if (selectedImageMedia.Topic == null)
-							mediaInfo = await _contentInfoBuilder.GenerateMediaInfoBytes(_user.Profile.ProfileTopic, null,
-								credit, SecureRandom.Next(24, 28), new[]
+						var mediaInfo = await _contentInfoBuilder
+							.GenerateMediaInfo(new Source
+							{
+								ProfileTopic = _user.Profile.ProfileTopic,
+								MediaTopic = selectedImageMedia?.Topic,
+								ImageBytes = new []
 								{
 									_actionOptions.PostAnalyser.Manager
 										.DownloadMedia(imageData.Url)
-								}, defaultCaption: _user.Profile.AdditionalConfigurations.DefaultCaption,
-								generateCaption: _user.Profile.AdditionalConfigurations.AutoGenerateCaption);
-						else
-							mediaInfo = await _contentInfoBuilder.GenerateMediaInfo(_user.Profile.ProfileTopic,
-								selectedImageMedia.Topic, credit, SecureRandom.Next(24, 28),
-								defaultCaption: _user.Profile.AdditionalConfigurations.DefaultCaption,
-								generateCaption: _user.Profile.AdditionalConfigurations.AutoGenerateCaption);
+								}
+							},
+							credit,
+							hashtagPickAmount: SecureRandom.Next(20,25),
+							defaultCaption: _user.Profile.AdditionalConfigurations.DefaultCaption,
+							generateCaption: _user.Profile.AdditionalConfigurations.AutoGenerateCaption);
 
 						mediaInfo.MediaType = InstaMediaType.Image;
 						
@@ -653,10 +618,16 @@ namespace Quarkless.Logic.Actions.Action_Instances
 						var selectedVideoMedia = selectedMediaData.SelectedMedia.ObjectItem.Medias.First();
 						var credit = selectedVideoMedia.User?.Username;
 
-						var mediaInfo = await _contentInfoBuilder.GenerateMediaInfo(_user.Profile.ProfileTopic,
-							selectedVideoMedia.Topic, credit, SecureRandom.Next(20, 28),
-							defaultCaption: _user.Profile.AdditionalConfigurations.DefaultCaption,
-							generateCaption: _user.Profile.AdditionalConfigurations.AutoGenerateCaption);
+						var mediaInfo = await _contentInfoBuilder
+							.GenerateMediaInfo(new Source
+								{
+									ProfileTopic = _user.Profile.ProfileTopic,
+									MediaTopic = selectedVideoMedia.Topic
+							},
+								credit,
+								hashtagPickAmount: SecureRandom.Next(20, 25),
+								defaultCaption: _user.Profile.AdditionalConfigurations.DefaultCaption,
+								generateCaption: _user.Profile.AdditionalConfigurations.AutoGenerateCaption);
 
 						var video = selectedMedia.MediaData.First();
 
@@ -705,14 +676,27 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 							var downloaded = _actionOptions.PostAnalyser.Manager.DownloadMedia(selectedMediaData.Url);
 
-							if (selectedCarouselMedia.Topic == null && downloaded.IsValidImage())
-								mediaInfo = await _contentInfoBuilder.GenerateMediaInfoBytes(_user.Profile.ProfileTopic, null,
-									credit, SecureRandom.Next(20, 28), new[] { downloaded },
+							if (downloaded.IsValidImage())
+								mediaInfo = await _contentInfoBuilder.GenerateMediaInfo(
+									new Source
+									{
+										ProfileTopic = _user.Profile.ProfileTopic,
+										MediaTopic = selectedCarouselMedia?.Topic,
+										ImageBytes = new [] {downloaded}
+									},
+									credit,
+									hashtagPickAmount: SecureRandom.Next(20, 25),
 									defaultCaption: _user.Profile.AdditionalConfigurations.DefaultCaption,
 									generateCaption: _user.Profile.AdditionalConfigurations.AutoGenerateCaption);
 							else
-								mediaInfo = await _contentInfoBuilder.GenerateMediaInfo(_user.Profile.ProfileTopic,
-									selectedCarouselMedia.Topic, credit, SecureRandom.Next(20, 28),
+								mediaInfo = await _contentInfoBuilder.GenerateMediaInfo(
+									new Source
+									{
+										ProfileTopic = _user.Profile.ProfileTopic,
+										MediaTopic = selectedCarouselMedia?.Topic,
+									},
+									credit,
+									hashtagPickAmount: SecureRandom.Next(20, 25),
 									defaultCaption: _user.Profile.AdditionalConfigurations.DefaultCaption,
 									generateCaption: _user.Profile.AdditionalConfigurations.AutoGenerateCaption);
 

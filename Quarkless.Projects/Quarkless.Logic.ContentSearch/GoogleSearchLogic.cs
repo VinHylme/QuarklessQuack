@@ -15,6 +15,7 @@ using Quarkless.Models.Proxy;
 using Quarkless.Models.SeleniumClient.Interfaces;
 using Microsoft.Extensions.Options;
 using OpenQA.Selenium;
+using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.RestSharpClientManager.Interfaces;
 using Quarkless.Models.Topic;
 
@@ -79,6 +80,7 @@ namespace Quarkless.Logic.ContentSearch
 					{
 						Medias = responseValues.MediasObject.Select(s => new MediaResponse
 						{
+							MediaId = s.MediaUrl.ToByteArray().ComputeHash().ToString(),
 							Topic = topic,
 							MediaFrom = MediaFrom.Google,
 							MediaType = InstaMediaType.Image,
@@ -129,6 +131,7 @@ namespace Quarkless.Logic.ContentSearch
 					response.Result.Medias.AddRange(responseValues.MediasObject.Select(s => new MediaResponse
 					{
 						Topic = null,
+						MediaId = s.MediaUrl.ToByteArray().ComputeHash().ToString(),
 						MediaFrom = MediaFrom.Google,
 						MediaType = InstaMediaType.Image,
 						MediaUrl = new List<string> { s.MediaUrl }

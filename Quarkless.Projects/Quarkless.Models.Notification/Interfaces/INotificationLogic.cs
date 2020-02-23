@@ -20,7 +20,7 @@ namespace Quarkless.Models.Notification.Interfaces
 
 		public Task<List<NotificationTimelineAction>> GetTimelineActionNotifications(string accountId,
 			string instagramAccountId, int limit = 250, ActionType actionType = ActionType.All, 
-			TimelineEventItemStatus? status = null);
+			TimelineEventItemStatus? status = null, bool includeSeen = false);
 
 		//gets for all users (only be used by admin)
 		public Task<List<NotificationTimelineAction>> GetTimelineActionNotifications(int limit = 250, 

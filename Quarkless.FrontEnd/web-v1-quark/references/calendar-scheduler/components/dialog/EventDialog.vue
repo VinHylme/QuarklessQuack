@@ -8,10 +8,10 @@
                         <h5 class="v-cal-dialog__title">{{ title }}</h5>
                         <button type="button" class="v-cal-dialog__close" @click="cancel"></button>
                     </header>
-                    <section v-if="postDataBuild.typeSelected<1"  class="v-cal-dialog-card__body" id="initial" style="padding-top:5em;" >
+                    <section v-if="postDataBuild.typeSelected<1"  class="v-cal-dialog-card__body" id="initial">
                         <p class="subtitle thin is-5 card-title">What would you like to schedule?</p>
                             <div class="container-media-overview" >
-                            <div class="container-media" style="margin-top:5em;">
+                            <div class="container-media">
                             <div class="card-post" @click="postDataBuild.typeSelected=1">
                                 <h3 class="title thin">Photo</h3>
                                 <div class="bar">

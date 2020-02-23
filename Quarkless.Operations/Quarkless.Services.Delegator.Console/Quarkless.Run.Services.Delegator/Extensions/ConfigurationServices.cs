@@ -7,14 +7,17 @@ using Quarkless.Events;
 using Quarkless.Events.Interfaces;
 using Quarkless.Logic.Agent;
 using Quarkless.Logic.InstagramAccounts;
+using Quarkless.Logic.Profile;
 using Quarkless.Logic.ReportHandler;
 using Quarkless.Models.Agent.Interfaces;
 using Quarkless.Models.InstagramAccounts.Interfaces;
+using Quarkless.Models.Profile.Interfaces;
 using Quarkless.Models.ReportHandler.Interfaces;
 using Quarkless.Models.Shared.Extensions;
 using Quarkless.Repository.InstagramAccounts.Mongo;
 using Quarkless.Repository.MongoContext;
 using Quarkless.Repository.MongoContext.Models;
+using Quarkless.Repository.Profile;
 using Quarkless.Repository.RedisContext;
 using Quarkless.Repository.RedisContext.Models;
 using Quarkless.Repository.ReportHandler;
@@ -26,7 +29,8 @@ namespace Quarkless.Run.Services.Delegator.Extensions
 		internal static void IncludeServices(this IServiceCollection services)
 		{
 			var accessors = new Config().Environments;
-
+			services.AddTransient<IProfileLogic, ProfileLogic>();
+			services.AddTransient<IProfileRepository, ProfileRepository>();
 			services.AddTransient<IInstagramAccountLogic, InstagramAccountLogic>();
 			services.AddTransient<IInstagramAccountRepository, InstagramAccountRepository>();
 			services.AddTransient<IAgentLogic, AgentLogic>();

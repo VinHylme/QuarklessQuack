@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Quarkless.Models.HashtagGenerator\Quarkless.Models.HashtagGenerator.csproj" />
     <ProjectReference Include="..\Quarkless.Models.Media\Quarkless.Models.Media.csproj" />
     <ProjectReference Include="..\Quarkless.Models.Profile\Quarkless.Models.Profile.csproj" />
     <ProjectReference Include="..\Quarkless.Models.TextGenerator\Quarkless.Models.TextGenerator.csproj" />

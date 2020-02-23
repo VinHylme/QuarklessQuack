@@ -65,10 +65,10 @@ namespace Quarkless.Logic.Notification
 		}
 
 		public async Task<List<NotificationTimelineAction>> GetTimelineActionNotifications(string accountId, string instagramAccountId, int limit = 250,
-			ActionType actionType = ActionType.All, TimelineEventItemStatus? status = null)
+			ActionType actionType = ActionType.All, TimelineEventItemStatus? status = null, bool includeSeen = false)
 		{
 			return await _notificationRepository.GetTimelineActionNotifications(accountId, instagramAccountId, limit,
-				actionType, status);
+				actionType, status, includeSeen);
 		}
 	}
 }

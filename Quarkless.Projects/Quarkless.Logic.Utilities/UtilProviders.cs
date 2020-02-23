@@ -14,19 +14,18 @@ namespace Quarkless.Logic.Utilities
 	public class UtilProviders : IUtilProviders
 	{
 		public UtilProviders(ITextGenerator textGenerator, IHashtagGenerator hashtagGenerator,
-			ITranslateService translateService, ISearchProvider searchProvider)
+			ISearchProvider searchProvider)
 		{
 			TextGenerator = textGenerator;
 			HashtagGenerator = hashtagGenerator;
-			TranslateService = translateService;
 			//EmailService = emailService;
 			SearchProvider = searchProvider;
 		}
 		public ISearchProvider SearchProvider { get; }
 		public IHashtagGenerator HashtagGenerator { get; }
 		public ITextGenerator TextGenerator { get; }
-		public ITranslateService TranslateService { get; }
-		public IEmailService EmailService { get; }
+		//public ITranslateService TranslateService { get; }
+		//public IEmailService EmailService { get; }
 
 		public FakerModel GeneratePerson(string locale = "en", string emailProvider = null, bool? isMale = null)
 		{

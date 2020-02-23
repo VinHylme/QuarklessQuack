@@ -16,19 +16,21 @@ using Quarkless.Models.Common.Models.Resolver;
 using Quarkless.Models.ContentInfo.Interfaces;
 using Quarkless.Models.Heartbeat;
 using Quarkless.Models.Heartbeat.Interfaces;
+using Quarkless.Models.Lookup.Interfaces;
 using Quarkless.Models.Media;
 using Quarkless.Models.SearchResponse;
 
 namespace Quarkless.Logic.Actions.Action_Instances
 {
-	internal class LikeMediaAction : IActionCommit
+	internal class LikeMediaAction : BaseAction, IActionCommit
 	{
 		private readonly IContentInfoBuilder _contentInfoBuilder;
 		private readonly IHeartbeatLogic _heartbeatLogic;
 		private readonly UserStoreDetails _user;
 		private LikeActionOptions _actionOptions;
 		internal LikeMediaAction(UserStoreDetails userStoreDetails, IContentInfoBuilder contentInfoBuilder,
-			IHeartbeatLogic heartbeatLogic)
+			IHeartbeatLogic heartbeatLogic, ILookupLogic lookupLogic)
+			: base(lookupLogic, ActionType.LikePost, userStoreDetails)
 		{
 			_user = userStoreDetails;
 			_contentInfoBuilder = contentInfoBuilder;
@@ -37,35 +39,26 @@ namespace Quarkless.Logic.Actions.Action_Instances
 		}
 		private async Task<LikeMediaModel> LikeUserFeedMedia()
 		{
-			var by = new By
-			{
-				ActionType = (int)ActionType.LikePost,
-				User = _user.Profile.InstagramAccountId
-			};
 			const MetaDataType fetchType = MetaDataType.FetchUsersFeed;
+			var lookups = await GetLookupItems();
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<Media>(
-					new MetaDataFetchRequest
-					{
-						MetaDataType = fetchType,
-						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-						InstagramId = _user.ShortInstagram.Id
-					}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-				.Where(s => s.ObjectItem.Medias.Count > 0).ToList();
-
-			var select = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count));
-
-			if (select == null) return null;
-			select.SeenBy.Add(by);
-
-			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
+			new MetaDataFetchRequest
 			{
 				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
-				Data = select
-			});
-			var media = select.ObjectItem?.Medias?.FirstOrDefault();
+				AccountId = _user.AccountId
+			}))?.Where(s => s.ObjectItem.Medias.Count > 0)
+				.SelectMany(_=>_.ObjectItem.Medias)
+				.Where(_=> !lookups.Exists(l => l.ObjectId == _.MediaId))
+				.ToList();
+
+			var media = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count - 1));
+
 			if (media == null) return null;
+
+			await AddObjectToLookup(media.MediaId);
+
 			return new LikeMediaModel
 			{
 				Media = new MediaShort
@@ -91,34 +84,25 @@ namespace Quarkless.Logic.Actions.Action_Instances
 		}
 		private async Task<LikeMediaModel> LikeUsersMediaByTopic()
 		{
-			var by = new By
-			{
-				ActionType = (int)ActionType.LikePost,
-				User = _user.Profile.InstagramAccountId
-			};
 			const MetaDataType fetchType = MetaDataType.FetchMediaByTopic;
+			var lookups = await GetLookupItems();
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 			{
 				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-				InstagramId = _user.ShortInstagram.Id
-			}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-				.Where(s => s.ObjectItem.Medias.Count > 0).ToList();
-
-			var select = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count));
-			if (select == null) return null;
-			select.SeenBy.Add(by);
-
-			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
-			{
-				MetaDataType = fetchType,
-				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
-				Data = select
-			});
+				AccountId = _user.AccountId
+			}))?.Where(s => s.ObjectItem.Medias.Count > 0)
+				.SelectMany(_ => _.ObjectItem.Medias)
+				.Where(_ => !lookups.Exists(l => l.ObjectId == _.MediaId))
+				.ToList();
 
-			var media = select.ObjectItem?.Medias?.FirstOrDefault();
+			var media = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count - 1));
+			
 			if (media == null) return null;
+
+			await AddObjectToLookup(media.MediaId);
+
 			return new LikeMediaModel
 			{
 				Media = new MediaShort
@@ -144,34 +128,24 @@ namespace Quarkless.Logic.Actions.Action_Instances
 		}
 		private async Task<LikeMediaModel> LikeUsersMediaByLocation()
 		{
-			var by = new By
-			{
-				ActionType = (int)ActionType.LikePost,
-				User = _user.Profile.InstagramAccountId
-			};
 			const MetaDataType fetchType = MetaDataType.FetchMediaByUserLocationTargetList;
+			var lookups = await GetLookupItems();
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 			{
 				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-				InstagramId = _user.ShortInstagram.Id
-			}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-				.Where(s => s.ObjectItem.Medias.Count > 0).ToList();
-
-			var select = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count));
-			if (select == null) return null;
-			select.SeenBy.Add(by);
-
-			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
-			{
-				MetaDataType = fetchType,
-				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
-				Data = select
-			});
+				AccountId = _user.AccountId
+			}))?.Where(s => s.ObjectItem.Medias.Count > 0)
+				.SelectMany(_ => _.ObjectItem.Medias)
+				.Where(_ => !lookups.Exists(l => l.ObjectId == _.MediaId))
+				.ToList();
 
-			var media = select.ObjectItem?.Medias?.FirstOrDefault();
+			var media = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count - 1));
+
 			if (media == null) return null;
+
+			await AddObjectToLookup(media.MediaId);
 			return new LikeMediaModel
 			{
 				Media = new MediaShort
@@ -197,35 +171,24 @@ namespace Quarkless.Logic.Actions.Action_Instances
 		}
 		private async Task<LikeMediaModel> LikeUsersMediaLikers()
 		{
-			var by = new By
-			{
-				ActionType = (int)ActionType.LikePost,
-				User = _user.Profile.InstagramAccountId
-			};
 			const MetaDataType fetchType = MetaDataType.FetchMediaByLikers;
+			var lookups = await GetLookupItems();
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<Media>(
 			new MetaDataFetchRequest
 			{
 				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-				InstagramId = _user.ShortInstagram.Id
-			}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-				.Where(s => s.ObjectItem.Medias.Count > 0).ToList();
-
-			var select = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count));
-			if (select == null) return null;
-			select.SeenBy.Add(by);
-
-			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
-			{
-				MetaDataType = fetchType,
-				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
-				Data = select
-			});
+				AccountId = _user.AccountId
+			}))?.Where(s => s.ObjectItem.Medias.Count > 0)
+				.SelectMany(_ => _.ObjectItem.Medias)
+				.Where(_ => !lookups.Exists(l => l.ObjectId == _.MediaId))
+				.ToList();
 
-			var media = select.ObjectItem?.Medias?.FirstOrDefault();
+			var media = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count - 1));
+
 			if (media == null) return null;
+			await AddObjectToLookup(media.MediaId);
 			return new LikeMediaModel
 			{
 				Media = new MediaShort
@@ -251,33 +214,23 @@ namespace Quarkless.Logic.Actions.Action_Instances
 		}
 		private async Task<LikeMediaModel> LikeUsersMediaCommenters()
 		{
-			var by = new By
-			{
-				ActionType = (int)ActionType.LikePost,
-				User = _user.Profile.InstagramAccountId
-			};
 			const MetaDataType fetchType = MetaDataType.FetchMediaByCommenters;
+			var lookups = await GetLookupItems();
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 			{
 				MetaDataType = fetchType,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-				InstagramId = _user.ShortInstagram.Id
-			}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-				.Where(s => s.ObjectItem.Medias.Count > 0).ToList();
-
-			var select = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count));
-			if (select == null) return null;
-			select.SeenBy.Add(by);
-
-			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
-			{
-				MetaDataType = fetchType,
-				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
-				Data = select
-			});
-			var media = select.ObjectItem?.Medias?.FirstOrDefault();
+				AccountId = _user.AccountId
+			}))?.Where(s => s.ObjectItem.Medias.Count > 0)
+				.SelectMany(_ => _.ObjectItem.Medias)
+				.Where(_ => !lookups.Exists(l => l.ObjectId == _.MediaId))
+				.ToList();
+
+			var media = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count - 1));
+
 			if (media == null) return null;
+			await AddObjectToLookup(media.MediaId);
 			return new LikeMediaModel
 			{
 				Media = new MediaShort
@@ -450,20 +403,13 @@ namespace Quarkless.Logic.Actions.Action_Instances
 								InstagramAccountUser = _user.InstagramAccountUser
 							}
 						};
-
-						var by = new By
-						{
-							ActionType = (int) ActionType.LikePost,
-							User = _user.Profile.InstagramAccountId
-						};
-
 						var fetchMedias = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 							{
 								MetaDataType = MetaDataType.FetchMediaByTopic,
 								ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-								InstagramId = _user.ShortInstagram.Id
-							}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == @by.User && e.ActionType == @by.ActionType))
-								.ToList();
+								InstagramId = _user.ShortInstagram.Id,
+								AccountId = _user.AccountId
+						}))?.ToList();
 
 						if (fetchMedias == null)
 						{
@@ -483,21 +429,12 @@ namespace Quarkless.Logic.Actions.Action_Instances
 							for (var i = 0; i < _actionOptions.StrategySettings.NumberOfActions; i++)
 							{
 								var media = topic.ElementAtOrDefault(i);
-								if (media == null) continue;
 
-								media.SeenBy.Add(@by);
-
-								await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
-								{
-									MetaDataType = MetaDataType.FetchUsersFeed,
-									ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-									InstagramId = _user.ShortInstagram.Id,
-									Data = media,
-								});
-
-								var nominatedMedia = media.ObjectItem?.Medias?.FirstOrDefault()?.MediaId;
+								var nominatedMedia = media?.ObjectItem?.Medias?.FirstOrDefault()?.MediaId;
 								if (nominatedMedia == null) continue;
 
+								await AddObjectToLookup(nominatedMedia);
+								
 								@event.DataObjects.Add(new EventBody(nominatedMedia, nominatedMedia.GetType(), 
 								executionTime.AddMinutes(
 									_actionOptions.StrategySettings.OffsetPerAction.TotalMinutes * timerCounter++)));

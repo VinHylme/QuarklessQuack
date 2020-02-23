@@ -259,8 +259,9 @@ namespace Quarkless.Logic.InstagramSearch
 			var medias = new Media();
 			foreach (var topic in topics)
 			{
-				var mediasResults = !isRecent ? await _container.Hashtag.GetTopHashtagMediaListAsync(topic.Name.OnlyWords(), PaginationParameters.MaxPagesToLoad(limit))
+				var mediasResults = !isRecent ? await _container.Hashtag.GetTopHashtagMediaListAsync(topic.Name.OnlyWords(), PaginationParameters.MaxPagesToLoad(limit)) 
 					: await _container.Hashtag.GetRecentHashtagMediaListAsync(topic.Name.OnlyWords(), PaginationParameters.MaxPagesToLoad(limit));
+				
 				if (mediasResults.Succeeded)
 				{
 					medias.Medias.AddRange(mediasResults.Value.Medias.Select(s =>
@@ -340,8 +341,10 @@ namespace Quarkless.Logic.InstagramSearch
 					}));
 				}
 			}
+
 			return medias;
 		}
+
 		public async Task<Media> SearchMediaDetailInstagram(IEnumerable<string> topics, int limit, bool isRecent = false)
 		{
 			var medias = new Media();

@@ -29,6 +29,7 @@ using Quarkless.Models.ResponseResolver.Enums;
 using Quarkless.Models.ResponseResolver.Models;
 using Quarkless.Models.Stories;
 using Quarkless.Models.Comments;
+using Quarkless.Models.Common.Models.Resolver;
 
 namespace Quarkless.Logic.ResponseResolver
 {
@@ -38,11 +39,12 @@ namespace Quarkless.Logic.ResponseResolver
 		{
 			public string Message { get; set; }
 			public string AssetUrl { get; set; }
-
-			public MessageCreated(string message, string assetUrl = "")
+			public MediaShort Media { get; set; }
+			public MessageCreated(string message, MediaShort media, string assetUrl = "")
 			{
 				this.Message = message;
 				this.AssetUrl = assetUrl;
+				this.Media = media;
 			}
 		}
 
@@ -269,7 +271,7 @@ namespace Quarkless.Logic.ResponseResolver
 			await _instagramAccountLogic.PartialUpdateInstagramAccount(context.AccountId, context.Id, newState);
 		}
 
-		private async Task CreateNotification(string assetUrl, string message, ResponseType responseType,
+		private async Task CreateNotification(string assetUrl, MediaShort media, string message, ResponseType responseType,
 			ActionType actionType, string responseMessage, TimelineEventItemStatus status)
 		{
 			var context = Context.InstagramAccount;
@@ -278,7 +280,7 @@ namespace Quarkless.Logic.ResponseResolver
 
 			await _notificationLogic
 				.AddTimelineActionNotification(NotificationExtensions
-					.CreateTimelineNotificationObject(context.AccountId, context.Id, assetUrl,
+					.CreateTimelineNotificationObject(context.AccountId, context.Id, assetUrl, media,
 						message, actionType, (int) responseType, responseMessage, status));
 		}
 
@@ -288,31 +290,49 @@ namespace Quarkless.Logic.ResponseResolver
 			{
 				case ActionType.RefreshLogin:
 				{
-					return new MessageCreated("Refreshed Account and cleared cookies");
+					return new MessageCreated("Refreshed Account and cleared cookies", null);
 				}
 				case ActionType.CreatePost:
 				{
 					MessageCreated messageCreated;
-					var message = "Created a new {0} post, with the caption of {1}. \n Hashtags used were: {2}";
+					var message = "Created a new {0} post";
 					switch (executedRequest)
 					{
 						case UploadPhotoModel model:
 							messageCreated = 
-								new MessageCreated(string.Format(message, "Photo", model.MediaInfo.Caption,
-									string.Join(" ", model.MediaInfo.Hashtags)), model.Image.Uri);
+								new MessageCreated(string.Format(message, "Photo"), new MediaShort
+									{
+										Caption = model.MediaInfo.Caption,
+										Hashtags = model.MediaInfo.Hashtags,
+										MediaType = (int) model.MediaInfo.MediaType,
+										MediaUrl = model.Image.Uri
+									}, Context?.InstagramAccount?.ProfilePicture);
 							break;
 						case UploadAlbumModel model:
 							messageCreated =
-								new MessageCreated(string.Format(message, "Album", model.MediaInfo.Caption,
-										string.Join(" ", model.MediaInfo.Hashtags)),
-									model.Album[0].ImageToUpload != null
-										? model.Album[0].ImageToUpload.Uri
-										: model.Album[0].VideoToUpload.VideoThumbnail.Uri);
+								new MessageCreated(string.Format(message, "Album"),
+									new MediaShort
+									{
+										Caption = model.MediaInfo.Caption,
+										Hashtags = model.MediaInfo.Hashtags,
+										MediaType = (int) model.MediaInfo.MediaType,
+										MediaUrl = model.Album[0].ImageToUpload != null
+											? model.Album[0].ImageToUpload.Uri
+											: model.Album[0].VideoToUpload.VideoThumbnail.Uri
+									},
+									Context?.InstagramAccount?.ProfilePicture);
 							break;
 						case UploadVideoModel model:
 							messageCreated =
-								new MessageCreated(string.Format(message, "Photo", model.MediaInfo.Caption,
-									string.Join(" ", model.MediaInfo.Hashtags)), model.Video.VideoThumbnail.Uri);
+								new MessageCreated(string.Format(message, "Video"),
+									new MediaShort
+									{
+										Caption = model.MediaInfo.Caption,
+										Hashtags = model.MediaInfo.Hashtags,
+										MediaType = (int) model.MediaInfo.MediaType,
+										MediaUrl = model.Video.VideoThumbnail.Uri
+									},
+									Context?.InstagramAccount?.ProfilePicture);
 							break;
 						default: throw new ArgumentOutOfRangeException();
 					}
@@ -322,85 +342,91 @@ namespace Quarkless.Logic.ResponseResolver
 				case ActionType.WatchStory:
 				{
 					if(!(executedRequest is StoryRequest exec)) throw new Exception();
-					return new MessageCreated($"Watched story {exec.User.Username} who happens to matches your interests",
-						exec.User.ProfilePicture);
+					return new MessageCreated($"Watched story from {exec.User.Username} who happens to matches your interests",
+						exec.Media, exec.User.ProfilePicture);
 				}
 				case ActionType.ReactStory:
 				{
 					if (!(executedRequest is StoryRequest exec)) throw new Exception();
 					return new MessageCreated($"Reacted {exec.User.Username}'s story",
-						exec.User.ProfilePicture);
+						exec.Media, exec.User.ProfilePicture);
 				}
 				case ActionType.CreateCommentMedia:
 				{
 					if (!(executedRequest is CreateCommentRequest exec)) throw new Exception();
 					return new MessageCreated($"Posted Comment: {exec.Text} on {exec.User.Username}'s post",
-						exec.Media.MediaUrl);
+						exec.Media,
+						exec.User.ProfilePicture);
 				}
 				case ActionType.CreateBiography:
 				{
-					return new MessageCreated("You have updated your biography");
+					return new MessageCreated("You have updated your biography",
+						null, Context?.InstagramAccount?.ProfilePicture);
 				}
 				case ActionType.CreateCommentReply:
 				{
 					if (!(executedRequest is CreateCommentRequest exec)) throw new Exception();
 					return new MessageCreated($"Replied to {exec.User.Username}'s comment",
-						exec.Media.MediaUrl);
+						exec.Media,
+						exec.User.ProfilePicture);
 				}
 				case ActionType.CreateStory:
 				{
-					return new MessageCreated("Added a new story");
+					return new MessageCreated("Added a new story", null, Context?.InstagramAccount?.ProfilePicture);
 				}
 				case ActionType.FollowHashtag:
 				{
-					return new MessageCreated("Followed Hashtag, based on your profile");
+					return new MessageCreated("Followed Hashtag, based on your profile", null);
 				}
 				case ActionType.FollowUser:
 				{
 					if (!(executedRequest is FollowAndUnFollowUserRequest exec)) throw new Exception();
-					return new MessageCreated($"Followed {exec.User.Username} who matches your profile", exec.User.ProfilePicture);
+					return new MessageCreated($"Followed {exec.User.Username} who matches your profile",
+						null, exec.User.ProfilePicture);
 				}
 				case ActionType.UnFollowUser:
 				{
 					if (!(executedRequest is FollowAndUnFollowUserRequest exec)) throw new Exception();
-					return new MessageCreated($"UnFollowed {exec.User.Username}", exec.User.ProfilePicture);
+					return new MessageCreated($"UnFollowed {exec.User.Username}", null, exec.User.ProfilePicture);
 				}
 				case ActionType.LikeComment:
 				{
 					if(!(executedRequest is LikeCommentRequest exec)) throw new Exception();
-					return new MessageCreated($"Liked {exec.User.Username}'s comment", exec.User.ProfilePicture);
+					return new MessageCreated($"Liked {exec.User.Username}'s comment", null, exec.User.ProfilePicture);
 				}
 				case ActionType.LikePost:
 				{
 					if (!(executedRequest is LikeMediaModel exec)) throw new Exception();
-					return new MessageCreated($"Liked {exec.User.Username}'s Post", exec.Media.MediaUrl);
+					return new MessageCreated($"Liked {exec.User.Username}'s Post",
+						exec.Media,
+						Context?.InstagramAccount?.ProfilePicture);
 				}
 				case ActionType.SendDirectMessageVideo:
 				{
 					if (!(executedRequest is SendDirectVideoModel exec)) throw new Exception();
-					return new MessageCreated($"Sent a direct video to {string.Join(",", exec.Recipients)}");
+					return new MessageCreated($"Sent a direct video to {string.Join(",", exec.Recipients)}", null);
 				}
 				case ActionType.SendDirectMessagePhoto:
 				{
 					if (!(executedRequest is SendDirectPhotoModel exec)) throw new Exception();
-					return new MessageCreated($"Sent a direct photo to {string.Join(",", exec.Recipients)}");
+					return new MessageCreated($"Sent a direct photo to {string.Join(",", exec.Recipients)}", null);
 				}
 				case ActionType.SendDirectMessageText:
 				{
 					if (!(executedRequest is SendDirectTextModel exec)) throw new Exception();
-					return new MessageCreated($"Sent a direct text message to {string.Join(",", exec.Recipients)}");
+					return new MessageCreated($"Sent a direct text message to {string.Join(",", exec.Recipients)}", null);
 				}
 				case ActionType.SendDirectMessageLink:
 				{
 					if (!(executedRequest is SendDirectLinkModel exec)) throw new Exception();
-					return new MessageCreated($"Sent a direct link to {string.Join(",", exec.Recipients)}");
+					return new MessageCreated($"Sent a direct link to {string.Join(",", exec.Recipients)}", null);
 				}
 				case ActionType.SendDirectMessageProfile:
 				{
 					if (!(executedRequest is SendDirectVideoModel exec)) throw new Exception();
-					return new MessageCreated($"Shared profile to {string.Join(",", exec.Recipients)}");
+					return new MessageCreated($"Shared profile to {string.Join(",", exec.Recipients)}", null);
 				}
-				default: return new MessageCreated($"{actionType.ToString()} Made");
+				default: return new MessageCreated($"{actionType.ToString()} Made", null);
 			}
 		}
 		private async Task MessagingHandler(ActionType actionType, string request)
@@ -931,10 +957,12 @@ namespace Quarkless.Logic.ResponseResolver
 			{
 				Response = response,
 			};
-			
+
+			var actionMessage = CreateMessage(actionType, request);
+
 			if (response?.Info == null)
 			{
-				await CreateNotification("", "Something is not going as expected right now, we're sorry",
+				await CreateNotification(actionMessage.AssetUrl, actionMessage.Media, "Something is not going as expected right now, we're sorry",
 					ResponseType.InternalException, actionType, "response is null",
 					TimelineEventItemStatus.ServerError);
 
@@ -943,15 +971,13 @@ namespace Quarkless.Logic.ResponseResolver
 
 			if (response.Succeeded)
 			{
-				var actionMessage = CreateMessage(actionType, request);
-
-				await CreateNotification(actionMessage.AssetUrl, actionMessage.Message,
+				await CreateNotification(actionMessage.AssetUrl, actionMessage.Media, actionMessage.Message,
 					response.Info.ResponseType, actionType, response.Info.Message,
 					TimelineEventItemStatus.Success);
 			}
 			else
 			{
-				await CreateNotification("", $"Failed to carry out {actionType.ToString()} action",
+				await CreateNotification(actionMessage.AssetUrl, actionMessage.Media, $"Failed to carry out {actionType.ToString()} action",
 					response.Info.ResponseType, actionType, response.Info.Message,
 					TimelineEventItemStatus.Failed);
 			}
@@ -1048,10 +1074,14 @@ namespace Quarkless.Logic.ResponseResolver
 			{
 				try
 				{
-					var getObj = (await _lookupLogic.Get(AccountId, InstagramAccountId, id)).FirstOrDefault();
+					var getObj = (await _lookupLogic.Get(AccountId, InstagramAccountId))
+						.FirstOrDefault(_=>_.ObjectId == id);
+
 					if (getObj == null)
 						continue;
-					await _lookupLogic.UpdateObjectToLookup(AccountId, InstagramAccountId, id, getObj, new LookupModel
+
+					await _lookupLogic.UpdateObjectToLookup(AccountId, InstagramAccountId, getObj,
+						new LookupModel(id)
 					{
 						Id = Guid.NewGuid().ToString(),
 						LastModified = DateTime.UtcNow,

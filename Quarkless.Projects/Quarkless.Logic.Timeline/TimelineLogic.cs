@@ -391,8 +391,8 @@ namespace Quarkless.Logic.Timeline
 					AddEventToTimeline(options);
 					
 					await _lookupCache.AddObjectToLookup(userStoreDetails.AccountId,
-						userStoreDetails.InstagramAccountUser, localCopy.Recipients.FirstOrDefault(),
-						new LookupModel {
+						userStoreDetails.InstagramAccountUser,
+						new LookupModel(localCopy.Recipients.FirstOrDefault()) {
 							Id = Guid.NewGuid().ToString(),
 							LastModified = DateTime.UtcNow,
 							LookupStatus = LookupStatus.Pending,

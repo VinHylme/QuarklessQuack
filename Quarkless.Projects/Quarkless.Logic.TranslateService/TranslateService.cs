@@ -15,14 +15,14 @@ using Quarkless.Models.Common.Extensions;
 
 namespace Quarkless.Logic.TranslateService
 {
-	//Todo: Refactor this and possibly use google translate service as is cheap
+	//TODO: Class NEEDS TO BE REFACTORED
 	public class TranslateService : ITranslateService
 	{
 		private readonly ISeleniumClient _seleniumClient;
 		private readonly IRestSharpClientManager _restSharpClient;
 		private readonly string _yandexApiKey;
 		private readonly string _detectApiKey;
-		private readonly string _naturalLanguageProcessingApi;
+		//private readonly string _naturalLanguageProcessingApi;
 		static int pos = 0;
 		public TranslateService(IOptions<TranslateOptions> tOptions, ISeleniumClient seleniumClient, 
 			IRestSharpClientManager restSharpClient)
@@ -31,7 +31,7 @@ namespace Quarkless.Logic.TranslateService
 			_seleniumClient = seleniumClient;
 			_yandexApiKey = tOptions.Value.YandexAPIKey;
 			_detectApiKey = tOptions.Value.DetectLangAPIKey;
-			_naturalLanguageProcessingApi = tOptions.Value.NaturalLanguageAPIPath;
+			//_naturalLanguageProcessingApi = tOptions.Value.NaturalLanguageAPIPath;
 			_seleniumClient.AddArguments(
 				"--headless",
 				"--enable-features=NetworkService"
@@ -50,30 +50,9 @@ namespace Quarkless.Logic.TranslateService
 
 		public IEnumerable<string> DetectLanguage(params string[] texts)
 		{
-			try
-			{
-				lock (texts)
-				{
-					if (texts.Length <= 0)
-						return new List<string>();
-					var items = texts.Where(_ => !string.IsNullOrEmpty(_) && _.Length > 4).ToArray();
-					var detect = new DetectLanguage
-					{
-						Text = items.Distinct().ToList()
-					};
-					var results = _restSharpClient.PostRequest(_naturalLanguageProcessingApi + "detectLanguage",
-						null, JsonConvert.SerializeObject(detect));
-					if (!results.IsSuccessful) return new List<string>();
-					var resParsed = JsonConvert.DeserializeObject<DetectLanguageResponse>(results.Content);
-					return resParsed.Detections ?? new List<string>();
-				}
-			}
-			catch (Exception ee)
-			{
-				Console.WriteLine(ee.Message);
-				return new List<string>();;
-			}
+			throw new NotImplementedException();
 		}
+
 		public IEnumerable<string> DetectLanguageYandex(params string[] texts)
 		{
 			var keyYandex = _yandexApiKey.Split('|');

@@ -1,13 +1,15 @@
 ﻿using InstagramApiSharp.Classes.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Quarkless.Models.Common.Models;
 
 namespace Quarkless.Models.Topic.Interfaces
 {
 	public interface ITopicLookupLogic
 	{
 		Task<List<InstaMedia>> GetMediasFromTopic(string topic, int limit);
-		Task<List<string>> BuildRelatedTopics(CTopic topic, bool saveToDb, bool includeGoogleSuggest = true);
+		Task<List<HashtagResponse>> BuildRelatedTopics(CTopic topic, bool saveToDb,
+			bool includeGoogleSuggest = true, int instagramTopicTakeAmount = 25);
 		Task<TopicResponse> AddTopic(CTopic topic, bool includeGoogleSuggest = true, bool saveTopicsSuggested = false);
 		Task<List<string>> AddTopics(List<CTopic> topics);
 		Task<CTopic> GetTopicById(string id);

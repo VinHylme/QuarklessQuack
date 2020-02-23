@@ -240,13 +240,16 @@ namespace Quarkless.Logic.Services.Automation
 		private async Task<int> SuccessfulActionCount(ActionType actionName, string accountId,
 			string instagramAccountId, int limit = 6000, bool isHourly = false)
 		{
-			var logs = await _notificationLogic.GetTimelineActionNotifications
-				(accountId, instagramAccountId, limit, status: TimelineEventItemStatus.Success);
+			var logs = await _notificationLogic.GetTimelineActionNotifications(
+				accountId, instagramAccountId, limit,
+				actionType: actionName,
+				status: TimelineEventItemStatus.Success,
+				includeSeen:true);
 
 			var startDate = DateTime.UtcNow;
 			var endDate = !isHourly ? startDate.AddDays(-1).AddTicks(1) : startDate.AddHours(-1).AddTicks(1);
 
-			return logs.Count(x => (x.Notification.CreatedAt <= startDate && x.Notification.CreatedAt >= endDate) &&  x.ActionType == actionName);
+			return logs.Count(x => x.Notification.CreatedAt <= startDate && x.Notification.CreatedAt >= endDate);
 		}
 		
 		// TODO: MAKE SURE ALL USERS ARE BUSINESS ACCOUNTS AND USERS OVER 100 FOLLOWERS
@@ -269,25 +272,38 @@ namespace Quarkless.Logic.Services.Automation
 
 					var accAuthDetails = await _accountRepository.GetAccountByUsername(accountId);
 					if (accAuthDetails == null) return;
+
+					var userRoleString = accAuthDetails.Roles.FirstOrDefault();
+
+					if (string.IsNullOrEmpty(userRoleString))
+						return;
 					
+					var userRole = userRoleString.GetValueFromDescription<AuthTypes>();
+
 					var profile = await _profileLogic.GetProfile(account.AccountId, account.Id);
 					if (profile == null) return;
 
-					account.UserLimits = ActionLimits.SetLimits(accAuthDetails.Roles.FirstOrDefault()
-						.GetValueFromDescription<AuthTypes>(), account.DateAdded.Value);
-
-					await _instagramAccountLogic.PartialUpdateInstagramAccount(account.AccountId, account.Id,
-						new InstagramAccountModel {UserLimits = account.UserLimits});
-
-					#region Check if automation can run
+					#region Check if account can run
 					var currentTime = DateTime.UtcNow.TimeOfDay;
 					var wakeTimeToUtc = profile.AdditionalConfigurations.WakeTime.ToUniversalTime().TimeOfDay;
 					var sleepTimeToUtc = profile.AdditionalConfigurations.SleepTime.ToUniversalTime().TimeOfDay;
-					if (currentTime < wakeTimeToUtc || currentTime < sleepTimeToUtc)
+					
+					if ((currentTime < wakeTimeToUtc || currentTime > sleepTimeToUtc) || userRole == AuthTypes.Expired)
 					{
+						await _instagramAccountLogic.PartialUpdateInstagramAccount(account.AccountId, account.Id,
+						new InstagramAccountModel
+						{
+							AgentState = (int) AgentState.NotStarted
+						});
 						return;
 					}
+
 					#endregion
+
+					account.UserLimits = ActionLimits.SetLimits(userRole, account.DateAdded.Value);
+
+					await _instagramAccountLogic.PartialUpdateInstagramAccount(account.AccountId, account.Id,
+						new InstagramAccountModel {UserLimits = account.UserLimits});
 
 					var userStoreDetails = new UserStoreDetails
 					{

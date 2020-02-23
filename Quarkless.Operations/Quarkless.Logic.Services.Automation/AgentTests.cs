@@ -12,11 +12,15 @@ using Quarkless.Models.Actions.Models;
 using Quarkless.Models.Agent.Interfaces;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Models;
+using Quarkless.Models.ContentInfo.Interfaces;
+using Quarkless.Models.HashtagGenerator;
 using Quarkless.Models.Library.Interfaces;
+using Quarkless.Models.Profile;
 using Quarkless.Models.Profile.Interfaces;
 using Quarkless.Models.Services.Automation.Interfaces;
 using Quarkless.Models.Services.Automation.Models.Tests;
 using Quarkless.Models.Storage.Interfaces;
+using Quarkless.Models.Topic;
 
 namespace Quarkless.Logic.Services.Automation
 {
@@ -29,13 +33,14 @@ namespace Quarkless.Logic.Services.Automation
 		private readonly ILibraryLogic _libraryLogic;
 		private readonly IPostAnalyser _postAnalyser;
 		private readonly IS3BucketLogic _bucketLogic;
-
+		private readonly IContentInfoBuilder _contentInfo;
 		public AgentTests(IActionCommitFactory actionCommitFactory, IAgentLogic agentLogic,
 			IProfileLogic profileLogic, ILibraryLogic libraryLogic, IPostAnalyser postAnalyser,
-			IS3BucketLogic s3BucketLogic, IActionExecuteFactory actionExecuteFactory)
+			IS3BucketLogic s3BucketLogic, IActionExecuteFactory actionExecuteFactory, IContentInfoBuilder contentInfoBuilder)
 		{
 			_actionCommitFactory = actionCommitFactory;
 			_actionExecuteFactory = actionExecuteFactory;
+			_contentInfo = contentInfoBuilder;
 			_agentLogic = agentLogic;
 			_profileLogic = profileLogic;
 			_libraryLogic = libraryLogic;
@@ -46,7 +51,7 @@ namespace Quarkless.Logic.Services.Automation
 		private async Task<UserStoreDetails> GetUserDetail()
 		{
 			const string accountId = "lemonkaces";
-			const string instagramAccountId = "5d364dbaa2b9a40f649069a6";
+			const string instagramAccountId = "5cf3d6b9871f49057c0169bc";
 			var testAccount = await _agentLogic.GetAccount(accountId, instagramAccountId);
 			var profile = await _profileLogic.GetProfile(accountId, instagramAccountId);
 
@@ -160,19 +165,91 @@ namespace Quarkless.Logic.Services.Automation
 			response.Items = results.Results.DataObjects;
 			return response;
 		}
+		private async Task<TestResponse> TestFollowUserAction(bool execute = true)
+		{
+			var response = new TestResponse();
+			var user = await GetUserDetail();
 
+			var postAction = _actionCommitFactory.Create(ActionType.FollowUser, user)
+				.ModifyOptions(new FollowActionOptions(FollowActionType.Any));
+
+			var results = await postAction.PushAsync(DateTimeOffset.UtcNow);
+
+			if (!results.IsSuccessful)
+			{
+				response.PassedInActionBuild = false;
+				response.Error = results.Info;
+				return response;
+			}
+
+			if (!execute)
+			{
+				response.IsSuccessful = true;
+				response.PassedInActionBuild = true;
+				response.Items = results.Results.DataObjects;
+				return response;
+			}
+
+			var resultsExecute = await _actionExecuteFactory.Create(ActionType.FollowUser,
+				new UserStore
+				{
+					AccountId = user.AccountId,
+					InstagramAccountUser = user.InstagramAccountUser,
+					InstagramAccountUsername = user.InstagramAccountUsername
+				}).ExecuteAsync(new EventExecuteBody(results.Results.DataObjects.First().Body,
+				results.Results.DataObjects.First().BodyType));
+
+			if (!resultsExecute.IsSuccessful)
+			{
+				response.PassedInActionBuild = true;
+				response.PassedInActionExecute = false;
+				response.Error = resultsExecute.Info;
+				return response;
+			}
+
+			response.PassedInActionBuild = true;
+			response.PassedInActionExecute = true;
+			response.IsSuccessful = true;
+			response.Items = results.Results.DataObjects;
+			return response;
+		}
+
+		private async Task<List<HashtagResponse>> HashtagImageTest()
+		{
+			var imageUrl = "https://www.oddnugget.com/wp-content/uploads/2019/02/Odd-Nugget-Soc-done-41-680x680.jpg";
+			var user = await GetUserDetail();
+			return await _contentInfo.SuggestHashtags(new Source
+			{
+				ImageUrls = new[] {imageUrl},
+				MediaTopic = new CTopic
+				{
+					_id = "aa2c74837bff130e0ea489d8",
+					ParentTopicId = "c9b7c5bb41bc9001b3c0bed5",
+					Name = "psyart"
+				},
+				ProfileTopic = user.Profile.ProfileTopic
+			}, false, false);
+		}
 		public async Task StartTests()
 		{
-			// var storyReactionTest = await TestReactStoryAction(false);
-			// if (!storyReactionTest.IsSuccessful)
+
+			
+
+			// var followUserTest = await TestFollowUserAction(true);
+			// if (!followUserTest.IsSuccessful)
 			// {
 			//
 			// }
-			
-			var postActionTest = await TestCreateMediaAction(false);
+
+			// var storyReactionTest = await TestReactStoryAction(false);
+			// if (!storyReactionTest.IsSuccessful) 
+			// {
+			// }
+			//
+			var postActionTest = await TestCreateMediaAction(true);
 			if (!postActionTest.IsSuccessful)
 			{
-
+			
 			}
 		}
 	}

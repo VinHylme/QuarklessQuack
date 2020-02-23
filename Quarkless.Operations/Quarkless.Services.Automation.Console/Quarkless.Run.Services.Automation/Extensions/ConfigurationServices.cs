@@ -176,12 +176,12 @@ namespace Quarkless.Run.Services.Automation.Extensions
 				o.ConnectionString = accessors.RedisConnectionString;
 				o.DefaultKeyExpiry = TimeSpan.FromDays(7);
 			});
-			services.Configure<TranslateOptions>(options =>
-			{
-				options.DetectLangAPIKey = accessors.DetectApi;
-				options.YandexAPIKey = accessors.YandexApiKey;
-				options.NaturalLanguageAPIPath = accessors.NaturalLanguageApiPath;
-			});
+			// services.Configure<TranslateOptions>(options =>
+			// {
+			// 	options.DetectLangAPIKey = accessors.DetectApi;
+			// 	options.YandexAPIKey = accessors.YandexApiKey;
+			// 	options.NaturalLanguageAPIPath = accessors.NaturalLanguageApiPath;
+			// });
 			services.Configure<SeleniumLaunchOptions>(options =>
 			{
 				options.ChromePath = accessors.SeleniumChromeAddress;
@@ -265,7 +265,7 @@ namespace Quarkless.Run.Services.Automation.Extensions
 			services.AddTransient<IClientContextProvider, ClientContextProvider>();
 			services.AddTransient<IApiClientContext, ApiClientContext>();
 			services.AddTransient<IApiClientContainer, ApiClientContainer>();
-			services.AddTransient<ITranslateService, TranslateService>();
+			//services.AddTransient<ITranslateService, TranslateService>();
 			services.AddTransient<IUtilProviders, UtilProviders>();
 			services.AddSingleton<ITextGenerator, TextGenerator>();
 			services.AddSingleton<IHashtagGenerator, HashtagGenerator>();

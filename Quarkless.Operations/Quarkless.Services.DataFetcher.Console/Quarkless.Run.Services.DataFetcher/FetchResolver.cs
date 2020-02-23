@@ -93,8 +93,6 @@ namespace Quarkless.Run.Services.DataFetcher
 
 		public async Task StartService()
 		{
-			var messages = await _utilProviders.EmailService.GetUnreadEmails("douniaouseb@gmail.com","Sherox.101");
-			Console.Read();
 			await OnCallBack();
 			while (true)
 			{

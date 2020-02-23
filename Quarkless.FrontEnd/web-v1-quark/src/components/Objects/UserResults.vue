@@ -4,7 +4,7 @@
         <div @click="SelectUser(index)" class="card-res" :style="data.selected ? 'border:2px solid #008542' : ''">
           <div class="card-res-header">
             <div class="card-res-header-headline">
-               <div v-if="data.item.lookup !== null && data.item.lookup.length > 0">
+               <div v-if="data.item.lookup.length > 0">
                  <div v-for="(lookup,index) in data.item.lookup" :key="'item_'+index">
                   <b-tooltip v-if="lookup.lookupStatus === 2" :label="'Recently Sent ' + MapActionType(lookup.actionType).tooltip" type="is-success">
                     <b-icon :icon="MapActionType(lookup.actionType).icon" pack="fas" type="is-success" size="is-default"/>
@@ -64,6 +64,7 @@ export default {
           return { icon: 'microphone', tooltip: 'Audio' }
         case 25: //profile
           return { icon: 'history', tooltip: 'Profile Link' }
+        default: return { icon: 'history', tooltip: 'Other Action' };
       }
     }
   }

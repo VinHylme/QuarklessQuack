@@ -10,8 +10,8 @@ namespace Quarkless.Models.Utilities.Interfaces
 	{
 		IHashtagGenerator HashtagGenerator { get; }
 		ITextGenerator TextGenerator { get; }
-		ITranslateService TranslateService { get; }
-		IEmailService EmailService { get; }
+		//ITranslateService TranslateService { get; }
+		//IEmailService EmailService { get; }
 		ISearchProvider SearchProvider { get; }
 		FakerModel GeneratePerson(string locale = "en", string emailProvider = null, bool? isMale = null);
 	}

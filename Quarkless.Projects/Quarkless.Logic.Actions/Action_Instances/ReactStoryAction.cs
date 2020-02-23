@@ -11,6 +11,7 @@ using Quarkless.Models.Common.Models;
 using Quarkless.Models.Common.Models.Carriers;
 using Quarkless.Models.ContentInfo.Interfaces;
 using Quarkless.Models.Heartbeat.Interfaces;
+using Quarkless.Models.Lookup.Interfaces;
 using Quarkless.Models.Stories;
 
 namespace Quarkless.Logic.Actions.Action_Instances
@@ -21,7 +22,8 @@ namespace Quarkless.Logic.Actions.Action_Instances
 		private ReactStoryOptions _actionOptions;
 		private readonly IContentInfoBuilder _contentInfoBuilder;
 		public ReactStoryAction(UserStoreDetails user, IContentInfoBuilder contentInfoBuilder,
-			IHeartbeatLogic heartbeatLogic) : base(heartbeatLogic, user)
+			IHeartbeatLogic heartbeatLogic, ILookupLogic lookupLogic) 
+			: base(heartbeatLogic, lookupLogic, ActionType.ReactStory, user)
 		{
 			_user = user;
 			_contentInfoBuilder = contentInfoBuilder;

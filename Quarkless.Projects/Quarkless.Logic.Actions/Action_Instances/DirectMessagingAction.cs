@@ -16,19 +16,22 @@ using Quarkless.Models.ContentInfo.Interfaces;
 using Quarkless.Models.Heartbeat;
 using Quarkless.Models.Heartbeat.Interfaces;
 using Quarkless.Models.InstagramSearch;
+using Quarkless.Models.Lookup.Interfaces;
 using Quarkless.Models.Messaging;
 using Quarkless.Models.SearchResponse;
 
 namespace Quarkless.Logic.Actions.Action_Instances
 {
-	internal class DirectMessagingAction : IActionCommit
+	internal class DirectMessagingAction : BaseAction, IActionCommit
 	{
 		private readonly IContentInfoBuilder _contentInfoBuilder;
 		private readonly IHeartbeatLogic _heartbeatLogic;
 		private readonly UserStoreDetails _user;
 		private SendDirectMessageActionOptions _actionOptions;
 
-		internal DirectMessagingAction(UserStoreDetails userStoreDetails, IContentInfoBuilder contentInfoBuilder, IHeartbeatLogic heartbeatLogic)
+		internal DirectMessagingAction(UserStoreDetails userStoreDetails,
+			IContentInfoBuilder contentInfoBuilder, IHeartbeatLogic heartbeatLogic,
+			ILookupLogic lookupLogic) : base(lookupLogic, ActionType.SendDirectMessage, userStoreDetails)
 		{
 			_contentInfoBuilder = contentInfoBuilder;
 			_heartbeatLogic = heartbeatLogic;
@@ -38,183 +41,136 @@ namespace Quarkless.Logic.Actions.Action_Instances
 		#region Functionality for each actions
 		private async Task<long> SendDirectMessageBasedOnLikers()
 		{
-			var by = new By
-			{
-				ActionType = (int)ActionType.SendDirectMessage,
-				User = _user.Profile.InstagramAccountId
-			};
-
+			var lookups = await GetLookupItems();
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(new MetaDataFetchRequest
 			{
 				MetaDataType = MetaDataType.FetchUsersViaPostLiked,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-				InstagramId = _user.ShortInstagram.Id
-			}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-				.Where(s => s.ObjectItem.Count > 0).ToList();
-
-			var select = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count));
-
-			if (@select == null) return 0;
-			@select.SeenBy.Add(@by);
-
-			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<string>>>
-			{
-				MetaDataType = MetaDataType.FetchUsersViaPostLiked,
-				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
-				Data = select
-			});
+				AccountId = _user.AccountId
+			}))
+				?.Where(s => s.ObjectItem.Count > 0)
+				.SelectMany(_=>_.ObjectItem)
+				.Where(_=> !lookups.Exists(l => l.ObjectId == _.UserId.ToString()))
+				.ToList();
 
-			return @select.ObjectItem?.ElementAtOrDefault(@select.ObjectItem.Count)?.UserId ?? 0;
+			var objectItem = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count - 1));
+
+			if (objectItem?.UserId == null) return 0;
+
+			await AddObjectToLookup(objectItem.UserId.ToString());
+
+			return objectItem.UserId;
 		}
 		private async Task<long> SendDirectMessageBasedOnCommenters()
 		{
-			var by = new By
-			{
-				ActionType = (int)ActionType.SendDirectMessage,
-				User = _user.Profile.InstagramAccountId
-			};
+			var lookups = await GetLookupItems();
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<List<UserResponse<CommentResponse>>>(
-					new MetaDataFetchRequest
-					{
-						MetaDataType = MetaDataType.FetchUsersViaPostCommented,
-						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-						InstagramId = _user.ShortInstagram.Id
-					}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-						.Where(s => s.ObjectItem.Count > 0).ToList();
-
-			var select = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count));
-			if (select == null) return 0;
-			select.SeenBy.Add(by);
-
-			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<CommentResponse>>>
+			new MetaDataFetchRequest
 			{
 				MetaDataType = MetaDataType.FetchUsersViaPostCommented,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
-				Data = select
-			});
+				AccountId = _user.AccountId
+			}))?.Where(s => s.ObjectItem.Count > 0)
+				.SelectMany(_ => _.ObjectItem)
+				.Where(_ => !lookups.Exists(l => l.ObjectId == _.UserId.ToString()))
+				.ToList();
 
-			return @select.ObjectItem.First().UserId;
+			var objectItem = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count - 1));
+
+			if (objectItem?.UserId == null) return 0;
+
+			await AddObjectToLookup(objectItem.UserId.ToString());
+
+			return objectItem.UserId;
 		}
 		private async Task<long> SendDirectMessageBasedOnTopic()
 		{
-			var by = new By
-			{
-				ActionType = (int)ActionType.SendDirectMessage,
-				User = _user.Profile.InstagramAccountId
-			};
-
+			var lookups = await GetLookupItems();
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 			{
 				MetaDataType = MetaDataType.FetchMediaByTopic,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-				InstagramId = _user.ShortInstagram.Id
-			}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-				.Where(s => s.ObjectItem.Medias.Count > 0).ToList();
-
-			var select = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count));
-
-			if (select == null) return 0;
-			select.SeenBy.Add(by);
-
-			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
-			{
-				MetaDataType = MetaDataType.FetchMediaByTopic,
-				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
-				Data = select
-			});
+				AccountId = _user.AccountId
+			}))
+				?.Where(s => s.ObjectItem.Medias.Count > 0)
+				.SelectMany(_ => _.ObjectItem.Medias)
+				.Where(_ => !lookups.Exists(l => l.ObjectId == _.User.UserId.ToString()))
+				.ToList();
 
-			return @select.ObjectItem?.Medias.FirstOrDefault()?.User.UserId ?? 0;
+			var objectItem = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count - 1));
+
+			if (objectItem?.MediaId == null) return 0;
+
+			await AddObjectToLookup(objectItem.User.UserId.ToString());
+
+			return objectItem.User.UserId;
 		}
 		private async Task<long> SendDirectMessageBasedOnLocation()
 		{
-			var by = new By
-			{
-				ActionType = (int)ActionType.SendDirectMessage,
-				User = _user.Profile.InstagramAccountId
-			};
+			var lookups = await GetLookupItems();
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 			{
 				MetaDataType = MetaDataType.FetchMediaByUserLocationTargetList,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-				InstagramId = _user.ShortInstagram.Id
-			}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-				.Where(s => s.ObjectItem.Medias.Count > 0).ToList();
-
-			var select = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count));
-			if (select == null) return 0;
-			select.SeenBy.Add(by);
-
-			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<Media>
-			{
-				MetaDataType = MetaDataType.FetchMediaByUserLocationTargetList,
-				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
-				Data = select
-			});
+				AccountId = _user.AccountId
+			}))?.Where(s => s.ObjectItem.Medias.Count > 0)
+				.SelectMany(_ => _.ObjectItem.Medias)
+				.Where(_ => !lookups.Exists(l => l.ObjectId == _.User.UserId.ToString()))
+				.ToList();
 
-			return @select.ObjectItem.Medias.FirstOrDefault()?.User.UserId ?? 0;
+			var objectItem = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count - 1));
+			if (objectItem?.MediaId == null) return 0;
+
+			await AddObjectToLookup(objectItem.User.UserId.ToString());
+
+			return objectItem.User.UserId;
 		}
 		private async Task<long> SendDirectMessageBasedOnSuggestions()
 		{
-			var by = new By
-			{
-				ActionType = (int)ActionType.SendDirectMessage,
-				User = _user.Profile.InstagramAccountId
-			};
+			var lookups = await GetLookupItems();
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<List<UserResponse<UserSuggestionDetails>>>(new MetaDataFetchRequest
 			{
 				MetaDataType = MetaDataType.FetchUsersFollowSuggestions,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-				InstagramId = _user.ShortInstagram.Id
-			}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-				.Where(s => s.ObjectItem.Count > 0).ToList();
-
-			var select = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count));
-			if (select == null) return 0;
-			select.SeenBy.Add(by);
-
-			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<UserSuggestionDetails>>>
-			{
-				MetaDataType = MetaDataType.FetchUsersFollowSuggestions,
-				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
-				Data = select
-			});
+				AccountId = _user.AccountId
+			}))?.Where(s => s.ObjectItem.Count > 0)
+				.SelectMany(_ => _.ObjectItem)
+				.Where(_ => !lookups.Exists(l => l.ObjectId == _.UserId.ToString()))
+				.ToList();
 
-			return select.ObjectItem.First().UserId;
+			var objectItem = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count - 1));
+			if (objectItem?.UserId == null) return 0;
+
+			await AddObjectToLookup(objectItem.UserId.ToString());
+
+			return objectItem.UserId;
 		}
 		private async Task<long> SendDirectMessageBasedOnUsersFollowers()
 		{
-			var by = new By
-			{
-				ActionType = (int)ActionType.SendDirectMessage,
-				User = _user.Profile.InstagramAccountId
-			};
-
+			var lookups = await GetLookupItems();
 			var fetchMedias = (await _heartbeatLogic.GetMetaData<List<UserResponse<string>>>(new MetaDataFetchRequest
 			{
 				MetaDataType = MetaDataType.FetchUsersFollowerList,
 				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-				InstagramId = _user.ShortInstagram.Id
-			}))?.Where(exclude => !exclude.SeenBy.Any(e => e.User == by.User && e.ActionType == by.ActionType))
-				.Where(s => s.ObjectItem.Count > 0).ToList();
-
-			var select = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count));
-			if (select == null) return 0;
-			select.SeenBy.Add(by);
-
-			await _heartbeatLogic.UpdateMetaData(new MetaDataCommitRequest<List<UserResponse<string>>>
-			{
-				MetaDataType = MetaDataType.FetchUsersFollowerList,
-				ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
 				InstagramId = _user.ShortInstagram.Id,
-				Data = select
-			});
+				AccountId = _user.AccountId
+			}))?.Where(s => s.ObjectItem.Count > 0)
+				.SelectMany(_ => _.ObjectItem)
+				.Where(_ => !lookups.Exists(l => l.ObjectId == _.UserId.ToString()))
+				.ToList();
 
-			return select.ObjectItem.First().UserId;
+			var objectItem = fetchMedias?.ElementAtOrDefault(SecureRandom.Next(fetchMedias.Count - 1));
+
+			if (objectItem?.UserId == null) return 0;
+
+			await AddObjectToLookup(objectItem.UserId.ToString());
+
+			return objectItem.UserId;
 		}
 		#endregion
 

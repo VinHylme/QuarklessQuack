@@ -35,6 +35,7 @@ namespace Quarkless.Logic.Heartbeat
 				await _heartbeatRepository.AddMetaData(request);
 			}
 		}
+
 		public async Task UpdateMetaData<TInput>(MetaDataCommitRequest<TInput> request)
 		{
 			var dataToRemove = (await _heartbeatRepository.GetMetaData<TInput>(new MetaDataFetchRequest
@@ -47,7 +48,7 @@ namespace Quarkless.Logic.Heartbeat
 			var dto = dataToRemove.FirstOrDefault(_ => 
 				JsonConvert.SerializeObject(_.ObjectItem) == JsonConvert.SerializeObject(request.Data.ObjectItem));
 
-			if (dto!=null) { 
+			if (dto!=null) {
 				await _heartbeatRepository.DeleteMetaDataFromSet(request);
 				await _heartbeatRepository.AddMetaData(request);
 			}
@@ -58,6 +59,7 @@ namespace Quarkless.Logic.Heartbeat
 			return (await _heartbeatRepository.GetMetaData<TInput>(request))
 				.DistinctBy(_ => _.ObjectItem);
 		}
+
 		public async Task RefreshMetaData(MetaDataFetchRequest request)
 		{
 			try {

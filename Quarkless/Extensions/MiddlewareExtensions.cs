@@ -2,24 +2,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Filters;
 using System;
-using Quarkless.Models.Timeline.Interfaces.TaskScheduler;
 
 namespace Quarkless.Extensions
 {
-	public static class HangFireExtensions
-	{
-		public static IApplicationBuilder ClearFailedHangfireJobs(this IApplicationBuilder app)
-		{
-			if (app == null)
-			{
-				throw new ArgumentNullException(nameof(app));
-			}
-
-			app.ApplicationServices.GetService<ITaskService>().DeleteAllFailedJobs();
-			return app;
-		}
-	}
-
 	public static class MiddlewareExtensions
 	{
 		public static IApplicationBuilder UseSecurityMiddleware(this IApplicationBuilder app, SecurityHeadersBuilder builder)

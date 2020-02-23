@@ -304,7 +304,7 @@
            </div>
             </b-collapse>
           </b-step-item>
-          <b-step-item label="Additional" :clickable="true" icon="atom">
+          <b-step-item label="Action Adjustments" :clickable="true" icon="atom">
             <b-field label="Additional Settings" class="is-dark"></b-field>
             <div class="box box-style">
                <b-field label="Specific Sites" size="is-small" class="is-dark is-small">

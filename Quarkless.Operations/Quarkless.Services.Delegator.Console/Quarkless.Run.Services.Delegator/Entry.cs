@@ -13,7 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.InstagramAccounts.Enums;
 using Quarkless.Models.InstagramAccounts.Interfaces;
-using Quarkless.Models.Timeline.Interfaces.TaskScheduler;
+using Quarkless.Models.Services.Heartbeat;
 using Quarkless.Run.Services.Delegator.Extensions;
 using SharedConfig = Quarkless.Models.Shared.Extensions.Config;
 
@@ -365,6 +365,8 @@ namespace Quarkless.Run.Services.Delegator
 
 			if (customers == null || !customers.Any()) return;
 
+			customers.ForEach(customer=>AccountStateChecker(customer));
+
 			var opsTypes = Enum.GetValues(typeof(ExtractOperationType)).Cast<ExtractOperationType>();
 
 			foreach (var opsType in opsTypes.Where(_=>_ != ExtractOperationType.None))
@@ -534,14 +536,18 @@ namespace Quarkless.Run.Services.Delegator
 			}
 			#endregion
 
-			var customers = (await _agentLogic.GetAllAccounts(0))?.ToList();
+			var customers = (await _agentLogic.GetAllAccounts(0))
+				?.Where(_=>_.AgentState != (int) AgentState.NotStarted).ToList();
+
 			if (customers == null || !customers.Any()) return;
+
+			customers.ForEach(customer => AccountStateChecker(customer));
 
 			var opsTypes = Enum.GetValues(typeof(ExtractOperationType)).Cast<ExtractOperationType>();
 
 			foreach (var operationType in opsTypes.Where(_=>_ != ExtractOperationType.None))
 			{
-				foreach (var customer in customers.Where(_=>_.Id == "5e427e6a85182a6978e884e3"))
+				foreach (var customer in customers)
 				{
 					RunProcess(heartbeatExe, customer.AccountId, customer.Id, operationType,
 						env.GetDescription(), HEART_BEAT_WORKER_TYPE);
@@ -561,6 +567,24 @@ namespace Quarkless.Run.Services.Delegator
 			}
 		}
 		#endregion
+
+		private static void AccountStateChecker(in ShortInstagramAccountModel account)
+		{
+			switch (account.AgentState)
+			{
+				case (int)AgentState.DeepSleep when account.SleepTimeRemaining.HasValue:
+					if (DateTime.UtcNow > account.SleepTimeRemaining.Value)
+					{
+						account.AgentState = (int)AgentState.Running;
+						var result = _instagramAccountLogic.PartialUpdateInstagramAccount(account.AccountId,
+							account.Id, new InstagramAccountModel
+							{
+								AgentState = account.AgentState,
+							}).Result;
+					}
+					break;
+			}
+		}
 
 		static async Task Main()
 		{

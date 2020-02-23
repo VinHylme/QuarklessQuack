@@ -2,13 +2,16 @@
 <div class="timeline_layout">
   <div class="columns is-mobile is-gapless">
     <div :class="$store.state.showingLogs ?'column is-4':'column is-0'" class="activity-log-container">
-      <p class="title">Activity</p>
-      <button style="float:right; margin-right:1em; margin-top:-3.5em;" class="button is-info is-light is-rounded">
+      <p class="title">Notifications</p>
+      <button v-if="timelineLogs.length > 0" style="float:right; margin-right:1em; margin-top:-6em;" class="button is-info is-rounded">
         <span class="icon">
-          <i class="fas fa-info"></i>
+          <i class="fab fa-readme"></i>
         </span>
         <span>Mark as Read</span>
       </button>
+      <div v-if="timelineLogs.length <= 0">
+        <p class="title is-5" style="margin-right:-1em;">Nothing to see here</p>
+      </div>
       <div v-for="(timelineLog,index) in timelineLogs" :key="timelineLog+'_'+index" class="card-acticity-log">
         <div class="card-activity-header">
           <b-icon v-if="timelineLog.actionType === 16" icon="sign-in-alt" pack="fas" class="is-pink" size="is-default"/>
@@ -29,8 +32,8 @@
           <b-icon v-if="timelineLog.actionType === 29" icon="smile-wink" pack="fas" class="is-cyan" size="is-default"></b-icon>
         </div>
         <div class="card-activity-content">
-          {{timelineLog.notification.message}}
-          <img v-if="timelineLog.notification.assetUrl" :src="timelineLog.notification.assetUrl"/>
+          <p class="title is-6">{{timelineLog.notification.message}}</p>
+          <img class="notify_asset" v-if="timelineLog.notification.assetUrl" :src="timelineLog.notification.assetUrl"/>
         </div>
         <div class="card-activity-footer">
           <p>{{formatDate(timelineLog.notification.createdAt)}}</p>
@@ -89,13 +92,14 @@ export default {
       this.isLoadingLogs = true;
       this.$store.dispatch('GetUsersTimeline',this.$route.params.id).then(res=> 
       { 
+        console.log(res.data)
         this.isLoading = false;
       }).catch(err=>{
           this.isLoading = false;
       });
       const id = this.$route.params.id;
       if(id !== undefined || id !== null){
-        this.$store.dispatch('GetAllEventLogsForUser', {instagramAccountId: id, limit:100})
+        this.$store.dispatch('GetAllEventLogsForUser', {instagramAccountId: id, limit:25})
         .then(resp=>{
           this.timelineLogs = resp.data
           this.isLoadingLogs = false;
@@ -151,7 +155,7 @@ export default {
       this.isLoadingLogs = true;
       const id = this.$route.params.id;
       if(id !== undefined){
-        this.$store.dispatch('GetAllEventLogsForUser', {instagramAccountId: id, limit:100})
+        this.$store.dispatch('GetAllEventLogsForUser', {instagramAccountId: id, limit:25})
         .then(resp=>{
             this.timelineLogs = resp.data
             this.isLoadingLogs = false;
@@ -272,18 +276,43 @@ html,body{
   height:125px;
   box-shadow: -0.1rem 0 .3rem rgba(0,0,0,.2);
   border-radius: .7em;
+   &:hover{
+    background:#343434;
+    cursor: pointer;
+  }
   .card-activity-header{
     float:left;
     margin:.5em;
   }
   .card-activity-footer{
     float:right;
-    margin-top:1em;
+    margin-top:0em;
     font-size: 14px;
     color:#b0b0b0;
   }
   .card-activity-content{
-    margin-left:4em;
+    //margin-left:4em;
+    .title{
+      float:left;
+      &.is-6{
+        font-weight: 150;
+        margin-left:0em;
+        margin-top:.5em;
+        max-width: 15vw;
+        height:3.5vw;
+        text-align: left;
+        font-size:1.05vw;
+      }
+    }
+    .notify_asset{
+      float:right;
+      //margin-top:-3.5em;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      box-shadow: -0.2rem 0 .4rem rgba(0,0,0,.3);
+     
+    }
   }
 }
 .uploadSearchResults
@@ -380,4 +409,6 @@ html,body{
     margin-top:2.5em;
   }
 }
+
+
 </style>

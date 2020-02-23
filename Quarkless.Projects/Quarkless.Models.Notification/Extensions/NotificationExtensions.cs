@@ -1,5 +1,6 @@
 ﻿using System;
 using Quarkless.Models.Common.Enums;
+using Quarkless.Models.Common.Models.Resolver;
 using Quarkless.Models.Notification.Enums;
 
 namespace Quarkless.Models.Notification.Extensions
@@ -8,7 +9,7 @@ namespace Quarkless.Models.Notification.Extensions
 	{
 
 		public static NotificationTimelineAction CreateTimelineNotificationObject(string accountId, 
-			string instagramAccountId, string assetUrl, string message, ActionType actionType,
+			string instagramAccountId, string assetUrl, MediaShort media, string message, ActionType actionType,
 			int responseType, string responseMessage, TimelineEventItemStatus timelineStatus)
 		{
 			return new NotificationTimelineAction
@@ -26,6 +27,7 @@ namespace Quarkless.Models.Notification.Extensions
 				ResponseType = responseType,
 				ResponseMessage = responseMessage,
 				TimelineStatus = timelineStatus,
+				Media = media
 			};
 		}
 	}

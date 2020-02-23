@@ -14,6 +14,9 @@ using Quarkless.Models.Profile.Interfaces;
 using Quarkless.Models.Topic;
 using Quarkless.Models.WorkerManager.Interfaces;
 using MoreLinq.Extensions;
+using Quarkless.Models.Common.Enums;
+using Quarkless.Models.Common.Models;
+using Quarkless.Models.Topic.Extensions;
 
 namespace Quarkless.Logic.Topic
 {
@@ -62,12 +65,13 @@ namespace Quarkless.Logic.Topic
 				await _searchingCache.AddSearchData(topic, medias);
 			return medias;
 		}
-		public async Task<List<string>> BuildRelatedTopics(CTopic topic, bool saveToDb, bool includeGoogleSuggest = true)
-		{
-			var responseResults = new List<string>();
-			const int instagramTopicTakeAmount = 25;
 
-			var cacheResults = await _searchingCache.GetSearchData<string>(topic.Name);
+		public async Task<List<HashtagResponse>> BuildRelatedTopics(CTopic topic, bool saveToDb,
+			bool includeGoogleSuggest = true, int instagramTopicTakeAmount = 25)
+		{
+			var responseResults = new List<HashtagResponse>();
+
+			var cacheResults = await _searchingCache.GetSearchData<HashtagResponse>(topic.Name);
 			if (cacheResults.Any())
 				return cacheResults;
 
@@ -85,9 +89,15 @@ namespace Quarkless.Logic.Topic
 						.Where(str=>str.Name.IsUsingLatinCharacters())
 						.OrderByDescending(_ => _.MediaCount)
 						.Take(instagramTopicTakeAmount)
+						.Select(_=> new HashtagResponse
+						{
+							Name = _.Name.RemoveFirstHashtagCharacter(),
+							Rarity = (HashtagRarity) _.GetRarity(),
+							IsMediaDescriptor = true
+						})
 						.ToList();
 
-					responseResults.AddRange(rankOrdered.Select(_ => _.Name));
+					responseResults.AddRange(rankOrdered);
 
 					if (saveToDb)
 					{
@@ -107,7 +117,13 @@ namespace Quarkless.Logic.Topic
 						if (!googleSuggest.Any())
 							return;
 
-						responseResults.AddRange(googleSuggest);
+						responseResults.AddRange(googleSuggest.Select(_=> new HashtagResponse
+						{
+							Name = topic.Name+_,
+							Rarity = HashtagRarity.ExternalSuggestion,
+							IsMediaDescriptor = true
+						}));
+
 						if (saveToDb)
 						{
 							await AddTopics(googleSuggest.Select(_ =>
@@ -147,7 +163,7 @@ namespace Quarkless.Logic.Topic
 				return results;
 
 			var related = await BuildRelatedTopics(topic, saveTopicsSuggested, includeGoogleSuggest);
-			results.RelatedTopicsFound = related;
+			results.RelatedTopicsFound = related.Select(_=>_.Name);
 			return results;
 		}
 		

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Quarkless.Models.Actions;
 using Quarkless.Models.Actions.Enums.ActionTypes;
@@ -8,11 +7,11 @@ using Quarkless.Models.Actions.Factory.Action_Options;
 using Quarkless.Models.Actions.Interfaces;
 using Quarkless.Models.Actions.Models;
 using Quarkless.Models.Common.Enums;
-using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.Common.Models;
 using Quarkless.Models.Common.Models.Carriers;
 using Quarkless.Models.ContentInfo.Interfaces;
 using Quarkless.Models.Heartbeat.Interfaces;
+using Quarkless.Models.Lookup.Interfaces;
 using Quarkless.Models.Stories;
 
 namespace Quarkless.Logic.Actions.Action_Instances
@@ -21,10 +20,11 @@ namespace Quarkless.Logic.Actions.Action_Instances
 	{
 		private readonly UserStoreDetails _user;
 		private WatchStoryOptions _actionOptions;
-		internal WatchStoryAction(UserStoreDetails userStoreDetails, IContentInfoBuilder contentInfoBuilder,
-			IHeartbeatLogic heartbeatLogic) : base(heartbeatLogic, userStoreDetails)
+		internal WatchStoryAction(UserStoreDetails user, IContentInfoBuilder contentInfoBuilder,
+			IHeartbeatLogic heartbeatLogic, ILookupLogic lookupLogic)
+			: base(heartbeatLogic, lookupLogic, ActionType.WatchStory, user)
 		{
-			_user = userStoreDetails;
+			_user = user;
 			_actionOptions = new WatchStoryOptions();
 		}
 

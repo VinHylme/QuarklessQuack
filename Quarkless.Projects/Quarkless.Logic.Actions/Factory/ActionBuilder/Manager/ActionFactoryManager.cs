@@ -5,6 +5,7 @@ using Quarkless.Models.Actions.Models;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.ContentInfo.Interfaces;
 using Quarkless.Models.Heartbeat.Interfaces;
+using Quarkless.Models.Lookup.Interfaces;
 
 namespace Quarkless.Logic.Actions.Factory.ActionBuilder.Manager
 {
@@ -14,11 +15,14 @@ namespace Quarkless.Logic.Actions.Factory.ActionBuilder.Manager
 
 		private readonly IHeartbeatLogic _heartbeatLogic;
 		private readonly IContentInfoBuilder _contentInfoBuilder;
-
-		public ActionFactoryManager(IHeartbeatLogic heartbeatLogic, IContentInfoBuilder contentInfoBuilder)
+		private readonly ILookupLogic _lookupLogic;
+		public ActionFactoryManager(IHeartbeatLogic heartbeatLogic, IContentInfoBuilder contentInfoBuilder,
+			ILookupLogic lookupLogic)
 		{
 			_heartbeatLogic = heartbeatLogic;
 			_contentInfoBuilder = contentInfoBuilder;
+			_lookupLogic = lookupLogic;
+
 			_factories = new Dictionary<ActionType, ActionBuilderFactory>
 			{
 				{ ActionType.FollowUser, new ExecuteFollowUserActionFactory()},
@@ -35,6 +39,6 @@ namespace Quarkless.Logic.Actions.Factory.ActionBuilder.Manager
 		}
 
 		public IActionCommit Create(ActionType action, in UserStoreDetails user)
-			=> _factories[action].Commit(user, _contentInfoBuilder, _heartbeatLogic);
+			=> _factories[action].Commit(user, _contentInfoBuilder, _heartbeatLogic, _lookupLogic);
 	}
 }

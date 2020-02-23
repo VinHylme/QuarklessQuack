@@ -351,7 +351,6 @@ export default {
         currentlySelectedItems() {
             this.results.current = 0;
             //this.results.selectedList = []
-
             this.results.searchResultItems.filter(user => {
                 if (user.selected === true) {
                     if (this.results.selectedList.findIndex(res => res.item.object.username === user.item.object.username) === -1)

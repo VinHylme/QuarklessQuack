@@ -10,6 +10,7 @@
     <ProjectReference Include="..\Quarkless.Models.ContentInfo\Quarkless.Models.ContentInfo.csproj" />
     <ProjectReference Include="..\Quarkless.Models.Heartbeat\Quarkless.Models.Heartbeat.csproj" />
     <ProjectReference Include="..\Quarkless.Models.Library\Quarkless.Models.Library.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Lookup\Quarkless.Models.Lookup.csproj" />
     <ProjectReference Include="..\Quarkless.Models.ResponseResolver\Quarkless.Models.ResponseResolver.csproj" />
     <ProjectReference Include="..\Quarkless.Models.Storage\Quarkless.Models.Storage.csproj" />
     <ProjectReference Include="..\Quarkless.Models.WorkerManager\Quarkless.Models.WorkerManager.csproj" />

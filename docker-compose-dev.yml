@@ -1,0 +1,26 @@
+version: '3.4'
+
+services:
+    quarkless:
+        image: quarkless/quarkless.api
+        container_name: api.quark
+        build:
+            context: .
+            dockerfile: Quarkless/Dockerfile
+        environment:
+            - DOTNET_ENV_RELEASE=dev
+        ports:
+            - 51518:80
+    chrome:
+        image: selenium/standalone-chrome:latest
+        container_name: chrome.quark
+        ports:
+            - 4444:4444
+    google_search:
+        image: quarkless/quarkless.python/google
+        build:
+            context: .
+            dockerfile: Quarkless.Python/GoogleSearch/Dockerfile
+        container_name: googlesearch.quark
+        ports:
+            - 5000:5000

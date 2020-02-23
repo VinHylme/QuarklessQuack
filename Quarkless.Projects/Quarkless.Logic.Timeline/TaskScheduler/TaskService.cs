@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Quarkless.Logic.Timeline.TaskScheduler.Extensions;
 using Quarkless.Models.Common.Enums;
+using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.Timeline;
 using Quarkless.Models.Timeline.Interfaces.TaskScheduler;
 using Quarkless.Models.Timeline.TaskScheduler;
@@ -27,19 +28,34 @@ namespace Quarkless.Logic.Timeline.TaskScheduler
 			});
 		}
 
-		public void DeleteAllFailedJobs()
+		public void ResetJobs()
 		{
 			var failedJobs = GetTotalFailedEvents(0, 2000);
+
 			foreach (var timelineFailedItem in failedJobs)
 			{
 				DeleteEvent(timelineFailedItem.ItemId);
 			}
 
-			// var deletedJobs = GetTotalDeletedEvents(0, 2000);
-			// foreach (var timelineDeletedItem in deletedJobs)
-			// {
-			// 	DeleteEvent(timelineDeletedItem.ItemId);
-			// }
+			var passed = GetTotalScheduledEvents(0, 2000);
+
+			foreach (var timelineItem in passed)
+			{
+				if (!timelineItem.EnqueueTime.HasValue ||
+					timelineItem.EnqueueTime.Value.ToUniversalTime() <= DateTime.UtcNow) continue;
+				
+				DeleteEvent(timelineItem.ItemId);
+
+				ScheduleEvent(new EventActionOptions
+				{
+					ActionDescription = timelineItem.ActionDescription,
+					ActionType = (int) timelineItem.ActionType,
+					DataObject = timelineItem.EventBody,
+					ExecutionTime = DateTimeOffset.UtcNow.AddMinutes(SecureRandom.Next(5)),
+					User = timelineItem.User
+				});
+			}
+
 		}
 
 		public string ScheduleEvent(EventActionOptions eventAction)

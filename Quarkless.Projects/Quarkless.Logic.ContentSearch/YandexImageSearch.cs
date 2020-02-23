@@ -108,6 +108,7 @@ namespace Quarkless.Logic.ContentSearch
 					totalFound.Medias.AddRange(result.Result.Select(o => new MediaResponse
 					{
 						Topic = yandexSearchQuery.OriginalTopic,
+						MediaId = o?.Preview?.OrderByDescending(s => s?.FileSizeInBytes).FirstOrDefault()?.Url.ToByteArray().ComputeHash().ToString(),
 						MediaType = InstagramApiSharp.Classes.Models.InstaMediaType.Image,
 						MediaFrom = MediaFrom.Yandex,
 						MediaUrl = new List<string> { o?.Preview?.OrderByDescending(s => s?.FileSizeInBytes).FirstOrDefault()?.Url },
@@ -146,6 +147,7 @@ namespace Quarkless.Logic.ContentSearch
 					totalFound.Medias.AddRange(result.Where(s => !s.Contains(".gif")).Select(a => new MediaResponse
 					{
 						Topic = url.TopicGroup,
+						MediaId = a.ToByteArray().ComputeHash().ToString(),
 						MediaUrl = new List<string> { a },
 						MediaFrom = MediaFrom.Yandex,
 						MediaType = InstagramApiSharp.Classes.Models.InstaMediaType.Image
@@ -191,6 +193,7 @@ namespace Quarkless.Logic.ContentSearch
 					{
 						totalCollected.Medias.AddRange(searchSerp.Result.Select(o => new MediaResponse
 						{
+							MediaId = o?.Preview?.OrderByDescending(s => s?.FileSizeInBytes).FirstOrDefault()?.Url.ToByteArray().ComputeHash().ToString(),
 							MediaType = InstagramApiSharp.Classes.Models.InstaMediaType.Image,
 							MediaFrom = MediaFrom.Yandex,
 							MediaUrl = new List<string> { o?.Preview?.OrderByDescending(s => s?.FileSizeInBytes).FirstOrDefault()?.Url },

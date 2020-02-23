@@ -13,19 +13,20 @@ using Quarkless.Models.Common.Models.Carriers;
 using Quarkless.Models.ContentInfo.Interfaces;
 using Quarkless.Models.Heartbeat;
 using Quarkless.Models.Heartbeat.Interfaces;
+using Quarkless.Models.Lookup.Interfaces;
 using Quarkless.Models.Media;
 using Quarkless.Models.SearchResponse;
 
 namespace Quarkless.Logic.Actions.Action_Instances
 {
-	internal class AccountCheckerAction : IActionCommit
+	internal class AccountCheckerAction : BaseAction, IActionCommit
 	{
 		private readonly IContentInfoBuilder _contentInfoBuilder;
 		private readonly IHeartbeatLogic _heartbeatLogic;
 		private readonly UserStoreDetails _user;
 		private AccountCheckerActionOptions _actionOptions;
 		internal AccountCheckerAction(UserStoreDetails userStoreDetails, IContentInfoBuilder contentInfoBuilder,
-			IHeartbeatLogic heartbeatLogic)
+			IHeartbeatLogic heartbeatLogic, ILookupLogic lookupLogic) : base(lookupLogic, ActionType.MaintainAccount, userStoreDetails)
 		{
 			_contentInfoBuilder = contentInfoBuilder;
 			_heartbeatLogic = heartbeatLogic;
@@ -52,7 +53,8 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				{
 					MetaDataType = MetaDataType.FetchUserOwnProfile,
 					ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-					InstagramId = _user.ShortInstagram.Id
+					InstagramId = _user.ShortInstagram.Id,
+					AccountId = _user.AccountId
 				})).ToList();
 
 				//remove duplicates from user's gallery

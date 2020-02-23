@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Quarkless.Base.ContentSearch;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Heartbeat.Interfaces;
-using Quarkless.Models.InstagramAccounts.Enums;
 using Quarkless.Models.InstagramAccounts.Interfaces;
 using Quarkless.Models.Services.Heartbeat;
 using Quarkless.Models.Topic.Interfaces;
@@ -15,9 +14,9 @@ namespace Quarkless.Logic.Services.Heartbeat
 	{
 		private readonly FullUserDetail _customer;
 		private readonly MetadataExtract _metadataExtract;
-		public MetadataBuilderManager(FullUserDetail customer,  
-			IHeartbeatLogic heartbeatLogic, IWorkerManager workerManager, 
-			ISearchProvider searchProvider, IInstagramAccountLogic accountLogic, 
+		public MetadataBuilderManager(FullUserDetail customer,
+			IHeartbeatLogic heartbeatLogic, IWorkerManager workerManager,
+			ISearchProvider searchProvider, IInstagramAccountLogic accountLogic,
 			ITopicLookupLogic topicLookup)
 		{
 			_customer = customer;

@@ -56,7 +56,6 @@ namespace Quarkless
 			services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
 			services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 			services.AddSingleton<IRateLimitConfiguration, CustomRateLimitConfiguration>();
-
 			var environments = new Config().Environments;
 			var redis = ConnectionMultiplexer.Connect(environments.RedisConnectionString);
 
@@ -119,13 +118,15 @@ namespace Quarkless
 			//app.UseIpRateLimiting();
 
 			app.UseCors(CORS_POLICY);
+			app.ResetHangfireJobs();
+
 			app.UseHangfireServer(jobServerOptions);
 
 			app.UseHangfireDashboard("/configs/hang-fire", new DashboardOptions
 			{
 				Authorization = new[] { new HangfireAllowAllConnectionsFilter() }
 			});
-			app.ClearFailedHangfireJobs();
+
 			app.UseStaticFiles();	
 			app.UseDefaultFiles();
 			app.UseCookiePolicy();

@@ -28,6 +28,7 @@ using Quarkless.Models.Heartbeat.Interfaces;
 using Quarkless.Models.Common.Models;
 using Quarkless.Models.Heartbeat;
 using Quarkless.Logic.Common;
+using Quarkless.Models.HashtagGenerator;
 using Quarkless.Models.ReportHandler.Interfaces;
 
 namespace Quarkless.Logic.Query
@@ -205,11 +206,17 @@ namespace Quarkless.Logic.Query
 				CanUserEditProfile = true
 			};
 		}
+
 		public async Task<IEnumerable<string>> BuildHashtags(SuggestHashtagRequest suggestHashtagRequest)
 		{
-			return await _hashtagGenerator.SuggestHashtags(suggestHashtagRequest.ProfileTopic,
-				suggestHashtagRequest.MediaTopic, pickAmount:suggestHashtagRequest.PickAmount,
-				images:suggestHashtagRequest.MediaUrls);
+			var results = await _hashtagGenerator.SuggestHashtags(new Source
+			{
+				ProfileTopic = suggestHashtagRequest.ProfileTopic,
+				MediaTopic = suggestHashtagRequest.MediaTopic,
+				ImageUrls = suggestHashtagRequest.MediaUrls.ToList()
+			},false,true);
+
+			return results.Results.Select(_ => _.Name).Take(26);
 		}
 		public async Task<SubTopics> GetRelatedKeywords(string topicName)
 		{
@@ -291,13 +298,13 @@ namespace Quarkless.Logic.Query
 			return await RunCodeWithLoggerExceptionAsync(async () =>
 			{
 				var medias = await SearchMediasByTopic(topics, username, instagramAccountId, limit);
+				var lookups = await _lookupLogic.Get(username, instagramAccountId);
 				if (medias != null)
 				{
 					var users = medias.Medias.Select(x => new LookupContainer<UserResponse>
 					{
 						Object = x.User,
-						Lookup = _lookupLogic.Get(username, instagramAccountId,
-								x.User.UserId.ToString()).GetAwaiter().GetResult()
+						Lookup = lookups.Where(s=>s.ObjectId == x.User.UserId.ToString())
 							.OrderByDescending(d => d.LastModified)
 							.DistinctBy(y => y.ActionType)
 					}).DistinctBy(x => x.Object.Username);
@@ -315,13 +322,13 @@ namespace Quarkless.Logic.Query
 			return await RunCodeWithLoggerExceptionAsync(async () =>
 			{
 				var medias = await SearchMediasByLocation(location, username, instagramAccountId, limit);
+				var lookups = await _lookupLogic.Get(username, instagramAccountId);
 				if (medias != null)
 				{
 					var users = medias.Medias.Select(x => new LookupContainer<UserResponse>
 					{
 						Object = x.User,
-						Lookup = _lookupLogic.Get(username, instagramAccountId,
-								x.User.UserId.ToString()).GetAwaiter().GetResult()
+						Lookup = lookups.Where(s => s.ObjectId == x.User.UserId.ToString())
 							.OrderByDescending(d => d.LastModified)
 							.DistinctBy(y => y.ActionType)
 					}).DistinctBy(x => x.Object.Username);
@@ -527,12 +534,12 @@ namespace Quarkless.Logic.Query
 					ProfileCategoryTopicId = profile.Topic.Category._id,
 					InstagramId = profile.InstagramAccountId
 				});
+				var lookups = await _lookupLogic.Get(profile.AccountId, profile.InstagramAccountId);
 				var users = medias.Select(a=>a.ObjectItem.Medias)
 					.SquashMe().Select(x=>new LookupContainer<UserResponse>
 					{
 						Object = x.User, 
-						Lookup = _lookupLogic.Get(profile.AccountId, profile.InstagramAccountId, 
-							x.User.UserId.ToString()).GetAwaiter().GetResult()
+						Lookup = lookups.Where(s=>s.ObjectId == x.User.UserId.ToString())
 							.OrderByDescending(d=>d.LastModified)
 							.DistinctBy(y=>y.ActionType)
 					}).ToList();
@@ -551,8 +558,7 @@ namespace Quarkless.Logic.Query
 							UserId = u.UserId,
 							Username = u.Username,
 						},
-						Lookup = _lookupLogic.Get(profile.AccountId, profile.InstagramAccountId, 
-							u.UserId.ToString()).GetAwaiter().GetResult().DistinctBy(x=>x.ActionType)
+						Lookup = lookups.Where(s=>s.ObjectId == u.UserId.ToString()).DistinctBy(x=>x.ActionType)
 					}));
 				}
 				return users.DistinctBy(x=>x.Object.Username);
@@ -582,13 +588,12 @@ namespace Quarkless.Logic.Query
 					ProfileCategoryTopicId = profile.Topic.Category._id,
 					InstagramId = profile.InstagramAccountId
 				});
-
+				var lookups = await _lookupLogic.Get(profile.AccountId, profile.InstagramAccountId);
 				var users = medias.Select(a=>a.ObjectItem.Medias)
-				.SquashMe().Select(x=>new LookupContainer<UserResponse>
+					.SquashMe().Select(x=>new LookupContainer<UserResponse>
 				{
 					Object = x.User, 
-					Lookup = _lookupLogic.Get(profile.AccountId, profile.InstagramAccountId, 
-						x.User.UserId.ToString()).GetAwaiter().GetResult()
+					Lookup = lookups.Where(s=>s.ObjectId == x.User.UserId.ToString())
 						.OrderByDescending(d=>d.LastModified)
 						.DistinctBy(y=>y.ActionType)
 				}).ToList();
@@ -608,8 +613,7 @@ namespace Quarkless.Logic.Query
 						UserId = u.UserId,
 						Username = u.Username,
 					},
-					Lookup = _lookupLogic.Get(profile.AccountId, profile.InstagramAccountId,
-						u.UserId.ToString()).GetAwaiter().GetResult()
+					Lookup = lookups.Where(s=>s.ObjectId == u.UserId.ToString())
 						.OrderByDescending(d=>d.LastModified)
 						.DistinctBy(y=>y.ActionType)
 				}));
@@ -626,14 +630,13 @@ namespace Quarkless.Logic.Query
 						MetaDataType = MetaDataType.FetchUsersFollowingList,
 						ProfileCategoryTopicId = profile.Topic.Category._id,
 						InstagramId = profile.InstagramAccountId
-					})
-					;
+					});
+				var lookups = await _lookupLogic.Get(profile.AccountId, profile.InstagramAccountId);
 				if (users != null) return users.Select(x => x.ObjectItem).SquashMe()
 					.Select(x=>new LookupContainer<UserResponse<string>>
 					{
 						Object = x, 
-						Lookup = _lookupLogic.Get(profile.AccountId, profile.InstagramAccountId, 
-							x.UserId.ToString()).GetAwaiter().GetResult()
+						Lookup = lookups.Where(s=>s.ObjectId == x.UserId.ToString())
 							.OrderByDescending(d=>d.LastModified)
 							.DistinctBy(y=>y.ActionType)
 					}).ToList();
@@ -651,13 +654,12 @@ namespace Quarkless.Logic.Query
 					ProfileCategoryTopicId = profile.Topic.Category._id, 
 					InstagramId = profile.InstagramAccountId
 				});
-
+				var lookups = await _lookupLogic.Get(profile.AccountId, profile.InstagramAccountId);
 				if (users != null) return users.Select(x => x.ObjectItem).SquashMe()
 					.Select(x=>new LookupContainer<UserResponse<string>>
 					{
 						Object = x, 
-						Lookup = _lookupLogic.Get(profile.AccountId, profile.InstagramAccountId, 
-							x.UserId.ToString()).GetAwaiter().GetResult()
+						Lookup = lookups.Where(s=>s.ObjectId == x.UserId.ToString())
 							.OrderByDescending(d=>d.LastModified)
 							.DistinctBy(y=>y.ActionType)
 					}).ToList();
@@ -675,13 +677,12 @@ namespace Quarkless.Logic.Query
 					ProfileCategoryTopicId = profile.Topic.Category._id, 
 					InstagramId = profile.InstagramAccountId
 				});
-
+				var lookups = await _lookupLogic.Get(profile.AccountId, profile.InstagramAccountId);
 				if (users != null) return users.Select(x => x.ObjectItem).SquashMe()
 					.Select(x=>new LookupContainer<UserResponse<UserSuggestionDetails>>
 					{
 						Object = x, 
-						Lookup = _lookupLogic.Get(profile.AccountId, profile.InstagramAccountId, 
-							x.UserId.ToString()).GetAwaiter().GetResult()
+						Lookup = lookups.Where(s=>s.ObjectId == x.UserId.ToString())
 							.OrderByDescending(d=>d.LastModified)
 							.DistinctBy(y=>y.ActionType)
 					}).ToList();

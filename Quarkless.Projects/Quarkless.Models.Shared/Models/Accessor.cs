@@ -16,7 +16,6 @@ namespace Quarkless.Models.Shared.Models
 		public string S3BucketName => _configuration["AppS3Bucket"];
 		public string FrontEnd => _configuration["Endpoints:FrontEnd"];
 		public string SeleniumChromeAddress => _configuration["Endpoints:SeleniumChrome"];
-		public string NaturalLanguageApiPath => _configuration["APIServices:NaturalLanguageProcessing"];
 		public string YandexApiKey => _configuration["APIServices:Yandex"];
 		public string DetectApi => _configuration["APIServices:DetectLanguageAPI"];
 		public string ImageSearchEndpoint => _configuration["Endpoints:ImageSearchEndpointGoogle"];
@@ -35,7 +34,6 @@ namespace Quarkless.Models.Shared.Models
 		public string TempAudioPath => _configuration["MediaPath:audioTempPath"];
 		public string FfmpegPath => _configuration["Ffmpeg"];
 		public string ApiBasePath => _configuration["Endpoints:ApiBasePath"];
-		public string AutomatorEndPoint => _configuration["Endpoints:AutomatorPath"];
 		public string ProxyHandlerApiEndPoint => _configuration["Endpoints:ProxyHandlerApi"];
 		public string JsonStripeCredentials =>"{" + string.Join(", ", _configuration.GetSection("Stripe")
 			.GetChildren()

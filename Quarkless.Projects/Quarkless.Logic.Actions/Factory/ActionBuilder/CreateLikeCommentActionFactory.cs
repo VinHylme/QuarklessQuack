@@ -4,12 +4,14 @@ using Quarkless.Models.Actions.Interfaces;
 using Quarkless.Models.Actions.Models;
 using Quarkless.Models.ContentInfo.Interfaces;
 using Quarkless.Models.Heartbeat.Interfaces;
+using Quarkless.Models.Lookup.Interfaces;
 
 namespace Quarkless.Logic.Actions.Factory.ActionBuilder
 {
 	public class ExecuteLikeCommentActionFactory : ActionBuilderFactory
 	{
-		public override IActionCommit Commit(UserStoreDetails user, IContentInfoBuilder contentInfoBuilder, IHeartbeatLogic heartbeatLogic)
-			=> new LikeCommentAction(user, contentInfoBuilder, heartbeatLogic);
+		public override IActionCommit Commit(UserStoreDetails user, IContentInfoBuilder contentInfoBuilder,
+			IHeartbeatLogic heartbeatLogic, ILookupLogic lookupLogic)
+			=> new LikeCommentAction(user, contentInfoBuilder, heartbeatLogic, lookupLogic);
 	}
 }

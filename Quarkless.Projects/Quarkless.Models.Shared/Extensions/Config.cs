@@ -32,10 +32,12 @@ namespace Quarkless.Models.Shared.Extensions
 			var path = ReferencePath();
 			configurationBuilder.SetBasePath(path);
 
+			configurationBuilder.AddJsonFile(string.Format(fileName, "")); // add the default file
+
 			switch (EnvironmentType)
 			{
 				case EnvironmentType.Development:
-					configurationBuilder.AddJsonFile(string.Format(fileName, ""));
+					configurationBuilder.AddJsonFile(string.Format(fileName, ".dev"));
 					break;
 				case EnvironmentType.Production:
 					configurationBuilder.AddJsonFile(string.Format(fileName, ".prod"));
@@ -64,7 +66,7 @@ namespace Quarkless.Models.Shared.Extensions
 				DetectApi = access.DetectApi,
 				S3BucketName = access.S3BucketName,
 				StatisticsDatabase = access.StatisticsDatabase,
-				NaturalLanguageApiPath = access.NaturalLanguageApiPath,
+				//NaturalLanguageApiPath = access.NaturalLanguageApiPath,
 				GeonamesApiKey = access.GeonamesApiKey,
 				GoogleGeocodeApiKey = access.GoogleGeocodeApiKey,
 				IpGeoLocationApiKey = access.IpGeoLocationApiKey,
