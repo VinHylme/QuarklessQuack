@@ -32,7 +32,8 @@ namespace Quarkless.Run.Services.Delegator
 
 		#region Docker Constants
 
-		private const string DOCKER_URL = "npipe://./pipe/docker_engine";
+		private const string DOCKER_URL_WIN = "npipe://./pipe/docker_engine";
+		private const string DOCKER_URL_LINUX = "unix:///var/run/docker.sock";
 		private const string HEARTBEAT_IMAGE_NAME = "quarkless/quarkless.services.heartbeat:latest";
 		private const string HEARTBEAT_CONTAINER_NAME = "quarkless.heartbeat.";
 
@@ -86,6 +87,7 @@ namespace Quarkless.Run.Services.Delegator
 		{
 			try
 			{
+				var runLinux = new SharedConfig().EnvironmentType == EnvironmentType.Development;
 				var process = new Process()
 				{
 					StartInfo = new ProcessStartInfo
@@ -95,8 +97,9 @@ namespace Quarkless.Run.Services.Delegator
 						RedirectStandardOutput = true,
 						RedirectStandardError = true,
 						RedirectStandardInput = true,
-						FileName = "cmd.exe",
-						Arguments = "/C "+ command
+						FileName = runLinux
+							? "/bin/bash" : "cmd.exe",
+						Arguments = runLinux? $"-c \"{command}\"" : "/C "+ command
 					}
 				};
 				process.ErrorDataReceived += (o, e) =>
@@ -282,9 +285,26 @@ namespace Quarkless.Run.Services.Delegator
 
 		private static async Task CarryOutDockerOperation()
 		{
-			#region Build Images if they don't Exist
-			var images = await Client.Images.ListImagesAsync(new ImagesListParameters());
+			
 			var env = new SharedConfig().EnvironmentType;
+
+			#region Build Images if they don't Exist
+			/*
+			var images = await Client.Images.ListImagesAsync(new ImagesListParameters
+			{
+				All = true
+			});
+			if (images == null)
+			{
+				Console.WriteLine("No Images found");
+				return;
+			}
+			
+			foreach (var imagesListResponse in images)
+			{
+				Console.WriteLine(imagesListResponse.ID);
+			}
+
 			if (!images.Any(image => image.RepoTags.Contains(HEARTBEAT_IMAGE_NAME)))
 			{
 				if (env == EnvironmentType.Development)
@@ -320,7 +340,7 @@ namespace Quarkless.Run.Services.Delegator
 					Console.WriteLine(err.Message);
 				}
 			}
-
+			*/
 			/*
 			if (!images.Any(image => image.RepoTags.Contains(DATA_FETCHER_IMAGE_NAME)))
 			{
@@ -376,14 +396,16 @@ namespace Quarkless.Run.Services.Delegator
 			var automatorImageName = AUTOMATOR_IMAGE_NAME;
 			if (env == EnvironmentType.Development)
 			{
-				heartbeatImageName = images
-					.Where(_ => _.RepoTags.Contains(HEARTBEAT_IMAGE_NAME))
-					.SelectMany(s => s.RepoTags)
-					.FirstOrDefault();
-				automatorImageName = images
-					.Where(_ => _.RepoTags.Contains(AUTOMATOR_IMAGE_NAME))
-					.SelectMany(s => s.RepoTags)
-					.FirstOrDefault();
+				heartbeatImageName = "762675489931.dkr.ecr.eu-west-2.amazonaws.com/" + HEARTBEAT_IMAGE_NAME;
+				automatorImageName = "762675489931.dkr.ecr.eu-west-2.amazonaws.com/" + AUTOMATOR_IMAGE_NAME;
+				// heartbeatImageName = images
+				// 	.Where(_ => _.RepoTags.Contains(HEARTBEAT_IMAGE_NAME))
+				// 	.SelectMany(s => s.RepoTags)
+				// 	.FirstOrDefault();
+				// automatorImageName = images
+				// 	.Where(_ => _.RepoTags.Contains(AUTOMATOR_IMAGE_NAME))
+				// 	.SelectMany(s => s.RepoTags)
+				// 	.FirstOrDefault();
 			}
 			
 			// recreate the heartbeat containers for users
@@ -637,7 +659,7 @@ namespace Quarkless.Run.Services.Delegator
 			await _instagramAccountLogic.UpdateAgentStates(AgentState.NotStarted, AUTOMATOR_WORKER_TYPE);
 
 			if (_useDockerContainer)
-				Client = new DockerClientConfiguration(new Uri(DOCKER_URL)).CreateClient();
+				Client = new DockerClientConfiguration(new Uri(new SharedConfig().EnvironmentType == EnvironmentType.Development? DOCKER_URL_LINUX : DOCKER_URL_WIN)).CreateClient();
 
 			if (_useDockerContainer)
 				await CarryOutDockerOperation();

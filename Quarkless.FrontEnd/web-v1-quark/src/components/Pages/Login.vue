@@ -61,7 +61,7 @@ export default {
 				this.isActive = false;
 				window.location.reload();
 			}).catch(err=>{
-				this.isActive = false;
+        this.isActive = false;
 				if(err.response.status === 401){
 					this.verificationNeeded = true;
 					Vue.prototype.$toast.open({
