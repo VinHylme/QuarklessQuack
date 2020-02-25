@@ -209,12 +209,12 @@ export default {
         methods:{
                 askForLocation(){
                         GetUserLocation().then().catch(err=>{
-                                Vue.prototype.$toast.open({
-                                        message: "Oops, looks like you've turned off location sharing for our site, please enable it in order to use this feature",
-                                        type: 'is-info',
-                                        position:'is-bottom',
-                                        duration:8000
-                                })
+                                // Vue.prototype.$toast.open({
+                                //         message: "Oops, looks like you've turned off location sharing for our site, please enable it in order to use this feature",
+                                //         type: 'is-info',
+                                //         position:'is-bottom',
+                                //         duration:8000
+                                // })
                                 this.linkData.useMyLocation = 'false'
                         })
                 },

@@ -75,6 +75,13 @@
                             </a>
                         </b-tooltip>
                     </div>
+                    <div v-if="agentState === 10" class="control">
+                        <b-tooltip label="Sleeping" type="is-dark" position="is-top">
+                            <a class="button is-dark is-default">
+                                <b-icon pack="fas" icon="clock"></b-icon>
+                            </a>
+                        </b-tooltip>
+                    </div>
                    <div class="control is-expanded">
                         <div class="control">
                             <a class="button is-light-dark is-fullwidth" style="font-weight:bold; font-size:1rem; max-width:150px;">{{MapToCorrectState(agentState)}}</a>
@@ -167,11 +174,12 @@ props: {
             {name:"Running", index:1},
             {name:"Stop", index:2},
             {name:"Resting", index:3},
-            {name:"Sleeping",index:4},
+            {name:"Resting",index:4},
             {name:"Blocked by instagram",index:5},
             {name:"Challange required",index:6},
             {name:"Awaiting from user",index:7},
-            {name: "Proxy Connectivity Issue", index:9}
+            {name: "Proxy Connectivity Issue", index:9},
+            {name: "Sleeping", index:10}
         ]
       }
   },
@@ -265,7 +273,7 @@ props: {
               case 3:
                   return "Resting";
               case 4:
-                  return "Sleeping";
+                  return "Taking a break";
               case 5:
                   return "Limit Reached";
               case 6:
@@ -274,6 +282,8 @@ props: {
                   return "Awaiting from user";
               case 9:
                   return "Proxy Issue";
+              case 10:
+                    return "Sleeping";
           }
       }
   }

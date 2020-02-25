@@ -24,11 +24,11 @@ const router = new Router({
 			path:"/login",
 			component:LazyLoad("Login")
 		},
-		{
-			name:"register",
-			path:"/register",
-			component:LazyLoad("Register")
-		},
+		// {
+		// 	name:"register",
+		// 	path:"/register",
+		// 	component:LazyLoad("Register")
+		// },
 		{
 			name:"checkout",
 			path:"/checkout/",
@@ -113,13 +113,16 @@ const router = new Router({
        {
            name:"Error404",
            path:"*",
-           component:LazyLoad('NotFound')
+           component:LazyLoad('HandlerPages/NotFound')
        }
 ]
 });
 
 
 router.beforeEach((to, from, next) => {
+    if(to.name === 'login' && store.getters.IsLoggedIn){
+        next('/manage')
+    }
     if(to.matched.some(record => record.meta.requiresAuth)) {
       if (store.getters.IsLoggedIn) {
         next()
@@ -127,11 +130,6 @@ router.beforeEach((to, from, next) => {
       }
       if(!store.getters.IsLoggedIn){
         next('/login')
-        return;
-      }
-      
-      if(router.currentRoute.fullPath !== '/login'){
-        next()
         return;
       }
     } else {

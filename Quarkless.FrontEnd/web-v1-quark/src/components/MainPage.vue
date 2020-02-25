@@ -1,7 +1,7 @@
 <template>
 	<div v-if="IsHome" class="container home">
 		<button class="button is-success" @click="LoadComponent('login')">Login</button>
-		<button class="button is-success" @click="LoadComponent('register')">Register</button>
+		<!-- <button class="button is-success" @click="LoadComponent('register')">Register</button> -->
 	</div>
   <div v-else class="container">
     <router-view :key="$route.fullPath"></router-view>
@@ -49,11 +49,7 @@ export default {
     width:50vw;
     height:30vw;
     border-radius:.5em;
-    background: #4568DC;
-    background: -webkit-linear-gradient(to right, #B06AB3, #4568DC);
-    background: linear-gradient(to right, #B06AB3, #4568DC);
-    box-shadow: -0.1rem 0 .4rem rgba(0,0,0,.5);
-
+    background: #000;
     .button{
       width:150px;
       height:80px;
