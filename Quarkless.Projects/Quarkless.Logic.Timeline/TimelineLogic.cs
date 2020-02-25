@@ -90,7 +90,8 @@ namespace Quarkless.Logic.Timeline
 				var mediaInfo = new MediaInfo
 				{
 					Caption = dataMediaSubmit.Caption,
-					Hashtags = dataMediaSubmit.Hashtags
+					Hashtags = dataMediaSubmit.Hashtags,
+					MediaType = (InstaMediaType) (int) dataMediaSubmit.OptionSelected
 				};
 
 				foreach (var media in dataMediaSubmit.RawMediaDatas)

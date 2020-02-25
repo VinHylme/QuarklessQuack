@@ -12,7 +12,7 @@ using Quarkless.Models.Timeline.TaskScheduler;
 
 namespace Quarkless.Logic.Timeline.TaskScheduler
 {
-	[ProlongExpirationTimeAttribute(ExpiryInHours = 9)]
+	[ProlongExpirationTimeAttribute(ExpiryInHours = 278)]
 	[AutomaticRetry(Attempts = 0)]
 	public class EventActionJob : IJob<EventActionOptions>
 	{

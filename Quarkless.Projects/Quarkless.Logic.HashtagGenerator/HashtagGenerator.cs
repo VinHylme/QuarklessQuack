@@ -126,6 +126,7 @@ namespace Quarkless.Logic.HashtagGenerator
 
 				} while (visionResults.Count > counter);
 
+				result.IsSuccessful = true;
 				return result;
 			}
 			catch (Exception err)
@@ -209,6 +210,7 @@ namespace Quarkless.Logic.HashtagGenerator
 
 				} while (visionResults.Count > counter);
 
+				result.IsSuccessful = true;
 				return result;
 			}
 			catch (Exception err)

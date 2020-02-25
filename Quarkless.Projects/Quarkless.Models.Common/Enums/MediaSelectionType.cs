@@ -9,6 +9,6 @@ namespace Quarkless.Models.Common.Enums
 		[Description("video")]
 		Video = 2,
 		[Description("carousel")]
-		Carousel = 3
+		Carousel = 8
 	}
 }
