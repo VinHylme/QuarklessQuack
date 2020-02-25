@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="ConfigFiles\appsettings.dev.json" />
     <None Remove="ConfigFiles\appsettings.docker.local.json" />
     <None Remove="ConfigFiles\appsettings.json" />
     <None Remove="ConfigFiles\appsettings.local.json" />
@@ -14,6 +15,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="ConfigFiles\appsettings.dev.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="ConfigFiles\appsettings.docker.local.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

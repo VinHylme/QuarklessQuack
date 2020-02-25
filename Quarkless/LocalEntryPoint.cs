@@ -25,6 +25,7 @@ namespace Quarkless
 
 		public static IWebHost BuildWebHost(string[] args) =>
 			WebHost.CreateDefaultBuilder(args)
+				.UseUrls("http://*:51518")
 				.UseStartup<Startup>()
 				.Build();
 	}

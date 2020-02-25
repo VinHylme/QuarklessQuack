@@ -11,6 +11,7 @@
 		Challenge = 6,
 		AwaitingActionFromUser = 7,
 		Working = 8,
-		BadProxy = 9
+		BadProxy = 9,
+		NotWakeTime = 10
 	}
 }

@@ -335,7 +335,7 @@ namespace Quarkless.Logic.Auth
 				var resCha = await _cognito.RespondToAuthChallengeAsync(new RespondToAuthChallengeRequest()
 				{
 					ClientId = UserPool.ClientID,
-					ChallengeName = Newrequest.ChallengeNameType,
+					ChallengeName = new ChallengeNameType("NEW_PASSWORD_REQUIRED"),
 					Session = Newrequest.Session,
 					ChallengeResponses = challengeResponses
 				});

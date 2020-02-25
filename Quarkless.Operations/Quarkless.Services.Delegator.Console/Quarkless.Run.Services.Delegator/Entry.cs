@@ -14,6 +14,7 @@ using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.InstagramAccounts.Enums;
 using Quarkless.Models.InstagramAccounts.Interfaces;
 using Quarkless.Models.Services.Heartbeat;
+using Quarkless.Models.Shared.Enums;
 using Quarkless.Run.Services.Delegator.Extensions;
 using SharedConfig = Quarkless.Models.Shared.Extensions.Config;
 
@@ -174,13 +175,14 @@ namespace Quarkless.Run.Services.Delegator
 				await Task.Delay(TimeSpan.FromSeconds(1.5));
 			}
 		}
-		static async Task CreateAndRunHeartbeatContainers(List<ShortInstagramAccountModel> customers, ExtractOperationType type)
+		static async Task CreateAndRunHeartbeatContainers(List<ShortInstagramAccountModel> customers,
+			ExtractOperationType type, string imageName)
 		{
 			foreach (var customer in customers)
 			{
 				await Client.Containers.CreateContainerAsync(new CreateContainerParameters
 				{
-					Image = HEARTBEAT_IMAGE_NAME,
+					Image = imageName,
 					Name = $"{HEARTBEAT_CONTAINER_NAME}{type.ToString()}.{customer.AccountId}.{customer.Id}",
 					HostConfig = new HostConfig
 					{
@@ -213,13 +215,14 @@ namespace Quarkless.Run.Services.Delegator
 				await Task.Delay(TimeSpan.FromSeconds(1.5));
 			}
 		}
-		static async Task CreateAndRunAutomatorContainers(List<ShortInstagramAccountModel> customers)
+		static async Task CreateAndRunAutomatorContainers(List<ShortInstagramAccountModel> customers,
+			string imageName)
 		{
 			foreach (var customer in customers)
 			{
 				await Client.Containers.CreateContainerAsync(new CreateContainerParameters
 				{
-					Image = AUTOMATOR_IMAGE_NAME,
+					Image = imageName,
 					Name = $"{AUTOMATOR_CONTAINER_NAME}{customer.AccountId}.{customer.Id}",
 					HostConfig = new HostConfig
 					{
@@ -281,9 +284,15 @@ namespace Quarkless.Run.Services.Delegator
 		{
 			#region Build Images if they don't Exist
 			var images = await Client.Images.ListImagesAsync(new ImagesListParameters());
-			
+			var env = new SharedConfig().EnvironmentType;
 			if (!images.Any(image => image.RepoTags.Contains(HEARTBEAT_IMAGE_NAME)))
 			{
+				if (env == EnvironmentType.Development)
+				{
+
+					Console.WriteLine("Please pull the heartbeat image before proceeding");
+					return;
+				}
 				Console.WriteLine("Creating image for {0}", HEARTBEAT_IMAGE_NAME);
 				try
 				{
@@ -294,9 +303,13 @@ namespace Quarkless.Run.Services.Delegator
 					Console.WriteLine(err.Message);
 				}
 			}
-			
 			if (!images.Any(image => image.RepoTags.Contains(AUTOMATOR_IMAGE_NAME)))
 			{
+				if (env == EnvironmentType.Development)
+				{
+					Console.WriteLine("Please pull the automation image before proceeding");
+					return;
+				}
 				Console.WriteLine("Creating image for {0}", AUTOMATOR_IMAGE_NAME);
 				try
 				{
@@ -359,6 +372,20 @@ namespace Quarkless.Run.Services.Delegator
 
 			Console.WriteLine("Recreating new instances of containers");
 
+			var heartbeatImageName = HEARTBEAT_IMAGE_NAME;
+			var automatorImageName = AUTOMATOR_IMAGE_NAME;
+			if (env == EnvironmentType.Development)
+			{
+				heartbeatImageName = images
+					.Where(_ => _.RepoTags.Contains(HEARTBEAT_IMAGE_NAME))
+					.SelectMany(s => s.RepoTags)
+					.FirstOrDefault();
+				automatorImageName = images
+					.Where(_ => _.RepoTags.Contains(AUTOMATOR_IMAGE_NAME))
+					.SelectMany(s => s.RepoTags)
+					.FirstOrDefault();
+			}
+			
 			// recreate the heartbeat containers for users
 			var customers = (await _agentLogic.GetAllAccounts(0))?
 				.Where(_=>_.AgentState != (int) AgentState.Stopped).ToList();
@@ -370,12 +397,12 @@ namespace Quarkless.Run.Services.Delegator
 			var opsTypes = Enum.GetValues(typeof(ExtractOperationType)).Cast<ExtractOperationType>();
 
 			foreach (var opsType in opsTypes.Where(_=>_ != ExtractOperationType.None))
-				await CreateAndRunHeartbeatContainers(customers, opsType);
+				await CreateAndRunHeartbeatContainers(customers, opsType, heartbeatImageName);
 
 			Console.WriteLine("Finished Heartbeat containers, now starting automator");
 
 			await Task.Delay(TimeSpan.FromMinutes(1)); // wait around 2.5 minutes before starting automation (populate data first)
-			await CreateAndRunAutomatorContainers(customers);
+			await CreateAndRunAutomatorContainers(customers, automatorImageName);
 			Console.WriteLine("Finished creating containers for automator");
 		}
 
@@ -537,7 +564,7 @@ namespace Quarkless.Run.Services.Delegator
 			#endregion
 
 			var customers = (await _agentLogic.GetAllAccounts(0))
-				?.Where(_=>_.AgentState != (int) AgentState.NotStarted).ToList();
+				?.Where(_=>_.AgentState != (int) AgentState.NotStarted || _.AgentState != (int) AgentState.NotWakeTime).ToList();
 
 			if (customers == null || !customers.Any()) return;
 
@@ -586,8 +613,13 @@ namespace Quarkless.Run.Services.Delegator
 			}
 		}
 
-		static async Task Main()
+		static async Task Main(string[] args)
 		{
+			if (args.Length <= 0) return;
+
+			Environment.SetEnvironmentVariable("APP_RUN_IN_DOCKER", args[0]);
+			Environment.SetEnvironmentVariable("DOTNET_ENV_RELEASE", args[1]);
+			
 			var runInDocker = Environment.GetEnvironmentVariable("APP_RUN_IN_DOCKER");
 			if (string.IsNullOrEmpty(runInDocker))
 				return;

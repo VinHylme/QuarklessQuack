@@ -293,7 +293,7 @@ namespace Quarkless.Logic.Services.Automation
 						await _instagramAccountLogic.PartialUpdateInstagramAccount(account.AccountId, account.Id,
 						new InstagramAccountModel
 						{
-							AgentState = (int) AgentState.NotStarted
+							AgentState = (int) AgentState.NotWakeTime
 						});
 						return;
 					}
@@ -463,15 +463,15 @@ namespace Quarkless.Logic.Services.Automation
 
 					#region Agent State Handler
 
-					if (account.AgentState == (int) AgentState.NotStarted)
-					{
-						account.AgentState = (int) AgentState.Running;
-						await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.AccountId,
-							userStoreDetails.InstagramAccountUser, new InstagramAccountModel
-							{
-								AgentState = account.AgentState,
-							});
-					}
+					// if (account.AgentState == (int) AgentState.NotStarted)
+					// {
+					// 	account.AgentState = (int) AgentState.Running;
+					// 	await _instagramAccountLogic.PartialUpdateInstagramAccount(userStoreDetails.AccountId,
+					// 		userStoreDetails.InstagramAccountUser, new InstagramAccountModel
+					// 		{
+					// 			AgentState = account.AgentState,
+					// 		});
+					// }
 
 					if (actionsContainerManager.RegisteredActions.Count <= 0)
 					{
