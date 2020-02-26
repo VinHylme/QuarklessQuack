@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.InstagramAccounts.Enums;
 using Quarkless.Models.InstagramAccounts.Interfaces;
+using Quarkless.Models.Profile.Interfaces;
 using Quarkless.Models.Services.Heartbeat;
 using Quarkless.Models.Shared.Enums;
 using Quarkless.Run.Services.Delegator.Extensions;
@@ -636,6 +637,14 @@ namespace Quarkless.Run.Services.Delegator
 					break;
 			}
 		}
+		public static bool IsBetween(TimeSpan time, TimeSpan start, TimeSpan end)
+		{
+			// If the start time and the end time is in the same day.
+			if (start <= end)
+				return time >= start && time <= end;
+			// The start time and end time is on different days.
+			return time >= start || time <= end;
+		}
 
 		static async Task Main(string[] args)
 		{
@@ -654,6 +663,7 @@ namespace Quarkless.Run.Services.Delegator
 			using var scope = services.BuildServiceProvider().CreateScope();
 			_agentLogic = scope.ServiceProvider.GetService<IAgentLogic>();
 			_instagramAccountLogic = scope.ServiceProvider.GetService<IInstagramAccountLogic>();
+			var profileLogic = scope.ServiceProvider.GetService<IProfileLogic>();
 			bool.TryParse(runInDocker, out var useDocker);
 			_useDockerContainer = useDocker;
 
@@ -663,6 +673,25 @@ namespace Quarkless.Run.Services.Delegator
 				{
 					await _instagramAccountLogic.UpdateAgentStates(AgentState.NotStarted, HEART_BEAT_WORKER_TYPE);
 					await _instagramAccountLogic.UpdateAgentStates(AgentState.NotStarted, AUTOMATOR_WORKER_TYPE);
+
+					//todo: change to only look at account who are sleeping
+					var accounts = await _agentLogic.GetAllAccounts();
+					foreach (var account in accounts)
+					{
+						var profile = await profileLogic.GetProfile(account.AccountId, account.Id);
+
+						var wakeTimeToUtc = profile.AdditionalConfigurations.WakeTime.ToUniversalTime().TimeOfDay;
+						var sleepTimeToUtc = profile.AdditionalConfigurations.SleepTime.ToUniversalTime().TimeOfDay;
+
+						if (IsBetween(DateTime.UtcNow.TimeOfDay, wakeTimeToUtc, sleepTimeToUtc))
+						{
+							await _instagramAccountLogic.PartialUpdateInstagramAccount(account.AccountId, account.Id,
+								new InstagramAccountModel
+								{
+									AgentState = (int) AgentState.Running
+								});
+						}
+					}
 
 					if (_useDockerContainer)
 						Client = new DockerClientConfiguration(
