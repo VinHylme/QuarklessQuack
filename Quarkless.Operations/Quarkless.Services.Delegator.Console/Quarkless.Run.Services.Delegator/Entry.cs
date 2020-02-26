@@ -407,10 +407,12 @@ namespace Quarkless.Run.Services.Delegator
 				// 	.SelectMany(s => s.RepoTags)
 				// 	.FirstOrDefault();
 			}
-			
+
 			// recreate the heartbeat containers for users
 			var customers = (await _agentLogic.GetAllAccounts(0))?
-				.Where(_=>_.AgentState != (int) AgentState.Stopped).ToList();
+				.Where(_=>_.AgentState != (int) AgentState.Stopped
+						&& _.AgentState != (int)AgentState.NotStarted
+						&& _.AgentState != (int)AgentState.NotWakeTime).ToList();
 
 			if (customers == null || !customers.Any()) return;
 
@@ -586,7 +588,7 @@ namespace Quarkless.Run.Services.Delegator
 			#endregion
 
 			var customers = (await _agentLogic.GetAllAccounts(0))
-				?.Where(_=>_.AgentState != (int) AgentState.NotStarted || _.AgentState != (int) AgentState.NotWakeTime).ToList();
+				?.Where(_=>_.AgentState != (int) AgentState.NotStarted && _.AgentState != (int) AgentState.NotWakeTime).ToList();
 
 			if (customers == null || !customers.Any()) return;
 
@@ -655,19 +657,31 @@ namespace Quarkless.Run.Services.Delegator
 			bool.TryParse(runInDocker, out var useDocker);
 			_useDockerContainer = useDocker;
 
-			await _instagramAccountLogic.UpdateAgentStates(AgentState.NotStarted, HEART_BEAT_WORKER_TYPE);
-			await _instagramAccountLogic.UpdateAgentStates(AgentState.NotStarted, AUTOMATOR_WORKER_TYPE);
+			while (true)
+			{
+				try
+				{
+					await _instagramAccountLogic.UpdateAgentStates(AgentState.NotStarted, HEART_BEAT_WORKER_TYPE);
+					await _instagramAccountLogic.UpdateAgentStates(AgentState.NotStarted, AUTOMATOR_WORKER_TYPE);
 
-			if (_useDockerContainer)
-				Client = new DockerClientConfiguration(
-					new Uri(!SharedConfig.IsWindowsOs
-						? DOCKER_URL_LINUX 
-						: DOCKER_URL_WIN)).CreateClient();
+					if (_useDockerContainer)
+						Client = new DockerClientConfiguration(
+							new Uri(!SharedConfig.IsWindowsOs
+								? DOCKER_URL_LINUX
+								: DOCKER_URL_WIN)).CreateClient();
 
-			if (_useDockerContainer)
-				await CarryOutDockerOperation();
-			else
-				await CarryOutLocalOperation(true);
+					if (_useDockerContainer)
+						await CarryOutDockerOperation();
+					else
+						await CarryOutLocalOperation(true);
+				}
+				catch (Exception err)
+				{
+					Console.WriteLine(err);
+				}
+
+				await Task.Delay(TimeSpan.FromMinutes(15));
+			}
 		}
 	}
 }

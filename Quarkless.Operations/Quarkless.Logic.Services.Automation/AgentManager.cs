@@ -251,7 +251,15 @@ namespace Quarkless.Logic.Services.Automation
 
 			return logs.Count(x => x.Notification.CreatedAt <= startDate && x.Notification.CreatedAt >= endDate);
 		}
-		
+		public bool IsBetween(TimeSpan time, TimeSpan start, TimeSpan end)
+		{
+			// If the start time and the end time is in the same day.
+			if (start <= end)
+				return time >= start && time <= end;
+			// The start time and end time is on different days.
+			return time >= start || time <= end;
+		}
+
 		// TODO: MAKE SURE ALL USERS ARE BUSINESS ACCOUNTS AND USERS OVER 100 FOLLOWERS
 		// TODO: BASE THEIR POSTING ON WHICH HOUR WAS MOST POPULAR
 		public async Task Start(string accountId, string instagramAccountId)
@@ -287,8 +295,8 @@ namespace Quarkless.Logic.Services.Automation
 					var currentTime = DateTime.UtcNow.TimeOfDay;
 					var wakeTimeToUtc = profile.AdditionalConfigurations.WakeTime.ToUniversalTime().TimeOfDay;
 					var sleepTimeToUtc = profile.AdditionalConfigurations.SleepTime.ToUniversalTime().TimeOfDay;
-					
-					if ((currentTime < wakeTimeToUtc || currentTime > sleepTimeToUtc) || userRole == AuthTypes.Expired)
+
+					if (!IsBetween(currentTime, wakeTimeToUtc, sleepTimeToUtc) || userRole == AuthTypes.Expired)
 					{
 						await _instagramAccountLogic.PartialUpdateInstagramAccount(account.AccountId, account.Id,
 						new InstagramAccountModel
