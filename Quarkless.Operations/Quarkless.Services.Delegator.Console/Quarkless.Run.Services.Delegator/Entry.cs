@@ -32,6 +32,7 @@ namespace Quarkless.Run.Services.Delegator
 
 		#region Docker Constants
 
+		private const string AWS_DOCKER_REPO = "762675489931.dkr.ecr.eu-west-2.amazonaws.com/";
 		private const string DOCKER_URL_WIN = "npipe://./pipe/docker_engine";
 		private const string DOCKER_URL_LINUX = "unix:///var/run/docker.sock";
 		private const string HEARTBEAT_IMAGE_NAME = "quarkless/quarkless.services.heartbeat:latest";
@@ -285,7 +286,6 @@ namespace Quarkless.Run.Services.Delegator
 
 		private static async Task CarryOutDockerOperation()
 		{
-			
 			var env = new SharedConfig().EnvironmentType;
 
 			#region Build Images if they don't Exist
@@ -396,8 +396,8 @@ namespace Quarkless.Run.Services.Delegator
 			var automatorImageName = AUTOMATOR_IMAGE_NAME;
 			if (env == EnvironmentType.Development)
 			{
-				heartbeatImageName = "762675489931.dkr.ecr.eu-west-2.amazonaws.com/" + HEARTBEAT_IMAGE_NAME;
-				automatorImageName = "762675489931.dkr.ecr.eu-west-2.amazonaws.com/" + AUTOMATOR_IMAGE_NAME;
+				heartbeatImageName = AWS_DOCKER_REPO + HEARTBEAT_IMAGE_NAME;
+				automatorImageName = AWS_DOCKER_REPO + AUTOMATOR_IMAGE_NAME;
 				// heartbeatImageName = images
 				// 	.Where(_ => _.RepoTags.Contains(HEARTBEAT_IMAGE_NAME))
 				// 	.SelectMany(s => s.RepoTags)

@@ -92,7 +92,6 @@ export default {
       this.isLoadingLogs = true;
       this.$store.dispatch('GetUsersTimeline',this.$route.params.id).then(res=> 
       { 
-        console.log(res.data)
         this.isLoading = false;
       }).catch(err=>{
           this.isLoading = false;
@@ -116,7 +115,13 @@ export default {
     clearInterval(this.timerLog)
   },
   mounted(){
-
+   
+  },
+  updated(){
+    let postElement = document.getElementsByClassName('v-cal-event-image');
+    if(postElement.length > 0){
+      postElement[0].scrollIntoView();
+    }
   },
   computed:{
   },
