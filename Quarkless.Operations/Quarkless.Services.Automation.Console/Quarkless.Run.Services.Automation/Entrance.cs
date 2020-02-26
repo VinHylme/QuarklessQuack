@@ -25,7 +25,7 @@ namespace Quarkless.Run.Services.Automation
 		private const string REDIS_DB_NAME = "Timeline";
 		static void Main(string[] args)
 		{
-			var shouldTest = false;
+			var shouldTest = true;
 
 			var environmentVariables = Environment.GetEnvironmentVariables();
 			var userId = environmentVariables["USER_ID"].ToString();

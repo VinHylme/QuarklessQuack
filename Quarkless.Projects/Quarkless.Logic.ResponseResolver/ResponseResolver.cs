@@ -2,7 +2,6 @@
 using Quarkless.Models.InstagramAccounts.Interfaces;
 using Quarkless.Models.InstagramClient.Interfaces;
 using Quarkless.Models.ResponseResolver.Interfaces;
-using Quarkless.Models.Timeline.Interfaces;
 using System;
 using System.Threading.Tasks;
 using Quarkless.Models.InstagramAccounts;
@@ -955,7 +954,7 @@ namespace Quarkless.Logic.ResponseResolver
 			InstagramAccountId = account.Id;
 			var resolverResponse = new ResolverResponse<TInput>
 			{
-				Response = response,
+				Response = response
 			};
 
 			var actionMessage = CreateMessage(actionType, request);

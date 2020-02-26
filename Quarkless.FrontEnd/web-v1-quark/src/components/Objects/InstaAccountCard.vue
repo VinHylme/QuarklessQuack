@@ -273,7 +273,7 @@ props: {
               case 3:
                   return "Resting";
               case 4:
-                  return "Taking a break";
+                  return "Break Time";
               case 5:
                   return "Limit Reached";
               case 6:

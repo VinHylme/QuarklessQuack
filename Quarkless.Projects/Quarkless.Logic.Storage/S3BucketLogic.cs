@@ -40,7 +40,7 @@ namespace Quarkless.Logic.Storage
 			try
 			{
 				var fileTransferUtility = new TransferUtility(_client);
-				using(var fileToUpload = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+				await using(var fileToUpload = new FileStream(filePath, FileMode.Open, FileAccess.Read))
 				{
 					await fileTransferUtility.UploadAsync(fileToUpload, bucketName ?? _bucketName, keyName);
 				}
@@ -54,7 +54,6 @@ namespace Quarkless.Logic.Storage
 		}
 		public async Task<string> ReadObjectDataAsync(string keyName, string bucketName)
 		{
-			var responseBody = "";
 			var request = new GetObjectRequest
 			{
 				BucketName = bucketName,
@@ -62,18 +61,17 @@ namespace Quarkless.Logic.Storage
 			};
 			try
 			{
-				using (var response = await _client.GetObjectAsync(request))
-				using (var responseStream = response.ResponseStream)
-				using (var reader = new StreamReader(responseStream))
-				{
-					var title = response.Metadata["x-amz-meta-title"]; // Assume you have "title" as medata added to the object.
-					var contentType = response.Headers["Content-Type"];
-					Console.WriteLine("Object metadata, Title: {0}", title);
-					Console.WriteLine("Content type: {0}", contentType);
+				using var response = await _client.GetObjectAsync(request);
+				await using var responseStream = response.ResponseStream;
+				using var reader = new StreamReader(responseStream);
 
-					responseBody = reader.ReadToEnd(); // Now you process the response body.
-					return responseBody;
-				}
+				var title = response.Metadata["x-amz-meta-title"];
+				var contentType = response.Headers["Content-Type"];
+				Console.WriteLine("Object metadata, Title: {0}", title);
+				Console.WriteLine("Content type: {0}", contentType);
+
+				var responseBody = reader.ReadToEnd();
+				return responseBody;
 			}
 			catch (AmazonS3Exception e)
 			{
@@ -86,6 +84,7 @@ namespace Quarkless.Logic.Storage
 				return null;
 			}
 		}
+
 		public async Task<string> UploadStreamFile(Stream stream, string keyName, string bucketName = null)
 		{
 			try
@@ -104,8 +103,10 @@ namespace Quarkless.Logic.Storage
 					Key = keyName,
 					Expires = DateTime.Now.AddDays(6.3)
 				};
+
 				//string url_ = $"https://{bucketName}.s3.eu-west-2.amazonaws.com/{keyName}";
 				var url = _client.GetPreSignedURL(expiryUrlRequest);
+				
 				using(var client = new WebClient())
 				{
 					try
@@ -132,25 +133,20 @@ namespace Quarkless.Logic.Storage
 				return null;
 			}
 		}
+
 		public async Task<bool> CreateBucket(string bucketName)
 		{
 			try
 			{
-				if (await AmazonS3Util.DoesS3BucketExistV2Async(_client, bucketName) == false)
+				if (await AmazonS3Util.DoesS3BucketExistV2Async(_client, bucketName)) return false;
+				var putBucketRequest = new PutBucketRequest
 				{
-					var putBucketRequest = new PutBucketRequest
-					{
-						BucketName = bucketName,
-						UseClientRegion = true
-					};
+					BucketName = bucketName,
+					UseClientRegion = true
+				};
 
-					var response = await _client.PutBucketAsync(putBucketRequest);
-					if (response.HttpStatusCode == System.Net.HttpStatusCode.OK)
-					{
-						return true;
-					}
-				}
-				return false;
+				var response = await _client.PutBucketAsync(putBucketRequest);
+				return response.HttpStatusCode == System.Net.HttpStatusCode.OK;
 			}
 			catch (AmazonS3Exception s3)
 			{

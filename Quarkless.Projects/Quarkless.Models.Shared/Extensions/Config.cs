@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Dynamic;
 using System.IO;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.Configuration;
 using Quarkless.Models.Shared.Enums;
 using Quarkless.Models.Shared.Models;
@@ -117,6 +118,8 @@ namespace Quarkless.Models.Shared.Extensions
 			}
 		}
 		public EnvironmentsAccess Environments => GetEnvironmentsDetails();
+		public static bool IsWindowsOs => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
 		public IConfiguration Configuration => GetConfiguration();
 	}
 }

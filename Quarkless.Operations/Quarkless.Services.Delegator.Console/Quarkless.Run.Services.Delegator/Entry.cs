@@ -87,7 +87,7 @@ namespace Quarkless.Run.Services.Delegator
 		{
 			try
 			{
-				var runLinux = new SharedConfig().EnvironmentType == EnvironmentType.Development;
+				var runLinux = SharedConfig.IsWindowsOs == false;
 				var process = new Process()
 				{
 					StartInfo = new ProcessStartInfo
@@ -659,7 +659,10 @@ namespace Quarkless.Run.Services.Delegator
 			await _instagramAccountLogic.UpdateAgentStates(AgentState.NotStarted, AUTOMATOR_WORKER_TYPE);
 
 			if (_useDockerContainer)
-				Client = new DockerClientConfiguration(new Uri(new SharedConfig().EnvironmentType == EnvironmentType.Development? DOCKER_URL_LINUX : DOCKER_URL_WIN)).CreateClient();
+				Client = new DockerClientConfiguration(
+					new Uri(!SharedConfig.IsWindowsOs
+						? DOCKER_URL_LINUX 
+						: DOCKER_URL_WIN)).CreateClient();
 
 			if (_useDockerContainer)
 				await CarryOutDockerOperation();

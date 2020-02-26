@@ -84,7 +84,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				_user.Profile.Theme.Colors.Select(s => Color.FromArgb(s.Red, s.Green, s.Blue)),
 				_user.Profile.Theme.Percentage, size)) return null;
 
-			var s3UrlLink = await UploadToS3(imageBytes, $"Image_{imageBytes.GetHashCode()}_{Guid.NewGuid()}");
+			var s3UrlLink = await UploadToS3(imageBytes, $"Image_{imageBytes.GetHashCode()}_{Guid.NewGuid().ToString()}");
 
 			return new MediaData
 			{
@@ -108,7 +108,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 					.ElementAt(_user.Profile.Theme.Colors.Count - 1),
 				_user.Profile.Theme.Percentage, 10)) return null;
 
-			var s3UrlLink = await UploadToS3(videoBytes, $"Video_{videoBytes.GetHashCode()}_{Guid.NewGuid()}");
+			var s3UrlLink = await UploadToS3(videoBytes, $"Video_{videoBytes.GetHashCode()}_{Guid.NewGuid().ToString()}");
 			
 			return new MediaData
 			{

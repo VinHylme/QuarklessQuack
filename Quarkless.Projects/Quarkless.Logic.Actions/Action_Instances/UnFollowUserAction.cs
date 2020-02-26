@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Quarkless.Base.InstagramUser.Models;
 using Quarkless.Models.Actions;
@@ -139,12 +138,24 @@ namespace Quarkless.Logic.Actions.Action_Instances
 						for (var i = 0; i < _actionOptions.StrategySettings.NumberOfUnfollows; i++)
 						{
 							var nominatedUser = fetchedUsers?.ElementAtOrDefault(i);
-							var userId = nominatedUser?.ObjectItem?.FirstOrDefault()?.UserId;
-							if (userId == null) continue;
+							var userToUnfollow = nominatedUser?.ObjectItem?.FirstOrDefault();
+
+							if (userToUnfollow == null) continue;
 
 							var request = new FollowAndUnFollowUserRequest
 							{
-								UserId = userId.Value
+								UserId = userToUnfollow.UserId,
+								User = new UserShort
+								{
+									Id = userToUnfollow.UserId,
+									Username = userToUnfollow.Username,
+									ProfilePicture = userToUnfollow.ProfilePicture
+								},
+								DataFrom = new DataFrom
+								{
+									NominatedFrom = fetchType,
+									TopicName = userToUnfollow.Topic?.Name
+								}
 							};
 							@event.DataObjects.Add(new EventBody(request, request.GetType(), executionTime.AddSeconds(i * _actionOptions.StrategySettings.OffsetPerAction.TotalSeconds)));
 						}

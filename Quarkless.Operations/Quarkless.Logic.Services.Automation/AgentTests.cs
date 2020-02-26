@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 using Quarkless.Analyser;
 using Quarkless.Models.Actions;
 using Quarkless.Models.Actions.Enums.ActionTypes;
+using Quarkless.Models.Actions.Enums.StrategyType;
 using Quarkless.Models.Actions.Factory.Action_Options;
+using Quarkless.Models.Actions.Factory.Action_Options.StrategySettings;
 using Quarkless.Models.Actions.Interfaces;
 using Quarkless.Models.Actions.Models;
 using Quarkless.Models.Agent.Interfaces;
@@ -66,6 +68,57 @@ namespace Quarkless.Logic.Services.Automation
 			};
 			return user;
 		}
+		private async Task<TestResponse> TestUnfollowUser(bool execute = true)
+		{
+			var response = new TestResponse();
+			var user = await GetUserDetail();
+
+			var postAction = _actionCommitFactory.Create(ActionType.UnFollowUser, user)
+				.ModifyOptions(
+					new UnfollowActionOptions(
+						new UnFollowStrategySettings(UnFollowStrategyType.LeastEngagingN, numberOfUnfollows: 1)));
+
+			var results = await postAction.PushAsync(DateTimeOffset.UtcNow);
+
+			if (!results.IsSuccessful)
+			{
+				response.PassedInActionBuild = false;
+				response.Error = results.Info;
+				return response;
+			}
+
+			if (!execute)
+			{
+				response.IsSuccessful = true;
+				response.PassedInActionBuild = true;
+				response.Items = results.Results.DataObjects;
+				return response;
+			}
+
+			var resultsExecute = await _actionExecuteFactory.Create(ActionType.UnFollowUser,
+				new UserStore
+				{
+					AccountId = user.AccountId,
+					InstagramAccountUser = user.InstagramAccountUser,
+					InstagramAccountUsername = user.InstagramAccountUsername
+				}).ExecuteAsync(new EventExecuteBody(results.Results.DataObjects.First().Body,
+				results.Results.DataObjects.First().BodyType));
+
+			if (!resultsExecute.IsSuccessful)
+			{
+				response.PassedInActionBuild = true;
+				response.PassedInActionExecute = false;
+				response.Error = resultsExecute.Info;
+				return response;
+			}
+
+			response.PassedInActionBuild = true;
+			response.PassedInActionExecute = true;
+			response.IsSuccessful = true;
+			response.Items = results.Results.DataObjects;
+			return response;
+		}
+
 		private async Task<TestResponse> TestReactStoryAction(bool execute = true)
 		{
 			var response = new TestResponse();
@@ -232,8 +285,9 @@ namespace Quarkless.Logic.Services.Automation
 		}
 		public async Task StartTests()
 		{
+			var unfollow = await TestUnfollowUser();
 
-			
+
 
 			// var followUserTest = await TestFollowUserAction(true);
 			// if (!followUserTest.IsSuccessful)
@@ -246,11 +300,11 @@ namespace Quarkless.Logic.Services.Automation
 			// {
 			// }
 			//
-			var postActionTest = await TestCreateMediaAction(true);
-			if (!postActionTest.IsSuccessful)
-			{
-			
-			}
+			// var postActionTest = await TestCreateMediaAction(true);
+			// if (!postActionTest.IsSuccessful)
+			// {
+			//
+			// }
 		}
 	}
 }
