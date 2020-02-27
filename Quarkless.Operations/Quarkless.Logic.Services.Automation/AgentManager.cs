@@ -496,8 +496,8 @@ namespace Quarkless.Logic.Services.Automation
 						{
 							var otherActionsAddedTotalTime =
 								_timelineLogic.PickAGoodTime(accountId, instagramAccountId, ActionType.None) ?? DateTime.UtcNow;
-
-							if (otherActionsAddedTotalTime.Subtract(DateTime.UtcNow) > TimeSpan.FromMinutes(59))
+							var pastBy = otherActionsAddedTotalTime.Subtract(DateTime.UtcNow);
+							if (pastBy > TimeSpan.FromMinutes(59))
 							{
 								account.AgentState = (int)AgentState.DeepSleep;
 
@@ -524,7 +524,7 @@ namespace Quarkless.Logic.Services.Automation
 										SecureRandom.Next(25, 45) + (SecureRandom.NextDouble() * 2));
 								}
 
-								account.SleepTimeRemaining = DateTime.UtcNow.AddMinutes(sleepTime.TotalMinutes);
+								account.SleepTimeRemaining = DateTime.UtcNow.AddMinutes(sleepTime.Add(pastBy).TotalMinutes);
 
 								await _instagramAccountLogic.PartialUpdateInstagramAccount(
 									userStoreDetails.AccountId,

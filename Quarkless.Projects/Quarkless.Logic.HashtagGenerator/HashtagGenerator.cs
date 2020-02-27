@@ -77,6 +77,7 @@ namespace Quarkless.Logic.HashtagGenerator
 				foreach (var image in images)
 				{
 					var web = new List<WebDetection>();
+					
 					if (image.IsBase64String())
 						web.AddRange(await _visionClient.DetectImageWebEntities(images
 							.Select(_ => Convert.FromBase64String(_.Split(",")[1]))));

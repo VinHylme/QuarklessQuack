@@ -17,8 +17,8 @@ namespace Quarkless.Logic.ContentInfo
 	public class ContentInfoBuilder : IContentInfoBuilder
 	{
 		private readonly IUtilProviders _utilProviders;
-		private readonly EmojiType[] _selectFrom = new[]
-		{
+		private readonly EmojiType[] _selectFrom = {
+			EmojiType.Positive,
 			EmojiType.Smileys,
 			EmojiType.Symbols,
 			EmojiType.AnimalsNature

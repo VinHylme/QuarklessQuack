@@ -158,7 +158,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 								optionPick.Add(new Chance<MetaDataType>
 								{
 									Object = MetaDataType.FetchMediaByUserTargetList,
-									Probability = 0.50
+									Probability = 0.25
 								});
 							}
 							if (_user.Profile.LocationTargetList != null && _user.Profile.LocationTargetList.Any())
@@ -166,7 +166,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 								optionPick.Add(new Chance<MetaDataType>
 								{
 									Object = MetaDataType.FetchMediaByUserLocationTargetList,
-									Probability = 0.50
+									Probability = 0.25
 								});
 							}
 						}
@@ -237,6 +237,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 			return selectedMedia;
 		}
+
 		private TempSelect FindVideoFromList(in List<Meta<Media>> mediaItems, MetaDataType selectedAction)
 		{
 			var selectedMedia = new TempSelect();
@@ -478,7 +479,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 							Errors = meta.ObjectItem?.Errors ?? 0,
 							Medias = meta.ObjectItem?.Medias
 								?.Where(a=>a.MediaType == (InstaMediaType)((int)actionType)
-										&& !lookups.Exists(_=>_.ObjectId == a.MediaId)).ToList() 
+										&& !lookups.Exists(_=>_.ObjectId == a.MediaId)).ToList()
 								?? new List<MediaResponse>()
 						})).Shuffle().ToList();
 
@@ -490,13 +491,14 @@ namespace Quarkless.Logic.Actions.Action_Instances
 					{
 						// create carousel from images
 						filterByMediaType = filteredResults.Select(meta =>
-							new Meta<Media>(new
-								Media
-								{
-									Errors = meta.ObjectItem.Errors,
-									Medias = meta.ObjectItem?.Medias
-									?.Where(a => a.MediaType == InstaMediaType.Image)?.ToList()
-									?? new List<MediaResponse>()})).Shuffle().ToList();
+						new Meta<Media>(new
+							Media
+							{
+								Errors = meta.ObjectItem.Errors,
+								Medias = meta.ObjectItem?.Medias
+								?.Where(a => a.MediaType == InstaMediaType.Image
+										&& !lookups.Exists(_ => _.ObjectId == a.MediaId))?.ToList()
+								?? new List<MediaResponse>()})).Shuffle().ToList();
 					}
 					else
 					{
