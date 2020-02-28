@@ -55,6 +55,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				allowedSearchTypes.Add(SearchType.Instagram);
 
 			allowedSearchTypes.Add(SearchType.Google);
+			allowedSearchTypes.Add(SearchType.YandexQuery);
 			return allowedSearchTypes;
 		}
 		private async Task<string> UploadToS3(byte[] media, string keyName)
@@ -122,91 +123,103 @@ namespace Quarkless.Logic.Actions.Action_Instances
 			switch (searchTypeSelected)
 			{
 				case SearchType.Google:
+				{
+					var googleResults = await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 					{
-						var googleResults = await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
-						{
-							MetaDataType = MetaDataType.FetchMediaForSpecificUserGoogle,
-							ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-							InstagramId = _user.Profile.InstagramAccountId,
-							AccountId = _user.AccountId
-						});
+						MetaDataType = MetaDataType.FetchMediaForSpecificUserGoogle,
+						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
+						InstagramId = _user.Profile.InstagramAccountId,
+						AccountId = _user.AccountId
+					});
 
-						return (googleResults != null ? googleResults.ToList() : new List<Meta<Media>>(),
-							MetaDataType.FetchMediaForSpecificUserGoogle);
+					return (googleResults != null ? googleResults.ToList() : new List<Meta<Media>>(),
+						MetaDataType.FetchMediaForSpecificUserGoogle);
+				}
+				case SearchType.YandexQuery:
+				{
+					var yandexResults = await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
+					{
+						MetaDataType = MetaDataType.FetchMediaForSpecificUserYandexQuery,
+						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
+						InstagramId = _user.Profile.InstagramAccountId,
+						AccountId = _user.AccountId
+					});
+					return (yandexResults != null ? yandexResults.ToList() : new List<Meta<Media>>(),
+						MetaDataType.FetchMediaForSpecificUserYandexQuery);
 					}
 				case SearchType.Instagram:
-					{
-						var optionPick = new List<Chance<MetaDataType>>();
+				{
+					var optionPick = new List<Chance<MetaDataType>>();
 
-						if (_user.Profile.AdditionalConfigurations.EnableOnlyAutoRepostFromUserTargetList)
+					if (_user.Profile.AdditionalConfigurations.EnableOnlyAutoRepostFromUserTargetList)
+					{
+						optionPick.Add(new Chance<MetaDataType>
+						{
+							Object = MetaDataType.FetchMediaByUserTargetList,
+							Probability = 0.50
+						});
+					}
+					else
+					{
+						optionPick.Add(new Chance<MetaDataType>
+						{
+							Object = MetaDataType.FetchMediaByTopic,
+							Probability = 0.50
+						});
+						if (_user.Profile.UserTargetList != null && _user.Profile.UserTargetList.Any())
 						{
 							optionPick.Add(new Chance<MetaDataType>
 							{
 								Object = MetaDataType.FetchMediaByUserTargetList,
-								Probability = 0.50
+								Probability = 0.25
 							});
 						}
-						else
+						if (_user.Profile.LocationTargetList != null && _user.Profile.LocationTargetList.Any())
 						{
 							optionPick.Add(new Chance<MetaDataType>
 							{
-								Object = MetaDataType.FetchMediaByTopic,
-								Probability = 0.50
+								Object = MetaDataType.FetchMediaByUserLocationTargetList,
+								Probability = 0.25
 							});
-							if (_user.Profile.UserTargetList != null && _user.Profile.UserTargetList.Any())
-							{
-								optionPick.Add(new Chance<MetaDataType>
-								{
-									Object = MetaDataType.FetchMediaByUserTargetList,
-									Probability = 0.25
-								});
-							}
-							if (_user.Profile.LocationTargetList != null && _user.Profile.LocationTargetList.Any())
-							{
-								optionPick.Add(new Chance<MetaDataType>
-								{
-									Object = MetaDataType.FetchMediaByUserLocationTargetList,
-									Probability = 0.25
-								});
-							}
 						}
-
-						var selectedMetaDataType = SecureRandom.ProbabilityRoll(optionPick);
-
-						var resultsFromMetaData = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
-						{
-							MetaDataType = selectedMetaDataType,
-							ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-							InstagramId = _user.ShortInstagram.Id,
-							AccountId = _user.AccountId
-						}))?.ToList();
-
-						if (resultsFromMetaData == null || !resultsFromMetaData.Any() 
-							&& selectedMetaDataType != MetaDataType.FetchMediaByTopic
-							&& !_user.Profile.AdditionalConfigurations.EnableOnlyAutoRepostFromUserTargetList)
-						{
-							resultsFromMetaData = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
-							{
-								MetaDataType = MetaDataType.FetchMediaByTopic,
-								ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-								InstagramId = _user.ShortInstagram.Id
-							}))?.ToList();
-						}
-
-						return (resultsFromMetaData ?? new List<Meta<Media>>(), selectedMetaDataType);
 					}
-				case SearchType.Yandex:
+
+					var selectedMetaDataType = SecureRandom.ProbabilityRoll(optionPick);
+
+					var resultsFromMetaData = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 					{
-						var yandexResults = await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
+						MetaDataType = selectedMetaDataType,
+						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
+						InstagramId = _user.ShortInstagram.Id,
+						AccountId = _user.AccountId
+					}))?.ToList();
+
+					if (resultsFromMetaData == null || !resultsFromMetaData.Any() 
+						&& selectedMetaDataType != MetaDataType.FetchMediaByTopic
+						&& !_user.Profile.AdditionalConfigurations.EnableOnlyAutoRepostFromUserTargetList)
+					{
+						resultsFromMetaData = (await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
 						{
-							MetaDataType = MetaDataType.FetchMediaForSpecificUserYandex,
+							MetaDataType = MetaDataType.FetchMediaByTopic,
 							ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
-							InstagramId = _user.ShortInstagram.Id,
-							AccountId = _user.AccountId
-						});
-						return (yandexResults != null ? yandexResults.ToList() : new List<Meta<Media>>(),
-							MetaDataType.FetchMediaForSpecificUserYandex);
+							InstagramId = _user.ShortInstagram.Id
+						}))?.ToList();
 					}
+
+					return (resultsFromMetaData ?? new List<Meta<Media>>(), selectedMetaDataType);
+				}
+				case SearchType.Yandex:
+				{
+					var yandexResults = await _heartbeatLogic.GetMetaData<Media>(new MetaDataFetchRequest
+					{
+						MetaDataType = MetaDataType.FetchMediaForSpecificUserYandex,
+						ProfileCategoryTopicId = _user.Profile.ProfileTopic.Category._id,
+						InstagramId = _user.ShortInstagram.Id,
+						AccountId = _user.AccountId
+					});
+					return (yandexResults != null ? yandexResults.ToList() : new List<Meta<Media>>(),
+						MetaDataType.FetchMediaForSpecificUserYandex);
+				}
 				default: throw new Exception("Search type was invalid");
 			}
 		}
@@ -237,7 +250,6 @@ namespace Quarkless.Logic.Actions.Action_Instances
 
 			return selectedMedia;
 		}
-
 		private TempSelect FindVideoFromList(in List<Meta<Media>> mediaItems, MetaDataType selectedAction)
 		{
 			var selectedMedia = new TempSelect();
@@ -396,11 +408,6 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				throw new Exception("Action Option cannot be null");
 			Console.WriteLine($"Create Media Action Started: {_user.AccountId}, {_user.InstagramAccountUsername}, {_user.InstagramAccountUser}");
 			
-			//todo: first select the action type
-			//if image then select from all search types
-			//if video then select from instagram only
-			//if carousel then either instagram carousel types (or all search types and create carousel)
-
 			var results = new ResultCarrier<EventActionModel>();
 			if (!_user.Profile.AdditionalConfigurations.EnableAutoPosting)
 			{
@@ -449,7 +456,9 @@ namespace Quarkless.Logic.Actions.Action_Instances
 					case PostMediaActionType.Carousel: //all/any search types (but instagram only if video included too)
 						break;
 					case PostMediaActionType.Video: //only instagram
-						allowedSearchTypes.RemoveAll(_ => _ == SearchType.Google || _ == SearchType.Yandex);
+						allowedSearchTypes.RemoveAll(_ => _ == SearchType.Google 
+												|| _ == SearchType.Yandex
+												|| _ == SearchType.YandexQuery);
 						break;
 				}
 

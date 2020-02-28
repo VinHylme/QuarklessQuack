@@ -1389,6 +1389,21 @@ namespace Quarkless.Logic.Services.Heartbeat
 			return query;
 		}
 
+		private SearchGoogleImageRequestModel GoogleSearchQueryBuilder(string color, string topics,
+			IEnumerable<string> sites, int limit = 10, ImageType imageType = ImageType.Any)
+		{
+
+			return new SearchGoogleImageRequestModel
+			{
+				Color = color.GetValueFromDescription<ColorType>(),
+				Prefix = sites?.TakeAny(1)?.FirstOrDefault(),
+				Keyword = topics,
+				Limit = limit,
+				MediaType = imageType,
+				Size = SizeType.Large
+			};
+		}
+
 		public async Task BuildGoogleImages(int limit = 50, int topicAmount = 1, int cutBy = 1)
 		{
 			Console.WriteLine("Began - BuildGoogleImages");
@@ -1404,42 +1419,37 @@ namespace Quarkless.Logic.Services.Heartbeat
 				var searchQueryTopics = pickedTopic;
 
 				var colorSelect = _customer.Profile.Theme.Colors.TakeAny(1).FirstOrDefault();
-				var imageType = ((ImageType)_customer.Profile.AdditionalConfigurations.ImageType).GetDescription();
 
-				if (colorSelect != null)
+				var query = GoogleSearchQueryBuilder(colorSelect?.Name ?? "any", searchQueryTopics?.Name,
+					_customer.Profile.AdditionalConfigurations.Sites,
+					limit, (ImageType) _customer.Profile.AdditionalConfigurations.ImageType);
+
+				var goSearch = await _searchProvider.GoogleSearch
+					.WithProxy().SearchGoogleImages(pickedTopic, query);
+
+				if (goSearch.StatusCode == ResponseCode.Success && goSearch.Result.Medias.Any())
 				{
-					var go = _searchProvider.GoogleSearch.WithProxy()
-						.SearchViaGoogle(pickedTopic, GoogleQueryBuilder(colorSelect.Name,
-						searchQueryTopics?.Name, _customer.Profile.AdditionalConfigurations.Sites,
-						limit, exactSize: _customer.Profile.AdditionalConfigurations.PostSize, imageType: imageType));
-
-					if (go != null)
+					await _heartbeatLogic.RefreshMetaData(new MetaDataFetchRequest
 					{
-						if (go.StatusCode == ResponseCode.Success)
+						MetaDataType = MetaDataType.FetchMediaForSpecificUserGoogle,
+						ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
+						InstagramId = _customer.InstagramAccount.Id,
+						AccountId = _customer.InstagramAccount.AccountId
+					});
+
+					var cut = goSearch.Result.Medias.ToList().CutObject(cutBy);
+
+					cut.ForEach(async mediaItems =>
+					{
+						await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<Media>
 						{
-							await _heartbeatLogic.RefreshMetaData(new MetaDataFetchRequest
-							{
-								MetaDataType = MetaDataType.FetchMediaForSpecificUserGoogle,
-								ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-								InstagramId = _customer.InstagramAccount.Id,
-								AccountId = _customer.InstagramAccount.AccountId
-							});
-
-							var cut = go.Result.Medias.ToList().CutObject(cutBy);
-
-							cut.ForEach(async mediaItems =>
-							{
-								await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<Media>
-								{
-									MetaDataType = MetaDataType.FetchMediaForSpecificUserGoogle,
-									ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-									InstagramId = _customer.InstagramAccount.Id,
-									AccountId = _customer.InstagramAccount.AccountId,
-									Data = new Meta<Media>(new Media{Medias = mediaItems})
-								});
-							});
-						}
-					}
+							MetaDataType = MetaDataType.FetchMediaForSpecificUserGoogle,
+							ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
+							InstagramId = _customer.InstagramAccount.Id,
+							AccountId = _customer.InstagramAccount.AccountId,
+							Data = new Meta<Media>(new Media { Medias = mediaItems })
+						});
+					});
 				}
 			}
 			catch (Exception ee)
@@ -1453,7 +1463,6 @@ namespace Quarkless.Logic.Services.Heartbeat
 					$"Ended - BuildGoogleImages : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
 			}
 		}
-
 		public async Task BuildYandexImagesQuery(int limit = 2, int topicAmount = 1, int cutBy = 1)
 		{
 			Console.WriteLine("Began - BuildYandexImagesQuery");
@@ -1466,62 +1475,57 @@ namespace Quarkless.Logic.Services.Heartbeat
 
 				var selectProfileSubTopic = _customer.Profile.ProfileTopic.Topics.Shuffle().First();
 				var relatedTopic = (await _topicLookup.GetTopicsByParentId(selectProfileSubTopic._id, true));
-				var searchQuery = relatedTopic.Shuffle().FirstOrDefault();
+				var searchQuery = relatedTopic.Shuffle().First();
 
 				var prf = _customer.Profile;
 				var colorSelect = prf.Theme.Colors.TakeAny(1).FirstOrDefault();
 
-				if (searchQuery != null && colorSelect != null)
+				var yandexSearchQuery = new YandexSearchQuery
 				{
-					var yandexSearchQuery = new YandexSearchQuery
-					{
-						OriginalTopic = _customer.Profile.ProfileTopic.Category,
-						SearchQuery = searchQuery.Name,
-						Color = colorSelect.Name.GetValueFromDescription<ColorType>(),
-						Format = FormatType.Any,
-						Orientation = Orientation.Any,
-						Size = SizeType.Large,
-						Type = (ImageType) prf.AdditionalConfigurations.ImageType == ImageType.Any
-							? Enum.GetValues(typeof(ImageType))
-								.Cast<ImageType>().Where(x => x != ImageType.Any).TakeAny(1).FirstOrDefault()
-							: (ImageType) prf.AdditionalConfigurations.ImageType
-					};
+					OriginalTopic = _customer.Profile.ProfileTopic.Category,
+					SearchQuery = searchQuery.Name,
+					Color = colorSelect?.Name.GetValueFromDescription<ColorType>() ?? ColorType.Any,
+					Format = FormatType.Any,
+					Orientation = Orientation.Any,
+					Size = SizeType.Large,
+					Type = (ImageType)prf.AdditionalConfigurations.ImageType
+				};
 
-					var yan = _searchProvider.YandexSearch.WithProxy().SearchQueryRest(yandexSearchQuery, limit);
-					if (yan != null)
+				var yan = _searchProvider.YandexSearch.WithProxy().SearchQueryRest(yandexSearchQuery, limit);
+
+				if (yan != null)
+				{
+					switch (yan.StatusCode)
 					{
-						switch (yan.StatusCode)
+						case ResponseCode.Success:
 						{
-							case ResponseCode.Success:
+							await _heartbeatLogic.RefreshMetaData(new MetaDataFetchRequest
 							{
-								await _heartbeatLogic.RefreshMetaData(new MetaDataFetchRequest
+								MetaDataType = MetaDataType.FetchMediaForSpecificUserYandexQuery,
+								ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
+								InstagramId = _customer.InstagramAccount.Id,
+								AccountId = _customer.InstagramAccount.AccountId
+							});
+
+							var cut = yan.Result.Medias.ToList().CutObject(cutBy);
+
+							cut.ForEach(async mediaItems =>
+							{
+								await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<Media>
 								{
 									MetaDataType = MetaDataType.FetchMediaForSpecificUserYandexQuery,
 									ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
 									InstagramId = _customer.InstagramAccount.Id,
-									AccountId = _customer.InstagramAccount.AccountId
+									AccountId = _customer.InstagramAccount.AccountId,
+									Data = new Meta<Media>(new Media { Medias = mediaItems })
 								});
-
-								var cut = yan.Result.Medias.ToList().CutObject(cutBy);
-
-								cut.ForEach(async mediaItems =>
-								{
-									await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<Media>
-									{
-										MetaDataType = MetaDataType.FetchMediaForSpecificUserYandexQuery,
-										ProfileCategoryTopicId = _customer.Profile.ProfileTopic.Category._id,
-										InstagramId = _customer.InstagramAccount.Id,
-										AccountId = _customer.InstagramAccount.AccountId,
-										Data = new Meta<Media>(new Media{Medias = mediaItems})
-									});
-								});
-								break;
-							}
-							case ResponseCode.Timeout:
-								break;
-							case ResponseCode.CaptchaRequired:
-								break;
+							});
+							break;
 						}
+						case ResponseCode.Timeout:
+							break;
+						case ResponseCode.CaptchaRequired:
+							break;
 					}
 				}
 			}
@@ -1536,6 +1540,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 					$"Ended - BuildYandexImagesQuery : Took {TimeSpan.FromMilliseconds(watch.ElapsedMilliseconds).TotalSeconds}s");
 			}
 		}
+
 		public async Task BuildYandexImages(int limit = 3, int takeTopicAmount = 1, int cutBy = 1)
 		{
 			Console.WriteLine("Began - BuildYandexImages");
@@ -1543,12 +1548,13 @@ namespace Quarkless.Logic.Services.Heartbeat
 			try
 			{
 				var imagesLike = _customer.Profile.Theme.ImagesLike;
-				if (imagesLike == null) return;
+				if (imagesLike == null || !imagesLike.Any()) return;
 
 				var filter = imagesLike.Where(s =>
 					s.TopicGroup.Name.Equals(_customer.Profile.ProfileTopic.Category.Name));
 
 				var groupSimilarImages = filter as GroupImagesAlike[] ?? filter.ToArray();
+
 				var yan = _searchProvider.YandexSearch.WithProxy()
 					.SearchRelatedImagesRest(groupSimilarImages.TakeAny(takeTopicAmount).ToList(), limit);
 
@@ -1558,10 +1564,6 @@ namespace Quarkless.Logic.Services.Heartbeat
 				{
 					yan = _searchProvider.YandexSearch.WithProxy()
 						.SearchSafeButSlow(groupSimilarImages.TakeAny(takeTopicAmount).ToList(), limit * 25);
-
-					if (yan == null || yan.StatusCode == ResponseCode.CaptchaRequired)
-						yan = _searchProvider.GoogleSearch.WithProxy().SearchSimilarImagesViaGoogle
-							(groupSimilarImages.TakeAny(takeTopicAmount).ToList(), limit * 25);
 				}
 
 				if (yan?.Result != null)

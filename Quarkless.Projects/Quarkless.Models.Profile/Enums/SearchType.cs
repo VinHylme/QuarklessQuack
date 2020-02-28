@@ -8,6 +8,8 @@ namespace Quarkless.Models.Profile.Enums
 		Google = 0,
 		[Description("Yandex")]
 		Yandex = 1,
+		[Description("YandexQuery")]
+		YandexQuery = 3,
 		[Description("Instagram")]
 		Instagram = 2
 	}

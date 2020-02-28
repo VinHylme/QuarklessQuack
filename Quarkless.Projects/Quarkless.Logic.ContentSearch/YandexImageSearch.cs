@@ -4,8 +4,10 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web;
+using InstagramApiSharp.Classes.Models;
 using Newtonsoft.Json;
 using OpenQA.Selenium;
+using OpenQA.Selenium.Interactions;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.Common.Models.Search;
@@ -79,7 +81,7 @@ namespace Quarkless.Logic.ContentSearch
 			}
 			if (yandexSearch.Color != ColorType.Any)
 			{
-				urlBuilt += "&icolor=" + yandexSearch.Color.GetDescription();
+				urlBuilt += "&icolor=" + yandexSearch.ColorForYandex;
 			}
 			if (yandexSearch.Format != FormatType.Any)
 			{
@@ -87,7 +89,7 @@ namespace Quarkless.Logic.ContentSearch
 			}
 			if (yandexSearch.Size != SizeType.None && yandexSearch.SpecificSize == null)
 			{
-				urlBuilt += "&isize=" + yandexSearch.Size.GetDescription();
+				urlBuilt += "&isize=" + yandexSearch.CorrectSizeTypeFormat;
 			}
 			if (yandexSearch.SpecificSize != null && yandexSearch.Size == SizeType.None)
 			{
@@ -95,7 +97,7 @@ namespace Quarkless.Logic.ContentSearch
 			}
 			return yandexImages + urlBuilt;
 		}
-		public SearchResponse<Media> SearchQueryRest(YandexSearchQuery yandexSearchQuery, int limit = 16)
+		public SearchResponse<Media> SearchQueryRest(YandexSearchQuery yandexSearchQuery, int limit = 1)
 		{
 			var response = new SearchResponse<Media>();
 			var totalFound = new Media();
@@ -103,20 +105,31 @@ namespace Quarkless.Logic.ContentSearch
 			{
 				var url = BuildUrl(yandexSearchQuery);
 				var result = Reader(url, limit);
+
 				if (result?.Result != null)
 				{
-					totalFound.Medias.AddRange(result.Result.Select(o => new MediaResponse
+					foreach (var item in result.Result)
 					{
-						Topic = yandexSearchQuery.OriginalTopic,
-						MediaId = o?.Preview?.OrderByDescending(s => s?.FileSizeInBytes).FirstOrDefault()?.Url.ToByteArray().ComputeHash().ToString(),
-						MediaType = InstagramApiSharp.Classes.Models.InstaMediaType.Image,
-						MediaFrom = MediaFrom.Yandex,
-						MediaUrl = new List<string> { o?.Preview?.OrderByDescending(s => s?.FileSizeInBytes).FirstOrDefault()?.Url },
-						Caption = o?.Snippet?.Text,
-						Title = o?.Snippet?.Title,
-						Domain = o?.Snippet?.Domain
-					}));
+						var mediaUrl = item?.Preview?.OrderByDescending(s => s?.FileSizeInBytes).FirstOrDefault()?.Url;
+						if(mediaUrl == null) continue;
+						if(mediaUrl.Contains(".gif")) continue;
+						var mediaId = mediaUrl.ToByteArray().ComputeHash().ToString();
+						if(totalFound.Medias.Exists(_=>_.MediaId == mediaId)) continue;
+
+						totalFound.Medias.Add(new MediaResponse
+						{
+							Topic = yandexSearchQuery.OriginalTopic,
+							MediaId = mediaId,
+							MediaType = InstaMediaType.Image,
+							MediaFrom = MediaFrom.Yandex,
+							MediaUrl = new List<string>(new[]{ mediaUrl }),
+							Caption = item.Snippet?.Text,
+							Title = item.Snippet?.Title,
+							Domain = item.Snippet?.Domain
+						});
+					}
 				}
+
 				return new SearchResponse<Media>
 				{
 					Message = result?.Message,
@@ -140,18 +153,28 @@ namespace Quarkless.Logic.ContentSearch
 			similarImages.ToList().ForEach(url =>
 			{
 				if (url == null) return;
+
 				var httpsYandexComImages = yandexImages;
+
 				try
 				{
 					var result = ImageSearch(httpsYandexComImages, url.Url, "serp-item_pos_", limit);
-					totalFound.Medias.AddRange(result.Where(s => !s.Contains(".gif")).Select(a => new MediaResponse
+					foreach (var mediaUrl in result)
 					{
-						Topic = url.TopicGroup,
-						MediaId = a.ToByteArray().ComputeHash().ToString(),
-						MediaUrl = new List<string> { a },
-						MediaFrom = MediaFrom.Yandex,
-						MediaType = InstagramApiSharp.Classes.Models.InstaMediaType.Image
-					}));
+						if(mediaUrl == null) continue;
+						if(mediaUrl.Contains(".gif")) continue;
+						var mediaId = mediaUrl.ToByteArray().ComputeHash().ToString();
+						if(totalFound.Medias.Exists(_=>_.MediaId == mediaId)) continue;
+
+						totalFound.Medias.Add(new MediaResponse
+						{
+							Topic = url.TopicGroup,
+							MediaId = mediaId,
+							MediaType = InstaMediaType.Image,
+							MediaFrom = MediaFrom.Yandex,
+							MediaUrl = new List<string>(new[]{ mediaUrl }),
+						});
+					}
 				}
 				catch (Exception ee)
 				{
@@ -161,6 +184,7 @@ namespace Quarkless.Logic.ContentSearch
 					totalFound.Errors++;
 				}
 			});
+
 			if (totalFound.Medias.Count > 0)
 			{
 				response.Result = totalFound;
@@ -173,11 +197,14 @@ namespace Quarkless.Logic.ContentSearch
 			}
 			return response;
 		}
-		public SearchResponse<List<SerpItem>> SearchRest(string imageUrl, int numberOfPages, int offset = 0)
+
+		public SearchResponse<List<SerpItem>> SearchRest(string imageUrl, int numberOfPages)
 		{
-			return YandexSearchMe(imageUrl, numberOfPages, offset);
+			return YandexSearchMe(imageUrl, numberOfPages);
 		}
-		public SearchResponse<Media> SearchRelatedImagesRest(IEnumerable<GroupImagesAlike> similarImages, int numberOfPages, int offset = 0)
+
+		public SearchResponse<Media> SearchRelatedImagesRest(IEnumerable<GroupImagesAlike> similarImages,
+			int numberOfPages)
 		{
 			var response = new SearchResponse<Media>();
 			var totalCollected = new Media();
@@ -186,26 +213,39 @@ namespace Quarkless.Logic.ContentSearch
 			{
 				if (url == null) continue;
 				var fullImageUrl = yandexBaseImageUrl + url.Url + rpt;
+
 				try
 				{
-					var searchSerp = SearchRest(fullImageUrl, numberOfPages, offset);
-					if (searchSerp.StatusCode == ResponseCode.Success || (searchSerp.StatusCode == ResponseCode.CaptchaRequired && searchSerp?.Result?.Count > 0))
+					var searchItems = SearchRest(fullImageUrl, numberOfPages);
+
+					if (searchItems.StatusCode == ResponseCode.Success
+						|| (searchItems.StatusCode == ResponseCode.CaptchaRequired && searchItems?.Result?.Count > 0))
 					{
-						totalCollected.Medias.AddRange(searchSerp.Result.Select(o => new MediaResponse
+						foreach (var item in searchItems.Result)
 						{
-							MediaId = o?.Preview?.OrderByDescending(s => s?.FileSizeInBytes).FirstOrDefault()?.Url.ToByteArray().ComputeHash().ToString(),
-							MediaType = InstagramApiSharp.Classes.Models.InstaMediaType.Image,
-							MediaFrom = MediaFrom.Yandex,
-							MediaUrl = new List<string> { o?.Preview?.OrderByDescending(s => s?.FileSizeInBytes).FirstOrDefault()?.Url },
-							Caption = o?.Snippet?.Text,
-							Title = o?.Snippet?.Title,
-							Domain = o?.Snippet?.Domain
-						}));
+							var mediaUrl = item?.Preview?.OrderByDescending(s => s?.FileSizeInBytes).FirstOrDefault()?.Url;
+							if (mediaUrl == null) continue;
+							if (mediaUrl.Contains(".gif")) continue;
+							var mediaId = mediaUrl.ToByteArray().ComputeHash().ToString();
+							if (totalCollected.Medias.Exists(_ => _.MediaId == mediaId)) continue;
+
+							totalCollected.Medias.Add(new MediaResponse
+							{
+								Topic = url.TopicGroup,
+								MediaId = mediaId,
+								MediaType = InstaMediaType.Image,
+								MediaFrom = MediaFrom.Yandex,
+								MediaUrl = new List<string>(new[] { mediaUrl }),
+								Caption = item.Snippet?.Text,
+								Title = item.Snippet?.Title,
+								Domain = item.Snippet?.Domain
+							});
+						}
 					}
 					else
 					{
-						response.StatusCode = searchSerp.StatusCode;
-						response.Message = searchSerp.Message;
+						response.StatusCode = searchItems.StatusCode;
+						response.Message = searchItems.Message;
 						return response;
 					}
 				}
@@ -229,7 +269,7 @@ namespace Quarkless.Logic.ContentSearch
 			}
 			return response;
 		}
-		public SearchResponse<List<SerpItem>> YandexSearchMe(string url, int pages, int offset = 0)
+		public SearchResponse<List<SerpItem>> YandexSearchMe(string url, int pages)
 		{
 			try
 			{
@@ -245,7 +285,7 @@ namespace Quarkless.Logic.ContentSearch
 						return response;
 					}
 
-					totalCollected.AddRange(ReadSerpItems(driver, pages, offset));
+					totalCollected.AddRange(ReadSerpItems(driver, pages));
 				}
 
 				response.StatusCode = ResponseCode.Success;
@@ -258,63 +298,62 @@ namespace Quarkless.Logic.ContentSearch
 				return null;
 			}
 		}
-		public IEnumerable<string> ImageSearch(string url, string imageurl, string targetElement, int limit = 5, string patternRegex = @"(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|gif|png)")
+		public IEnumerable<string> ImageSearch(string url, string imageurl, string targetElement,
+			int limit = 5, string patternRegex = @"(http(s?):)([/|.|\w|\s|-])*\.(?:jpg|gif|png)")
 		{
 			try
 			{
 				var urls = new List<string>();
-				using (var driver = _seleniumClient.CreateDriver())
+				using var driver = _seleniumClient.CreateDriver();
+				driver.Navigate().GoToUrl(url);
+
+				var searchButton = driver.FindElement(By.ClassName("input__button"));
+				//TEXTCOPY WAS HERE
+				searchButton.Click();
+				var searchField = driver.FindElement(By.Name("cbir-url"));
+				searchField.SendKeys(imageurl);
+				var submitButton = driver.FindElement(By.Name("cbir-submit"));
+				submitButton.Click();
+
+				var pagehere = driver.PageSource;
+				Thread.Sleep(2000);
+
+				var similarButton = driver.FindElement(By.ClassName("similar__link"));
+				//var hrefval = similarButton.GetAttribute("href");
+
+				((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", similarButton);
+				Thread.Sleep(3000);
+				driver.FindElement(By.ClassName("pane2__close-icon")).Click();
+				var elements = driver.FindElements(By.XPath($"//div[contains(@class,'{targetElement}')]")).ToList();
+
+				while (elements.Count < limit)
 				{
-					driver.Navigate().GoToUrl(url);
-
-					var searchButton = driver.FindElement(By.ClassName("input__button"));
-					//TEXTCOPY WAS HERE
-					searchButton.Click();
-					var searchField = driver.FindElement(By.Name("cbir-url"));
-					searchField.SendKeys(imageurl);
-					var submitButton = driver.FindElement(By.Name("cbir-submit"));
-					submitButton.Click();
-
-					var pagehere = driver.PageSource;
-					Thread.Sleep(2000);
-
-					var similarButton = driver.FindElement(By.ClassName("similar__link"));
-					//var hrefval = similarButton.GetAttribute("href");
-
-					((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", similarButton);
-					Thread.Sleep(3000);
-					driver.FindElement(By.ClassName("pane2__close-icon")).Click();
-					var elements = driver.FindElements(By.XPath($"//div[contains(@class,'{targetElement}')]")).ToList();
-
-					while (elements.Count < limit)
-					{
-						_seleniumClient.ScrollPage(driver, 1);
-						var uniqueFind = driver.FindElements(By.XPath($"//div[contains(@class,'{targetElement}')]"));
-						elements.AddRange(uniqueFind);
-						elements = elements.Distinct().ToList();
-					}
-
-					for (var x = 0; x <= limit; x++)
-					{
-						var tohtml = elements[x].GetAttribute("outerHTML");
-
-						var decoded = HttpUtility.HtmlDecode(tohtml);
-						var imageUrl = Regex.Matches(decoded, patternRegex).Select(_ => _.Value).FirstOrDefault();
-						if (string.IsNullOrEmpty(imageUrl))
-						{
-							if (x > elements.Count)
-							{
-								throw new Exception("can't find any images, all returning null");
-							}
-							x = x == 0 ? 0 : x--;
-						}
-						else
-						{
-							urls.Add(imageUrl);
-						}
-					}
-					return urls.TakeAny(SecureRandom.Next(urls.Count));
+					_seleniumClient.ScrollPage(driver, 1);
+					var uniqueFind = driver.FindElements(By.XPath($"//div[contains(@class,'{targetElement}')]"));
+					elements.AddRange(uniqueFind);
+					elements = elements.Distinct().ToList();
 				}
+
+				for (var x = 0; x <= limit; x++)
+				{
+					var tohtml = elements[x].GetAttribute("outerHTML");
+
+					var decoded = HttpUtility.HtmlDecode(tohtml);
+					var imageUrl = Regex.Matches(decoded, patternRegex).Select(_ => _.Value).FirstOrDefault();
+					if (string.IsNullOrEmpty(imageUrl))
+					{
+						if (x > elements.Count)
+						{
+							throw new Exception("can't find any images, all returning null");
+						}
+						x = x == 0 ? 0 : x--;
+					}
+					else
+					{
+						urls.Add(imageUrl);
+					}
+				}
+				return urls.TakeAny(SecureRandom.Next(urls.Count));
 			}
 			catch (Exception ee)
 			{
@@ -322,44 +361,40 @@ namespace Quarkless.Logic.ContentSearch
 				return null;
 			}
 		}
-		private IEnumerable<SerpItem> ReadSerpItems(IWebDriver driver, int pageLimit, int offset = 0)
+		private IEnumerable<SerpItem> ReadSerpItems(IWebDriver driver, int pageLimit = 2)
 		{
 			var total = new List<SerpItem>();
-			for (var currPage = offset; currPage <= pageLimit; currPage++)
+			_seleniumClient.ScrollPageByPixel(driver, pageLimit);
+
+			var source = driver.PageSource.Replace("&quot;", "\"");
+			var regexMatch = Regex.Matches(source, "{\"serp-item\":.*?}}");
+			var results = new List<string>();
+
+			foreach (Match x in regexMatch)
 			{
-				var source = driver.PageSource.Replace("&quot;", "\"");
-				var regexMatch = Regex.Matches(source, "{\"serp-item\":.*?}}");
-				var results = new List<string>();
-				foreach (Match x in regexMatch)
-				{
-					var newRes = x.Value.Replace("{\"serp-item\":", "");
-					results.Add(newRes.Substring(0, newRes.Length - 1));
-				}
-				if (results.Count <= 0)
-				{
-					break;
-				}
-
-				foreach (var serpString in results)
-				{
-					try
-					{
-						total.Add(JsonConvert.DeserializeObject<SerpItem>(serpString));
-					}
-					catch
-					{
-						var tryagainSerpString = serpString + "}}";
-						total.Add(JsonConvert.DeserializeObject<SerpItem>(tryagainSerpString));
-						//Console.WriteLine("could not convert serp object");
-					}
-				}
-				if (total.Count > 0)
-					total.RemoveAt(0); //remove the duplicate
-
-				var nextPageUrl = driver.FindElement(By.ClassName("more__button")).GetAttribute("href");
-				Thread.Sleep(1000);
-				driver.Navigate().GoToUrl(nextPageUrl);
+				var newRes = x.Value.Replace("{\"serp-item\":", "");
+				results.Add(newRes.Substring(0, newRes.Length - 1));
 			}
+
+			if (results.Count <= 0)
+				return total;
+
+			foreach (var value in results.Distinct())
+			{
+				try
+				{
+					total.Add(JsonConvert.DeserializeObject<SerpItem>(value));
+				}
+				catch
+				{
+					var tryAgain = value + "}}";
+					total.Add(JsonConvert.DeserializeObject<SerpItem>(tryAgain));
+				}
+			}
+
+			if (total.Count > 0)
+				total.RemoveAt(0);
+
 			return total;
 		}
 		public SearchResponse<List<SerpItem>> Reader(string url, int limit = 1)
@@ -370,6 +405,7 @@ namespace Quarkless.Logic.ContentSearch
 				{
 					var totalCollected = new List<SerpItem>();
 					var response = new SearchResponse<List<SerpItem>>();
+
 					using (var driver = _seleniumClient.CreateDriver())
 					{
 						driver.Navigate().GoToUrl(url);
@@ -387,9 +423,9 @@ namespace Quarkless.Logic.ContentSearch
 							if (misspell != null)
 							{
 								var autosuggestion = "https://yandex.com" +
-													 Regex.Match(misspell.GetAttribute("outerHTML"),
-															 "href=.*?/images.*?>").Value.Replace("href=", "")
-														 .Replace(">", "").Replace("\"", "");
+								 Regex.Match(misspell.GetAttribute("outerHTML"),
+										 "href=.*?/images.*?>").Value.Replace("href=", "")
+									 .Replace(">", "").Replace("\"", "");
 								driver.Navigate().GoToUrl(autosuggestion);
 								Thread.Sleep(2000);
 							}
@@ -409,27 +445,6 @@ namespace Quarkless.Logic.ContentSearch
 			catch (Exception ee)
 			{
 				Console.WriteLine(ee);
-				return null;
-			}
-		}
-		public IEnumerable<string> YandexImageSearchREST(string baseurl, string url, int pageLimit = 5)
-		{
-			try
-			{
-				using (var driver = _seleniumClient.CreateDriver())
-				{
-					driver.Navigate().GoToUrl(baseurl);
-					var souce = driver.PageSource;
-					driver.Navigate().GoToUrl(url);
-					var manageD = driver.Manage().Cookies.AllCookies;
-					var source = driver.PageSource;
-				}
-
-				return null;
-			}
-			catch (Exception ee)
-			{
-				Console.WriteLine(ee.Message);
 				return null;
 			}
 		}

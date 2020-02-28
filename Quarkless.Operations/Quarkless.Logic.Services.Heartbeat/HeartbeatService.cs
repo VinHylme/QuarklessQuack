@@ -68,7 +68,6 @@ namespace Quarkless.Logic.Services.Heartbeat
 				case AgentState.AwaitingActionFromUser:
 				case AgentState.DeepSleep:
 				case AgentState.NotStarted:
-				case AgentState.Stopped:
 					return;
 			}
 

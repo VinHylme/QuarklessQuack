@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Quarkless.Analyser;
@@ -15,6 +18,10 @@ using Quarkless.Models.Agent.Interfaces;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Models;
 using Quarkless.Models.ContentInfo.Interfaces;
+using Quarkless.Models.ContentSearch.Enums;
+using Quarkless.Models.ContentSearch.Interfaces;
+using Quarkless.Models.ContentSearch.Models;
+using Quarkless.Models.ContentSearch.Models.Yandex;
 using Quarkless.Models.HashtagGenerator;
 using Quarkless.Models.Library.Interfaces;
 using Quarkless.Models.Profile;
@@ -36,9 +43,12 @@ namespace Quarkless.Logic.Services.Automation
 		private readonly IPostAnalyser _postAnalyser;
 		private readonly IS3BucketLogic _bucketLogic;
 		private readonly IContentInfoBuilder _contentInfo;
+		private readonly IGoogleSearchLogic _googleSearch;
+		private readonly IYandexImageSearch _yandexImageSearch;
 		public AgentTests(IActionCommitFactory actionCommitFactory, IAgentLogic agentLogic,
 			IProfileLogic profileLogic, ILibraryLogic libraryLogic, IPostAnalyser postAnalyser,
-			IS3BucketLogic s3BucketLogic, IActionExecuteFactory actionExecuteFactory, IContentInfoBuilder contentInfoBuilder)
+			IS3BucketLogic s3BucketLogic, IActionExecuteFactory actionExecuteFactory,
+			IContentInfoBuilder contentInfoBuilder)
 		{
 			_actionCommitFactory = actionCommitFactory;
 			_actionExecuteFactory = actionExecuteFactory;
@@ -285,7 +295,8 @@ namespace Quarkless.Logic.Services.Automation
 		}
 		public async Task StartTests()
 		{
-			var unfollow = await TestUnfollowUser();
+
+			//	var unfollow = await TestUnfollowUser();
 
 
 

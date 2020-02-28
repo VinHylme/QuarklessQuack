@@ -12,7 +12,7 @@ namespace Quarkless.Models.ContentSearch.Interfaces
 	{
 		IGoogleSearchLogic WithProxy(ProxyModel proxy = null);
 		Task<List<string>> GetSuggestions(string query);
-		SearchResponse<Media> SearchViaGoogle(CTopic topic, SearchImageModel searchImageQuery);
+		Task<SearchResponse<Media>> SearchGoogleImages(CTopic topic, SearchGoogleImageRequestModel searchQuery);
 		SearchResponse<Media> SearchSimilarImagesViaGoogle(IEnumerable<GroupImagesAlike> groupImages, int limit, int offset = 0);
 	}
 }

@@ -40,18 +40,18 @@ namespace Quarkless.Logic.SeleniumClient
 		}
 		public IWebDriver CreateDriver()
 		{
+
 			return new RemoteWebDriver(new Uri(_remoteChromeEndpoint), ChromeOptions);
 		}
+
 		public IEnumerable<Cookie> GetCookiesOfPage(string url)
 		{
 			try
 			{
-				//				using(var driver = new ChromeDriver(_chromeService, ChromeOptions))
-				using (var driver = CreateDriver())
-				{
-					driver.Navigate().GoToUrl(url);
-					return driver.Manage().Cookies.AllCookies;
-				}
+				//using(var driver = new ChromeDriver(_chromeService, ChromeOptions))
+				using var driver = CreateDriver();
+				driver.Navigate().GoToUrl(url);
+				return driver.Manage().Cookies.AllCookies;
 			}
 			catch (Exception ee)
 			{
@@ -76,6 +76,24 @@ namespace Quarkless.Logic.SeleniumClient
 				count++;
 			}
 		}
+
+		public void ScrollPageByPixel(IWebDriver driver, int yAmount)
+		{
+			var current = 0;
+			var amount = 2500;
+			while (current < yAmount)
+			{
+				var script = $@"window.scrollBy(0, {amount})";
+
+				var jsExecute = driver as IJavaScriptExecutor;
+
+				jsExecute.ExecuteScript(script);
+
+				current ++;
+				Thread.Sleep(5000);
+			}
+		}
+
 		public void ScrollToElement(IWebDriver driver, int positionX, int positionY)
 		{
 			var script = $@"window.scrollTo({positionX},{positionY});";

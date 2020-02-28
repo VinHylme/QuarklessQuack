@@ -13,6 +13,8 @@ namespace Quarkless.Models.ContentSearch.Enums
 		[Description("lineart")]
 		Drawings,
 		[Description("face")]
-		People
+		People,
+		[Description("animated")]
+		Gif
 	}
 }

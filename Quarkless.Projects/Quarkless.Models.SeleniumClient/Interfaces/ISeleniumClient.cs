@@ -10,6 +10,7 @@ namespace Quarkless.Models.SeleniumClient.Interfaces
 		IEnumerable<Cookie> GetCookiesOfPage(string url);
 		IWebDriver CreateDriver();
 		void ScrollPage(IWebDriver driver, int counter);
+		void ScrollPageByPixel(IWebDriver driver, int yAmount);
 		void ScrollToElement(IWebDriver driver, int positionX, int positionY);
 	}
 }

@@ -9,10 +9,10 @@ namespace Quarkless.Models.ContentSearch.Interfaces
 	public interface IYandexImageSearch
 	{
 		IYandexImageSearch WithProxy(ProxyModel proxy = null);
-		SearchResponse<Media> SearchQueryRest(YandexSearchQuery yandexSearchQuery, int limit = 16);
+		SearchResponse<Media> SearchQueryRest(YandexSearchQuery yandexSearchQuery, int limit = 1);
 		SearchResponse<Media> SearchSafeButSlow(IEnumerable<GroupImagesAlike> similarImages, int limit);
-		SearchResponse<List<SerpItem>> SearchRest(string imageUrl, int numberOfPages, int offset = 0);
+		SearchResponse<List<SerpItem>> SearchRest(string imageUrl, int numberOfPages);
 		SearchResponse<Media> SearchRelatedImagesRest(IEnumerable<GroupImagesAlike> similarImages,
-			int numberOfPages, int offset = 0);
+			int numberOfPages);
 	}
 }

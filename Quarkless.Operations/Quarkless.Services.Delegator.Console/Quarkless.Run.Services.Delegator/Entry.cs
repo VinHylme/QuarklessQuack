@@ -411,8 +411,7 @@ namespace Quarkless.Run.Services.Delegator
 
 			// recreate the heartbeat containers for users
 			var customers = (await _agentLogic.GetAllAccounts(0))?
-				.Where(_=>_.AgentState != (int) AgentState.Stopped
-						&& _.AgentState != (int)AgentState.NotStarted
+				.Where(_=> _.AgentState != (int)AgentState.NotStarted
 						&& _.AgentState != (int)AgentState.NotWakeTime).ToList();
 
 			if (customers == null || !customers.Any()) return;
@@ -674,9 +673,8 @@ namespace Quarkless.Run.Services.Delegator
 					await _instagramAccountLogic.UpdateAgentStates(AgentState.NotStarted, HEART_BEAT_WORKER_TYPE);
 					await _instagramAccountLogic.UpdateAgentStates(AgentState.NotStarted, AUTOMATOR_WORKER_TYPE);
 
-					//todo: change to only look at account who are sleeping
 					var accounts = await _agentLogic.GetAllAccounts();
-					foreach (var account in accounts)
+					foreach (var account in accounts.Where(_=>_.AgentState == (int) AgentState.NotWakeTime))
 					{
 						var profile = await profileLogic.GetProfile(account.AccountId, account.Id);
 

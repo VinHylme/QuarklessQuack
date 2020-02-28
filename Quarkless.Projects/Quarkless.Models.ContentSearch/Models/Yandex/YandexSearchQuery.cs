@@ -14,5 +14,47 @@ namespace Quarkless.Models.ContentSearch.Models.Yandex
 		public FormatType Format { get; set; }
 		public SizeType Size { get; set; } = SizeType.None;
 		public SpecificSize? SpecificSize { get; set; } = null;
+
+		public string ColorForYandex
+		{
+			get
+			{
+				return Color switch
+				{
+					ColorType.Any => "any",
+					ColorType.ColoredImagesOnly => "color",
+					ColorType.BlackAndWhite => "gray",
+					ColorType.Red => "red",
+					ColorType.Yellow => "yellow",
+					ColorType.Orange => "orange",
+					ColorType.Cyan => "cyan",
+					ColorType.Teal => "cyan",
+					ColorType.Green => "green",
+					ColorType.Blue => "blue",
+					ColorType.Violet => "violet",
+					ColorType.Pink => "violet",
+					ColorType.Purple => "violet",
+					ColorType.White => "white",
+					ColorType.Black => "black",
+					ColorType.Brown => "black",
+					_ => "any"
+				};
+			}
+		}
+
+		public string CorrectSizeTypeFormat
+		{
+			get
+			{
+				return Size switch
+				{
+					SizeType.Large => "large",
+					SizeType.Medium => "medium",
+					SizeType.Small => "small",
+					SizeType.None => "large",
+					_ => "large"
+				};
+			}
+		}
 	}
 }

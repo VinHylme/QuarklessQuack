@@ -111,7 +111,7 @@ namespace Quarkless.Logic.RestSharpClientManager
 			{
 				var request = string.IsNullOrEmpty(resource) ? new RestRequest(Method.GET) : new RestRequest(resource, Method.GET);
 				RestClient.BaseUrl = new Uri(url);
-
+				
 				if (parameters != null && parameters.Any())
 				{
 					foreach (var param_ in parameters)

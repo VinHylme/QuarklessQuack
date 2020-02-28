@@ -14,5 +14,6 @@ namespace Quarkless.Models.RestSharpClientManager.Interfaces
 		IRestResponse PostRequest(string url, string resource, string jsonBody, UserStore userStore = null,
 			IEnumerable<Parameter> parameters = null, IEnumerable<HttpHeader> headers = null, string username = null, string password = null);
 		void SetBaseUrl(string url);
+
 	}
 }

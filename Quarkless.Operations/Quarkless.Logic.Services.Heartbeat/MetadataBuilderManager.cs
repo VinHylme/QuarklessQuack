@@ -71,9 +71,11 @@ namespace Quarkless.Logic.Services.Heartbeat
 				return;
 			}
 
-			var googleImages = Task.Run(async () => await _metadataExtract.BuildGoogleImages(20));
-			var yandexImages = Task.Run(async () => await _metadataExtract.BuildYandexImages(takeTopicAmount: 1));
-			await Task.WhenAll(googleImages, yandexImages);
+			var googleImages = Task.Run(async () => await _metadataExtract.BuildGoogleImages(25));
+			var yandexQuery = Task.Run(async () => await _metadataExtract.BuildYandexImagesQuery(4));
+			var yandexImages = Task.Run(async () => await _metadataExtract.BuildYandexImages());
+
+			await Task.WhenAll(googleImages, yandexImages, yandexQuery);
 			Console.WriteLine("Ended External Extract for {0}", _customer.InstagramAccount.Username);
 		}
 

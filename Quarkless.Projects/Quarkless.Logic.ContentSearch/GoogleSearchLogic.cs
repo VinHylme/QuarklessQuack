@@ -3,7 +3,10 @@ using Quarkless.Models.ContentSearch.Interfaces;
 using Quarkless.Models.SearchResponse;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using InstagramApiSharp.Classes.Models;
 using Quarkless.Models.Common.Enums;
@@ -16,6 +19,7 @@ using Quarkless.Models.SeleniumClient.Interfaces;
 using Microsoft.Extensions.Options;
 using OpenQA.Selenium;
 using Quarkless.Models.Common.Extensions;
+using Quarkless.Models.ContentSearch.Enums;
 using Quarkless.Models.RestSharpClientManager.Interfaces;
 using Quarkless.Models.Topic;
 
@@ -23,7 +27,7 @@ namespace Quarkless.Logic.ContentSearch
 {
 	public class GoogleSearchLogic : IGoogleSearchLogic
 	{
-		private const string IMAGE_URL = "https://www.google.co.uk/imghp?hl=en&tab=wi&ogbl";
+		private const string IMAGE_URL = "https://www.google.co.uk/search?";
 		private readonly string _apiEndpoint;
 		private readonly IRestSharpClientManager _restSharpClient;
 		private readonly ISeleniumClient _seleniumClient;
@@ -52,102 +56,160 @@ namespace Quarkless.Logic.ContentSearch
 			}
 			return this;
 		}
-		public SearchResponse<Media> SearchViaGoogle(CTopic topic, SearchImageModel searchImageQuery)
+		private string QueryBuilder(SearchGoogleImageRequestModel query)
+		{
+			var queryBuilder = IMAGE_URL;
+			var keywordBuilder = string.Empty;
+
+			if (!string.IsNullOrEmpty(query.Prefix))
+				keywordBuilder += $"{query.Prefix}+";
+			keywordBuilder += query.Keyword;
+			if (!string.IsNullOrEmpty(query.Suffix))
+				keywordBuilder += $"+{query.Suffix}";
+
+			queryBuilder += $"q={keywordBuilder}&tbm=isch&hl=en&hl=en";
+			const string specificTag = "&tbs=ic:specific";
+			queryBuilder += specificTag;
+
+			if (query.Color != ColorType.Any)
+			{
+				queryBuilder += $",isc:{query.ColorForGoogle}";
+			}
+
+			if (query.MediaType != ImageType.Any)
+			{
+				queryBuilder += $",itp:{query.MediaType.GetDescription()}";
+			}
+
+			queryBuilder += $",isz:{query.CorrectSizeTypeFormat}";
+
+			queryBuilder += "&biw=1504&bih=734";
+			return queryBuilder;
+		}
+		public async Task<SearchResponse<Media>> SearchGoogleImages(CTopic topic, SearchGoogleImageRequestModel searchQuery)
 		{
 			var response = new SearchResponse<Media>();
-			try
+			if (topic == null)
 			{
-				var results = _restSharpClient.PostRequest(_apiEndpoint,
-					"searchImages", JsonConvert.SerializeObject(searchImageQuery), null);
-
-				if (results == null)
-				{
-					response.StatusCode = ResponseCode.InternalServerError;
-					return response;
-				}
-
-				if (results.IsSuccessful)
-				{
-					var responseValues = JsonConvert.DeserializeObject<TempMedia>(results.Content);
-					if (responseValues.MediasObject.Count <= 0)
-					{
-						response.StatusCode = ResponseCode.InternalServerError;
-						response.Message = $"Google search returned no results for object: {JsonConvert.SerializeObject(searchImageQuery)}";
-						return response;
-					}
-
-					var responseResult = new Media
-					{
-						Medias = responseValues.MediasObject.Select(s => new MediaResponse
-						{
-							MediaId = s.MediaUrl.ToByteArray().ComputeHash().ToString(),
-							Topic = topic,
-							MediaFrom = MediaFrom.Google,
-							MediaType = InstaMediaType.Image,
-							MediaUrl = new List<string> { s.MediaUrl }
-						}).ToList()
-					};
-
-					response.StatusCode = ResponseCode.Success;
-					response.Result = responseResult;
-					return response;
-				}
-			}
-			catch (Exception ee)
-			{
-				response.Message = ee.Message;
 				response.StatusCode = ResponseCode.InternalServerError;
+				response.Message = "Topic was null";
 				return response;
 			}
-			response.StatusCode = ResponseCode.ReachedEndAndNull;
-			response.Message = $"SearchViaGoogle failed for  object{JsonConvert.SerializeObject(searchImageQuery)}";
-			return response;
-		}
-		public SearchResponse<Media> SearchSimilarImagesViaGoogle(IEnumerable<GroupImagesAlike> groupImages, int limit, int offset = 0)
-		{
-			var response = new SearchResponse<Media>();
+
+			if (searchQuery == null || string.IsNullOrEmpty(searchQuery.Keyword))
+			{
+				response.StatusCode = ResponseCode.InternalServerError;
+				response.Message = "Invalid search query";
+				return response;
+			}
+
 			try
 			{
-				foreach (var images in groupImages)
+				var request = QueryBuilder(searchQuery);
+				response.Result = new Media();
+				using var client = _seleniumClient.CreateDriver();
+				client.Navigate().GoToUrl(request);
+				var totalMedias = new List<MediaResponse>();
+
+				var elements = client.FindElements(By.XPath("//a[@class='wXeWr islib nfEiy mM5pbd']"));
+				if (elements.Any())
 				{
-					var searchImage = new SearchImageModel
+					foreach (var webElement in elements.Take(searchQuery.Limit))
 					{
-						NoDownload = true,
-						SimilarImages = images.Url,
-						Limit = limit,
-						Offset = offset < limit ? offset : 0
-					};
-					var res = _restSharpClient.PostRequest(_apiEndpoint,
-						"searchImages", JsonConvert.SerializeObject(searchImage));
+						try
+						{
+							webElement.Click();
+							await Task.Delay(TimeSpan.FromSeconds(.5));
+							var image = client.FindElements(By.ClassName("n3VNCb"));
+							var srcUrl = image.FirstOrDefault(_ => !_.GetProperty("src").Contains("data:"));
+							if (srcUrl == null) continue;
 
-					var responseValues = JsonConvert.DeserializeObject<TempMedia>(res.Content);
-					if (responseValues.MediasObject.Count <= 0)
-					{
-						response.StatusCode = ResponseCode.InternalServerError;
-						response.Message = $"Google search returned no results for object: {JsonConvert.SerializeObject(searchImage)}";
-						return response;
+							var src = srcUrl.GetProperty("src");
+
+							if(src.Contains(".gif")) continue;
+							
+							var title = client.FindElement(By.ClassName("Beeb4e"))?.Text;
+
+							totalMedias.Add(new MediaResponse
+							{
+								MediaUrl = new[] { src }.ToList(),
+								MediaId = src.ToByteArray().ComputeHash().ToString(),
+								MediaType = InstaMediaType.Image,
+								Caption = title,
+								MediaFrom = MediaFrom.Google,
+								Topic = topic
+							});
+
+							#region Commented code for getting related images too
+							/*
+							// for (var x = 0; x < 5; x++)
+							// {
+							// 	var elementsRelated = client.FindElements(By.XPath("//a[@class='wXeWr islib nfEiy mM5pbd']"))
+							// 		.TakeLast(12);
+							//
+							// 	var element = elementsRelated.ElementAt(x);
+							//
+							// 	try
+							// 	{
+							// 		element.Click();
+							// 		await Task.Delay(TimeSpan.FromSeconds(.95));
+							// 		var imageR = client.FindElements(By.ClassName("n3VNCb"));
+							// 		var srcUrlR = imageR.FirstOrDefault(_ => !_.GetProperty("src").Contains("data:"));
+							// 		if (srcUrlR == null) continue;
+							//
+							// 		var srcR = srcUrlR.GetProperty("src");
+							// 		var titleR = client.FindElement(By.ClassName("Beeb4e"))?.Text;
+							//
+							// 		totalMedias.Add(new MediaResponse
+							// 		{
+							// 			MediaUrl = new[] { srcR }.ToList(),
+							// 			Caption = titleR,
+							// 			MediaFrom = MediaFrom.Google,
+							// 			Topic = topic
+							// 		});
+							//
+							// 		client.Navigate().Back();
+							// 	}
+							// 	catch(Exception err)
+							// 	{
+							// 		Console.WriteLine("failed to get image");
+							// 	}
+							// }
+							*/
+							#endregion
+							var closeButton = client.FindElement(By.ClassName("hm60ue"));
+							closeButton.Click();
+						}
+						catch(Exception err)
+						{
+							Console.WriteLine("could not load this image");
+						}
 					}
-
-					response.Result.Medias.AddRange(responseValues.MediasObject.Select(s => new MediaResponse
-					{
-						Topic = null,
-						MediaId = s.MediaUrl.ToByteArray().ComputeHash().ToString(),
-						MediaFrom = MediaFrom.Google,
-						MediaType = InstaMediaType.Image,
-						MediaUrl = new List<string> { s.MediaUrl }
-					}).ToList());
 				}
+				
+				if(totalMedias.Any())
+					response.Result.Medias.AddRange(totalMedias);
 
 				response.StatusCode = ResponseCode.Success;
 				return response;
 			}
-			catch (Exception ee)
+			catch (Exception err)
 			{
-				response.Message = ee.Message;
+				Console.WriteLine(err);
 				response.StatusCode = ResponseCode.InternalServerError;
+				response.Message = err.Message;
 				return response;
 			}
 		}
+
+		public SearchResponse<Media> SearchSimilarImagesViaGoogle(IEnumerable<GroupImagesAlike> groupImages, int limit, int offset = 0)
+		{
+			return new SearchResponse<Media>
+			{
+				StatusCode = ResponseCode.InternalServerError
+			};
+		}
+
 		public async Task<List<string>> GetSuggestions(string query)
 		{
 			var results = new List<string>();

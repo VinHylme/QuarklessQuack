@@ -291,7 +291,12 @@ namespace Quarkless.Logic.Services.Automation
 					var profile = await _profileLogic.GetProfile(account.AccountId, account.Id);
 					if (profile == null) return;
 
+
 					#region Check if account can run
+
+					if (account.AgentState == (int) AgentState.Stopped)
+						return;
+
 					var currentTime = DateTime.UtcNow.TimeOfDay;
 					var wakeTimeToUtc = profile.AdditionalConfigurations.WakeTime.ToUniversalTime().TimeOfDay;
 					var sleepTimeToUtc = profile.AdditionalConfigurations.SleepTime.ToUniversalTime().TimeOfDay;
