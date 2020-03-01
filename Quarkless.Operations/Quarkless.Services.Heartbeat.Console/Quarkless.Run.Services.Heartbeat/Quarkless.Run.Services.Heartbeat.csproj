@@ -41,13 +41,11 @@
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.ReportHandler\Quarkless.Logic.ReportHandler.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.ResponseResolver\Quarkless.Logic.ResponseResolver.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.RestSharpClientManager\Quarkless.Logic.RestSharpClientManager.csproj" />
-    <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.SeleniumClient\Quarkless.Logic.SeleniumClient.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.Timeline\Quarkless.Logic.Timeline.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.Topic\Quarkless.Logic.Topic.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.Hashtag\Quarkless.Models.Hashtag.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.Lookup\Quarkless.Models.Lookup.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.RestSharpClientManager\Quarkless.Models.RestSharpClientManager.csproj" />
-    <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.SeleniumClient\Quarkless.Models.SeleniumClient.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.Shared\Quarkless.Models.Shared.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Repository.Auth\Quarkless.Repository.Auth.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Repository.ContentSearch\Quarkless.Repository.ContentSearch.csproj" />

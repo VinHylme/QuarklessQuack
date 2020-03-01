@@ -97,12 +97,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Quarkless.ContentSearch", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Models.ContentSearch", "Quarkless.Projects\Quarkless.Models.ContentSearch\Quarkless.Models.ContentSearch.csproj", "{F6A141A4-9DD2-4F25-9D52-251F54B44296}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Quarkless.SeleniumClient", "Quarkless.SeleniumClient", "{892E7464-BB23-4178-8E35-AF1D4EF143B4}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Models.SeleniumClient", "Quarkless.Projects\Quarkless.Models.SeleniumClient\Quarkless.Models.SeleniumClient.csproj", "{833DF3DA-8F83-4F01-938E-8CF90973B354}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Logic.SeleniumClient", "Quarkless.Projects\Quarkless.Logic.SeleniumClient\Quarkless.Logic.SeleniumClient.csproj", "{A1F4DB24-3181-4EE3-B998-C2FC4541B3D6}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Models.SearchResponse", "Quarkless.Projects\Quarkless.Models.SearchResponse\Quarkless.Models.SearchResponse.csproj", "{71BEB880-B72E-475F-B83D-7441D4F1C09A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Logic.ContentSearch", "Quarkless.Projects\Quarkless.Logic.ContentSearch\Quarkless.Logic.ContentSearch.csproj", "{835EDA90-14F8-45D6-87A5-106BFBC4E12C}"
@@ -381,11 +375,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Models.Stats", "Q
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Quarkless.Notification", "Quarkless.Notification", "{E301F04C-0EC1-46EA-996B-BFFC6BC6697A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quarkless.Models.Notification", "Quarkless.Projects\Quarkless.Models.Notification\Quarkless.Models.Notification.csproj", "{2AFE5822-AA55-4AA2-98EB-57893551780C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Models.Notification", "Quarkless.Projects\Quarkless.Models.Notification\Quarkless.Models.Notification.csproj", "{2AFE5822-AA55-4AA2-98EB-57893551780C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quarkless.Logic.Notification", "Quarkless.Projects\Quarkless.Logic.Notification\Quarkless.Logic.Notification.csproj", "{D181DF9D-AFE6-4A0D-92C0-9725B88DCB58}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Logic.Notification", "Quarkless.Projects\Quarkless.Logic.Notification\Quarkless.Logic.Notification.csproj", "{D181DF9D-AFE6-4A0D-92C0-9725B88DCB58}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quarkless.Repository.Notification", "Quarkless.Projects\Quarkless.Repository.Notification\Quarkless.Repository.Notification.csproj", "{CD324689-64B3-4D57-B502-4E85D988A133}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Repository.Notification", "Quarkless.Projects\Quarkless.Repository.Notification\Quarkless.Repository.Notification.csproj", "{CD324689-64B3-4D57-B502-4E85D988A133}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Quarkless.PuppeteerClient", "Quarkless.PuppeteerClient", "{6CFBEBD4-E2B0-4352-86E5-2AC5BAEBAE51}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Logic.PuppeteerClient", "Quarkless.Projects\Quarkless.Logic.PuppeteerClient\Quarkless.Logic.PuppeteerClient.csproj", "{930BE97E-6EA5-4E11-AD4F-BD9695A20A01}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -525,14 +523,6 @@ Global
 		{F6A141A4-9DD2-4F25-9D52-251F54B44296}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6A141A4-9DD2-4F25-9D52-251F54B44296}.Release|Any CPU.ActiveCfg = Debug|Any CPU
 		{F6A141A4-9DD2-4F25-9D52-251F54B44296}.Release|Any CPU.Build.0 = Debug|Any CPU
-		{833DF3DA-8F83-4F01-938E-8CF90973B354}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{833DF3DA-8F83-4F01-938E-8CF90973B354}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{833DF3DA-8F83-4F01-938E-8CF90973B354}.Release|Any CPU.ActiveCfg = Debug|Any CPU
-		{833DF3DA-8F83-4F01-938E-8CF90973B354}.Release|Any CPU.Build.0 = Debug|Any CPU
-		{A1F4DB24-3181-4EE3-B998-C2FC4541B3D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A1F4DB24-3181-4EE3-B998-C2FC4541B3D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A1F4DB24-3181-4EE3-B998-C2FC4541B3D6}.Release|Any CPU.ActiveCfg = Debug|Any CPU
-		{A1F4DB24-3181-4EE3-B998-C2FC4541B3D6}.Release|Any CPU.Build.0 = Debug|Any CPU
 		{71BEB880-B72E-475F-B83D-7441D4F1C09A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{71BEB880-B72E-475F-B83D-7441D4F1C09A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{71BEB880-B72E-475F-B83D-7441D4F1C09A}.Release|Any CPU.ActiveCfg = Debug|Any CPU
@@ -909,6 +899,10 @@ Global
 		{CD324689-64B3-4D57-B502-4E85D988A133}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CD324689-64B3-4D57-B502-4E85D988A133}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CD324689-64B3-4D57-B502-4E85D988A133}.Release|Any CPU.Build.0 = Release|Any CPU
+		{930BE97E-6EA5-4E11-AD4F-BD9695A20A01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{930BE97E-6EA5-4E11-AD4F-BD9695A20A01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{930BE97E-6EA5-4E11-AD4F-BD9695A20A01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{930BE97E-6EA5-4E11-AD4F-BD9695A20A01}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -958,9 +952,6 @@ Global
 		{77C31EA1-2995-44E2-8203-C1C1C8BBACD4} = {9C0FAD4D-A3E9-4CF9-8AA4-42D4FD8DF367}
 		{F9922B9F-7F39-496F-A36F-6884E38D3D36} = {FA565628-E611-4DB7-93ED-1CCEC2B38518}
 		{F6A141A4-9DD2-4F25-9D52-251F54B44296} = {F9922B9F-7F39-496F-A36F-6884E38D3D36}
-		{892E7464-BB23-4178-8E35-AF1D4EF143B4} = {FA565628-E611-4DB7-93ED-1CCEC2B38518}
-		{833DF3DA-8F83-4F01-938E-8CF90973B354} = {892E7464-BB23-4178-8E35-AF1D4EF143B4}
-		{A1F4DB24-3181-4EE3-B998-C2FC4541B3D6} = {892E7464-BB23-4178-8E35-AF1D4EF143B4}
 		{71BEB880-B72E-475F-B83D-7441D4F1C09A} = {48078500-1469-42B8-9CD4-F46018730D30}
 		{835EDA90-14F8-45D6-87A5-106BFBC4E12C} = {F9922B9F-7F39-496F-A36F-6884E38D3D36}
 		{9C7D41C8-531A-4975-9346-6653B19D3512} = {FA565628-E611-4DB7-93ED-1CCEC2B38518}
@@ -1102,6 +1093,8 @@ Global
 		{2AFE5822-AA55-4AA2-98EB-57893551780C} = {E301F04C-0EC1-46EA-996B-BFFC6BC6697A}
 		{D181DF9D-AFE6-4A0D-92C0-9725B88DCB58} = {E301F04C-0EC1-46EA-996B-BFFC6BC6697A}
 		{CD324689-64B3-4D57-B502-4E85D988A133} = {E301F04C-0EC1-46EA-996B-BFFC6BC6697A}
+		{6CFBEBD4-E2B0-4352-86E5-2AC5BAEBAE51} = {FA565628-E611-4DB7-93ED-1CCEC2B38518}
+		{930BE97E-6EA5-4E11-AD4F-BD9695A20A01} = {6CFBEBD4-E2B0-4352-86E5-2AC5BAEBAE51}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D3E4C3A5-ADB4-4A48-9A99-78BD4FDE9AE6}

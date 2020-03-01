@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Runtime.InteropServices;
-using System.Threading;
 using System.Threading.Tasks;
 using Hangfire;
 using Microsoft.Extensions.DependencyInjection;
 using Quarkless.Logic.Actions.Factory.ActionExecute.Manager;
 using Quarkless.Logic.Services.Automation;
 using Quarkless.Logic.WorkerManager;
-using Quarkless.Models.Actions.Factory;
 using Quarkless.Models.Actions.Interfaces;
 using Quarkless.Models.InstagramAccounts.Interfaces;
 using Quarkless.Models.InstagramClient.Interfaces;

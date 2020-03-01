@@ -1491,7 +1491,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 					Type = (ImageType)prf.AdditionalConfigurations.ImageType
 				};
 
-				var yan = _searchProvider.YandexSearch.WithProxy().SearchQueryRest(yandexSearchQuery, limit);
+				var yan = await _searchProvider.YandexSearch.WithProxy().QueryImages(yandexSearchQuery, limit);
 
 				if (yan != null)
 				{
@@ -1555,16 +1555,8 @@ namespace Quarkless.Logic.Services.Heartbeat
 
 				var groupSimilarImages = filter as GroupImagesAlike[] ?? filter.ToArray();
 
-				var yan = _searchProvider.YandexSearch.WithProxy()
-					.SearchRelatedImagesRest(groupSimilarImages.TakeAny(takeTopicAmount).ToList(), limit);
-
-				if (yan == null || yan.StatusCode == ResponseCode.CaptchaRequired
-								|| yan.StatusCode == ResponseCode.InternalServerError
-								|| yan.StatusCode == ResponseCode.ReachedEndAndNull)
-				{
-					yan = _searchProvider.YandexSearch.WithProxy()
-						.SearchSafeButSlow(groupSimilarImages.TakeAny(takeTopicAmount).ToList(), limit * 25);
-				}
+				var yan = await _searchProvider.YandexSearch.WithProxy()
+					.QuerySimilarImages(groupSimilarImages.TakeAny(takeTopicAmount).ToList(), limit);
 
 				if (yan?.Result != null)
 				{
@@ -1580,12 +1572,9 @@ namespace Quarkless.Logic.Services.Heartbeat
 								AccountId = _customer.InstagramAccount.AccountId
 							});
 
-							var cut = yan.Result.Medias
-								.DistinctBy(_=>_.MediaUrl)
-								.ToList()
-								.CutObject(cutBy);
+							var cut = yan.Result.Medias.DistinctBy(_=>_.MediaUrl).ToList().CutObject(cutBy);
 
-								cut.ForEach(async mediaItems =>
+							cut.ForEach(async mediaItems =>
 							{
 								await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<Media>
 								{
@@ -1596,6 +1585,7 @@ namespace Quarkless.Logic.Services.Heartbeat
 									Data = new Meta<Media>(new Media{Medias = mediaItems})
 								});
 							});
+
 							break;
 						}
 						case ResponseCode.Timeout:
@@ -1614,12 +1604,9 @@ namespace Quarkless.Logic.Services.Heartbeat
 									AccountId = _customer.InstagramAccount.AccountId
 								});
 
-								var cut = yan.Result.Medias
-									.DistinctBy(_ => _.MediaUrl)
-									.ToList()
-									.CutObject(cutBy);
-
-									cut.ForEach(async mediaItems =>
+								var cut = yan.Result.Medias.DistinctBy(_ => _.MediaUrl).ToList().CutObject(cutBy);
+								
+								cut.ForEach(async mediaItems =>
 								{
 									await _heartbeatLogic.AddMetaData(new MetaDataCommitRequest<Media>
 									{
@@ -1631,7 +1618,6 @@ namespace Quarkless.Logic.Services.Heartbeat
 									});
 								});
 							}
-
 							break;
 						}
 					}

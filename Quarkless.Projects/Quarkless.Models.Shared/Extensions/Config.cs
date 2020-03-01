@@ -78,13 +78,11 @@ namespace Quarkless.Models.Shared.Extensions
 				AccountCreationDatabase = access.AccountCreationDatabase,
 				FrontEnd = access.FrontEnd,
 				ProxyHandlerApiEndPoint = access.ProxyHandlerApiEndPoint,
-				SeleniumChromeAddress = access.SeleniumChromeAddress,
 				TempImagePath = access.TempImagePath,
 				TempVideoPath = access.TempVideoPath,
 				TempAudioPath = access.TempAudioPath,
 				FfmpegPath = access.FfmpegPath,
 				VisionCredentials = access.VisionCredentials(ReferencePath()),
-				ImageSearchEndpoint = access.ImageSearchEndpoint,
 				JsonStripeCredentials = access.JsonStripeCredentials
 			};
 		}

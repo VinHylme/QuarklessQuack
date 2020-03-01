@@ -56,7 +56,6 @@
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.RequestBuilder\Quarkless.Logic.RequestBuilder.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.ResponseResolver\Quarkless.Logic.ResponseResolver.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.RestSharpClientManager\Quarkless.Logic.RestSharpClientManager.csproj" />
-    <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.SeleniumClient\Quarkless.Logic.SeleniumClient.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.Storage\Quarkless.Logic.Storage.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.TextGenerator\Quarkless.Logic.TextGenerator.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Logic.Timeline\Quarkless.Logic.Timeline.csproj" />
@@ -74,7 +73,6 @@
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.ReportHandler\Quarkless.Models.ReportHandler.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.ResponseResolver\Quarkless.Models.ResponseResolver.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.RestSharpClientManager\Quarkless.Models.RestSharpClientManager.csproj" />
-    <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.SeleniumClient\Quarkless.Models.SeleniumClient.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.Shared.Api\Quarkless.Models.Shared.Api.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.Shared\Quarkless.Models.Shared.csproj" />
     <ProjectReference Include="..\..\..\Quarkless.Projects\Quarkless.Models.TextGenerator\Quarkless.Models.TextGenerator.csproj" />

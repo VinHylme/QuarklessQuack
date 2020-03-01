@@ -8,10 +8,8 @@ namespace Quarkless.Models.Shared.Models
 		public string BasePath { get; set; }
 		public string S3BucketName { get; set; }
 		public string FrontEnd { get; set; }
-		public string SeleniumChromeAddress { get; set; }
 		public string YandexApiKey { get; set; }
 		public string DetectApi { get; set; }
-		public string ImageSearchEndpoint { get; set; }
 		public string GoogleGeocodeApiKey { get; set; }
 		public string GeonamesApiKey { get; set; }
 		public string IpGeoLocationApiKey { get; set; }

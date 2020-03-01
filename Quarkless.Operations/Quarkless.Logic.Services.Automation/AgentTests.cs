@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Text;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Quarkless.Analyser;
 using Quarkless.Models.Actions;
@@ -18,14 +17,11 @@ using Quarkless.Models.Agent.Interfaces;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Models;
 using Quarkless.Models.ContentInfo.Interfaces;
-using Quarkless.Models.ContentSearch.Enums;
 using Quarkless.Models.ContentSearch.Interfaces;
-using Quarkless.Models.ContentSearch.Models;
-using Quarkless.Models.ContentSearch.Models.Yandex;
 using Quarkless.Models.HashtagGenerator;
 using Quarkless.Models.Library.Interfaces;
-using Quarkless.Models.Profile;
 using Quarkless.Models.Profile.Interfaces;
+using Quarkless.Models.SearchResponse;
 using Quarkless.Models.Services.Automation.Interfaces;
 using Quarkless.Models.Services.Automation.Models.Tests;
 using Quarkless.Models.Storage.Interfaces;
@@ -43,8 +39,6 @@ namespace Quarkless.Logic.Services.Automation
 		private readonly IPostAnalyser _postAnalyser;
 		private readonly IS3BucketLogic _bucketLogic;
 		private readonly IContentInfoBuilder _contentInfo;
-		private readonly IGoogleSearchLogic _googleSearch;
-		private readonly IYandexImageSearch _yandexImageSearch;
 		public AgentTests(IActionCommitFactory actionCommitFactory, IAgentLogic agentLogic,
 			IProfileLogic profileLogic, ILibraryLogic libraryLogic, IPostAnalyser postAnalyser,
 			IS3BucketLogic s3BucketLogic, IActionExecuteFactory actionExecuteFactory,
@@ -296,10 +290,10 @@ namespace Quarkless.Logic.Services.Automation
 		public async Task StartTests()
 		{
 
+			var user = await GetUserDetail();
+			var topic = user.Profile.ProfileTopic.Topics[0];
+
 			//	var unfollow = await TestUnfollowUser();
-
-
-
 			// var followUserTest = await TestFollowUserAction(true);
 			// if (!followUserTest.IsSuccessful)
 			// {

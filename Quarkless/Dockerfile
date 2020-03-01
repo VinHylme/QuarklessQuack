@@ -1,6 +1,7 @@
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-buster-slim AS base
-RUN apt-get update && apt-get install -y libgdiplus
-RUN apt-get update && apt-get install libfontconfig1 nano -y
+
+RUN apt-get update -y
+RUN apt-get install -y gconf-service libasound2 libatk1.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libgdiplus libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils wget
 
 WORKDIR /app
 
@@ -45,8 +46,6 @@ COPY ["Quarkless.Projects/Quarkless.Repository.MongoContext/Quarkless.Repository
 COPY ["Quarkless.Projects/Quarkless.Geolocation/Quarkless.Geolocation.csproj", "Quarkless.Projects/Quarkless.Geolocation/"]
 COPY ["Quarkless.Projects/Quarkless.Events/Quarkless.Events.csproj", "Quarkless.Projects/Quarkless.Events/"]
 COPY ["Quarkless.Projects/Quarkless.Repository.Topic/Quarkless.Repository.Topic.csproj", "Quarkless.Projects/Quarkless.Repository.Topic/"]
-COPY ["Quarkless.Projects/Quarkless.Logic.SeleniumClient/Quarkless.Logic.SeleniumClient.csproj", "Quarkless.Projects/Quarkless.Logic.SeleniumClient/"]
-COPY ["Quarkless.Projects/Quarkless.Models.SeleniumClient/Quarkless.Models.SeleniumClient.csproj", "Quarkless.Projects/Quarkless.Models.SeleniumClient/"]
 COPY ["Quarkless.Projects/Quarkless.Repository.Library/Quarkless.Repository.Library.csproj", "Quarkless.Projects/Quarkless.Repository.Library/"]
 COPY ["Quarkless.Projects/Quarkless.Repository.RedisClientContext/Quarkless.Repository.RedisContext.csproj", "Quarkless.Projects/Quarkless.Repository.RedisClientContext/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.Messaging/Quarkless.Logic.Messaging.csproj", "Quarkless.Projects/Quarkless.Logic.Messaging/"]
@@ -76,6 +75,7 @@ COPY ["Quarkless.Projects/Quarkless.Logic.Library/Quarkless.Logic.Library.csproj
 COPY ["Quarkless.Projects/Quarkless.Base.InstagramDiscover/Quarkless.Base.InstagramDiscover.csproj", "Quarkless.Projects/Quarkless.Base.InstagramDiscover/"]
 COPY ["Quarkless.Projects/Quarkless.Models.WebHooks/Quarkless.Models.WebHooks.csproj", "Quarkless.Projects/Quarkless.Models.WebHooks/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.ReportHandler/Quarkless.Logic.ReportHandler.csproj", "Quarkless.Projects/Quarkless.Logic.ReportHandler/"]
+COPY ["Quarkless.Projects/Quarkless.Logic.PuppeteerClient/Quarkless.Logic.PuppeteerClient.csproj", "Quarkless.Projects/Quarkless.Logic.PuppeteerClient/"]
 COPY ["Quarkless.Projects/Quarkless.Base.InstagramBusiness/Quarkless.Base.InstagramBusiness.csproj", "Quarkless.Projects/Quarkless.Base.InstagramBusiness/"]
 COPY ["Quarkless.Projects/Quarkless.Models.Account/Quarkless.Models.Account.csproj", "Quarkless.Projects/Quarkless.Models.Account/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.Query/Quarkless.Logic.Query.csproj", "Quarkless.Projects/Quarkless.Logic.Query/"]

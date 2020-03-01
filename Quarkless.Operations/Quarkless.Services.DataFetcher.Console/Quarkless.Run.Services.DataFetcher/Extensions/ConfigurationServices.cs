@@ -22,19 +22,14 @@ using Quarkless.Logic.Proxy;
 using Quarkless.Logic.ReportHandler;
 using Quarkless.Logic.ResponseResolver;
 using Quarkless.Logic.RestSharpClientManager;
-using Quarkless.Logic.SeleniumClient;
 using Quarkless.Logic.TextGenerator;
-using Quarkless.Logic.Timeline;
 using Quarkless.Logic.Topic;
-using Quarkless.Logic.TranslateService;
 using Quarkless.Logic.Utilities;
 using Quarkless.Logic.WorkerManager;
 using Quarkless.Models.Auth;
 using Quarkless.Models.Auth.Interfaces;
 using Quarkless.Models.Comments.Interfaces;
 using Quarkless.Models.ContentSearch.Interfaces;
-using Quarkless.Models.ContentSearch.Models;
-using Quarkless.Models.EmailService.Interfaces;
 using Quarkless.Models.Hashtag.Interfaces;
 using Quarkless.Models.HashtagGenerator.Interfaces;
 using Quarkless.Models.Heartbeat.Interfaces;
@@ -51,13 +46,10 @@ using Quarkless.Models.Proxy.Interfaces;
 using Quarkless.Models.ReportHandler.Interfaces;
 using Quarkless.Models.ResponseResolver.Interfaces;
 using Quarkless.Models.RestSharpClientManager.Interfaces;
-using Quarkless.Models.SeleniumClient.Interfaces;
 using Quarkless.Models.Services.DataFetcher.Interfaces;
 using Quarkless.Models.Shared.Extensions;
 using Quarkless.Models.TextGenerator.Interfaces;
-using Quarkless.Models.Timeline.Interfaces;
 using Quarkless.Models.Topic.Interfaces;
-using Quarkless.Models.TranslateService.Interfaces;
 using Quarkless.Models.Utilities.Interfaces;
 using Quarkless.Models.WorkerManager.Interfaces;
 using Quarkless.Repository.Comments;
@@ -75,7 +67,6 @@ using Quarkless.Repository.Proxy;
 using Quarkless.Repository.RedisContext;
 using Quarkless.Repository.RedisContext.Models;
 using Quarkless.Repository.ReportHandler;
-using Quarkless.Repository.Timeline;
 using Quarkless.Repository.Topic;
 
 namespace Quarkless.Run.Services.DataFetcher.Extensions
@@ -108,7 +99,6 @@ namespace Quarkless.Run.Services.DataFetcher.Extensions
 			services.AddSingleton<ITopicLookupRepository, TopicLookupRepository>();
 			services.AddSingleton<IGoogleSearchLogic, GoogleSearchLogic>();
 			services.AddSingleton<IRestSharpClientManager, RestSharpClientManager>();
-			services.AddSingleton<ISeleniumClient, SeleniumClient>();
 			services.AddSingleton<IWorkerManager, WorkerManager>();
 			services.AddTransient<IApiClientContext, ApiClientContext>();
 			services.AddTransient<IApiClientContainer, ApiClientContainer>();
@@ -142,14 +132,14 @@ namespace Quarkless.Run.Services.DataFetcher.Extensions
 				s.GetService<IGeoLocationHandler>(),
 				s.GetService<IProxyAssignmentsRepository>()));
 
-			services.Configure<GoogleSearchOptions>(options => { options.Endpoint = accessors.ImageSearchEndpoint; });
-			services.AddTransient<IEventPublisher, EventPublisher>(
-				s => new EventPublisher(services));
+			services.AddTransient<IEventPublisher, EventPublisher>(s => new EventPublisher(services));
+
 			services.Configure<RedisOptions>(o =>
 			{
 				o.ConnectionString = accessors.RedisConnectionString;
 				o.DefaultKeyExpiry = TimeSpan.FromDays(7);
 			});
+
 			BsonSerializer.RegisterSerializer(typeof(Guid), new GuidSerializer(BsonType.String));
 			services.AddTransient<IMongoClientContext, MongoClientContext>(s =>
 				new MongoClientContext(new MongoOptions

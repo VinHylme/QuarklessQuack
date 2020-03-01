@@ -54,18 +54,17 @@ using Quarkless.Logic.Messaging;
 using Quarkless.Logic.Notification;
 using Quarkless.Logic.Profile;
 using Quarkless.Logic.Proxy;
+using Quarkless.Logic.PuppeteerClient;
 using Quarkless.Logic.Query;
 using Quarkless.Logic.ReportHandler;
 using Quarkless.Logic.RequestBuilder;
 using Quarkless.Logic.ResponseResolver;
 using Quarkless.Logic.RestSharpClientManager;
-using Quarkless.Logic.SeleniumClient;
 using Quarkless.Logic.Storage;
 using Quarkless.Logic.TextGenerator;
 using Quarkless.Logic.Timeline;
 using Quarkless.Logic.Timeline.TaskScheduler;
 using Quarkless.Logic.Topic;
-using Quarkless.Logic.TranslateService;
 using Quarkless.Logic.Utilities;
 using Quarkless.Logic.WebHooks;
 using Quarkless.Logic.WorkerManager;
@@ -105,8 +104,6 @@ using Quarkless.Models.ReportHandler.Interfaces;
 using Quarkless.Models.RequestBuilder.Interfaces;
 using Quarkless.Models.ResponseResolver.Interfaces;
 using Quarkless.Models.RestSharpClientManager.Interfaces;
-using Quarkless.Models.SeleniumClient;
-using Quarkless.Models.SeleniumClient.Interfaces;
 using Quarkless.Models.Shared.Api.Extensions;
 using Quarkless.Models.Shared.Extensions;
 using Quarkless.Models.Storage;
@@ -115,8 +112,6 @@ using Quarkless.Models.TextGenerator.Interfaces;
 using Quarkless.Models.Timeline.Interfaces;
 using Quarkless.Models.Timeline.Interfaces.TaskScheduler;
 using Quarkless.Models.Topic.Interfaces;
-using Quarkless.Models.TranslateService;
-using Quarkless.Models.TranslateService.Interfaces;
 using Quarkless.Models.Utilities.Interfaces;
 using Quarkless.Models.WebHooks.Interfaces;
 using Quarkless.Models.WorkerManager.Interfaces;
@@ -321,31 +316,21 @@ namespace Quarkless.Extensions
 			var accessors = new Config().Environments;
 			var apiAccessors = new Configuration().Environments;
 			services.Configure<S3Options>(options => { options.BucketName = accessors.S3BucketName; });
-			services.Configure<GoogleSearchOptions>(options => { options.Endpoint = accessors.ImageSearchEndpoint; });
 			services.Configure<RedisOptions>(o =>
 			{
 				o.ConnectionString = accessors.RedisConnectionString;
 				o.DefaultKeyExpiry = TimeSpan.FromDays(7);
 			});
 			services.Configure<MaxConcurrentRequestsOptions>(options =>
-				{
-					options.Limit = apiAccessors.MaxConcurrentRequests.Limit;
-					options.Enabled = apiAccessors.MaxConcurrentRequests.Enabled;
-					options.ExcludePaths = apiAccessors.MaxConcurrentRequests.ExcludePaths;
-					options.LimitExceededPolicy = apiAccessors.MaxConcurrentRequests.LimitExceededPolicy.GetValueFromDescription<MaxConcurrentRequestsLimitExceededPolicy>();
-					options.MaxQueueLength = apiAccessors.MaxConcurrentRequests.MaxQueueLength;
-					options.MaxTimeInQueue = apiAccessors.MaxConcurrentRequests.MaxTimeInQueue;
-				});
-			// services.Configure<TranslateOptions>(options =>
-			// {
-			// 	options.DetectLangAPIKey = accessors.DetectApi;
-			// 	options.YandexAPIKey = accessors.YandexApiKey;
-			// 	options.NaturalLanguageAPIPath = accessors.NaturalLanguageApiPath;
-			// });
-			services.Configure<SeleniumLaunchOptions>(options =>
 			{
-				options.ChromePath = accessors.SeleniumChromeAddress;
+				options.Limit = apiAccessors.MaxConcurrentRequests.Limit;
+				options.Enabled = apiAccessors.MaxConcurrentRequests.Enabled;
+				options.ExcludePaths = apiAccessors.MaxConcurrentRequests.ExcludePaths;
+				options.LimitExceededPolicy = apiAccessors.MaxConcurrentRequests.LimitExceededPolicy.GetValueFromDescription<MaxConcurrentRequestsLimitExceededPolicy>();
+				options.MaxQueueLength = apiAccessors.MaxConcurrentRequests.MaxQueueLength;
+				options.MaxTimeInQueue = apiAccessors.MaxConcurrentRequests.MaxTimeInQueue;
 			});
+
 			var stripeCredentials = JsonConvert.DeserializeObject<StripeCredentials>(accessors.JsonStripeCredentials);
 
 			services.AddSingleton<IAccountLogic, AccountLogic>(s =>
@@ -386,6 +371,8 @@ namespace Quarkless.Extensions
 			services.AddSingleton<IVisionClient, VisionClient>
 				(s => new VisionClient(accessors.VisionCredentials, s.GetService<ISearchingCache>()));
 
+			services.AddSingleton<IPuppeteerClient, PuppeteerClient>(s=> new PuppeteerClient(8));
+
 			services.AddTransient<IMongoClientContext, MongoClientContext>(s =>
 				new MongoClientContext(new MongoOptions
 				{
@@ -425,8 +412,6 @@ namespace Quarkless.Extensions
 		{
 			services.AddTransient<IReportHandler, ReportHandler>();
 			services.AddSingleton<IRestSharpClientManager, RestSharpClientManager>();
-
-			services.AddTransient<ISeleniumClient, SeleniumClient>();
 
 			services.AddTransient<IClientContextProvider, ClientContextProvider>();
 			services.AddTransient<IApiClientContext, ApiClientContext>();

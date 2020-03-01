@@ -15,10 +15,8 @@ namespace Quarkless.Models.Shared.Models
 		public string BasePath => Environment.CurrentDirectory.Split("QuarklessQuack")[0] + "QuarklessQuack";
 		public string S3BucketName => _configuration["AppS3Bucket"];
 		public string FrontEnd => _configuration["Endpoints:FrontEnd"];
-		public string SeleniumChromeAddress => _configuration["Endpoints:SeleniumChrome"];
 		public string YandexApiKey => _configuration["APIServices:Yandex"];
 		public string DetectApi => _configuration["APIServices:DetectLanguageAPI"];
-		public string ImageSearchEndpoint => _configuration["Endpoints:ImageSearchEndpointGoogle"];
 		public string GoogleGeocodeApiKey => _configuration["APIServices:GoogleGeocodeApiKey"];
 		public string GeonamesApiKey => _configuration["APIServices:GeonamesApiKey"];
 		public string IpGeoLocationApiKey => _configuration["APIServices:IpGeoLocationApiKey"];

@@ -1,6 +1,7 @@
 FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-buster-slim AS base
-RUN apt-get update && apt-get install -y libgdiplus
-RUN apt-get update && apt-get install libfontconfig1 nano -y
+
+RUN apt-get update -y
+RUN apt-get install -y gconf-service libasound2 libatk1.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libgdiplus libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils wget
 
 WORKDIR /app
 
@@ -83,8 +84,6 @@ COPY ["Quarkless.Projects/Quarkless.Models.ApiLogger/Quarkless.Models.ApiLogger.
 COPY ["Quarkless.Projects/Quarkless.Repository.ReportHandler/Quarkless.Repository.ReportHandler.csproj", "Quarkless.Projects/Quarkless.Repository.ReportHandler/"]
 COPY ["Quarkless.Projects/Quarkless.Repository.Auth/Quarkless.Repository.Auth.csproj", "Quarkless.Projects/Quarkless.Repository.Auth/"]
 COPY ["Quarkless.Projects/Quarkless.Repository.Timeline/Quarkless.Repository.Timeline.csproj", "Quarkless.Projects/Quarkless.Repository.Timeline/"]
-COPY ["Quarkless.Projects/Quarkless.Logic.SeleniumClient/Quarkless.Logic.SeleniumClient.csproj", "Quarkless.Projects/Quarkless.Logic.SeleniumClient/"]
-COPY ["Quarkless.Projects/Quarkless.Models.SeleniumClient/Quarkless.Models.SeleniumClient.csproj", "Quarkless.Projects/Quarkless.Models.SeleniumClient/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.Profile/Quarkless.Logic.Profile.csproj", "Quarkless.Projects/Quarkless.Logic.Profile/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.Messaging/Quarkless.Logic.Messaging.csproj", "Quarkless.Projects/Quarkless.Logic.Messaging/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.Storage/Quarkless.Logic.Storage.csproj", "Quarkless.Projects/Quarkless.Logic.Storage/"]
@@ -99,6 +98,7 @@ COPY ["Quarkless.Projects/Quarkless.Repository.Profile/Quarkless.Repository.Prof
 COPY ["Quarkless.Projects/Quarkless.Logic.RestSharpClientManager/Quarkless.Logic.RestSharpClientManager.csproj", "Quarkless.Projects/Quarkless.Logic.RestSharpClientManager/"]
 COPY ["Quarkless.Projects/Quarkless.Repository.Lookup/Quarkless.Repository.Lookup.csproj", "Quarkless.Projects/Quarkless.Repository.Lookup/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.ContentSearch/Quarkless.Logic.ContentSearch.csproj", "Quarkless.Projects/Quarkless.Logic.ContentSearch/"]
+COPY ["Quarkless.Projects/Quarkless.Logic.PuppeteerClient/Quarkless.Logic.PuppeteerClient.csproj", "Quarkless.Projects/Quarkless.Logic.PuppeteerClient/"]
 COPY ["Quarkless.Projects/Quarkless.Logic.HashtagGenerator/Quarkless.Logic.HashtagGenerator.csproj", "Quarkless.Projects/Quarkless.Logic.HashtagGenerator/"]
 COPY ["Quarkless.Projects/Quarkless.Vision/Quarkless.Vision.csproj", "Quarkless.Projects/Quarkless.Vision/"]
 COPY ["Quarkless.Projects/Quarkless.Repository.ContentSearch/Quarkless.Repository.ContentSearch.csproj", "Quarkless.Projects/Quarkless.Repository.ContentSearch/"]

@@ -3,21 +3,15 @@ using Quarkless.Models.ContentSearch.Interfaces;
 using Quarkless.Models.SearchResponse;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using InstagramApiSharp.Classes.Models;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.ContentSearch.Models;
 using Quarkless.Models.SearchResponse.Enums;
-using Quarkless.Models.SearchResponse.Structs;
-using Newtonsoft.Json;
 using Quarkless.Models.Proxy;
-using Quarkless.Models.SeleniumClient.Interfaces;
-using Microsoft.Extensions.Options;
-using OpenQA.Selenium;
+using Quarkless.Logic.PuppeteerClient;
 using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.ContentSearch.Enums;
 using Quarkless.Models.RestSharpClientManager.Interfaces;
@@ -28,14 +22,11 @@ namespace Quarkless.Logic.ContentSearch
 	public class GoogleSearchLogic : IGoogleSearchLogic
 	{
 		private const string IMAGE_URL = "https://www.google.co.uk/search?";
-		private readonly string _apiEndpoint;
 		private readonly IRestSharpClientManager _restSharpClient;
-		private readonly ISeleniumClient _seleniumClient;
-
-		public GoogleSearchLogic(IOptions<GoogleSearchOptions> options, ISeleniumClient seleniumClient)
+		private readonly IPuppeteerClient _puppeteerClient;
+		public GoogleSearchLogic(IPuppeteerClient puppeteerClient)
 		{
-			_seleniumClient = seleniumClient;
-			_apiEndpoint = options.Value.Endpoint;
+			_puppeteerClient = puppeteerClient;
 			_restSharpClient = new RestSharpClientManager.RestSharpClientManager();
 		}
 
@@ -52,10 +43,11 @@ namespace Quarkless.Logic.ContentSearch
 				var proxyLine = string.IsNullOrEmpty(proxy.Username)
 					? $"http://{proxy.HostAddress}:{proxy.Port}"
 					: $"http://{proxy.Username}:{proxy.Password}@{proxy.HostAddress}:{proxy.Port}";
-				_seleniumClient.AddArguments($"--proxy-server={proxyLine}");
+				//_seleniumClient.AddArguments($"--proxy-server={proxyLine}");
 			}
 			return this;
 		}
+
 		private string QueryBuilder(SearchGoogleImageRequestModel query)
 		{
 			var queryBuilder = IMAGE_URL;
@@ -86,6 +78,7 @@ namespace Quarkless.Logic.ContentSearch
 			queryBuilder += "&biw=1504&bih=734";
 			return queryBuilder;
 		}
+
 		public async Task<SearchResponse<Media>> SearchGoogleImages(CTopic topic, SearchGoogleImageRequestModel searchQuery)
 		{
 			var response = new SearchResponse<Media>();
@@ -107,87 +100,39 @@ namespace Quarkless.Logic.ContentSearch
 			{
 				var request = QueryBuilder(searchQuery);
 				response.Result = new Media();
-				using var client = _seleniumClient.CreateDriver();
-				client.Navigate().GoToUrl(request);
 				var totalMedias = new List<MediaResponse>();
+				string htmlBody;
 
-				var elements = client.FindElements(By.XPath("//a[@class='wXeWr islib nfEiy mM5pbd']"));
-				if (elements.Any())
 				{
-					foreach (var webElement in elements.Take(searchQuery.Limit))
-					{
-						try
-						{
-							webElement.Click();
-							await Task.Delay(TimeSpan.FromSeconds(.5));
-							var image = client.FindElements(By.ClassName("n3VNCb"));
-							var srcUrl = image.FirstOrDefault(_ => !_.GetProperty("src").Contains("data:"));
-							if (srcUrl == null) continue;
-
-							var src = srcUrl.GetProperty("src");
-
-							if(src.Contains(".gif")) continue;
-							
-							var title = client.FindElement(By.ClassName("Beeb4e"))?.Text;
-
-							totalMedias.Add(new MediaResponse
-							{
-								MediaUrl = new[] { src }.ToList(),
-								MediaId = src.ToByteArray().ComputeHash().ToString(),
-								MediaType = InstaMediaType.Image,
-								Caption = title,
-								MediaFrom = MediaFrom.Google,
-								Topic = topic
-							});
-
-							#region Commented code for getting related images too
-							/*
-							// for (var x = 0; x < 5; x++)
-							// {
-							// 	var elementsRelated = client.FindElements(By.XPath("//a[@class='wXeWr islib nfEiy mM5pbd']"))
-							// 		.TakeLast(12);
-							//
-							// 	var element = elementsRelated.ElementAt(x);
-							//
-							// 	try
-							// 	{
-							// 		element.Click();
-							// 		await Task.Delay(TimeSpan.FromSeconds(.95));
-							// 		var imageR = client.FindElements(By.ClassName("n3VNCb"));
-							// 		var srcUrlR = imageR.FirstOrDefault(_ => !_.GetProperty("src").Contains("data:"));
-							// 		if (srcUrlR == null) continue;
-							//
-							// 		var srcR = srcUrlR.GetProperty("src");
-							// 		var titleR = client.FindElement(By.ClassName("Beeb4e"))?.Text;
-							//
-							// 		totalMedias.Add(new MediaResponse
-							// 		{
-							// 			MediaUrl = new[] { srcR }.ToList(),
-							// 			Caption = titleR,
-							// 			MediaFrom = MediaFrom.Google,
-							// 			Topic = topic
-							// 		});
-							//
-							// 		client.Navigate().Back();
-							// 	}
-							// 	catch(Exception err)
-							// 	{
-							// 		Console.WriteLine("failed to get image");
-							// 	}
-							// }
-							*/
-							#endregion
-							var closeButton = client.FindElement(By.ClassName("hm60ue"));
-							closeButton.Click();
-						}
-						catch(Exception err)
-						{
-							Console.WriteLine("could not load this image");
-						}
-					}
+					using var browser = _puppeteerClient.GetBrowser();
+					using var page = await browser.NewPageAsync();
+					await page.GoToAsync(request);
+					htmlBody = await page.GetContentAsync();
 				}
-				
-				if(totalMedias.Any())
+
+				if (string.IsNullOrEmpty(htmlBody))
+				{
+					response.StatusCode = ResponseCode.NotFound;
+					response.Message = "Html body returned empty";
+					return response;
+				}
+
+				var json = new Regex("\\[\n*.*\"GRID_STATE0\"(?=[\\S\\s]{10,8000})[\\S\\s]*\\]$", RegexOptions.Multiline)
+					.Matches(htmlBody).First().Value;
+
+				var items = new Regex("\\[0,\"(.*?),\\[(.*?)\\]\n*,\\[(.*?)\\]", RegexOptions.Multiline)
+					.Matches(json);
+
+				totalMedias.AddRange(items.Select(_=>new MediaResponse
+				{
+					MediaId = _.Groups[1].Value.Replace("\"",""),
+					MediaUrl = new List<string>(new []{ _.Groups[3].Value.Split(",")[0].Replace("\"","") }),
+					MediaType = InstaMediaType.Image,
+					MediaFrom = MediaFrom.Google,
+					Topic = topic
+				}));
+
+				if (totalMedias.Any())
 					response.Result.Medias.AddRange(totalMedias);
 
 				response.StatusCode = ResponseCode.Success;
@@ -213,18 +158,31 @@ namespace Quarkless.Logic.ContentSearch
 		public async Task<List<string>> GetSuggestions(string query)
 		{
 			var results = new List<string>();
-			using (var driver = _seleniumClient.CreateDriver())
+			var request = QueryBuilder(new SearchGoogleImageRequestModel
 			{
-				driver.Navigate().GoToUrl(IMAGE_URL);
-				var searchBox = driver.FindElement(By.XPath("//input[@title= 'Search']"));
-				await Task.Delay(TimeSpan.FromSeconds(.25));
-				searchBox.SendKeys(query);
-				searchBox.Submit();
-				await Task.Delay(TimeSpan.FromSeconds(.55));
-				var carouselSuggestions = driver.FindElements(By.ClassName("dtviD"));
-				if (carouselSuggestions.Any())
-					results.AddRange(carouselSuggestions.Select(_ => _.Text));
+				Keyword = query
+			});
+			string htmlBody;
+
+			{
+				using var browser = _puppeteerClient.GetBrowser();
+				using var page = await browser.NewPageAsync();
+				await page.GoToAsync(request);
+				htmlBody = await page.GetContentAsync();
 			}
+
+			if (string.IsNullOrEmpty(htmlBody))
+			{
+				return results;
+			}
+
+			var json = new Regex("\"online_chips\",\\[(?=[\\S\\s]{10,8000})[\\S\\s]*]$", RegexOptions.Multiline)
+				.Matches(htmlBody).First().Value;
+
+			var items = new Regex("(\\[\"(.*?)\")", RegexOptions.Multiline)
+				.Matches(json);
+
+			results.AddRange(items.Take(14).Skip(1).Select(item => item.Groups[2].Value));
 
 			return results;
 		}

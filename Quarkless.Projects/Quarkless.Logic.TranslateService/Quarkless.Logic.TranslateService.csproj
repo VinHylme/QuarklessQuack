@@ -11,7 +11,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Quarkless.Models.Common\Quarkless.Models.Common.csproj" />
     <ProjectReference Include="..\Quarkless.Models.RestSharpClientManager\Quarkless.Models.RestSharpClientManager.csproj" />
-    <ProjectReference Include="..\Quarkless.Models.SeleniumClient\Quarkless.Models.SeleniumClient.csproj" />
     <ProjectReference Include="..\Quarkless.Models.TranslateService\Quarkless.Models.TranslateService.csproj" />
   </ItemGroup>
 

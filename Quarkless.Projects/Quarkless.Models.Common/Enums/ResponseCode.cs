@@ -6,6 +6,7 @@
 		CaptchaRequired,
 		Success,
 		Timeout,
-		ReachedEndAndNull
+		ReachedEndAndNull,
+		NotFound
 	}
 }

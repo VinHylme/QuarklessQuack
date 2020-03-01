@@ -32,20 +32,18 @@ using Quarkless.Logic.Messaging;
 using Quarkless.Logic.Notification;
 using Quarkless.Logic.Profile;
 using Quarkless.Logic.Proxy;
+using Quarkless.Logic.PuppeteerClient;
 using Quarkless.Logic.ReportHandler;
 using Quarkless.Logic.RequestBuilder;
 using Quarkless.Logic.ResponseResolver;
 using Quarkless.Logic.RestSharpClientManager;
-using Quarkless.Logic.SeleniumClient;
 using Quarkless.Logic.Services.Automation;
 using Quarkless.Logic.Storage;
 using Quarkless.Logic.TextGenerator;
 using Quarkless.Logic.Timeline;
 using Quarkless.Logic.Timeline.TaskScheduler;
 using Quarkless.Logic.Topic;
-using Quarkless.Logic.TranslateService;
 using Quarkless.Logic.Utilities;
-using Quarkless.Logic.WorkerManager;
 using Quarkless.Models.Actions.Interfaces;
 using Quarkless.Models.Agent.Interfaces;
 using Quarkless.Models.ApiLogger.Interfaces;
@@ -54,7 +52,6 @@ using Quarkless.Models.Auth.Interfaces;
 using Quarkless.Models.Comments.Interfaces;
 using Quarkless.Models.ContentInfo.Interfaces;
 using Quarkless.Models.ContentSearch.Interfaces;
-using Quarkless.Models.ContentSearch.Models;
 using Quarkless.Models.Hashtag.Interfaces;
 using Quarkless.Models.HashtagGenerator.Interfaces;
 using Quarkless.Models.Heartbeat.Interfaces;
@@ -72,8 +69,6 @@ using Quarkless.Models.ReportHandler.Interfaces;
 using Quarkless.Models.RequestBuilder.Interfaces;
 using Quarkless.Models.ResponseResolver.Interfaces;
 using Quarkless.Models.RestSharpClientManager.Interfaces;
-using Quarkless.Models.SeleniumClient;
-using Quarkless.Models.SeleniumClient.Interfaces;
 using Quarkless.Models.Services.Automation.Interfaces;
 using Quarkless.Models.Shared.Api.Extensions;
 using Quarkless.Models.Shared.Extensions;
@@ -83,10 +78,7 @@ using Quarkless.Models.TextGenerator.Interfaces;
 using Quarkless.Models.Timeline.Interfaces;
 using Quarkless.Models.Timeline.Interfaces.TaskScheduler;
 using Quarkless.Models.Topic.Interfaces;
-using Quarkless.Models.TranslateService;
-using Quarkless.Models.TranslateService.Interfaces;
 using Quarkless.Models.Utilities.Interfaces;
-using Quarkless.Models.WorkerManager.Interfaces;
 using Quarkless.Repository.ApiLogger;
 using Quarkless.Repository.Auth;
 using Quarkless.Repository.Comments;
@@ -106,7 +98,6 @@ using Quarkless.Repository.Proxy;
 using Quarkless.Repository.RedisContext;
 using Quarkless.Repository.RedisContext.Models;
 using Quarkless.Repository.ReportHandler;
-using Quarkless.Repository.Timeline;
 using Quarkless.Repository.Topic;
 using Quarkless.Vision;
 
@@ -170,23 +161,12 @@ namespace Quarkless.Run.Services.Automation.Extensions
 				}));
 
 			services.AddSingleton<IS3BucketLogic, S3BucketLogic>();
-			services.Configure<GoogleSearchOptions>(options => { options.Endpoint = accessors.ImageSearchEndpoint; });
 			services.Configure<RedisOptions>(o =>
 			{
 				o.ConnectionString = accessors.RedisConnectionString;
 				o.DefaultKeyExpiry = TimeSpan.FromDays(7);
 			});
-			// services.Configure<TranslateOptions>(options =>
-			// {
-			// 	options.DetectLangAPIKey = accessors.DetectApi;
-			// 	options.YandexAPIKey = accessors.YandexApiKey;
-			// 	options.NaturalLanguageAPIPath = accessors.NaturalLanguageApiPath;
-			// });
-			services.Configure<SeleniumLaunchOptions>(options =>
-			{
-				options.ChromePath = accessors.SeleniumChromeAddress;
-			});
-
+			
 			services.AddSingleton<IGeoLocationHandler, GeoLocationHandler>(s =>
 				new GeoLocationHandler(new GeoLocationOptions
 				{
@@ -199,6 +179,7 @@ namespace Quarkless.Run.Services.Automation.Extensions
 				new ProxyRequestOptions(accessors.ProxyHandlerApiEndPoint),
 				s.GetService<IGeoLocationHandler>(),
 				s.GetService<IProxyAssignmentsRepository>()));
+
 			// var stripeCredentials = JsonConvert.DeserializeObject<StripeCredentials>(accessors.JsonStripeCredentials);
 			//
 			// services.AddSingleton<IAccountLogic, AccountLogic>(s =>
@@ -220,6 +201,8 @@ namespace Quarkless.Run.Services.Automation.Extensions
 
 			services.AddSingleton<IVisionClient, VisionClient>
 				(s => new VisionClient(accessors.VisionCredentials, s.GetService<ISearchingCache>()));
+
+			services.AddSingleton<IPuppeteerClient, PuppeteerClient>(s => new PuppeteerClient(2));
 			
 			BsonSerializer.RegisterSerializer(typeof(Guid), new GuidSerializer(BsonType.String));
 			services.AddTransient<IMongoClientContext, MongoClientContext>(s =>
@@ -261,7 +244,6 @@ namespace Quarkless.Run.Services.Automation.Extensions
 		{
 			services.AddTransient<IReportHandler, ReportHandler>();
 			services.AddSingleton<IRestSharpClientManager, RestSharpClientManager>();
-			services.AddTransient<ISeleniumClient, SeleniumClient>();
 			services.AddTransient<IClientContextProvider, ClientContextProvider>();
 			services.AddTransient<IApiClientContext, ApiClientContext>();
 			services.AddTransient<IApiClientContainer, ApiClientContainer>();

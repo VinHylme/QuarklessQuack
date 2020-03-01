@@ -115,7 +115,7 @@ namespace Quarkless.Logic.Query
 
 				if (moreAccurate)
 				{
-					response = _searchProvider.YandexSearch.SearchRelatedImagesRest(strurl, 6).Result;
+					response = _searchProvider.YandexSearch.QuerySimilarImages(strurl, 6).Result.Result;
 					response.Medias = response.Medias?.Distinct().Reverse().ToList();
 					searchRequest.ResponseData = response;
 					await _searchingCache.StoreSearchData(userId, searchRequest);
@@ -131,7 +131,7 @@ namespace Quarkless.Logic.Query
 					}
 					else
 					{
-						response = _searchProvider.YandexSearch.SearchRelatedImagesRest(strurl, 6).Result;
+						response = _searchProvider.YandexSearch.QuerySimilarImages(strurl, 6).Result.Result;
 						response.Medias = response.Medias?.Distinct().Reverse().ToList();
 						searchRequest.ResponseData = response;
 						await _searchingCache.StoreSearchData(userId, searchRequest);
@@ -161,7 +161,7 @@ namespace Quarkless.Logic.Query
 
 				if (moreAccurate)
 				{
-					response = _searchProvider.YandexSearch.SearchRelatedImagesRest(strurl, 1 + offset).Result;
+					response = _searchProvider.YandexSearch.QuerySimilarImages(strurl, 1 + offset).Result.Result;
 					response.Medias = response.Medias?.Distinct().Reverse().ToList();
 					searchRequest.ResponseData = response;
 					await _searchingCache.StoreSearchData(userId, searchRequest);
@@ -178,7 +178,7 @@ namespace Quarkless.Logic.Query
 					}
 					else
 					{
-						response = _searchProvider.YandexSearch.SearchRelatedImagesRest(strurl, 1 + offset).Result;
+						response = _searchProvider.YandexSearch.QuerySimilarImages(strurl, 1 + offset).Result.Result;
 						response.Medias = response.Medias?.Distinct().Reverse().ToList();
 						searchRequest.ResponseData = response;
 						await _searchingCache.StoreSearchData(userId, searchRequest);

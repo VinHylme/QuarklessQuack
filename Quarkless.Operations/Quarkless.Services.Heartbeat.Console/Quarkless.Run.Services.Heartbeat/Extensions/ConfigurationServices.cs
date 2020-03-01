@@ -19,18 +19,15 @@ using Quarkless.Logic.Lookup;
 using Quarkless.Logic.Notification;
 using Quarkless.Logic.Profile;
 using Quarkless.Logic.Proxy;
+using Quarkless.Logic.PuppeteerClient;
 using Quarkless.Logic.ReportHandler;
 using Quarkless.Logic.ResponseResolver;
 using Quarkless.Logic.RestSharpClientManager;
-using Quarkless.Logic.SeleniumClient;
 using Quarkless.Logic.Services.Heartbeat;
-using Quarkless.Logic.Timeline;
 using Quarkless.Logic.Topic;
-using Quarkless.Logic.WorkerManager;
 using Quarkless.Models.Auth;
 using Quarkless.Models.Auth.Interfaces;
 using Quarkless.Models.ContentSearch.Interfaces;
-using Quarkless.Models.ContentSearch.Models;
 using Quarkless.Models.Hashtag.Interfaces;
 using Quarkless.Models.Heartbeat.Interfaces;
 using Quarkless.Models.InstagramAccounts;
@@ -45,13 +42,9 @@ using Quarkless.Models.Proxy.Interfaces;
 using Quarkless.Models.ReportHandler.Interfaces;
 using Quarkless.Models.ResponseResolver.Interfaces;
 using Quarkless.Models.RestSharpClientManager.Interfaces;
-using Quarkless.Models.SeleniumClient;
-using Quarkless.Models.SeleniumClient.Interfaces;
 using Quarkless.Models.Services.Heartbeat.Interfaces;
 using Quarkless.Models.Shared.Extensions;
-using Quarkless.Models.Timeline.Interfaces;
 using Quarkless.Models.Topic.Interfaces;
-using Quarkless.Models.WorkerManager.Interfaces;
 using Quarkless.Repository.Auth;
 using Quarkless.Repository.ContentSearch;
 using Quarkless.Repository.Hashtag;
@@ -96,17 +89,12 @@ namespace Quarkless.Run.Services.Heartbeat.Extensions
 		internal static void IncludeConfigurators(this IServiceCollection services)
 		{
 			var accessors = new Config().Environments;
-			services.Configure<GoogleSearchOptions>(options => { options.Endpoint = accessors.ImageSearchEndpoint; });
 			services.Configure<RedisOptions>(o =>
 			{
 				o.ConnectionString = accessors.RedisConnectionString;
 				o.DefaultKeyExpiry = TimeSpan.FromDays(7);
 			});
-			services.Configure<SeleniumLaunchOptions>(options =>
-			{
-				options.ChromePath = accessors.SeleniumChromeAddress;
-			});
-
+			
 			BsonSerializer.RegisterSerializer(typeof(Guid), new GuidSerializer(BsonType.String));
 
 			services.AddSingleton<IGeoLocationHandler, GeoLocationHandler>(s =>
@@ -121,6 +109,8 @@ namespace Quarkless.Run.Services.Heartbeat.Extensions
 				new ProxyRequestOptions(accessors.ProxyHandlerApiEndPoint),
 				s.GetService<IGeoLocationHandler>(),
 				s.GetService<IProxyAssignmentsRepository>()));
+
+			services.AddSingleton<IPuppeteerClient, PuppeteerClient>(s=>new PuppeteerClient(15));
 
 			services.AddTransient<IMongoClientContext, MongoClientContext>(s =>
 				new MongoClientContext(new MongoOptions
@@ -153,7 +143,6 @@ namespace Quarkless.Run.Services.Heartbeat.Extensions
 		{
 			services.AddTransient<IReportHandler, ReportHandler>();
 			services.AddSingleton<IRestSharpClientManager, RestSharpClientManager>();
-			services.AddTransient<ISeleniumClient, SeleniumClient>();
 			services.AddTransient<IClientContextProvider, ClientContextProvider>();
 			services.AddTransient<IApiClientContext, ApiClientContext>();
 			services.AddTransient<IApiClientContainer, ApiClientContainer>();
