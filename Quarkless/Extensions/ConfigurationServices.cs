@@ -82,7 +82,6 @@ using Quarkless.Models.Comments.Interfaces;
 using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.ContentInfo.Interfaces;
 using Quarkless.Models.ContentSearch.Interfaces;
-using Quarkless.Models.ContentSearch.Models;
 using Quarkless.Models.Hashtag.Interfaces;
 using Quarkless.Models.HashtagGenerator.Interfaces;
 using Quarkless.Models.Heartbeat.Interfaces;

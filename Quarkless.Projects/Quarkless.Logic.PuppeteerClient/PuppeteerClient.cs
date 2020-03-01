@@ -32,8 +32,13 @@ namespace Quarkless.Logic.PuppeteerClient
 
 		private void Initialise()
 		{
+			var fetcher = new BrowserFetcher();
+			var available = fetcher.LocalRevisions();
+			if (!available.Any())
+				fetcher.DownloadAsync(BrowserFetcher.DefaultRevision).GetAwaiter().GetResult();
+
 			var processes = Process.GetProcesses();
-			foreach (var chrome in processes.Where(_=>_.ProcessName.Equals("chrome")))
+			foreach (var chrome in processes.Where(_=>_.ProcessName.Equals("chrome") || _.ProcessName.Equals("chromium")))
 			{
 				chrome.Kill();
 			}
@@ -44,7 +49,7 @@ namespace Quarkless.Logic.PuppeteerClient
 			var timed = Stopwatch.StartNew();
 			var browser = Puppeteer.LaunchAsync(new LaunchOptions
 			{
-				Headless = false,
+				Headless = true,
 				Args = new[] { "--no-sandbox" },
 				DefaultViewport = null
 			}).Result;
