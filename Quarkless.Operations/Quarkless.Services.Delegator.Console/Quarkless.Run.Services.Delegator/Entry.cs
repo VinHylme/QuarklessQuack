@@ -208,7 +208,7 @@ namespace Quarkless.Run.Services.Delegator
 					AttachStderr = true,
 					AttachStdout = true
 				});
-				Console.WriteLine("Successfully created automator app for customer {0}", customer.Username);
+				Console.WriteLine("Successfully created heartbeat app for customer {0}", customer.Username);
 			}
 
 			//start the containers

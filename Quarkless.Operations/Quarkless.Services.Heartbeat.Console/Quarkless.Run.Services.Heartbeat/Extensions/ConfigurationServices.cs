@@ -110,7 +110,7 @@ namespace Quarkless.Run.Services.Heartbeat.Extensions
 				s.GetService<IGeoLocationHandler>(),
 				s.GetService<IProxyAssignmentsRepository>()));
 
-			services.AddSingleton<IPuppeteerClient, PuppeteerClient>(s=>new PuppeteerClient(15));
+			services.AddSingleton<IPuppeteerClient, PuppeteerClient>(s=>new PuppeteerClient(2));
 
 			services.AddTransient<IMongoClientContext, MongoClientContext>(s =>
 				new MongoClientContext(new MongoOptions
