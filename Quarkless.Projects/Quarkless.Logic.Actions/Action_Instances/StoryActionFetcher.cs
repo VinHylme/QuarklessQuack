@@ -142,7 +142,7 @@ namespace Quarkless.Logic.Actions.Action_Instances
 				.SelectMany(_ => _.ObjectItem)
 				.Where(_ => !lookups.Exists(l => l.ObjectId == _.UserId.ToString()))
 				.ToList();
-
+			
 			var user = fetchUsers?.ElementAtOrDefault(SecureRandom.Next(fetchUsers.Count - 1));
 
 			if (user == null)

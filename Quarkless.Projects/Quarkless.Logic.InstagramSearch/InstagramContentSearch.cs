@@ -25,6 +25,7 @@ namespace Quarkless.Logic.InstagramSearch
 			IResponseResolver responseResolver, ProxyModel proxy = null)
 		{
 			_container = clientContainer;
+			_container.GetContext.Container.Proxy = proxy;
 			_responseResolver = responseResolver;
 		}
 
@@ -254,6 +255,7 @@ namespace Quarkless.Logic.InstagramSearch
 				.WithResolverAsync(()=> _container.User.GetFullUserInfoAsync(userId));
 			return userDetailsResp.Response.Succeeded ? userDetailsResp.Response.Value : null;
 		}
+
 		public async Task<Media> SearchMediaDetailInstagram(IEnumerable<CTopic> topics, int limit, bool isRecent = false)
 		{
 			var medias = new Media();

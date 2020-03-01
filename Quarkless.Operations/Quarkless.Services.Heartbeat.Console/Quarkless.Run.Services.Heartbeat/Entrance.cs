@@ -3,7 +3,10 @@ using Quarkless.Models.Services.Heartbeat.Enums;
 using Quarkless.Models.Services.Heartbeat.Interfaces;
 using System;
 using System.Threading.Tasks;
+using Quarkless.Logic.ContentSearch;
+using Quarkless.Logic.PuppeteerClient;
 using Quarkless.Logic.WorkerManager;
+using Quarkless.Models.ContentSearch.Interfaces;
 using Quarkless.Models.InstagramAccounts.Interfaces;
 using Quarkless.Models.InstagramClient.Interfaces;
 using Quarkless.Models.ResponseResolver.Interfaces;
@@ -49,7 +52,7 @@ namespace Quarkless.Run.Services.Heartbeat
 			services.IncludeRepositories();
 			services.IncludeHandlers();
 			services.IncludeEventServices();
-
+			
 			services.AddSingleton<IWorkerManager, WorkerManager>
 			(s => new WorkerManager(s.GetService<IApiClientContext>(),
 				s.GetService<IInstagramAccountLogic>(),
