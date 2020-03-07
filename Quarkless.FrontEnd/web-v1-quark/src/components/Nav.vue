@@ -86,8 +86,6 @@ export default {
   }
 }
 </script>
-
-
 <style lang="scss" scoped>
 .is-disabled{
   cursor:initial;
@@ -120,4 +118,6 @@ export default {
       color:#13c551;
   }
 }
+
+
 </style>

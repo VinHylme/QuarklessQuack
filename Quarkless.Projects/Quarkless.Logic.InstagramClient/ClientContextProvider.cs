@@ -140,7 +140,7 @@ namespace Quarkless.Logic.InstagramClient
 									State = state,
 									ProfilePicture = instagramAccountDetails.ProfilePicture,
 									FullName = instagramAccountDetails.FullName,
-									Device = state.DeviceInfo.DeviceModel
+									Device = state.DeviceInfo.DeviceName
 								});
 						}
 					}

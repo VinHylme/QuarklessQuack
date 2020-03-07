@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using Quarkless.Events.Interfaces;
 using Quarkless.Models.Common.Models.Carriers;
 using Quarkless.Models.InstagramAccounts;
@@ -310,6 +311,26 @@ namespace Quarkless.Logic.InstagramAccounts
 				await _reportHandler.MakeReport(ee);
 				return null;
 			}
+		}
+
+		public async Task<bool> ClearCacheData(string accountId, string instagramAccountId)
+		{
+			var account = await GetInstagramAccount(accountId, instagramAccountId);
+			if (account == null) return false;
+			
+			var androidDevice = account.State.DeviceInfo;
+			
+			var newState = new StateData
+			{
+				DeviceInfo = androidDevice,
+				UserSession = account.State.UserSession,
+				IsAuthenticated = account.State.IsAuthenticated,
+				InstaApiVersion = account.State.InstaApiVersion,
+				Cookies = new CookieContainer(),
+				RawCookies = new List<Cookie>()
+			};
+
+			return await _instagramAccountRepository.ClearCacheData(accountId, instagramAccountId, newState);
 		}
 		public async Task<long?> PartialUpdateInstagramAccount(string accountId, string instagramAccountId, InstagramAccountModel instagramAccountModel)
 		{

@@ -12,25 +12,25 @@ using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Quarkless.Extensions;
 using Quarkless.Filters;
-using Quarkless.Models.Timeline.TaskScheduler;
+using Quarkless.Models.Auth.Interfaces;
 using Quarkless.Models.Shared.Extensions;
 
 namespace Quarkless
 {
 	public class Startup
-    {
-	    private const string CORS_POLICY = "HashtagGrowCORSPolicy";
-	    private const string REDIS_DB_NAME = "Timeline";
+	{
+		private const string CORS_POLICY = "HashtagGrowCORSPolicy";
+		private const string REDIS_DB_NAME = "Timeline";
 
-	    public Startup(IConfiguration configuration)
-        {
-            Configuration = configuration;
-        }
-        public static IConfiguration Configuration { get; private set; }
+		public Startup(IConfiguration configuration)
+		{
+			Configuration = configuration;
+		}
 
-        public void ConfigureServices(IServiceCollection services)
-        {
-			
+		public static IConfiguration Configuration { get; private set; }
+
+		public void ConfigureServices(IServiceCollection services)
+		{
 			#region Add Services
 			services.IncludeHangFrameworkServices();
 			services.IncludeLogicServices();
@@ -43,7 +43,7 @@ namespace Quarkless
 			services.IncludeEventServices();
 
 			services.AddControllers();
-	        services.AddOptions();
+			services.AddOptions();
 			services.AddMemoryCache();
 			services.AddSingleton<IIpPolicyStore, DistributedCacheIpPolicyStore>();
 			services.AddSingleton<IRateLimitCounterStore,DistributedCacheRateLimitCounterStore>();
@@ -56,6 +56,7 @@ namespace Quarkless
 			services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
 			services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 			services.AddSingleton<IRateLimitConfiguration, CustomRateLimitConfiguration>();
+
 			var environments = new Config().Environments;
 			var redis = ConnectionMultiplexer.Connect(environments.RedisConnectionString);
 
@@ -71,6 +72,8 @@ namespace Quarkless
 					});
 			});
 
+			#endregion
+
 			services.AddHangfire(options =>
 			{
 				options.UseRedisStorage(redis, new Hangfire.Redis.RedisStorageOptions
@@ -84,49 +87,34 @@ namespace Quarkless
 					UseTransactions = true
 				});
 			});
-			#endregion
-
-			var serializerSettings = new JsonSerializerSettings()
+			
+			GlobalConfiguration.Configuration.UseSerializerSettings(new JsonSerializerSettings()
 			{
 				ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-			};
-
-			GlobalConfiguration.Configuration.UseSerializerSettings(serializerSettings);
+			});
 		}
 
 		public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-        {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
-            else
-            {
-                app.UseHsts();
-            }
-
-            GlobalConfiguration.Configuration.UseActivator(new WorkerActivator(app.ApplicationServices));
-
-            var jobServerOptions = new BackgroundJobServerOptions
-			{
-				WorkerCount = Environment.ProcessorCount * 5,
-				ServerName = $"ISE_{Environment.MachineName}.{Guid.NewGuid().ToString()}",
-			};
+		{
+			if (env.IsDevelopment())
+				app.UseDeveloperExceptionPage();
+			else
+				app.UseHsts();
 
 			app.UseHttpsRedirection();
 			app.UseRouting();
 			//app.UseIpRateLimiting();
 
 			app.UseCors(CORS_POLICY);
-			app.ResetHangfireJobs();
-
-			app.UseHangfireServer(jobServerOptions);
-
 			app.UseHangfireDashboard("/configs/hang-fire", new DashboardOptions
 			{
-				Authorization = new[] { new HangfireAllowAllConnectionsFilter() }
+				DisplayStorageConnectionString = false,
+				Authorization = new[]
+				{
+					new HangfireAllowOnlyAdminConnectionsFilter()
+				}
 			});
-
+			
 			app.UseStaticFiles();	
 			app.UseDefaultFiles();
 			app.UseCookiePolicy();
@@ -140,15 +128,6 @@ namespace Quarkless
 			app.UseSecurityMiddleware(new SecurityHeadersBuilder()
 				.AddDefaultSecurePolicy()
 				.AddCustomHeader("X-Client-ID", "x-key-1-v"));
-        }
-	}
-	public class WorkerActivator : JobActivator
-	{
-		private readonly IServiceProvider _serviceProvider;
-		public WorkerActivator(IServiceProvider serviceProvider)
-		{
-			_serviceProvider = serviceProvider;
 		}
-		public override object ActivateJob(Type jobType) => _serviceProvider.GetService(jobType);
 	}
 }

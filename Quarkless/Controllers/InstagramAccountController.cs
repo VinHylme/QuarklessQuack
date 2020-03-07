@@ -184,6 +184,8 @@ namespace Quarkless.Controllers
 				var clientContainer =
 					new ApiClientContainer(_clientContext, _userContext.CurrentUser, instagramAccountId);
 
+				await _instagramAccountLogic.ClearCacheData(instaDetails.AccountId, instaDetails._id);
+
 				var loginRes = await _responseResolver
 					.WithClient(clientContainer)
 					.WithAttempts(1)

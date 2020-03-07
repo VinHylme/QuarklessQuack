@@ -1037,20 +1037,20 @@ namespace Quarkless.Logic.ResponseResolver
 						return response;
 					}
 
-					var assignedResult = await _proxyRequest.AssignProxy(account.AccountId, account.Id,
-						Context.Proxy.Location.LocationQuery);
-
-					if (assignedResult == null)
-					{
-						response.IsSuccessful = false;
-						response.AttemptedToReAssign = true;
-						response.Reason = "Failed to assign proxy";
-						response.ProxyIsFromUser = false;
-						return response;
-					}
+					// var assignedResult = await _proxyRequest.AssignProxy(account.AccountId, account.Id,
+					// 	Context.Proxy.Location.LocationQuery);
+					//
+					// if (assignedResult == null)
+					// {
+					// 	response.IsSuccessful = false;
+					// 	response.AttemptedToReAssign = true;
+					// 	response.Reason = "Failed to assign proxy";
+					// 	response.ProxyIsFromUser = false;
+					// 	return response;
+					// }
 
 					response.IsSuccessful = true;
-					response.AttemptedToReAssign = true;
+					response.AttemptedToReAssign = false;
 					response.ProxyIsFromUser = false;
 					return response;
 				}

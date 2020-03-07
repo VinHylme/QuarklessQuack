@@ -195,7 +195,10 @@ namespace Quarkless.Logic.InstagramClient
 					UserName = instagramAccount.InstagramAccount.Username,
 					Password = instagramAccount.InstagramAccount.Password
 				}, instagramAccount.Proxy);
-				instance.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
+
+				instance.SetDevice(!string.IsNullOrEmpty(instagramAccount.InstagramAccount.Device)
+					? AndroidDeviceGenerator.GetByName(instagramAccount.InstagramAccount.Device)
+					: AndroidDeviceGenerator.GetRandomAndroidDevice());
 
 				var res = instance.LoginAsync().GetAwaiter().GetResult();
 
@@ -214,10 +217,15 @@ namespace Quarkless.Logic.InstagramClient
 			}
 			else
 			{
-				var instance = CreateApiClient(instagramAccount.InstagramAccount.State.UserSession, 
+				var instance = CreateApiClient(instagramAccount.InstagramAccount.State?.UserSession ?? new UserSessionData
+					{
+						UserName = instagramAccount.InstagramAccount.Username,
+						Password = instagramAccount.InstagramAccount.Password
+					},
 					instagramAccount.Proxy);
 
 				instance.SetDevice(instagramAccount.InstagramAccount.State.DeviceInfo);
+
 				instance.LoadStateDataFromString(JsonConvert.SerializeObject(instagramAccount.InstagramAccount.State));
 
 				if (instance.IsUserValidated() && instance.Username == instagramAccount.InstagramAccount.Username)

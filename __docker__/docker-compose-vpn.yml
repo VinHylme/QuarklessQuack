@@ -10,20 +10,13 @@ services:
         environment:
           - USER=silviuandre@yahoo.com
           - PASS='IYVunLc0dzjovj0='
-          - COUNTRY=United_States
-          - PROTOCOL=UDP
-          - CATEGORY=Dedicated IP
+          #- COUNTRY=United_States
+          - PROTOCOL=openvpn_tcp
+          - CATEGORY=Standard VPN servers
           #- NETWORK=192.168.1.0/24
-          - OPENVPN_OPTS=--pull-filter ignore "ping-restart" --ping-exit 180
-          - TZ=America/Denver
+          #- OPENVPN_OPTS=--pull-filter ignore "ping-restart" --ping-exit 180
+          #- TZ=America/Denver
         ports:
           - 8080:80
         restart: unless-stopped
-        networks:
-            localnet:
-                aliases:
-                    - quarkless.local.vpn
-
-networks:
-    localnet:
-        external: true
+        network_mode: bridge

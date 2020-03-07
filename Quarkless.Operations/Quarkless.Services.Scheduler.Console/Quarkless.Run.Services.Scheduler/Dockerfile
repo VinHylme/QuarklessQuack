@@ -1,0 +1,79 @@
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1-buster-slim AS base
+
+WORKDIR /app
+
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1-buster AS build
+WORKDIR /src
+COPY ["Quarkless.Operations/Quarkless.Services.Scheduler.Console/Quarkless.Run.Services.Scheduler/Quarkless.Run.Services.Scheduler.csproj", "Quarkless.Operations/Quarkless.Services.Scheduler.Console/Quarkless.Run.Services.Scheduler/"]
+COPY ["Quarkless.Projects/Quarkless.Logic.Actions/Quarkless.Logic.Actions.csproj", "Quarkless.Projects/Quarkless.Logic.Actions/"]
+COPY ["Quarkless.Projects/Quarkless.Models.InstagramSearch/Quarkless.Models.InstagramSearch.csproj", "Quarkless.Projects/Quarkless.Models.InstagramSearch/"]
+COPY ["Quarkless.Projects/Quarkless.Models.Common/Quarkless.Models.Common.csproj", "Quarkless.Projects/Quarkless.Models.Common/"]
+COPY ["InstagramApiSharp/InstagramApiSharp.csproj", "InstagramApiSharp/"]
+COPY ["Quarkless.Projects/Quarkless.Models.Topic/Quarkless.Models.Topic.csproj", "Quarkless.Projects/Quarkless.Models.Topic/"]
+COPY ["Quarkless.Projects/Quarkless.Models.SearchResponse/Quarkless.Models.SearchResponse.csproj", "Quarkless.Projects/Quarkless.Models.SearchResponse/"]
+COPY ["Quarkless.Projects/Quarkless.Models.WorkerManager/Quarkless.Models.WorkerManager.csproj", "Quarkless.Projects/Quarkless.Models.WorkerManager/"]
+COPY ["Quarkless.Projects/Quarkless.Models.ResponseResolver/Quarkless.Models.ResponseResolver.csproj", "Quarkless.Projects/Quarkless.Models.ResponseResolver/"]
+COPY ["Quarkless.Projects/Quarkless.Models.InstagramClient/Quarkless.Models.InstagramClient.csproj", "Quarkless.Projects/Quarkless.Models.InstagramClient/"]
+COPY ["Quarkless.Projects/Quarkless.Models.Profile/Quarkless.Models.Profile.csproj", "Quarkless.Projects/Quarkless.Models.Profile/"]
+COPY ["Quarkless.Projects/Quarkless.Models.Proxy/Quarkless.Models.Proxy.csproj", "Quarkless.Projects/Quarkless.Models.Proxy/"]
+COPY ["Quarkless.Projects/Quarkless.Models.InstagramAccounts/Quarkless.Models.InstagramAccounts.csproj", "Quarkless.Projects/Quarkless.Models.InstagramAccounts/"]
+COPY ["Quarkless.Projects/Quarkless.Models.Auth/Quarkless.Models.Auth.csproj", "Quarkless.Projects/Quarkless.Models.Auth/"]
+COPY ["Quarkless.Projects/Quarkless.Logic.WorkerManager/Quarkless.Logic.WorkerManager.csproj", "Quarkless.Projects/Quarkless.Logic.WorkerManager/"]
+COPY ["Quarkless.Projects/Quarkless.Models.Shared/Quarkless.Models.Shared.csproj", "Quarkless.Projects/Quarkless.Models.Shared/"]
+COPY ["Quarkless.Projects/Quarkless.Logic.InstagramClient/Quarkless.Logic.InstagramClient.csproj", "Quarkless.Projects/Quarkless.Logic.InstagramClient/"]
+COPY ["Quarkless.Projects/Quarkless.Logic.ResponseResolver/Quarkless.Logic.ResponseResolver.csproj", "Quarkless.Projects/Quarkless.Logic.ResponseResolver/"]
+COPY ["Quarkless.Projects/Quarkless.Models.Media/Quarkless.Models.Media.csproj", "Quarkless.Projects/Quarkless.Models.Media/"]
+COPY ["Quarkless.Projects/Quarkless.Models.Notification/Quarkless.Models.Notification.csproj", "Quarkless.Projects/Quarkless.Models.Notification/"]
+COPY ["Quarkless.Projects/Quarkless.Models.Timeline/Quarkless.Models.Timeline.csproj", "Quarkless.Projects/Quarkless.Models.Timeline/"]
+COPY ["Quarkless.Projects/Quarkless.Models.Messaging/Quarkless.Models.Messaging.csproj", "Quarkless.Projects/Quarkless.Models.Messaging/"]
+COPY ["Quarkless.Projects/Quarkless.Models.Library/Quarkless.Models.Library.csproj", "Quarkless.Projects/Quarkless.Models.Library/"]
+COPY ["Quarkless.Projects/Quarkless.Models.Lookup/Quarkless.Models.Lookup.csproj", "Quarkless.Projects/Quarkless.Models.Lookup/"]
+COPY ["Quarkless.Projects/Quarkless.Base.InstagramUser/Quarkless.Base.InstagramUser.csproj", "Quarkless.Projects/Quarkless.Base.InstagramUser/"]
+COPY ["Quarkless.Projects/Quarkless.Models.Utilities/Quarkless.Models.Utilities.csproj", "Quarkless.Projects/Quarkless.Models.Utilities/"]
+COPY ["Quarkless.Projects/Quarkless.Models.TranslateService/Quarkless.Models.TranslateService.csproj", "Quarkless.Projects/Quarkless.Models.TranslateService/"]
+COPY ["Quarkless.Projects/Quarkless.Models.EmailService/Quarkless.Models.EmailService.csproj", "Quarkless.Projects/Quarkless.Models.EmailService/"]
+COPY ["Quarkless.Projects/Quarkless.Base.ContentSearch/Quarkless.Base.ContentSearch.csproj", "Quarkless.Projects/Quarkless.Base.ContentSearch/"]
+COPY ["Quarkless.Projects/Quarkless.Models.ContentSearch/Quarkless.Models.ContentSearch.csproj", "Quarkless.Projects/Quarkless.Models.ContentSearch/"]
+COPY ["Quarkless.Projects/Quarkless.Logic.InstagramSearch/Quarkless.Logic.InstagramSearch.csproj", "Quarkless.Projects/Quarkless.Logic.InstagramSearch/"]
+COPY ["Quarkless.Projects/Quarkless.Models.HashtagGenerator/Quarkless.Models.HashtagGenerator.csproj", "Quarkless.Projects/Quarkless.Models.HashtagGenerator/"]
+COPY ["Quarkless.Projects/Quarkless.Models.TextGenerator/Quarkless.Models.TextGenerator.csproj", "Quarkless.Projects/Quarkless.Models.TextGenerator/"]
+COPY ["Quarkless.Projects/Quarkless.Models.ReportHandler/Quarkless.Models.ReportHandler.csproj", "Quarkless.Projects/Quarkless.Models.ReportHandler/"]
+COPY ["Quarkless.Projects/Quarkless.Models.Comments/Quarkless.Models.Comments.csproj", "Quarkless.Projects/Quarkless.Models.Comments/"]
+COPY ["Quarkless.Projects/Quarkless.Models.Stories/Quarkless.Models.Stories.csproj", "Quarkless.Projects/Quarkless.Models.Stories/"]
+COPY ["Quarkless.Projects/Quarkless.Logic.Proxy/Quarkless.Logic.Proxy.csproj", "Quarkless.Projects/Quarkless.Logic.Proxy/"]
+COPY ["Quarkless.Projects/Quarkless.Repository.Proxy/Quarkless.Repository.Proxy.csproj", "Quarkless.Projects/Quarkless.Repository.Proxy/"]
+COPY ["Quarkless.Projects/Quarkless.Repository.MongoContext/Quarkless.Repository.MongoContext.csproj", "Quarkless.Projects/Quarkless.Repository.MongoContext/"]
+COPY ["Quarkless.Projects/Quarkless.Geolocation/Quarkless.Geolocation.csproj", "Quarkless.Projects/Quarkless.Geolocation/"]
+COPY ["Quarkless.Projects/Quarkless.Events/Quarkless.Events.csproj", "Quarkless.Projects/Quarkless.Events/"]
+COPY ["Quarkless.Projects/Quarkless.Models.Storage/Quarkless.Models.Storage.csproj", "Quarkless.Projects/Quarkless.Models.Storage/"]
+COPY ["Quarkless.Projects/Quarkless.Analyser/Quarkless.Analyser.csproj", "Quarkless.Projects/Quarkless.Analyser/"]
+COPY ["Quarkless.Projects/Quarkless.Models.Actions/Quarkless.Models.Actions.csproj", "Quarkless.Projects/Quarkless.Models.Actions/"]
+COPY ["Quarkless.Projects/Quarkless.Models.ContentInfo/Quarkless.Models.ContentInfo.csproj", "Quarkless.Projects/Quarkless.Models.ContentInfo/"]
+COPY ["Quarkless.Projects/Quarkless.Models.Heartbeat/Quarkless.Models.Heartbeat.csproj", "Quarkless.Projects/Quarkless.Models.Heartbeat/"]
+COPY ["Quarkless.Projects/Quarkless.Logic.InstagramAccounts/Quarkless.Logic.InstagramAccounts.csproj", "Quarkless.Projects/Quarkless.Logic.InstagramAccounts/"]
+COPY ["Quarkless.Projects/Quarkless.Repository.InstagramAccounts/Quarkless.Repository.InstagramAccounts.csproj", "Quarkless.Projects/Quarkless.Repository.InstagramAccounts/"]
+COPY ["Quarkless.Projects/Quarkless.Repository.RedisClientContext/Quarkless.Repository.RedisContext.csproj", "Quarkless.Projects/Quarkless.Repository.RedisClientContext/"]
+COPY ["Quarkless.Projects/Quarkless.Logic.Lookup/Quarkless.Logic.Lookup.csproj", "Quarkless.Projects/Quarkless.Logic.Lookup/"]
+COPY ["Quarkless.Projects/Quarkless.Logic.Notification/Quarkless.Logic.Notification.csproj", "Quarkless.Projects/Quarkless.Logic.Notification/"]
+COPY ["Quarkless.Projects/Quarkless.Repository.Notification/Quarkless.Repository.Notification.csproj", "Quarkless.Projects/Quarkless.Repository.Notification/"]
+COPY ["Quarkless.Projects/Quarkless.Repository.ReportHandler/Quarkless.Repository.ReportHandler.csproj", "Quarkless.Projects/Quarkless.Repository.ReportHandler/"]
+COPY ["Quarkless.Projects/Quarkless.Repository.Timeline/Quarkless.Repository.Timeline.csproj", "Quarkless.Projects/Quarkless.Repository.Timeline/"]
+COPY ["Quarkless.Projects/Quarkless.Logic.Profile/Quarkless.Logic.Profile.csproj", "Quarkless.Projects/Quarkless.Logic.Profile/"]
+COPY ["Quarkless.Projects/Quarkless.Logic.Timeline/Quarkless.Logic.Timeline.csproj", "Quarkless.Projects/Quarkless.Logic.Timeline/"]
+COPY ["Quarkless.Projects/Quarkless.Models.RestSharpClientManager/Quarkless.Models.RestSharpClientManager.csproj", "Quarkless.Projects/Quarkless.Models.RestSharpClientManager/"]
+COPY ["Quarkless.Projects/Quarkless.Models.RequestBuilder/Quarkless.Models.RequestBuilder.csproj", "Quarkless.Projects/Quarkless.Models.RequestBuilder/"]
+COPY ["Quarkless.Projects/Quarkless.Logic.ReportHandler/Quarkless.Logic.ReportHandler.csproj", "Quarkless.Projects/Quarkless.Logic.ReportHandler/"]
+COPY ["Quarkless.Projects/Quarkless.Repository.Profile/Quarkless.Repository.Profile.csproj", "Quarkless.Projects/Quarkless.Repository.Profile/"]
+COPY ["Quarkless.Projects/Quarkless.Repository.Lookup/Quarkless.Repository.Lookup.csproj", "Quarkless.Projects/Quarkless.Repository.Lookup/"]
+RUN dotnet restore "Quarkless.Operations/Quarkless.Services.Scheduler.Console/Quarkless.Run.Services.Scheduler/Quarkless.Run.Services.Scheduler.csproj"
+COPY . .
+WORKDIR "/src/Quarkless.Operations/Quarkless.Services.Scheduler.Console/Quarkless.Run.Services.Scheduler"
+RUN dotnet build "Quarkless.Run.Services.Scheduler.csproj" -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish "Quarkless.Run.Services.Scheduler.csproj" -c Release -o /app/publish
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "Quarkless.Run.Services.Scheduler.dll"]

@@ -52,7 +52,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     DeviceGuid = Guid.NewGuid(),
                     PhoneGuid = Guid.NewGuid(),
                     Resolution = "1440x2560",
-                    Dpi = "640dpi"
+                    Dpi = "640dpi",
+                    DeviceName = "lg-optimus-g"
                 }
             },
             {
@@ -74,7 +75,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     DeviceGuid = Guid.NewGuid(),
                     PhoneGuid = Guid.NewGuid(),
                     Resolution = "1440x2560",
-                    Dpi = "640dpi"
+                    Dpi = "640dpi",
+                    DeviceName = "nexus7gen2"
                 }
             },
             {
@@ -96,7 +98,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     DeviceGuid = Guid.NewGuid(),
                     PhoneGuid = Guid.NewGuid(),
                     Resolution = "1440x2560",
-                    Dpi = "640dpi"
+                    Dpi = "640dpi",
+                    DeviceName = "nexus7gen1"
                 }
             },
             {
@@ -118,7 +121,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     DeviceGuid = Guid.NewGuid(),
                     PhoneGuid = Guid.NewGuid(),
                     Resolution = "1440x2560",
-                    Dpi = "640dpi"
+                    Dpi = "640dpi",
+                    DeviceName = "htc10"
                 }
             },
             {
@@ -140,7 +144,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     DeviceGuid = Guid.NewGuid(),
                     PhoneGuid = Guid.NewGuid(),
                     Resolution = "1440x2560",
-                    Dpi = "640dpi"
+                    Dpi = "640dpi",
+                    DeviceName = "galaxy6"
                 }
             },
             {
@@ -162,7 +167,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     DeviceGuid = Guid.NewGuid(),
                     PhoneGuid = Guid.NewGuid(),
                     Resolution = "1440x2560",
-                    Dpi = "640dpi"
+                    Dpi = "640dpi",
+                    DeviceName = "galaxy-s5-gold"
                 }
             },
             {
@@ -184,7 +190,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     DeviceGuid = Guid.NewGuid(),
                     PhoneGuid = Guid.NewGuid(),
                     Resolution = "1440x2560",
-                    Dpi = "640dpi"
+                    Dpi = "640dpi",
+                    DeviceName = "lg-optimus-f6"
                 }
             },
             {
@@ -206,7 +213,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     DeviceGuid = Guid.NewGuid(),
                     PhoneGuid = Guid.NewGuid(),
                     Resolution = "1440x2560",
-                    Dpi = "640dpi"
+                    Dpi = "640dpi",
+                    DeviceName = "nexus-5x"
                 }
             },
             {
@@ -229,7 +237,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     DeviceGuid = Guid.NewGuid(),
                     PhoneGuid = Guid.NewGuid(),
                     Resolution = "1440x2560",
-                    Dpi = "640dpi"
+                    Dpi = "640dpi",
+                    DeviceName = "galaxy-s7-edge"
                 }
             },
             {
@@ -251,7 +260,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     DeviceGuid = Guid.NewGuid(),
                     PhoneGuid = Guid.NewGuid(),
                     Resolution = "1440x2560",
-                    Dpi = "640dpi"
+                    Dpi = "640dpi",
+                    DeviceName = "xperia-z5"
                 }
             },
             {
@@ -273,7 +283,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     DeviceGuid = Guid.NewGuid(),
                     PhoneGuid = Guid.NewGuid(),
                     Resolution = "1440x2560",
-                    Dpi = "640dpi"
+                    Dpi = "640dpi",
+                    DeviceName = "galaxy-s4"
                 }
             },
             {
@@ -295,7 +306,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     DeviceGuid = Guid.NewGuid(),
                     PhoneGuid = Guid.NewGuid(),
                     Resolution = "1440x2560",
-                    Dpi = "640dpi"
+                    Dpi = "640dpi",
+                    DeviceName = "nexus-6p"
                 }
             },
             {
@@ -317,7 +329,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     DeviceGuid = Guid.NewGuid(),
                     PhoneGuid = Guid.NewGuid(),
                     Resolution = "1440x2560",
-                    Dpi = "640dpi"
+                    Dpi = "640dpi",
+                    DeviceName = "sony-z3-compact"
                 }
             },
             {
@@ -340,7 +353,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     DeviceGuid = Guid.NewGuid(),
                     PhoneGuid = Guid.NewGuid(),
                     Resolution = "1440x2560",
-                    Dpi = "640dpi"
+                    Dpi = "640dpi",
+                    DeviceName = "galaxy-tab3"
                 }
             },
             {
@@ -362,7 +376,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     DeviceGuid = Guid.NewGuid(),
                     PhoneGuid = Guid.NewGuid(),
                     Resolution = "1440x2560",
-                    Dpi = "640dpi"
+                    Dpi = "640dpi",
+                    DeviceName = "nexus5"
                 }
             },
             {
@@ -384,7 +399,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     DeviceGuid = Guid.NewGuid(),
                     PhoneGuid = Guid.NewGuid(),
                     Resolution = "1440x2560",
-                    Dpi = "640dpi"
+                    Dpi = "640dpi",
+                    DeviceName = "galaxy-note-edge"
                 }
             },
             {
@@ -406,7 +422,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     DeviceGuid = Guid.NewGuid(),
                     PhoneGuid = Guid.NewGuid(),
                     Resolution = "1440x2560",
-                    Dpi = "640dpi"
+                    Dpi = "640dpi",
+                    DeviceName = "nexus4-chroma"
                 }
             },
             {
@@ -428,7 +445,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     DeviceGuid = Guid.NewGuid(),
                     PhoneGuid = Guid.NewGuid(),
                     Resolution = "1440x2560",
-                    Dpi = "640dpi"
+                    Dpi = "640dpi",
+                    DeviceName = AndroidDevices.SAMSUNG_NOTE3
                 }
             },
             {
@@ -450,7 +468,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     DeviceGuid = Guid.NewGuid(),
                     PhoneGuid = Guid.NewGuid(),
                     Resolution = "1440x2560",
-                    Dpi = "640dpi"
+                    Dpi = "640dpi",
+                    DeviceName = AndroidDevices.GALAXY_TAB
                 }
             },
             {
@@ -472,7 +491,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     AndroidBootloader = "4.23",
                     DeviceModelBoot = "qcom",
                     FirmwareTags = "release-keys",
-                    FirmwareType = "user"
+                    FirmwareType = "user",
+                    DeviceName = AndroidDevices.HONOR_8LITE
                 }
             },
             {
@@ -494,7 +514,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     AndroidBootloader = "4.23",
                     DeviceModelBoot = "qcom",
                     FirmwareTags = "release-keys",
-                    FirmwareType = "user"
+                    FirmwareType = "user",
+                    DeviceName = AndroidDevices.XIAOMI_MI_4W
                 }
             },
             {
@@ -516,7 +537,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     AndroidBootloader = "4.23",
                     DeviceModelBoot = "qcom",
                     FirmwareTags = "release-keys",
-                    FirmwareType = "user"
+                    FirmwareType = "user",
+                    DeviceName = AndroidDevices.XIAOMI_HM_1SW
                 }
             },
             {
@@ -538,7 +560,8 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
                     AndroidBootloader = "4.23",
                     DeviceModelBoot = "qcom",
                     FirmwareTags = "release-keys",
-                    FirmwareType = "user"
+                    FirmwareType = "user",
+                    DeviceName = AndroidDevices.HTC_ONE_PLUS
                 }
             }
         };
@@ -571,7 +594,6 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
         {
             return AndroidAndroidDeviceSets[name];
         }
-
         //public static AndroidDevice GetById(string deviceId)
         //{
         //    return (from androidAndroidDeviceSet in AndroidAndroidDeviceSets

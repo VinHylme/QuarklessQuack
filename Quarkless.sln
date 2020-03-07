@@ -385,6 +385,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Quarkless.PuppeteerClient",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Logic.PuppeteerClient", "Quarkless.Projects\Quarkless.Logic.PuppeteerClient\Quarkless.Logic.PuppeteerClient.csproj", "{930BE97E-6EA5-4E11-AD4F-BD9695A20A01}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Quarkless.Services.Scheduler", "Quarkless.Services.Scheduler", "{278B4EAB-0513-4451-87F4-AE1B1DAB780C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quarkless.Run.Services.Scheduler", "Quarkless.Operations\Quarkless.Services.Scheduler.Console\Quarkless.Run.Services.Scheduler\Quarkless.Run.Services.Scheduler.csproj", "{F949BB08-6A11-4FA4-A856-254B600F0923}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -903,6 +907,10 @@ Global
 		{930BE97E-6EA5-4E11-AD4F-BD9695A20A01}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{930BE97E-6EA5-4E11-AD4F-BD9695A20A01}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{930BE97E-6EA5-4E11-AD4F-BD9695A20A01}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F949BB08-6A11-4FA4-A856-254B600F0923}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F949BB08-6A11-4FA4-A856-254B600F0923}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F949BB08-6A11-4FA4-A856-254B600F0923}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F949BB08-6A11-4FA4-A856-254B600F0923}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1095,6 +1103,8 @@ Global
 		{CD324689-64B3-4D57-B502-4E85D988A133} = {E301F04C-0EC1-46EA-996B-BFFC6BC6697A}
 		{6CFBEBD4-E2B0-4352-86E5-2AC5BAEBAE51} = {FA565628-E611-4DB7-93ED-1CCEC2B38518}
 		{930BE97E-6EA5-4E11-AD4F-BD9695A20A01} = {6CFBEBD4-E2B0-4352-86E5-2AC5BAEBAE51}
+		{278B4EAB-0513-4451-87F4-AE1B1DAB780C} = {E935F12E-2003-47F2-825B-506AF5D902F4}
+		{F949BB08-6A11-4FA4-A856-254B600F0923} = {278B4EAB-0513-4451-87F4-AE1B1DAB780C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D3E4C3A5-ADB4-4A48-9A99-78BD4FDE9AE6}

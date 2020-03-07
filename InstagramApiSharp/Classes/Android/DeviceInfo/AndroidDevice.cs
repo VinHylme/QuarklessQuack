@@ -1,4 +1,5 @@
 ﻿using System;
+using Newtonsoft.Json;
 
 namespace InstagramApiSharp.Classes.Android.DeviceInfo
 {
@@ -31,7 +32,7 @@ namespace InstagramApiSharp.Classes.Android.DeviceInfo
         public string HardwareModel { get; set; }
         public string Resolution { get; set; } = "1080x1812";
         public string Dpi { get; set; } = "480dpi";
-
+        public string DeviceName { get; set; }
 
         // Related to headers
         // X-IG-Bandwidth-Speed-KBPS

@@ -84,7 +84,7 @@
                     </div>
                    <div class="control is-expanded">
                         <div class="control">
-                            <a class="button is-light-dark is-fullwidth" style="font-weight:bold; font-size:1rem; max-width:150px;">{{MapToCorrectState(agentState)}}</a>
+                            <a class="button is-light-dark is-fullwidth">{{MapToCorrectState(agentState)}}</a>
                         </div>
                     </div> 
                       <div class="control">
@@ -315,6 +315,7 @@ props: {
     background-color: #292929 !important;
     color:white !important;
 }
+
 .select{
     width:190px;
 }
@@ -366,6 +367,11 @@ img{
         opacity: 1 !important;
     }
 }
+.is-fullwidth{
+    font-weight:bold;
+    font-size:1rem;
+    max-width:150px;
+}
 .card-content{
     margin:0;
 
@@ -399,5 +405,22 @@ img{
     display: block;
     width:100%;
 }
-
+@media (max-width: 850px) {
+        .card{
+            margin-left:0;
+            width:80vw !important;
+        }
+        .is-6{
+            font-size:.7rem;
+        }
+        .control{
+            margin-right:0.5rem !important;
+            .button{
+                font-size:.8rem;
+            }
+            .tag{
+                font-size:.65rem !important;
+            }
+        }
+}
 </style>

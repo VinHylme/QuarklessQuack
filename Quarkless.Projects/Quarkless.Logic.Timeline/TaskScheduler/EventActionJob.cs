@@ -28,12 +28,12 @@ namespace Quarkless.Logic.Timeline.TaskScheduler
 		{
 			if (jobOptions == null)
 				return;
-
+			
 			var result = _actionExecuteFactory.Create((ActionType) jobOptions.ActionType, new UserStore
 			{
-					AccountId = jobOptions.User.AccountId,
-					InstagramAccountUsername = jobOptions.User.InstagramAccountUsername,
-					InstagramAccountUser = jobOptions.User.InstagramAccountUser
+				AccountId = jobOptions.User.AccountId,
+				InstagramAccountUsername = jobOptions.User.InstagramAccountUsername,
+				InstagramAccountUser = jobOptions.User.InstagramAccountUser
 			}).ExecuteAsync(new EventExecuteBody(jobOptions.DataObject.Body, jobOptions.DataObject.BodyType)
 			{
 				ActionType = (ActionType)jobOptions.ActionType

@@ -103,6 +103,23 @@ namespace Quarkless.Repository.InstagramAccounts.Mongo
 				return false;
 			}
 		}
+
+		public async Task<bool> ClearCacheData(string accountId, string instagramAccountId, StateData state)
+		{
+			try
+			{
+				var update = await _ctx.UpdateOneAsync(_ => _.AccountId == accountId && _._id == instagramAccountId,
+					Builders<InstagramAccountModel>.Update.Set(_ => _.State, state));
+
+				return update.ModifiedCount > 0;
+			}
+			catch (Exception err)
+			{
+				Console.WriteLine(err);
+				return false;
+			}
+		}
+
 		public async Task<bool> AddBlockedAction(string instagramAccountId, ActionType actionType, DateTime? blockFor = null)
 		{
 			try

@@ -1,6 +1,6 @@
 <template>
 <div class="ccontainer">
-        <div :style="!isNavOn?'margin-left:7em;':''">
+        <div :class="!isNavOn?'navbar-push':''">
                 <div class="accounts_container" >
                         <div v-for="(acc,index) in InstagramAccounts" :key="index">
                                 <InstaCard @onChangeBiography="onChangeBiography" @onChangeProfilePicture="onChangeProfilePic" 
@@ -19,7 +19,7 @@
                 </div>
         </div>
         <b-modal :active.sync="isAccountLinkModalOpened" has-modal-card>
-                <div class="modal-card is-custom" style="width: 100%; height:45vw; padding:0;">
+                <div class="modal-card is-custom">
                     <header class="modal-card-head">
                         <p class="modal-card-title">Link your Instagram Account</p>
                     </header>
@@ -416,8 +416,41 @@ export default {
 
 <style lang="scss">
 @import '../../Style/darkTheme.scss';
+.navbar-push{
+        margin-left:7em;
+}
+.card {
+        &.is-hover{
+                margin-left:0.4em;
+                margin-top:1em;
+                width:400px !important;
+                height:395px !important;
+                background-color: #292929 !important;
+                color:white !important;
+                .card-content{
+                        h3{
+                                color:wheat;
+                                padding:0em;
+                                font-size:250px;
+                                text-align: center;
+                                &:hover{
+                                        color:#292929;
+                                }
+                        }
+                        
+                }
+                &:hover{
+                        background:wheat !important;
+                }
+        }
+       
+}
+
 .modal-card{
         &.is-custom{
+                width: 100%;
+                height:45vw;
+                padding:0;
                  background-color:$modal_background;
                  .modal-card-body{
                         padding-top:1em;
@@ -474,36 +507,26 @@ export default {
         align-items: center;
 }
 
-.card {
-        &.is-hover{
-                margin-left:0.4em;
-                margin-top:1em;
-                width:400px !important;
-                height:395px !important;
-                background-color: #292929 !important;
-                color:white !important;
-                .card-content{
-                        h3{
-                                color:wheat;
-                                padding:0em;
-                                font-size:250px;
-                                text-align: center;
-                                &:hover{
-                                        color:#292929;
-                                }
-                        }
-                        
-                }
-                &:hover{
-                        background:wheat !important;
-                }
-        }
-       
-}
 body {
        // overflow-y:hidden;
         width: 100%;
         text-align: center;
 }
-
+@media (max-width: 850px) {
+        .modal-card{
+                height:100vh;
+                &.is-custom{
+                        height:100vh;
+                }
+        }
+        .navbar-push{
+                margin-left: 0em;
+        }
+        .card {
+                &.is-hover{
+                        margin-left:0;
+                        width:80vw !important;
+                }
+        }
+}
 </style>

@@ -672,8 +672,14 @@ namespace Quarkless.Run.Services.Delegator
 					await _instagramAccountLogic.UpdateAgentStates(AgentState.NotStarted, HEART_BEAT_WORKER_TYPE);
 					await _instagramAccountLogic.UpdateAgentStates(AgentState.NotStarted, AUTOMATOR_WORKER_TYPE);
 
-					var accounts = await _agentLogic.GetAllAccounts();
-					foreach (var account in accounts.Where(_=>_.AgentState == (int) AgentState.NotWakeTime))
+					var accounts = (await _agentLogic.GetAllAccounts())
+						?.Where(_=>_.AgentState == (int) AgentState.NotWakeTime)
+						.ToList();
+
+					if (accounts == null)
+						return;
+
+					foreach (var account in accounts)
 					{
 						var profile = await profileLogic.GetProfile(account.AccountId, account.Id);
 

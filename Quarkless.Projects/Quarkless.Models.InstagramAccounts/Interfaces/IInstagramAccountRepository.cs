@@ -18,6 +18,7 @@ namespace Quarkless.Models.InstagramAccounts.Interfaces
 		Task<InstagramAccountModel> AddInstagramAccount(InstagramAccountModel instagramAccount);
 		Task<bool> AddBlockedAction(string instagramAccountId, ActionType actionType, DateTime? blockFor = null);
 		Task<bool> RemoveBlockedAction(string instagramAccountId, ActionType actionType);
+		Task<bool> ClearCacheData(string accountId, string instagramAccountId, StateData state);
 		Task<long?> PartialUpdateInstagramAccount(string instagramAccountId, InstagramAccountModel instagramAccountModel);
 		Task<ResultCarrier<StateData>> GetInstagramAccountStateData(string accountId, string instagramAccountId);
 		Task EmptyChallengeInfo(string instagramAccountId);

@@ -1,8 +1,8 @@
 <template>
 <div class="home_layout">
   <div class="columns is-mobile">
-    <div>
-      <b-tooltip type="is-dark" label="Go back to Site" position="is-right" style="position:absolute; top:2em;left:4em;">
+    <div class="bar-nav">
+      <b-tooltip type="is-dark" label="Go back to Site" position="is-right">
         <router-link to="/">
         <b-icon
           class="floater is-site"
@@ -13,7 +13,7 @@
         </b-icon>
         </router-link>
       </b-tooltip>
-      <b-tooltip type="is-dark" label="Go to Dashboard" position="is-right" style="position:absolute; top:5em;left:4em;">
+      <b-tooltip type="is-dark" label="Go to Dashboard" position="is-right" >
         <router-link to="/manage">
         <b-icon
           class="floater is-house"
@@ -24,7 +24,7 @@
         </b-icon>
         </router-link>
       </b-tooltip>
-       <b-tooltip type="is-dark" label="Communications" position="is-right" style="position:absolute; top:8em;left:4em;">
+       <b-tooltip type="is-dark" label="Communications" position="is-right" >
         <router-link to="/communications">
         <b-icon
           class="floater is-messaging"
@@ -35,7 +35,7 @@
         </b-icon>
         </router-link>
       </b-tooltip>
-      <b-tooltip v-if="showData.userSelected" type="is-dark" label="Media Library" position="is-right" style="position:absolute; top:10em;left:4em;">
+      <b-tooltip v-if="showData.userSelected" type="is-dark" label="Media Library">
         <router-link :to="'/library/'+showData.userSelected">
         <b-icon
           class="floater is-library"
@@ -46,7 +46,7 @@
         </b-icon>
         </router-link>
       </b-tooltip>
-      <b-tooltip v-if="showData.userSelected" type="is-dark" label="Show Activity" position="is-right" style="position:absolute; top:10em;left:4em;">
+      <b-tooltip v-if="showData.userSelected" type="is-dark" label="Show Activity">
        <a @click="$store.state.showingLogs = !$store.state.showingLogs">
           <b-icon
             class="floater is-show-extra"
@@ -57,7 +57,7 @@
           </b-icon>
         </a>
         </b-tooltip>
-        <b-tooltip type="is-dark" label="Settings ❤️ coming soon ❤️" position="is-right" style="position:absolute; bottom:2em;left:4em;">
+        <b-tooltip type="is-dark" label="Settings ❤️ coming soon ❤️" position="is-right">
         <a class="">
           <b-icon
             class="is-setting is-disabled"
@@ -68,7 +68,7 @@
           </b-icon>
         </a>
       </b-tooltip>
-        <b-tooltip type="is-dark" label="Logout" style="position:absolute; bottom:3em;right:2.8em;">
+        <b-tooltip type="is-dark" label="Logout">
         <a @click="signout">
         <b-icon
           class="is-user"
@@ -133,7 +133,8 @@ export default {
 
 <style lang="scss">
 @import '../Style/darkTheme.scss';
-.column{
+@media (min-width:850px){
+  .column{
   background:$background;
   padding:0 !important;
 }
@@ -213,7 +214,6 @@ export default {
     cursor: pointer;
   }
 }
-
 .main_area{
   width:100% !important;
   height:100% !important;
@@ -233,5 +233,26 @@ export default {
   // background: #232323; 
   // width:6px;
   //opacity: 0;
+}
+}
+
+@media (max-width: 850px) {
+  .bar-nav{
+    position: absolute;
+    bottom: 0;
+    margin:0 auto;
+    padding:0;
+    z-index: 999;
+    width:105vw;
+    height:15vh !important;
+    display: flex;
+    flex-direction: row;
+    background: rgb(31, 31, 136);
+    .icon{
+      width:100px;
+      height:100px;
+      background:black;
+    }
+  }
 }
 </style>
