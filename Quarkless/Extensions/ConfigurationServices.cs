@@ -387,6 +387,7 @@ namespace Quarkless.Extensions
 		{
 			BsonSerializer.RegisterSerializer(typeof(Guid),
 			new GuidSerializer(BsonType.String));
+
 			services.AddTransient<IInstagramAccountRepository, InstagramAccountRepository>();
 			services.AddTransient<IProxyAssignmentsRepository, ProxyAssignmentsRepository>();
 			services.AddTransient<IProfileRepository, ProfileRepository>();

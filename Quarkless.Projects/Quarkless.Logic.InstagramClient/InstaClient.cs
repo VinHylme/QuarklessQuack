@@ -38,7 +38,7 @@ namespace Quarkless.Logic.InstagramClient
 		{
 			var instaApi = InstaApiBuilder.CreateBuilder()
 				.UseLogger(new DebugLogger(LogLevel.All))
-				.SetRequestDelay(RequestDelay.FromSeconds(0, 2))
+				.SetRequestDelay(RequestDelay.FromSeconds(1, 2))
 				.Build();
 			instaApi.SetApiVersion(INSTAGRAM_VERSION);
 			return instaApi;
@@ -49,12 +49,14 @@ namespace Quarkless.Logic.InstagramClient
 			var instaApi = CreateEmptyClient();
 			return new InstaClient(instaApi);
 		}
+
 		public IInstaClient Empty(UserSessionData userSessionData)
 		{
 			var instaApi = CreateEmptyClient();
 			instaApi.SetUser(userSessionData);
 			return new InstaClient(instaApi);
 		}
+
 		public IInstaClient Empty(ProxyModel proxy, bool genDevice = false)
 		{
 			var instaApi = CreateEmptyClient();
@@ -132,8 +134,8 @@ namespace Quarkless.Logic.InstagramClient
 					};
 
 					if (!string.IsNullOrEmpty(proxy.Username) && !string.IsNullOrEmpty(proxy.Password))
-						handler.Credentials = new NetworkCredential(proxy.Username, proxy.Password);
-
+						handler.Proxy.Credentials = new  NetworkCredential(proxy.Username, proxy.Password);
+					
 					clientHandler = handler;
 					break;
 				}
@@ -163,7 +165,7 @@ namespace Quarkless.Logic.InstagramClient
 				throw new Exception("Username & Password field required");
 
 			if (requestDelay == null)
-				requestDelay = RequestDelay.FromSeconds(1, 2);
+				requestDelay = RequestDelay.FromSeconds(2, 5);
 
 			var clientApi = InstaApiBuilder.CreateBuilder()
 				.UseLogger(new DebugLogger(logLevel))
@@ -184,22 +186,21 @@ namespace Quarkless.Logic.InstagramClient
 		public IResult<IInstaClient> GetClientFromModel(InstagramClientAccount instagramAccount)
 		{
 			if (instagramAccount?.InstagramAccount == null)
-			{
 				throw new Exception("Model cannot be null");
-			}
+
+			if(instagramAccount.InstagramAccount.DeviceDetail == null)
+				throw new ArgumentNullException(null, "Android Device cannot be null");
+
+			var instance = CreateApiClient(new UserSessionData
+			{
+				UserName = instagramAccount.InstagramAccount.Username,
+				Password = instagramAccount.InstagramAccount.Password
+			}, instagramAccount.Proxy);
+
+			instance.SetDevice(instagramAccount.InstagramAccount.DeviceDetail);
 
 			if (instagramAccount.InstagramAccount?.State == null)
 			{
-				var instance = CreateApiClient(new UserSessionData
-				{
-					UserName = instagramAccount.InstagramAccount.Username,
-					Password = instagramAccount.InstagramAccount.Password
-				}, instagramAccount.Proxy);
-
-				instance.SetDevice(!string.IsNullOrEmpty(instagramAccount.InstagramAccount.Device)
-					? AndroidDeviceGenerator.GetByName(instagramAccount.InstagramAccount.Device)
-					: AndroidDeviceGenerator.GetRandomAndroidDevice());
-
 				var res = instance.LoginAsync().GetAwaiter().GetResult();
 
 				var stateDataAsString = instance.GetStateDataAsString();
@@ -217,15 +218,6 @@ namespace Quarkless.Logic.InstagramClient
 			}
 			else
 			{
-				var instance = CreateApiClient(instagramAccount.InstagramAccount.State?.UserSession ?? new UserSessionData
-					{
-						UserName = instagramAccount.InstagramAccount.Username,
-						Password = instagramAccount.InstagramAccount.Password
-					},
-					instagramAccount.Proxy);
-
-				instance.SetDevice(instagramAccount.InstagramAccount.State.DeviceInfo);
-
 				instance.LoadStateDataFromString(JsonConvert.SerializeObject(instagramAccount.InstagramAccount.State));
 
 				if (instance.IsUserValidated() && instance.Username == instagramAccount.InstagramAccount.Username)
@@ -236,12 +228,6 @@ namespace Quarkless.Logic.InstagramClient
 					};
 					return new InstagramApiSharp.Classes.Result<IInstaClient>(true, client, null);
 				}
-
-				instance.SetUser(new UserSessionData
-				{
-					UserName = instagramAccount.InstagramAccount.Username, 
-					Password = instagramAccount.InstagramAccount.Password
-				});
 
 				var stateDataAsString = instance.GetStateDataAsString();
 				var instaClient = new InstaClient(instance)
@@ -286,32 +272,9 @@ namespace Quarkless.Logic.InstagramClient
 		}
 		public async Task LoadStateDataFromStringAsync(string state)
 			=> await instagramApi.LoadStateDataFromStringAsync(state);
-		
-		public async Task<IResult<InstaChallengeRequireVerifyMethod>> GetChallengeRequireVerifyMethodAsync(string username, string password)
-		{
-			instagramApi.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
-			instagramApi.SetUser(new UserSessionData
-			{
-				Password = password,
-				UserName = username
-			});
-			instagramApi.SetApiVersion(INSTAGRAM_VERSION);
-			return await instagramApi.GetChallengeRequireVerifyMethodAsync();
-		}
-		public async Task<IResult<InstaLoginResult>> SubmitChallengeCode(string username, string password, InstaChallengeLoginInfo instaChallengeLoginInfo, string code)
-		{
-			instagramApi.SetDevice(AndroidDeviceGenerator.GetRandomAndroidDevice());
-			instagramApi.SetUser(new UserSessionData
-			{
-				Password = password,
-				UserName = username
-			});
-			instagramApi.ChallengeLoginInfo = instaChallengeLoginInfo;
-			instagramApi.SetApiVersion(INSTAGRAM_VERSION);
-			return await instagramApi.VerifyCodeForChallengeRequireAsync(code);
-		}
-		
+
 		#endregion
+
 		public async Task<IResult<string>> TryLogin()
 		{
 			if (instagramApi == null)
@@ -329,16 +292,17 @@ namespace Quarkless.Logic.InstagramClient
 					null, results.Info);
 		}
 
-		public async Task<IResult<string>> TryLogin(string username, string password, AndroidDevice device, 
+		public async Task<IResult<string>> TryLogin(string username, string password, AndroidDevice device,
 			ProxyModel proxy = null)
 		{
+			if(device == null) throw new ArgumentNullException(null,"device cannot be empty");
 			var instance = instagramApi ?? CreateApiClient(new UserSessionData
 			{
 				UserName = username,
 				Password = password
 			}, proxy);
 
-			instance.SetDevice(device ?? AndroidDeviceGenerator.GetRandomAndroidDevice());
+			instance.SetDevice(device);
 
 			var results = await instance.LoginAsync();
 			return results.Succeeded 

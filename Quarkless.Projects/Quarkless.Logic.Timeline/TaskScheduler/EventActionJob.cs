@@ -29,6 +29,12 @@ namespace Quarkless.Logic.Timeline.TaskScheduler
 			if (jobOptions == null)
 				return;
 			
+			if (jobOptions.ExecutionTime > DateTimeOffset.UtcNow.AddSeconds(15))
+			{
+				//push to another queue for re-attempting (if user choices to do so)
+				return;
+			}
+
 			var result = _actionExecuteFactory.Create((ActionType) jobOptions.ActionType, new UserStore
 			{
 				AccountId = jobOptions.User.AccountId,

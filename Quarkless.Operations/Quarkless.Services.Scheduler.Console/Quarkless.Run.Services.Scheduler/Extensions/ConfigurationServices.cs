@@ -3,6 +3,9 @@ using System.Runtime.InteropServices;
 using Hangfire;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
 using Quarkless.Analyser;
 using Quarkless.Analyser.Models;
 using Quarkless.Events;
@@ -86,6 +89,9 @@ namespace Quarkless.Run.Services.Scheduler.Extensions
 
 		internal static void IncludeRepositoryAndConfigs(this IServiceCollection services)
 		{
+			BsonSerializer.RegisterSerializer(typeof(Guid),
+				new GuidSerializer(BsonType.String));
+
 			var accessors = new Config().Environments;
 			services.Configure<RedisOptions>(o =>
 			{

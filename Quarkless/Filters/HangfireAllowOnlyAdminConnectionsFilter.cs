@@ -1,5 +1,4 @@
 ﻿using Hangfire.Dashboard;
-using Quarkless.Models.Auth.Interfaces;
 
 namespace Quarkless.Filters
 {

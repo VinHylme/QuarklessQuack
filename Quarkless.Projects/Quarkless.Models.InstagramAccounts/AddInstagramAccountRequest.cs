@@ -30,6 +30,8 @@ namespace Quarkless.Models.InstagramAccounts
 		
 		public bool EnableAutoLocate { get; set; }
 
+		public bool ShouldGenerateDevice { get; set; } = true;
+
 		[JsonProperty("ProxyDetail")]
 		public ProxyLinkRequest ProxyDetail { get; set; }
 	}

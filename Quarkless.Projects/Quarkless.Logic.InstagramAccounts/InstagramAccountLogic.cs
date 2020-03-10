@@ -37,7 +37,7 @@ namespace Quarkless.Logic.InstagramAccounts
 		{
 			var instagramAccountModel = new InstagramAccountModel
 			{
-				Device = AndroidDeviceGenerator.GetRandomAndroidDevice().DeviceModel,
+				DeviceDetail = AndroidDeviceGenerator.GetRandomAndroidDevice(),
 				AccountId = accountId,
 				Password = addRequest.Password,
 				Username = addRequest.Username,
@@ -128,6 +128,7 @@ namespace Quarkless.Logic.InstagramAccounts
 				var instagramAccountModel = new InstagramAccountModel
 				{
 					AccountId = accountId,
+					DeviceDetail = AndroidDeviceGenerator.GetRandomAndroidDevice(),
 					FollowersCount = null,
 					FollowingCount = null,
 					Password = addInstagram.Password,
@@ -318,8 +319,9 @@ namespace Quarkless.Logic.InstagramAccounts
 			var account = await GetInstagramAccount(accountId, instagramAccountId);
 			if (account == null) return false;
 			
-			var androidDevice = account.State.DeviceInfo;
-			
+			var androidDevice = account.State?.DeviceInfo;
+			if (androidDevice == null) return true;
+
 			var newState = new StateData
 			{
 				DeviceInfo = androidDevice,

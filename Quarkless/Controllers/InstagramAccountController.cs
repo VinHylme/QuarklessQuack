@@ -190,7 +190,7 @@ namespace Quarkless.Controllers
 					.WithClient(clientContainer)
 					.WithAttempts(1)
 					.WithResolverAsync(() => clientContainer.GetContext.Container.InstaClient
-							.TryLogin(instaDetails.Username, instaDetails.Password, instaDetails?.State?.DeviceInfo,
+							.TryLogin(instaDetails.Username, instaDetails.Password, instaDetails.DeviceDetail,
 								clientContainer.GetContext.Container.Proxy));
 				
 				if (loginRes == null) return Ok(false);

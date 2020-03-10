@@ -3,6 +3,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System;
 using System.Collections.Generic;
+using InstagramApiSharp.Classes.Android.DeviceInfo;
 using Quarkless.Models.Common.Models;
 
 namespace Quarkless.Models.InstagramAccounts
@@ -15,6 +16,7 @@ namespace Quarkless.Models.InstagramAccounts
 		public string AccountId { get; set; }
 		public long? UserId { get; set; }
 		public StateData State { get; set; }
+		public AndroidDevice DeviceDetail { get; set; }
 		public string Username { get; set; }
 		public string FullName { get; set; }
 		public string ProfilePicture { get; set; }
@@ -29,7 +31,6 @@ namespace Quarkless.Models.InstagramAccounts
 		public long? FollowingCount { get; set; }
 		public long? TotalPostsCount { get; set; }
 		public int? Type { get; set; } //0 = normal account, 1 = learner account
-		public string Device { get; set; }
 		public int? AgentState { get; set; }
 
 		[BsonRepresentation(BsonType.DateTime)]

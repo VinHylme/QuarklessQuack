@@ -9,6 +9,10 @@ using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
+using MongoDB.Driver;
 using Newtonsoft.Json;
 using Quarkless.Extensions;
 using Quarkless.Filters;
@@ -87,7 +91,6 @@ namespace Quarkless
 					UseTransactions = true
 				});
 			});
-			
 			GlobalConfiguration.Configuration.UseSerializerSettings(new JsonSerializerSettings()
 			{
 				ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
