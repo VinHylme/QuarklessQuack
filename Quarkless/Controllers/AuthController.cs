@@ -6,11 +6,12 @@ using Amazon.CognitoIdentityProvider;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
-using Quarkless.Logic.Details;
-using Quarkless.Models.Auth;
-using Quarkless.Models.Auth.AccountContext;
-using Quarkless.Models.Auth.Enums;
-using Quarkless.Models.Auth.Interfaces;
+using Quarkless.Base.Auth.Common.Models;
+using Quarkless.Base.Auth.Common.Models.AccountContext;
+using Quarkless.Base.Auth.Common.Models.Enums;
+using Quarkless.Base.Auth.Models;
+using Quarkless.Base.Auth.Models.Interfaces;
+using Quarkless.Base.AuthDetails.Models.Interfaces;
 
 namespace Quarkless.Controllers
 {

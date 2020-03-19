@@ -5,12 +5,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Cloud.Speech.V1" Version="1.3.1" />
-    <PackageReference Include="Google.Cloud.Vision.V1" Version="1.7.0" />
+    <PackageReference Include="Google.Cloud.Speech.V1" Version="2.0.0" />
+    <PackageReference Include="Google.Cloud.Vision.V1" Version="2.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Quarkless.Models.ContentSearch\Quarkless.Models.ContentSearch.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.ContentSearch\Quarkless.Base.ContentSearch.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Common\Quarkless.Models.Common.csproj" />
   </ItemGroup>
 
 </Project>

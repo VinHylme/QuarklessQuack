@@ -5,16 +5,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Bogus" Version="28.4.4" />
+    <PackageReference Include="Bogus" Version="29.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\InstagramApiSharp\InstagramApiSharp.csproj" />
-    <ProjectReference Include="..\Quarkless.Models.InstagramAccounts\Quarkless.Models.InstagramAccounts.csproj" />
-    <ProjectReference Include="..\Quarkless.Models.InstagramClient\Quarkless.Models.InstagramClient.csproj" />
-    <ProjectReference Include="..\Quarkless.Models.Proxy\Quarkless.Models.Proxy.csproj" />
-    <ProjectReference Include="..\Quarkless.Models.ReportHandler\Quarkless.Models.ReportHandler.csproj" />
-    <ProjectReference Include="..\Quarkless.Models.Utilities\Quarkless.Models.Utilities.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.InstagramClient\Quarkless.Base.InstagramClient.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.ReportHandler\Quarkless.Base.ReportHandler.csproj" />
   </ItemGroup>
 
 </Project>

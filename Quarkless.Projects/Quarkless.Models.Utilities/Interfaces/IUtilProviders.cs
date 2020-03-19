@@ -1,4 +1,5 @@
 ﻿using Quarkless.Base.ContentSearch;
+using Quarkless.Base.ContentSearch.Models.Interfaces;
 using Quarkless.Models.EmailService.Interfaces;
 using Quarkless.Models.HashtagGenerator.Interfaces;
 using Quarkless.Models.TextGenerator.Interfaces;

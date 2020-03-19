@@ -8,8 +8,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Options;
-using Quarkless.Models.ApiLogger;
-using Quarkless.Models.ApiLogger.Interfaces;
+using Quarkless.Base.ApiLogger.Models;
+using Quarkless.Base.ApiLogger.Models.Interfaces;
 
 namespace Quarkless.Filters
 {

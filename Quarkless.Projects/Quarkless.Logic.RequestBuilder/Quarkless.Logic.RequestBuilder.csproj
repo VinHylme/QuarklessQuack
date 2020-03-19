@@ -10,7 +10,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Quarkless.Models.RequestBuilder\Quarkless.Models.RequestBuilder.csproj" />
-    <ProjectReference Include="..\Quarkless.Models.RestSharpClientManager\Quarkless.Models.RestSharpClientManager.csproj" />
   </ItemGroup>
 
 </Project>

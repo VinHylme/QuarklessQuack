@@ -3,12 +3,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Quarkless.Models.Auth.Enums;
-using Quarkless.Models.Auth.Interfaces;
-using Quarkless.Models.Messaging;
-using Quarkless.Models.Timeline;
-using Quarkless.Models.Timeline.Interfaces;
-using Quarkless.Models.Timeline.TaskScheduler;
+using Quarkless.Base.Auth.Common.Models.Enums;
+using Quarkless.Base.Auth.Common.Models.Interfaces;
+using Quarkless.Base.Messaging.Models;
+using Quarkless.Base.Timeline.Models;
+using Quarkless.Base.Timeline.Models.Interfaces;
+using Quarkless.Base.Timeline.Models.TaskScheduler;
+using Quarkless.Common.Timeline.Models;
 
 namespace Quarkless.Controllers
 {

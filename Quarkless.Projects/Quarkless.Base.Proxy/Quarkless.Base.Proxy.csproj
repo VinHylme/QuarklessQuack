@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HttpToSocks5Proxy" Version="1.4.0" />
+    <PackageReference Include="MongoDB.Bson" Version="2.10.2" />
+    <PackageReference Include="MongoDB.Driver" Version="2.10.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quarkless.Events\Quarkless.Events.csproj" />
+    <ProjectReference Include="..\Quarkless.Geolocation\Quarkless.Geolocation.csproj" />
+    <ProjectReference Include="..\Quarkless.Repository.MongoContext\Quarkless.Repository.MongoContext.csproj" />
+  </ItemGroup>
+
+</Project>

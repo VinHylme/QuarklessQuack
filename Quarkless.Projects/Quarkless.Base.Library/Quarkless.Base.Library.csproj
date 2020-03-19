@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MongoDB.Bson" Version="2.10.2" />
+    <PackageReference Include="MongoDB.Driver" Version="2.10.2" />
+    <PackageReference Include="StackExchange.Redis" Version="2.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quarkless.Models.Common\Quarkless.Models.Common.csproj" />
+    <ProjectReference Include="..\Quarkless.Repository.MongoContext\Quarkless.Repository.MongoContext.csproj" />
+    <ProjectReference Include="..\Quarkless.Repository.RedisClientContext\Quarkless.Repository.RedisContext.csproj" />
+  </ItemGroup>
+
+</Project>

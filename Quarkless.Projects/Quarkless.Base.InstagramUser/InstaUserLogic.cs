@@ -4,9 +4,9 @@ using InstagramApiSharp;
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Models;
 using InstagramApiSharp.Enums;
-using Quarkless.Models.InstagramAccounts;
-using Quarkless.Models.InstagramClient.Interfaces;
-using Quarkless.Models.ReportHandler.Interfaces;
+using Quarkless.Base.InstagramAccounts.Models;
+using Quarkless.Base.InstagramClient.Models.Interfaces;
+using Quarkless.Base.ReportHandler.Models.Interfaces;
 
 namespace Quarkless.Base.InstagramUser
 {

@@ -8,7 +8,6 @@
     <ProjectReference Include="..\..\InstagramApiSharp\InstagramApiSharp.csproj" />
     <ProjectReference Include="..\Quarkless.Models.Common\Quarkless.Models.Common.csproj" />
     <ProjectReference Include="..\Quarkless.Models.SearchResponse\Quarkless.Models.SearchResponse.csproj" />
-    <ProjectReference Include="..\Quarkless.Models.Topic\Quarkless.Models.Topic.csproj" />
   </ItemGroup>
 
 </Project>

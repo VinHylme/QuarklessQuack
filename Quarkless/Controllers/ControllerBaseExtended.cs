@@ -2,9 +2,9 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Quarkless.Models.ResponseResolver.Enums;
-using Quarkless.Models.ResponseResolver.Extensions;
-using Quarkless.Models.ResponseResolver.Models;
+using Quarkless.Base.ResponseResolver.Models;
+using Quarkless.Base.ResponseResolver.Models.Enums;
+using Quarkless.Base.ResponseResolver.Models.Extensions;
 
 namespace Quarkless.Controllers
 {

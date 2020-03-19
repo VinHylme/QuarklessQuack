@@ -1,19 +1,16 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Quarkless.Models.Services.Heartbeat.Enums;
-using Quarkless.Models.Services.Heartbeat.Interfaces;
 using System;
 using System.Threading.Tasks;
-using Quarkless.Logic.ContentSearch;
-using Quarkless.Logic.PuppeteerClient;
-using Quarkless.Logic.WorkerManager;
-using Quarkless.Models.ContentSearch.Interfaces;
-using Quarkless.Models.InstagramAccounts.Interfaces;
-using Quarkless.Models.InstagramClient.Interfaces;
-using Quarkless.Models.ResponseResolver.Interfaces;
-using Quarkless.Models.Services.Heartbeat;
-using Quarkless.Models.WorkerManager.Interfaces;
-using Quarkless.Run.Services.Heartbeat.Extensions;
+using Quarkless.Base.InstagramAccounts.Models.Interfaces;
+using Quarkless.Base.InstagramClient.Models.Interfaces;
+using Quarkless.Base.ResponseResolver.Models.Interfaces;
+using Quarkless.Base.WorkerManager.Logic;
+using Quarkless.Base.WorkerManager.Models.Interfaces;
+using Quarkless.Run.Services.Heartbeat.Models.Extensions;
+using CustomerAccount = Quarkless.Run.Services.Heartbeat.Models.CustomerAccount;
 using Environment = System.Environment;
+using ExtractOperationType = Quarkless.Run.Services.Heartbeat.Models.Enums.ExtractOperationType;
+using IHeartbeatService = Quarkless.Run.Services.Heartbeat.Models.Interfaces.IHeartbeatService;
 
 namespace Quarkless.Run.Services.Heartbeat
 {

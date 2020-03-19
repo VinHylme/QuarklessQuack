@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using InstagramApiSharp.Classes.Models;
+using Quarkless.Models.Common.Models.Topic;
 using Quarkless.Models.SearchResponse.Enums;
-using Quarkless.Models.Topic;
 
 namespace Quarkless.Models.SearchResponse
 {

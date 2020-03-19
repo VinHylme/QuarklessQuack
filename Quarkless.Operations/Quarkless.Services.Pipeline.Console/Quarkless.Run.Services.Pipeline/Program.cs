@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Quarkless.Models.Services.Pipeline.Interfaces;
-using Quarkless.Run.Services.Pipeline.Configuration;
+using Quarkless.Run.Services.Pipeline.Models.Configuration;
+using Quarkless.Run.Services.Pipeline.Models.Interfaces;
 
 namespace Quarkless.Run.Services.Pipeline
 {

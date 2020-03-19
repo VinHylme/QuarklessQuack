@@ -1,14 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Quarkless.Logic.Proxy;
-using Quarkless.Models.Auth.Enums;
-using Quarkless.Models.Auth.Interfaces;
-using Quarkless.Models.Proxy;
-using Quarkless.Models.Proxy.Enums;
-using Quarkless.Models.Proxy.Interfaces;
+using Quarkless.Base.Auth.Common.Models.Enums;
+using Quarkless.Base.Auth.Common.Models.Interfaces;
+using Quarkless.Base.Proxy.Logic;
+using Quarkless.Base.Proxy.Models;
+using Quarkless.Base.Proxy.Models.Enums;
+using Quarkless.Base.Proxy.Models.Interfaces;
 
 namespace Quarkless.Controllers
 {

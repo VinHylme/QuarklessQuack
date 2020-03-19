@@ -9,7 +9,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Quarkless.Models.Lookup\Quarkless.Models.Lookup.csproj" />
     <ProjectReference Include="..\Quarkless.Repository.RedisClientContext\Quarkless.Repository.RedisContext.csproj" />
   </ItemGroup>
 

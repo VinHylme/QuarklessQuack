@@ -1,6 +1,7 @@
 ﻿using Bogus;
 using Bogus.DataSets;
 using Quarkless.Base.ContentSearch;
+using Quarkless.Base.ContentSearch.Models.Interfaces;
 using Quarkless.Models.Common.Extensions;
 using Quarkless.Models.EmailService.Interfaces;
 using Quarkless.Models.HashtagGenerator.Interfaces;

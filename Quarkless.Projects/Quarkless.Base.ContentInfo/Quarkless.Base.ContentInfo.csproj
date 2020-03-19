@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quarkless.Base.HashtagGenerator\Quarkless.Base.HashtagGenerator.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.TextGenerator\Quarkless.Base.TextGenerator.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.Utilities\Quarkless.Base.Utilities.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Common\Quarkless.Models.Common.csproj" />
+  </ItemGroup>
+
+</Project>

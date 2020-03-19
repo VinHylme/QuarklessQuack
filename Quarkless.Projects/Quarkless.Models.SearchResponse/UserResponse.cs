@@ -1,5 +1,5 @@
 ﻿using System;
-using Quarkless.Models.Topic;
+using Quarkless.Models.Common.Models.Topic;
 
 namespace Quarkless.Models.SearchResponse
 {
@@ -27,10 +27,5 @@ namespace Quarkless.Models.SearchResponse
 		public bool IsPrivate { get; set; }
 		public bool IsVerified { get; set; }
 		public string ProfilePicture { get; set; }
-	}
-	public class GroupImagesAlike
-	{
-		public CTopic TopicGroup { get; set; }
-		public string Url { get; set; }
 	}
 }

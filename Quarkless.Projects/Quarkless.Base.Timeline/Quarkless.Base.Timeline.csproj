@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Hangfire.Core" Version="1.7.9" />
+    <PackageReference Include="RestSharp" Version="106.10.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quarkless.Analyser\Quarkless.Analyser.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.Actions\Quarkless.Base.Actions.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.Library\Quarkless.Base.Library.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.Lookup\Quarkless.Base.Lookup.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.Media\Quarkless.Base.Media.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.Messaging\Quarkless.Base.Messaging.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.RequestBuilder\Quarkless.Base.RequestBuilder.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.Storage\Quarkless.Base.Storage.csproj" />
+    <ProjectReference Include="..\Quarkless.Common.Timeline\Quarkless.Common.Timeline.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Common\Quarkless.Models.Common.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -9,10 +9,10 @@ services:
           - /dev/net/tun
         environment:
           - USER=silviuandre@yahoo.com
-          - PASS='IYVunLc0dzjovj0='
+          - PASS=IYVunLc0dzjovj0=
           #- COUNTRY=United_States
-          - PROTOCOL=openvpn_tcp
-          - CATEGORY=Standard VPN servers
+          #- PROTOCOL=openvpn_tcp
+          #- CATEGORY=Standard VPN servers
           #- NETWORK=192.168.1.0/24
           #- OPENVPN_OPTS=--pull-filter ignore "ping-restart" --ping-exit 180
           #- TZ=America/Denver

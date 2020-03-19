@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using InstagramApiSharp;
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Models;
 using InstagramApiSharp.Enums;
-using InstagramApiSharp.Helpers;
-using Quarkless.Models.InstagramClient.Interfaces;
-using Quarkless.Models.ReportHandler.Interfaces;
+using Quarkless.Base.InstagramClient.Models.Interfaces;
+using Quarkless.Base.ReportHandler.Models.Interfaces;
 
 namespace Quarkless.Base.InstagramDiscover
 {

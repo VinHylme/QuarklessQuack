@@ -1,9 +1,10 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Quarkless.Models.Auth.Enums;
-using Quarkless.Models.Auth.Interfaces;
-using Quarkless.Models.Profile;
-using Quarkless.Models.Profile.Interfaces;
+using Quarkless.Base.Auth.Common.Models.Enums;
+using Quarkless.Base.Auth.Common.Models.Interfaces;
+using Quarkless.Base.Profile.Models;
+using Quarkless.Base.Profile.Models.Interfaces;
+using Quarkless.Events.Models;
 
 namespace Quarkless.Controllers
 {

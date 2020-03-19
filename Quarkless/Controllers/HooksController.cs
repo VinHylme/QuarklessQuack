@@ -2,8 +2,8 @@
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Quarkless.Logic.WebHooks;
-using Quarkless.Models.WebHooks.Interfaces;
+using Quarkless.Base.WebHooks.Logic;
+using Quarkless.Base.WebHooks.Models.Interfaces;
 
 namespace Quarkless.Controllers
 {

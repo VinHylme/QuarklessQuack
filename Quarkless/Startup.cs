@@ -9,14 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization;
-using MongoDB.Bson.Serialization.Serializers;
-using MongoDB.Driver;
 using Newtonsoft.Json;
 using Quarkless.Extensions;
 using Quarkless.Filters;
-using Quarkless.Models.Auth.Interfaces;
 using Quarkless.Models.Shared.Extensions;
 
 namespace Quarkless

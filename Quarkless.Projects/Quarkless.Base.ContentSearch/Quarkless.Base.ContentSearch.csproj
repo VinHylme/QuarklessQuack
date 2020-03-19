@@ -5,11 +5,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Quarkless.Logic.InstagramSearch\Quarkless.Logic.InstagramSearch.csproj" />
-    <ProjectReference Include="..\Quarkless.Models.ContentSearch\Quarkless.Models.ContentSearch.csproj" />
-    <ProjectReference Include="..\Quarkless.Models.InstagramClient\Quarkless.Models.InstagramClient.csproj" />
-    <ProjectReference Include="..\Quarkless.Models.InstagramSearch\Quarkless.Models.InstagramSearch.csproj" />
-    <ProjectReference Include="..\Quarkless.Models.ResponseResolver\Quarkless.Models.ResponseResolver.csproj" />
+    <PackageReference Include="StackExchange.Redis" Version="2.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quarkless.Base.InstagramSearch\Quarkless.Base.InstagramSearch.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.PuppeteerClient\Quarkless.Base.PuppeteerClient.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.RestSharpClientManager\Quarkless.Base.RestSharpClientManager.csproj" />
+    <ProjectReference Include="..\Quarkless.Repository.RedisClientContext\Quarkless.Repository.RedisContext.csproj" />
   </ItemGroup>
 
 </Project>

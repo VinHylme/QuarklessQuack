@@ -4,15 +4,15 @@ using System.Threading.Tasks;
 using InstagramApiSharp.Classes;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Quarkless.Base.Auth.Common.Models.Enums;
+using Quarkless.Base.Auth.Common.Models.Interfaces;
+using Quarkless.Base.InstagramAccounts.Models;
+using Quarkless.Base.InstagramAccounts.Models.Enums;
+using Quarkless.Base.InstagramAccounts.Models.Interfaces;
+using Quarkless.Base.InstagramClient.Logic;
+using Quarkless.Base.InstagramClient.Models.Interfaces;
 using Quarkless.Base.InstagramUser;
-using Quarkless.Logic.InstagramClient;
-using Quarkless.Models.Auth.Enums;
-using Quarkless.Models.Auth.Interfaces;
-using Quarkless.Models.InstagramAccounts;
-using Quarkless.Models.InstagramAccounts.Enums;
-using Quarkless.Models.InstagramAccounts.Interfaces;
-using Quarkless.Models.InstagramClient.Interfaces;
-using Quarkless.Models.ResponseResolver.Interfaces;
+using Quarkless.Base.ResponseResolver.Models.Interfaces;
 
 namespace Quarkless.Controllers
 {

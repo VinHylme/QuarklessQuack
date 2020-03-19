@@ -1,18 +1,13 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Quarkless.Logic.WorkerManager;
-using Quarkless.Models.Auth.Interfaces;
-using Quarkless.Models.Common.Enums;
-using Quarkless.Models.InstagramAccounts.Interfaces;
-using Quarkless.Models.InstagramClient.Interfaces;
-using Quarkless.Models.Notification;
-using Quarkless.Models.Notification.Interfaces;
-using Quarkless.Models.Services.DataFetcher.Interfaces;
-using Quarkless.Models.WorkerManager.Interfaces;
-using Quarkless.Repository.Auth;
-using Quarkless.Repository.Notification;
+using Quarkless.Base.Auth.Common.Models.Interfaces;
+using Quarkless.Base.AuthDetails.Repository;
+using Quarkless.Base.InstagramAccounts.Models.Interfaces;
+using Quarkless.Base.InstagramClient.Models.Interfaces;
+using Quarkless.Base.WorkerManager.Logic;
+using Quarkless.Base.WorkerManager.Models.Interfaces;
 using Quarkless.Run.Services.DataFetcher.Extensions;
+using Quarkless.Run.Services.DataFetcher.Models.Interfaces;
 
 namespace Quarkless.Run.Services.DataFetcher
 {

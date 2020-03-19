@@ -8,8 +8,4 @@
     <PackageReference Include="MongoDB.Bson" Version="2.10.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Quarkless.Utilities.Models\Quarkless.Utilities.Models.csproj" />
-  </ItemGroup>
-
 </Project>

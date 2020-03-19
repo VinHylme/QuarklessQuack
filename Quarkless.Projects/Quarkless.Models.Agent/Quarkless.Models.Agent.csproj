@@ -4,8 +4,4 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Quarkless.Models.InstagramAccounts\Quarkless.Models.InstagramAccounts.csproj" />
-  </ItemGroup>
-
 </Project>

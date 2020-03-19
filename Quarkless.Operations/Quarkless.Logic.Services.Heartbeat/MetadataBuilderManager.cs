@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Quarkless.Base.ContentSearch;
+using Quarkless.Base.ContentSearch.Models.Interfaces;
+using Quarkless.Base.InstagramAccounts.Models.Interfaces;
+using Quarkless.Base.Topic.Models.Interfaces;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Heartbeat.Interfaces;
-using Quarkless.Models.InstagramAccounts.Interfaces;
 using Quarkless.Models.Services.Heartbeat;
-using Quarkless.Models.Topic.Interfaces;
 using Quarkless.Models.WorkerManager.Interfaces;
 
 namespace Quarkless.Logic.Services.Heartbeat

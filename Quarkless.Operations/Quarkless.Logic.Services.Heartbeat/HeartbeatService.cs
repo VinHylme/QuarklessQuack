@@ -1,16 +1,16 @@
-﻿using Quarkless.Logic.Proxy;
-using Quarkless.Models.Heartbeat.Interfaces;
-using Quarkless.Models.Profile.Interfaces;
+﻿using Quarkless.Models.Heartbeat.Interfaces;
 using Quarkless.Models.Services.Heartbeat.Interfaces;
 using System;
 using System.Threading.Tasks;
-using Quarkless.Models.InstagramAccounts;
-using Quarkless.Models.InstagramAccounts.Enums;
-using Quarkless.Models.InstagramAccounts.Interfaces;
 using Quarkless.Models.Services.Heartbeat;
 using Quarkless.Models.Services.Heartbeat.Enums;
-using Quarkless.Models.Topic.Interfaces;
-using Quarkless.Base.ContentSearch;
+using Quarkless.Base.ContentSearch.Models.Interfaces;
+using Quarkless.Base.InstagramAccounts.Models;
+using Quarkless.Base.InstagramAccounts.Models.Enums;
+using Quarkless.Base.InstagramAccounts.Models.Interfaces;
+using Quarkless.Base.Profile.Models.Interfaces;
+using Quarkless.Base.Proxy.Models.Interfaces;
+using Quarkless.Base.Topic.Models.Interfaces;
 using Quarkless.Models.WorkerManager.Interfaces;
 
 namespace Quarkless.Logic.Services.Heartbeat

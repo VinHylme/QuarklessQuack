@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quarkless.Base.ContentSearch\Quarkless.Base.ContentSearch.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.HashtagGenerator\Quarkless.Base.HashtagGenerator.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.Hashtag\Quarkless.Base.Hashtag.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.Heartbeat\Quarkless.Base.Heartbeat.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.Lookup\Quarkless.Base.Lookup.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.Topic\Quarkless.Base.Topic.csproj" />
+    <ProjectReference Include="..\Quarkless.Logic.Common\Quarkless.Logic.Common.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.SearchResponse\Quarkless.Models.SearchResponse.csproj" />
+  </ItemGroup>
+
+</Project>

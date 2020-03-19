@@ -6,7 +6,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\InstagramApiSharp\InstagramApiSharp.csproj" />
-    <ProjectReference Include="..\Quarkless.Models.Topic\Quarkless.Models.Topic.csproj" />
   </ItemGroup>
 
 </Project>

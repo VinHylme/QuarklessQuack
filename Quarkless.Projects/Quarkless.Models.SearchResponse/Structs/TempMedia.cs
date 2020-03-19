@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Quarkless.Models.Topic;
+using Quarkless.Models.Common.Models.Topic;
 
 namespace Quarkless.Models.SearchResponse.Structs
 {

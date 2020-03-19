@@ -2,18 +2,19 @@
 using System.Threading.Tasks;
 using Hangfire;
 using Microsoft.Extensions.DependencyInjection;
-using Quarkless.Logic.Actions.Factory.ActionExecute.Manager;
-using Quarkless.Logic.Services.Automation;
-using Quarkless.Logic.WorkerManager;
-using Quarkless.Models.Actions.Interfaces;
-using Quarkless.Models.InstagramAccounts.Interfaces;
-using Quarkless.Models.InstagramClient.Interfaces;
-using Quarkless.Models.ResponseResolver.Interfaces;
-using Quarkless.Models.Services.Automation.Interfaces;
+using Quarkless.Base.Actions.Logic.Factory.ActionExecute.Manager;
+using Quarkless.Base.Actions.Models.Interfaces;
+using Quarkless.Base.InstagramAccounts.Models.Interfaces;
+using Quarkless.Base.InstagramClient.Models.Interfaces;
+using Quarkless.Base.ResponseResolver.Models.Interfaces;
+using Quarkless.Base.WorkerManager.Logic;
+using Quarkless.Base.WorkerManager.Models.Interfaces;
 using Quarkless.Models.Shared.Extensions;
-using Quarkless.Models.WorkerManager.Interfaces;
-using Quarkless.Run.Services.Automation.Extensions;
+using Quarkless.Run.Services.Automation.Models.Extensions;
 using StackExchange.Redis;
+using AgentTests = Quarkless.Run.Services.Automation.Logic.AgentTests;
+using IAgentManager = Quarkless.Run.Services.Automation.Models.Interfaces.IAgentManager;
+using IAgentTests = Quarkless.Run.Services.Automation.Models.Interfaces.IAgentTests;
 
 namespace Quarkless.Run.Services.Automation
 {

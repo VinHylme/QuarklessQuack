@@ -5,12 +5,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.3.100.1" />
+    <PackageReference Include="AWSSDK.Extensions.NETCore.Setup" Version="3.3.101" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Quarkless.Models.ApiLogger\Quarkless.Models.ApiLogger.csproj" />
-    <ProjectReference Include="..\Quarkless.Models.Auth\Quarkless.Models.Auth.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.ApiLogger\Quarkless.Base.ApiLogger.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.Auth\Quarkless.Base.Auth.csproj" />
     <ProjectReference Include="..\Quarkless.Models.Shared\Quarkless.Models.Shared.csproj" />
   </ItemGroup>
 

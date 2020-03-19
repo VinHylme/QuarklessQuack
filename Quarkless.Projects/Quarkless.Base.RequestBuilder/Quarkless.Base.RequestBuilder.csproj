@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Quarkless.Base.RestSharpClientManager\Quarkless.Base.RestSharpClientManager.csproj" />
+    <ProjectReference Include="..\Quarkless.Common.Timeline\Quarkless.Common.Timeline.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Common\Quarkless.Models.Common.csproj" />
+  </ItemGroup>
+
+</Project>

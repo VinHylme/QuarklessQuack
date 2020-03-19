@@ -7,8 +7,8 @@ using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Speech.V1;
 using Google.Cloud.Vision.V1;
 using Grpc.Auth;
+using Quarkless.Base.ContentSearch.Models.Interfaces;
 using Quarkless.Models.Common.Extensions;
-using Quarkless.Models.ContentSearch.Interfaces;
 
 namespace Quarkless.Vision
 {
@@ -20,10 +20,21 @@ namespace Quarkless.Vision
 		public VisionClient(string credentialJson, ISearchingCache cache)
 		{
 			var credential = GoogleCredential.FromJson(credentialJson).CreateScoped(ImageAnnotatorClient.DefaultScopes);
-			var visionChannel = new Grpc.Core.Channel(ImageAnnotatorClient.DefaultEndpoint.ToString(), credential.ToChannelCredentials());
-			var speechChannel = new Grpc.Core.Channel(SpeechClient.DefaultEndpoint.ToString(), credential.ToChannelCredentials());
-			_client = ImageAnnotatorClient.Create(visionChannel);
-			_speechClient = SpeechClient.Create(speechChannel);
+
+			var annotatorClientBuilder = new ImageAnnotatorClientBuilder
+			{
+				ChannelCredentials = credential.ToChannelCredentials(),
+				Endpoint = ImageAnnotatorClient.DefaultEndpoint
+			};
+
+			var speechClientBuilder = new SpeechClientBuilder
+			{
+				ChannelCredentials = credential.ToChannelCredentials(),
+				Endpoint = SpeechClient.DefaultEndpoint
+			};
+
+			_client = annotatorClientBuilder.Build();
+			_speechClient = speechClientBuilder.Build();
 			_searchingCache = cache;
 		}
 

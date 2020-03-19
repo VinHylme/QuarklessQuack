@@ -1,5 +1,4 @@
-﻿using Quarkless.Models.Agent.Interfaces;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -7,15 +6,16 @@ using System.Linq;
 using System.Threading.Tasks;
 using Docker.DotNet;
 using Docker.DotNet.Models;
-using Quarkless.Models.InstagramAccounts;
-using Quarkless.Models.Services.Heartbeat.Enums;
 using Microsoft.Extensions.DependencyInjection;
+using Quarkless.Base.Agent.Models.Interfaces;
+using Quarkless.Base.InstagramAccounts.Models;
+using Quarkless.Base.InstagramAccounts.Models.Enums;
+using Quarkless.Base.InstagramAccounts.Models.Interfaces;
+using Quarkless.Base.Profile.Models.Interfaces;
 using Quarkless.Models.Common.Extensions;
-using Quarkless.Models.InstagramAccounts.Enums;
-using Quarkless.Models.InstagramAccounts.Interfaces;
-using Quarkless.Models.Profile.Interfaces;
 using Quarkless.Models.Shared.Enums;
 using Quarkless.Run.Services.Delegator.Extensions;
+using Quarkless.Run.Services.Heartbeat.Models.Enums;
 using SharedConfig = Quarkless.Models.Shared.Extensions.Config;
 
 namespace Quarkless.Run.Services.Delegator

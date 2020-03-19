@@ -10,7 +10,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Quarkless.Models.ContentInfo\Quarkless.Models.ContentInfo.csproj" />
-    <ProjectReference Include="..\Quarkless.Models.Utilities\Quarkless.Models.Utilities.csproj" />
   </ItemGroup>
 
 </Project>

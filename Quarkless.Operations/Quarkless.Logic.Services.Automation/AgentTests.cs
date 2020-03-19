@@ -17,7 +17,6 @@ using Quarkless.Models.Agent.Interfaces;
 using Quarkless.Models.Common.Enums;
 using Quarkless.Models.Common.Models;
 using Quarkless.Models.ContentInfo.Interfaces;
-using Quarkless.Models.ContentSearch.Interfaces;
 using Quarkless.Models.HashtagGenerator;
 using Quarkless.Models.Library.Interfaces;
 using Quarkless.Models.Profile.Interfaces;

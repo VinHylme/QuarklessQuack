@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Hangfire;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using Quarkless.Models.InstagramAccounts.Interfaces;
+using Quarkless.Base.InstagramAccounts.Models.Interfaces;
 using Quarkless.Models.Shared.Extensions;
 using Quarkless.Run.Services.Scheduler.Extensions;
 using StackExchange.Redis;

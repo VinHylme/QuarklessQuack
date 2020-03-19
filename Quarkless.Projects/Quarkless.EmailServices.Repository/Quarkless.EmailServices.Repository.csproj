@@ -9,7 +9,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Quarkless.EmailServices.Models\Quarkless.EmailServices.Models.csproj" />
     <ProjectReference Include="..\Quarkless.Repository.MongoContext\Quarkless.Repository.MongoContext.csproj" />
     <ProjectReference Include="..\Quarkless.SmsHandler\Quarkless.SmsHandler.Models.csproj" />
   </ItemGroup>

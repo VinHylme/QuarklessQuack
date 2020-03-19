@@ -1,5 +1,5 @@
-﻿using Quarkless.Models.ApiLogger;
-using Quarkless.Models.Auth.Aws;
+﻿using Quarkless.Base.ApiLogger.Models;
+using Quarkless.Base.Auth.Models.Aws;
 
 namespace Quarkless.Models.Shared.Api
 {

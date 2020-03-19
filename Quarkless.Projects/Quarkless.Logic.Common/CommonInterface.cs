@@ -4,10 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
+using Quarkless.Base.ReportHandler.Models;
+using Quarkless.Base.ReportHandler.Models.Enums;
+using Quarkless.Base.ReportHandler.Models.Interfaces;
 using Quarkless.Models.Common.Objects;
-using Quarkless.Models.ReportHandler;
-using Quarkless.Models.ReportHandler.Enums;
-using Quarkless.Models.ReportHandler.Interfaces;
 
 namespace Quarkless.Logic.Common
 {

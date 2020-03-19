@@ -2,7 +2,7 @@
 using InstagramApiSharp.Classes;
 using InstagramApiSharp.Classes.Models;
 using InstagramApiSharp.Enums;
-using Quarkless.Models.InstagramAccounts;
+using Quarkless.Base.InstagramAccounts.Models;
 
 namespace Quarkless.Base.InstagramUser
 {

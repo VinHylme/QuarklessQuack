@@ -1,6 +1,6 @@
-﻿using Quarkless.Models.InstagramAccounts;
-using Quarkless.Models.Profile;
-using Quarkless.Models.Proxy;
+﻿using Quarkless.Base.InstagramAccounts.Models;
+using Quarkless.Base.Profile.Models;
+using Quarkless.Base.Proxy.Models;
 
 namespace Quarkless.Models.Services.Heartbeat
 {

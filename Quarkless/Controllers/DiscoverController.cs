@@ -1,12 +1,11 @@
 ﻿using InstagramApiSharp.Classes.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using Quarkless.Base.Auth.Common.Models.Enums;
+using Quarkless.Base.Auth.Common.Models.Interfaces;
+using Quarkless.Base.Hashtag.Models.Interfaces;
 using Quarkless.Base.InstagramDiscover;
-using Quarkless.Models.Auth.Enums;
-using Quarkless.Models.Auth.Interfaces;
-using Quarkless.Models.Common.Enums;
-using Quarkless.Models.Hashtag.Interfaces;
-using Quarkless.Models.ResponseResolver.Interfaces;
+using Quarkless.Base.ResponseResolver.Models.Interfaces;
 
 namespace Quarkless.Controllers
 {

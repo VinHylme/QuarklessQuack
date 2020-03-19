@@ -5,9 +5,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.InstagramAccounts\Quarkless.Models.InstagramAccounts.csproj" />
-    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.Profile\Quarkless.Models.Profile.csproj" />
-    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.Proxy\Quarkless.Models.Proxy.csproj" />
+    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Base.InstagramAccounts\Quarkless.Base.InstagramAccounts.csproj" />
+    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Base.Profile\Quarkless.Base.Profile.csproj" />
+    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Base.Proxy\Quarkless.Base.Proxy.csproj" />
     <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.SearchResponse\Quarkless.Models.SearchResponse.csproj" />
   </ItemGroup>
 

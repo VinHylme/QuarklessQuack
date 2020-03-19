@@ -11,12 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\InstagramApiSharp\InstagramApiSharp.csproj" />
-    <ProjectReference Include="..\Quarkless.Logic.InstagramClient\Quarkless.Logic.InstagramClient.csproj" />
     <ProjectReference Include="..\Quarkless.Models.Common\Quarkless.Models.Common.csproj" />
-    <ProjectReference Include="..\Quarkless.Models.InstagramAccounts\Quarkless.Models.InstagramAccounts.csproj" />
-    <ProjectReference Include="..\Quarkless.Models.InstagramClient\Quarkless.Models.InstagramClient.csproj" />
-    <ProjectReference Include="..\Quarkless.Models.Proxy\Quarkless.Models.Proxy.csproj" />
-    <ProjectReference Include="..\Quarkless.Models.ResponseResolver\Quarkless.Models.ResponseResolver.csproj" />
     <ProjectReference Include="..\Quarkless.Models.Shared\Quarkless.Models.Shared.csproj" />
     <ProjectReference Include="..\Quarkless.Models.WorkerManager\Quarkless.Models.WorkerManager.csproj" />
   </ItemGroup>

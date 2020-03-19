@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Logic\Converters\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="morelinq" Version="3.3.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\InstagramApiSharp\InstagramApiSharp.csproj" />
+    <ProjectReference Include="..\Quarkless.Analyser\Quarkless.Analyser.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.Auth.Common\Quarkless.Base.Auth.Common.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.ContentInfo\Quarkless.Base.ContentInfo.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.HashtagGenerator\Quarkless.Base.HashtagGenerator.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.Heartbeat\Quarkless.Base.Heartbeat.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.InstagramAccounts\Quarkless.Base.InstagramAccounts.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.InstagramClient\Quarkless.Base.InstagramClient.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.InstagramComments\Quarkless.Base.InstagramComments.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.InstagramSearch\Quarkless.Base.InstagramSearch.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.InstagramUser\Quarkless.Base.InstagramUser.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.Library\Quarkless.Base.Library.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.Media\Quarkless.Base.Media.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.Messaging\Quarkless.Base.Messaging.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.Profile\Quarkless.Base.Profile.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.ResponseResolver\Quarkless.Base.ResponseResolver.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.Storage\Quarkless.Base.Storage.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.Stories\Quarkless.Base.Stories.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.TextGenerator\Quarkless.Base.TextGenerator.csproj" />
+    <ProjectReference Include="..\Quarkless.Base.WorkerManager\Quarkless.Base.WorkerManager.csproj" />
+    <ProjectReference Include="..\Quarkless.Common.Timeline\Quarkless.Common.Timeline.csproj" />
+    <ProjectReference Include="..\Quarkless.Models.Common\Quarkless.Models.Common.csproj" />
+  </ItemGroup>
+
+</Project>

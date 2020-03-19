@@ -3,24 +3,24 @@ using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
+using Quarkless.Base.Agent.Logic;
+using Quarkless.Base.Agent.Models.Interfaces;
+using Quarkless.Base.InstagramAccounts.Logic;
+using Quarkless.Base.InstagramAccounts.Models.Interfaces;
+using Quarkless.Base.InstagramAccounts.Repository.Mongo;
+using Quarkless.Base.Profile.Logic;
+using Quarkless.Base.Profile.Models.Interfaces;
+using Quarkless.Base.Profile.Repository;
+using Quarkless.Base.ReportHandler.Logic;
+using Quarkless.Base.ReportHandler.Models.Interfaces;
+using Quarkless.Base.ReportHandler.Repository;
 using Quarkless.Events;
 using Quarkless.Events.Interfaces;
-using Quarkless.Logic.Agent;
-using Quarkless.Logic.InstagramAccounts;
-using Quarkless.Logic.Profile;
-using Quarkless.Logic.ReportHandler;
-using Quarkless.Models.Agent.Interfaces;
-using Quarkless.Models.InstagramAccounts.Interfaces;
-using Quarkless.Models.Profile.Interfaces;
-using Quarkless.Models.ReportHandler.Interfaces;
 using Quarkless.Models.Shared.Extensions;
-using Quarkless.Repository.InstagramAccounts.Mongo;
 using Quarkless.Repository.MongoContext;
 using Quarkless.Repository.MongoContext.Models;
-using Quarkless.Repository.Profile;
 using Quarkless.Repository.RedisContext;
 using Quarkless.Repository.RedisContext.Models;
-using Quarkless.Repository.ReportHandler;
 
 namespace Quarkless.Run.Services.Delegator.Extensions
 {

@@ -1,7 +1,6 @@
 ﻿using System;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Quarkless.Models.Timeline.Interfaces.TaskScheduler;
+using Quarkless.Base.Timeline.Models.Interfaces.TaskScheduler;
 
 namespace Quarkless.Run.Services.Scheduler.Extensions
 {

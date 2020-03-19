@@ -4,8 +4,6 @@ WORKDIR /app
 FROM mcr.microsoft.com/dotnet/core/sdk:3.1.100-buster AS build
 WORKDIR /src
 COPY ["Quarkless.Operations/Quarkless.Services.Pipeline.Console/Quarkless.Run.Services.Pipeline/Quarkless.Run.Services.Pipeline.csproj", "Quarkless.Operations/Quarkless.Services.Pipeline.Console/Quarkless.Run.Services.Pipeline/"]
-COPY ["Quarkless.Operations/Quarkless.Logic.Services.Pipeline/Quarkless.Logic.Services.Pipeline.csproj", "Quarkless.Operations/Quarkless.Logic.Services.Pipeline/"]
-COPY ["Quarkless.Operations/Quarkless.Models.Services.Pipeline/Quarkless.Models.Services.Pipeline.csproj", "Quarkless.Operations/Quarkless.Models.Services.Pipeline/"]
 COPY ["Quarkless.Projects/Quarkless.Models.Shared/Quarkless.Models.Shared.csproj", "Quarkless.Projects/Quarkless.Models.Shared/"]
 RUN dotnet restore "Quarkless.Operations/Quarkless.Services.Pipeline.Console/Quarkless.Run.Services.Pipeline/Quarkless.Run.Services.Pipeline.csproj"
 COPY . .

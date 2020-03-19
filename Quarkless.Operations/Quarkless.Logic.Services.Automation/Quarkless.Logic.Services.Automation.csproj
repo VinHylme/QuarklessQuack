@@ -9,15 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Logic.Actions\Quarkless.Logic.Actions.csproj" />
-    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Logic.Agent\Quarkless.Logic.Agent.csproj" />
-    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.Actions\Quarkless.Models.Actions.csproj" />
-    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.Agent\Quarkless.Models.Agent.csproj" />
-    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.Auth\Quarkless.Models.Auth.csproj" />
-    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.Comments\Quarkless.Models.Comments.csproj" />
-    <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.InstagramSearch\Quarkless.Models.InstagramSearch.csproj" />
     <ProjectReference Include="..\..\Quarkless.Projects\Quarkless.Models.Shared\Quarkless.Models.Shared.csproj" />
-    <ProjectReference Include="..\Quarkless.Models.Services.Automation\Quarkless.Models.Services.Automation.csproj" />
   </ItemGroup>
 
 </Project>
