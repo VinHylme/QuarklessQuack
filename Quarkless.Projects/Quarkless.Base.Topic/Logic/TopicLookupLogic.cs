@@ -83,7 +83,7 @@ namespace Quarkless.Base.Topic.Logic
 				{
 					var results = await worker.Client.Hashtag.SearchHashtagAsync(topic
 						.Name.RemoveLargeSpacesInText(1, ""));
-
+					
 					if (results.Succeeded && results.Value.Count <= 0)
 						return;
 

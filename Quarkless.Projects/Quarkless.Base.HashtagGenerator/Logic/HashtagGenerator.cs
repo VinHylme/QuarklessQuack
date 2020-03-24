@@ -84,17 +84,21 @@ namespace Quarkless.Base.HashtagGenerator.Logic
 					
 					else
 						web.AddRange(await _visionClient.DetectImageWebEntities(images.ToArray()));
-					
+
 					if (web.Any())
+					{
+						visionResults.AddRange(web.SelectMany(_=>_.BestGuessLabels
+							.Select(s=>new KeyWordsContainer(s.Label, true, currentImage++))));
+
 						visionResults.AddRange(web.SelectMany(_ =>
 							_.WebEntities.OrderByDescending(s => s.Score)
 								.Select(s => new KeyWordsContainer(s.Description, true, currentImage++))));
+					}
 				}
 
 				visionResults = visionResults
 					.DistinctBy(_ => _.Keyword)
-					.Shuffle()
-					.Take(5)
+					.Take(3)
 					.ToList();
 
 				var counter = 0;
@@ -111,15 +115,12 @@ namespace Quarkless.Base.HashtagGenerator.Logic
 					
 					result.Results.AddRange(resultBuild);
 
-					if (includeMediaExample)
-					{
-						var mediaExamples = await GetHashtagsFromMediaSearch(resultBuild.Shuffle().First().Name, 1);
+					var mediaExamples = await GetHashtagsFromMediaSearch(resultBuild.Shuffle().First().Name, 1);
 
-						if (mediaExamples.Any())
-						{
-							mediaExamples.ForEach(_=>_.IsMediaDescriptor=true);
-							result.Results.AddRange(mediaExamples);
-						}
+					if (mediaExamples.Any())
+					{
+						mediaExamples.ForEach(_ => _.IsMediaDescriptor = true);
+						result.Results.AddRange(mediaExamples);
 					}
 
 					if (!deepDive) break;
@@ -170,16 +171,21 @@ namespace Quarkless.Base.HashtagGenerator.Logic
 					web.AddRange(await _visionClient.DetectImageWebEntities(images.ToArray()));
 
 					if (web.Any())
+					{
+						visionResults.AddRange(web.SelectMany(_ => _.BestGuessLabels
+							.Select(s => new KeyWordsContainer(s.Label, true, currentImage++))));
+
 						visionResults.AddRange(web.SelectMany(_ =>
 							_.WebEntities.OrderByDescending(s => s.Score)
 								.Select(s => new KeyWordsContainer(s.Description, true, currentImage++))));
+					}
 				}
 
 				visionResults = visionResults
 					.DistinctBy(_ => _.Keyword)
-					.Shuffle()
-					.Take(5)
+					.Take(3)
 					.ToList();
+
 
 				var counter = 0;
 				do
@@ -195,17 +201,13 @@ namespace Quarkless.Base.HashtagGenerator.Logic
 
 					result.Results.AddRange(resultBuild);
 
-					if (includeMediaExamples)
+					var mediaExamples = await GetHashtagsFromMediaSearch(resultBuild.Shuffle().First().Name, 1);
+
+					if (mediaExamples.Any())
 					{
-						var mediaExamples = await GetHashtagsFromMediaSearch(resultBuild.Shuffle().First().Name, 1);
-
-						if (mediaExamples.Any())
-						{
-							mediaExamples.ForEach(_ => _.IsMediaDescriptor = true);
-							result.Results.AddRange(mediaExamples);
-						}
+						mediaExamples.ForEach(_ => _.IsMediaDescriptor = true);
+						result.Results.AddRange(mediaExamples);
 					}
-
 					if (!deepDive) break;
 					counter++;
 
@@ -234,6 +236,16 @@ namespace Quarkless.Base.HashtagGenerator.Logic
 			{
 				Results = new List<HashtagResponse>()
 			};
+			if (source.ImageBytes == null && source.ImageUrls == null
+			  & source.ProfileTopic == null && source.MediaTopic == null)
+			{
+				results.IsSuccessful = false;
+				results.Info = new ErrorResponse
+				{
+					Message = "Please provide a source"
+				};
+				return results;
+			}
 
 			try
 			{

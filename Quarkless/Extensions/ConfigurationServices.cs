@@ -29,6 +29,8 @@ using Quarkless.Base.Actions.Logic.Factory.ActionExecute.Manager;
 using Quarkless.Base.Actions.Models.Interfaces;
 using Quarkless.Base.Agent.Logic;
 using Quarkless.Base.Agent.Models.Interfaces;
+using Quarkless.Base.Analytics.Logic;
+using Quarkless.Base.Analytics.Models.Interfaces;
 using Quarkless.Base.ApiLogger.Models;
 using Quarkless.Base.ApiLogger.Models.Interfaces;
 using Quarkless.Base.ApiLogger.Repository;
@@ -161,6 +163,7 @@ namespace Quarkless.Extensions
 			services.AddTransient<ICollectionsLogic, CollectionsLogic>();
 			services.AddTransient<IInstaAccountOptionsLogic, InstaAccountOptionsLogic>();
 			services.AddTransient<IHashtagLogic, HashtagLogic>();
+			services.AddTransient<IHashtagsAnalytics, HashtagsAnalytics>();
 			services.AddTransient<IMediaLogic, MediaLogic>();
 			services.AddTransient<ITimelineLogic, TimelineLogic>();
 			services.AddTransient<IHeartbeatLogic, HeartbeatLogic>();

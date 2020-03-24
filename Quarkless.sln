@@ -257,6 +257,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Base.Agent", "Qua
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Quarkless.Base.InstagramAccountCreation", "Quarkless.Projects\Quarkless.Base.InstagramAccountCreation\Quarkless.Base.InstagramAccountCreation.csproj", "{ABA79537-B8ED-4430-A793-F16BACB6B73D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quarkless.Test.HashtagGenerator", "Quarkless.Tests\Quarkless.Test.HashtagGenerator\Quarkless.Test.HashtagGenerator.csproj", "{8F313F8D-3FCA-4A33-B836-3C8F44CFF8E3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Quarkless.Analytics", "Quarkless.Analytics", "{B49E1C3D-2A09-4A0F-BA32-7C01E719D55D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quarkless.Base.Analytics", "Quarkless.Projects\Quarkless.Base.Analytics\Quarkless.Base.Analytics.csproj", "{FFC6F8FD-1DDA-4E33-8357-2D153EE2992E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -527,6 +533,14 @@ Global
 		{ABA79537-B8ED-4430-A793-F16BACB6B73D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ABA79537-B8ED-4430-A793-F16BACB6B73D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ABA79537-B8ED-4430-A793-F16BACB6B73D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8F313F8D-3FCA-4A33-B836-3C8F44CFF8E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F313F8D-3FCA-4A33-B836-3C8F44CFF8E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F313F8D-3FCA-4A33-B836-3C8F44CFF8E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F313F8D-3FCA-4A33-B836-3C8F44CFF8E3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FFC6F8FD-1DDA-4E33-8357-2D153EE2992E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FFC6F8FD-1DDA-4E33-8357-2D153EE2992E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FFC6F8FD-1DDA-4E33-8357-2D153EE2992E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FFC6F8FD-1DDA-4E33-8357-2D153EE2992E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -655,6 +669,9 @@ Global
 		{D15B861D-DEA3-4A28-88EB-9BA9EB8848C3} = {55A05DCF-E5A0-494D-BA3A-F02505A06D79}
 		{63F313D3-384A-4BC0-9B3E-5895FD49D6CE} = {8B5193AB-6031-4DFA-A686-089F4B123527}
 		{ABA79537-B8ED-4430-A793-F16BACB6B73D} = {7AB0885C-4563-4223-9D9E-5266A73AA832}
+		{8F313F8D-3FCA-4A33-B836-3C8F44CFF8E3} = {CD1FA4A9-E14A-4745-A01B-5EDDCE21BEFA}
+		{B49E1C3D-2A09-4A0F-BA32-7C01E719D55D} = {FA565628-E611-4DB7-93ED-1CCEC2B38518}
+		{FFC6F8FD-1DDA-4E33-8357-2D153EE2992E} = {B49E1C3D-2A09-4A0F-BA32-7C01E719D55D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D3E4C3A5-ADB4-4A48-9A99-78BD4FDE9AE6}

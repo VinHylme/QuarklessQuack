@@ -41,6 +41,7 @@
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Base.Account\Quarkless.Base.Account.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Base.Actions\Quarkless.Base.Actions.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Base.Agent\Quarkless.Base.Agent.csproj" />
+    <ProjectReference Include="..\Quarkless.Projects\Quarkless.Base.Analytics\Quarkless.Base.Analytics.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Base.AuthDetails\Quarkless.Base.AuthDetails.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Base.ContentSearch\Quarkless.Base.ContentSearch.csproj" />
     <ProjectReference Include="..\Quarkless.Projects\Quarkless.Base.InstagramBusiness\Quarkless.Base.InstagramBusiness.csproj" />
